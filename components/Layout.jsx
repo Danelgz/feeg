@@ -5,10 +5,13 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 
 export default function Layout({ children }) {
-  const { theme } = useUser();
+  const { theme, isMobile: userIsMobile } = useUser();
   const isDark = theme === 'dark';
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
+
+  // Usar la detección de UserContext si está disponible, si no usar el estado local
+  const currentIsMobile = userIsMobile !== undefined ? userIsMobile : isMobile;
 
   useEffect(() => {
     // Aplicar color de fondo al body para evitar bordes blancos y mejorar el scroll en móvil
@@ -28,13 +31,13 @@ export default function Layout({ children }) {
   return (
     <div style={{ 
       display: "flex", 
-      flexDirection: isMobile ? "column" : "row",
+      flexDirection: currentIsMobile ? "column" : "row",
       minHeight: "100vh", 
       fontFamily: "Arial, sans-serif", 
       backgroundColor: isDark ? "#0f0f0f" : "#f0f2f5",
       color: isDark ? "#fff" : "#333",
-      transition: "all 0.3s ease",
-      paddingBottom: isMobile ? "70px" : "0" // Espacio para el bottom nav
+      transition: "background-color 0.3s ease",
+      paddingBottom: currentIsMobile ? "70px" : "0" // Espacio para el bottom nav
     }}>
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
@@ -51,17 +54,18 @@ export default function Layout({ children }) {
             min-height: 100%;
           }
           @keyframes fadeInPage {
-            from {
+            0% {
               opacity: 0;
-              transform: translateY(5px);
+              transform: translateY(10px);
             }
-            to {
+            100% {
               opacity: 1;
               transform: translateY(0);
             }
           }
           .page-transition {
-            animation: fadeInPage 0.4s ease-out forwards;
+            animation: fadeInPage 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            will-change: opacity, transform;
           }
         `}</style>
       </Head>
@@ -71,7 +75,7 @@ export default function Layout({ children }) {
         className="page-transition"
         style={{ 
           flex: 1, 
-          padding: isMobile ? "10px" : "20px", 
+          padding: currentIsMobile ? "15px" : "20px", 
           backgroundColor: isDark ? "#0f0f0f" : "#f0f2f5", 
           color: isDark ? "#fff" : "#333",
           transition: "background-color 0.3s ease",

@@ -6,6 +6,7 @@ export default function Sidebar() {
   const { theme } = useUser();
   const isDark = theme === 'dark';
   const [isMobile, setIsMobile] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -26,35 +27,76 @@ export default function Sidebar() {
 
   if (isMobile) {
     return (
-      <nav style={{
-        position: "fixed",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: "70px",
-        backgroundColor: isDark ? "#1a1a1a" : "#ffffff",
-        display: "flex",
-        justifyContent: "space-around",
-        alignItems: "center",
-        borderTop: isDark ? "1px solid #333" : "1px solid #e0e0e0",
-        zIndex: 1000,
-        padding: "0 10px"
-      }}>
-        {links.map(link => (
-          <Link key={link.name} href={link.href} style={{
+      <>
+        {/* Botón Hamburguesa */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          style={{
+            position: "fixed",
+            top: "15px",
+            right: "15px",
+            zIndex: 2000,
+            width: "45px",
+            height: "45px",
+            borderRadius: "50%",
+            backgroundColor: "#1dd1a1",
+            border: "none",
+            cursor: "pointer",
             display: "flex",
             flexDirection: "column",
+            justifyContent: "center",
             alignItems: "center",
-            textDecoration: "none",
-            color: isDark ? "#fff" : "#333",
-            fontSize: "0.7rem",
-            gap: "5px"
-          }}>
-            <span style={{ fontSize: "1.2rem" }}>{link.icon}</span>
-            <span>{link.name}</span>
-          </Link>
-        ))}
-      </nav>
+            gap: "5px",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
+            padding: "0"
+          }}
+        >
+          <div style={{ width: "20px", height: "2px", backgroundColor: "#000", transition: "0.3s", transform: isOpen ? "rotate(45deg) translate(5px, 5px)" : "none" }} />
+          <div style={{ width: "20px", height: "2px", backgroundColor: "#000", transition: "0.3s", opacity: isOpen ? 0 : 1 }} />
+          <div style={{ width: "20px", height: "2px", backgroundColor: "#000", transition: "0.3s", transform: isOpen ? "rotate(-45deg) translate(5px, -5px)" : "none" }} />
+        </button>
+
+        {/* Menú Desplegable */}
+        <div style={{
+          position: "fixed",
+          top: 0,
+          right: 0,
+          left: 0,
+          bottom: 0,
+          backgroundColor: isDark ? "rgba(15, 15, 15, 0.98)" : "rgba(255, 255, 255, 0.98)",
+          zIndex: 1500,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: "25px",
+          transition: "all 0.3s ease-in-out",
+          opacity: isOpen ? 1 : 0,
+          visibility: isOpen ? "visible" : "hidden",
+          transform: isOpen ? "translateY(0)" : "translateY(-100%)"
+        }}>
+          <h2 style={{ color: "#1dd1a1", fontSize: "2rem", marginBottom: "20px" }}>FEEG</h2>
+          {links.map(link => (
+            <Link 
+              key={link.name} 
+              href={link.href} 
+              onClick={() => setIsOpen(false)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                textDecoration: "none",
+                color: isDark ? "#fff" : "#333",
+                fontSize: "1.5rem",
+                gap: "15px",
+                fontWeight: "600"
+              }}
+            >
+              <span>{link.icon}</span>
+              <span>{link.name}</span>
+            </Link>
+          ))}
+        </div>
+      </>
     );
   }
 
@@ -73,17 +115,29 @@ export default function Sidebar() {
     }}>
       <h2 style={{ margin: 0, color: isDark ? "#fff" : "#333", fontSize: "1.5rem" }}>FEEG</h2>
       {links.map(link => (
-        <Link key={link.name} href={link.href} style={{
-          color: isDark ? "#fff" : "#333",
-          textDecoration: "none",
-          padding: "10px",
-          borderRadius: "5px",
-          transition: "0.2s",
-          backgroundColor: "transparent",
-          display: "flex",
-          alignItems: "center",
-          gap: "10px"
-        }}>
+        <Link 
+          key={link.name} 
+          href={link.href} 
+          style={{
+            color: isDark ? "#fff" : "#333",
+            textDecoration: "none",
+            padding: "10px",
+            borderRadius: "5px",
+            transition: "0.2s",
+            backgroundColor: "transparent",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px"
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = isDark ? "#2a2a2a" : "#f5f5f5";
+            e.currentTarget.style.color = "#1dd1a1";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
+            e.currentTarget.style.color = isDark ? "#fff" : "#333";
+          }}
+        >
           <span>{link.icon}</span>
           <span>{link.name}</span>
         </Link>

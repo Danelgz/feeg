@@ -37,7 +37,6 @@ export default function Layout({ children }) {
       backgroundColor: isDark ? "#0f0f0f" : "#f0f2f5",
       color: isDark ? "#fff" : "#333",
       transition: "background-color 0.3s ease",
-      paddingBottom: currentIsMobile ? "70px" : "0" // Espacio para el bottom nav
     }}>
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />

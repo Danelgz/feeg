@@ -2,11 +2,13 @@ import Sidebar from "./Sidebar";
 import { useUser } from "../context/UserContext";
 import { useState, useEffect } from "react";
 import Head from "next/head";
+import { useRouter } from "next/router";
 
 export default function Layout({ children }) {
   const { theme } = useUser();
   const isDark = theme === 'dark';
   const [isMobile, setIsMobile] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     // Aplicar color de fondo al body para evitar bordes blancos y mejorar el scroll en móvil
@@ -48,18 +50,35 @@ export default function Layout({ children }) {
           #__next {
             min-height: 100%;
           }
+          @keyframes fadeInPage {
+            from {
+              opacity: 0;
+              transform: translateY(5px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          .page-transition {
+            animation: fadeInPage 0.4s ease-out forwards;
+          }
         `}</style>
       </Head>
       <Sidebar />
-      <main style={{ 
-        flex: 1, 
-        padding: isMobile ? "10px" : "20px", 
-        backgroundColor: isDark ? "#0f0f0f" : "#f0f2f5", 
-        color: isDark ? "#fff" : "#333",
-        transition: "all 0.3s ease",
-        width: "100%",
-        boxSizing: "border-box"
-      }}>
+      <main 
+        key={router.asPath}
+        className="page-transition"
+        style={{ 
+          flex: 1, 
+          padding: isMobile ? "10px" : "20px", 
+          backgroundColor: isDark ? "#0f0f0f" : "#f0f2f5", 
+          color: isDark ? "#fff" : "#333",
+          transition: "background-color 0.3s ease",
+          width: "100%",
+          boxSizing: "border-box"
+        }}
+      >
         {children}
       </main>
     </div>

@@ -18,11 +18,11 @@ export default function Sidebar() {
   }, []);
 
   const links = [
-    { name: "Feed", href: "/", icon: "🏠" },
-    { name: "Rutinas", href: "/routines", icon: "📋" },
-    { name: "Ejercicios", href: "/exercises", icon: "🏋️‍♂️" },
-    { name: "Perfil", href: "/profile", icon: "👤" },
-    { name: "Ajustes", href: "/settings", icon: "⚙️" }
+    { name: "Feed", href: "/", icon: "" },
+    { name: "Rutinas", href: "/routines", icon: "" },
+    { name: "Ejercicios", href: "/exercises", icon: "" },
+    { name: "Perfil", href: "/profile", icon: "" },
+    { name: "Ajustes", href: "/settings", icon: "" }
   ];
 
   if (isMobile) {

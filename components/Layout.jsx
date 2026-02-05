@@ -59,7 +59,7 @@ export default function Layout({ children }) {
           @keyframes fadeInPage {
             0% {
               opacity: 0;
-              transform: translateY(10px);
+              transform: translateY(5px);
             }
             100% {
               opacity: 1;
@@ -67,7 +67,7 @@ export default function Layout({ children }) {
             }
           }
           .page-transition {
-            animation: fadeInPage 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            animation: fadeInPage 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
             will-change: opacity, transform;
           }
         `}</style>

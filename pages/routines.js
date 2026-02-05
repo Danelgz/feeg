@@ -125,6 +125,40 @@ export default function Routines() {
       {/* Tab: Rutinas Activas */}
       {activeTab === "active" && (
         <>
+          <div style={{ marginBottom: "25px" }}>
+            <Link href="/routines/empty">
+              <button
+                style={{
+                  width: "100%",
+                  padding: "15px",
+                  backgroundColor: "#1dd1a1",
+                  color: "#000",
+                  border: "none",
+                  borderRadius: "10px",
+                  fontSize: "1.1rem",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "10px",
+                  transition: "all 0.3s ease",
+                  boxShadow: isDark ? "0 4px 10px rgba(0,0,0,0.3)" : "0 4px 10px rgba(0,0,0,0.1)"
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = "#19b088";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = "#1dd1a1";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                Iniciar Entrenamiento Vacío
+              </button>
+            </Link>
+          </div>
+
           <RoutineForm saveRoutine={saveRoutine} />
 
           {routines.length === 0 && <p style={{ color: isDark ? "#ccc" : "#666" }}>No hay rutinas guardadas.</p>}

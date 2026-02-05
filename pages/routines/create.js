@@ -215,26 +215,24 @@ export default function CreateRoutine() {
                     onClick={() => addExercise(ex)}
                     style={{
                       padding: "1rem",
-                      backgroundColor: isDark ? "#1e3a8a" : "#e0f2fe",
-                      border: `2px solid ${isDark ? "#3b82f6" : "#bae6fd"}`,
+                      backgroundColor: isDark ? "#1a1a1a" : "#f0fdf4",
+                      border: `2px solid #1dd1a1`,
                       borderRadius: "10px",
                       fontSize: "0.95rem",
                       fontWeight: "600",
-                      color: isDark ? "#fff" : "#0369a1",
+                      color: "#1dd1a1",
                       cursor: "pointer",
                       transition: "all 0.3s ease"
                     }}
                     onMouseOver={(e) => {
-                      e.target.style.backgroundColor = isDark ? "#1e40af" : "#bae6fd";
-                      e.target.style.borderColor = isDark ? "#60a5fa" : "#7dd3fc";
+                      e.target.style.backgroundColor = isDark ? "#2a2a2a" : "#e6fffa";
+                      e.target.style.boxShadow = "0 4px 12px rgba(29, 209, 161, 0.3)";
                       e.target.style.transform = "translateY(-2px)";
-                      e.target.style.boxShadow = "0 4px 12px rgba(59, 130, 246, 0.3)";
                     }}
                     onMouseOut={(e) => {
-                      e.target.style.backgroundColor = isDark ? "#1e3a8a" : "#e0f2fe";
-                      e.target.style.borderColor = isDark ? "#3b82f6" : "#bae6fd";
-                      e.target.style.transform = "translateY(0)";
+                      e.target.style.backgroundColor = isDark ? "#1a1a1a" : "#f0fdf4";
                       e.target.style.boxShadow = "none";
+                      e.target.style.transform = "translateY(0)";
                     }}
                   >
                     {ex.name}
@@ -291,13 +289,13 @@ export default function CreateRoutine() {
                       {ex.name}
                     </h3>
                     <span style={{ 
-                      backgroundColor: isDark ? "#1e3a8a" : "#e0f2fe", 
+                      backgroundColor: isDark ? "#1a1a1a" : "#f0fdf4", 
                       padding: "0.25rem 0.75rem", 
                       borderRadius: "20px", 
                       fontSize: "0.85rem", 
-                      color: isDark ? "#93c5fd" : "#0369a1", 
+                      color: "#1dd1a1", 
                       fontWeight: "600", 
-                      border: `1px solid ${isDark ? "#3b82f6" : "#bae6fd"}` 
+                      border: `1px solid #1dd1a1` 
                     }}>
                       {ex.group}
                     </span>

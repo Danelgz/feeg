@@ -75,7 +75,16 @@ export default function Sidebar() {
           visibility: isOpen ? "visible" : "hidden",
           transform: isOpen ? "translateY(0)" : "translateY(-100%)"
         }}>
-          <h2 style={{ color: "#1dd1a1", fontSize: "2rem", marginBottom: "20px" }}>FEEG</h2>
+          <img 
+            src="/logo.png" 
+            alt="FEEG Logo" 
+            style={{ 
+              width: "120px", 
+              height: "auto", 
+              marginBottom: "20px",
+              filter: isDark ? "brightness(0) invert(1)" : "none" // Invertir si es negro sobre transparente
+            }} 
+          />
           {links.map(link => (
             <Link 
               key={link.name} 
@@ -113,7 +122,17 @@ export default function Sidebar() {
       borderRight: isDark ? "2px solid #333" : "2px solid #e0e0e0",
       transition: "all 0.3s ease"
     }}>
-      <h2 style={{ margin: 0, color: isDark ? "#fff" : "#333", fontSize: "1.5rem" }}>FEEG</h2>
+      <div style={{ padding: "10px 0", marginBottom: "10px", textAlign: "center" }}>
+        <img 
+          src="/logo.png" 
+          alt="FEEG Logo" 
+          style={{ 
+            width: "80px", 
+            height: "auto",
+            filter: isDark ? "brightness(0) invert(1)" : "none"
+          }} 
+        />
+      </div>
       {links.map(link => (
         <Link 
           key={link.name} 

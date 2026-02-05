@@ -40,7 +40,7 @@ export default function Layout({ children }) {
     }}>
       <Head>
         <title>FEEG - Tu App de Entrenamiento</title>
-        <link rel="icon" href="/logo.png" />
+        <link rel="icon" href="/logo3.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
         <style>{`
           html, body {

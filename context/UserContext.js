@@ -6,11 +6,13 @@ export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [theme, setTheme] = useState('dark');
+  const [language, setLanguage] = useState('es');
 
   useEffect(() => {
-    // Cargar usuario y tema desde localStorage al montar
+    // Cargar usuario, tema e idioma desde localStorage al montar
     const savedUser = localStorage.getItem('userProfile');
     const savedTheme = localStorage.getItem('theme');
+    const savedLanguage = localStorage.getItem('language');
     
     if (savedUser) {
       try {
@@ -22,6 +24,10 @@ export function UserProvider({ children }) {
     
     if (savedTheme) {
       setTheme(savedTheme);
+    }
+
+    if (savedLanguage) {
+      setLanguage(savedLanguage);
     }
     
     setIsLoaded(true);
@@ -43,8 +49,22 @@ export function UserProvider({ children }) {
     localStorage.setItem('theme', newTheme);
   };
 
+  const updateLanguage = (newLang) => {
+    setLanguage(newLang);
+    localStorage.setItem('language', newLang);
+  };
+
   return (
-    <UserContext.Provider value={{ user, saveUser, clearUser, isLoaded, theme, toggleTheme }}>
+    <UserContext.Provider value={{ 
+      user, 
+      saveUser, 
+      clearUser, 
+      isLoaded, 
+      theme, 
+      toggleTheme, 
+      language, 
+      updateLanguage 
+    }}>
       {children}
     </UserContext.Provider>
   );

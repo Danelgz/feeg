@@ -69,6 +69,44 @@ export default function Layout({ children }) {
         `}</style>
       </Head>
       <Sidebar />
+      
+      {/* Botón de Retroceder */}
+      {router.asPath !== "/" && (
+        <button
+          onClick={() => router.back()}
+          style={{
+            position: "fixed",
+            top: "15px",
+            left: currentIsMobile ? "15px" : "235px", // Ajustado para no solapar el sidebar en PC
+            zIndex: 2000,
+            width: "45px",
+            height: "45px",
+            borderRadius: "50%",
+            backgroundColor: isDark ? "#1a1a1a" : "#ffffff",
+            border: `2px solid #1dd1a1`,
+            color: "#1dd1a1",
+            cursor: "pointer",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            fontSize: "1.2rem",
+            fontWeight: "bold",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+            transition: "all 0.2s ease"
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = "#1dd1a1";
+            e.currentTarget.style.color = "#000";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = isDark ? "#1a1a1a" : "#ffffff";
+            e.currentTarget.style.color = "#1dd1a1";
+          }}
+        >
+          ←
+        </button>
+      )}
+
       <main 
         key={router.asPath}
         className="page-transition"

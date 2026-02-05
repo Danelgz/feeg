@@ -9,8 +9,18 @@ export default function Home() {
   const { user, isLoaded, theme } = useUser();
   const [completedWorkouts, setCompletedWorkouts] = useState([]);
   const [selectedWorkout, setSelectedWorkout] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
   
   const isDark = theme === 'dark';
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const formatElapsedTime = (seconds) => {
     if (!seconds && seconds !== 0) return null;
@@ -71,9 +81,9 @@ export default function Home() {
 
   return (
     <Layout>
-      <div style={{ padding: "20px", maxWidth: "1000px", margin: "0 auto" }}>
-        <h1 style={{ color: isDark ? "#fff" : "#333", fontSize: "2.5rem", marginBottom: "1rem" }}>Bienvenido a tu App de Entrenamiento</h1>
-        <p style={{ color: isDark ? "#ccc" : "#666", fontSize: "1.1rem", lineHeight: "1.6" }}>
+      <div style={{ padding: isMobile ? "10px" : "20px", maxWidth: "1000px", margin: "0 auto" }}>
+        <h1 style={{ color: isDark ? "#fff" : "#333", fontSize: isMobile ? "1.8rem" : "2.5rem", marginBottom: "1rem" }}>Bienvenido a tu App de Entrenamiento</h1>
+        <p style={{ color: isDark ? "#ccc" : "#666", fontSize: isMobile ? "1rem" : "1.1rem", lineHeight: "1.6" }}>
           Aquí puedes gestionar tus rutinas y ejercicios de forma personalizada.
         </p>
 
@@ -81,22 +91,23 @@ export default function Home() {
           <Link href="/routines">
             <button
               style={{
-                padding: "10px 20px",
-                backgroundColor: "#008CFF",
-                color: "#fff",
+                padding: "12px 20px",
+                backgroundColor: "#1dd1a1",
+                color: "#000",
                 border: "none",
                 borderRadius: "8px",
                 cursor: "pointer",
                 fontSize: "1rem",
                 fontWeight: "600",
-                transition: "all 0.3s ease"
+                transition: "all 0.3s ease",
+                width: isMobile ? "100%" : "auto"
               }}
               onMouseOver={(e) => {
-                e.target.style.backgroundColor = "#0073CC";
-                e.target.style.boxShadow = "0 4px 8px rgba(0, 140, 255, 0.3)";
+                e.target.style.backgroundColor = "#19b088";
+                e.target.style.boxShadow = "0 4px 8px rgba(29, 209, 161, 0.3)";
               }}
               onMouseOut={(e) => {
-                e.target.style.backgroundColor = "#008CFF";
+                e.target.style.backgroundColor = "#1dd1a1";
                 e.target.style.boxShadow = "none";
               }}
             >
@@ -114,7 +125,7 @@ export default function Home() {
             
             <div style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+              gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(280px, 1fr))",
               gap: "15px"
             }}>
               {completedWorkouts.map(workout => (
@@ -257,12 +268,12 @@ export default function Home() {
             <div
               style={{
                 backgroundColor: isDark ? "#1a1a1a" : "#fff",
-                border: isDark ? "2px solid #1dd1a1" : "2px solid #008CFF",
+                border: "2px solid #1dd1a1",
                 borderRadius: "15px",
-                padding: "30px",
+                padding: isMobile ? "15px" : "30px",
                 maxWidth: "600px",
-                width: "100%",
-                maxHeight: "80vh",
+                width: isMobile ? "95%" : "100%",
+                maxHeight: "85vh",
                 overflowY: "auto",
                 boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)"
               }}
@@ -270,7 +281,7 @@ export default function Home() {
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "20px" }}>
                 <div>
-                  <h2 style={{ color: isDark ? "#1dd1a1" : "#008CFF", margin: "0 0 5px 0" }}>{selectedWorkout.name}</h2>
+                  <h2 style={{ color: "#1dd1a1", margin: "0 0 5px 0" }}>{selectedWorkout.name}</h2>
                   <p style={{ color: isDark ? "#999" : "#666", margin: 0, fontSize: "0.9rem" }}>
                     {new Date(selectedWorkout.completedAt).toLocaleDateString('es-ES', {
                       weekday: 'long',
@@ -303,7 +314,7 @@ export default function Home() {
                   padding: "15px", 
                   borderRadius: "8px", 
                   marginBottom: "20px",
-                  borderLeft: `4px solid ${isDark ? "#1dd1a1" : "#008CFF"}`
+                  borderLeft: "4px solid #1dd1a1"
                 }}>
                   <p style={{ color: isDark ? "#ccc" : "#444", margin: 0, fontStyle: "italic" }}>"{selectedWorkout.comments}"</p>
                 </div>
@@ -311,25 +322,25 @@ export default function Home() {
 
               <div style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(2, 1fr)",
-                gap: "15px",
+                gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(2, 1fr)", // keeping grid but making sure it fits
+                gap: isMobile ? "10px" : "15px",
                 marginBottom: "25px"
               }}>
                 <div style={{ backgroundColor: isDark ? "#0f0f0f" : "#f5f5f5", padding: "12px", borderRadius: "8px", textAlign: "center" }}>
                   <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>Series Totales</p>
-                  <p style={{ color: isDark ? "#1dd1a1" : "#008CFF", margin: "0", fontSize: "1.2rem", fontWeight: "bold" }}>{selectedWorkout.series}</p>
+                  <p style={{ color: "#1dd1a1", margin: "0", fontSize: "1.2rem", fontWeight: "bold" }}>{selectedWorkout.series}</p>
                 </div>
                 <div style={{ backgroundColor: isDark ? "#0f0f0f" : "#f5f5f5", padding: "12px", borderRadius: "8px", textAlign: "center" }}>
                   <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>Volumen Total</p>
-                  <p style={{ color: isDark ? "#1dd1a1" : "#008CFF", margin: "0", fontSize: "1.2rem", fontWeight: "bold" }}>{selectedWorkout.totalVolume.toLocaleString()} kg</p>
+                  <p style={{ color: "#1dd1a1", margin: "0", fontSize: "1.2rem", fontWeight: "bold" }}>{selectedWorkout.totalVolume.toLocaleString()} kg</p>
                 </div>
                 <div style={{ backgroundColor: isDark ? "#0f0f0f" : "#f5f5f5", padding: "12px", borderRadius: "8px", textAlign: "center" }}>
                   <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>Repeticiones</p>
-                  <p style={{ color: isDark ? "#1dd1a1" : "#008CFF", margin: "0", fontSize: "1.2rem", fontWeight: "bold" }}>{selectedWorkout.totalReps}</p>
+                  <p style={{ color: "#1dd1a1", margin: "0", fontSize: "1.2rem", fontWeight: "bold" }}>{selectedWorkout.totalReps}</p>
                 </div>
                 <div style={{ backgroundColor: isDark ? "#0f0f0f" : "#f5f5f5", padding: "12px", borderRadius: "8px", textAlign: "center" }}>
                   <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>Tiempo</p>
-                  <p style={{ color: isDark ? "#1dd1a1" : "#008CFF", margin: "0", fontSize: "1.2rem", fontWeight: "bold" }}>
+                  <p style={{ color: "#1dd1a1", margin: "0", fontSize: "1.2rem", fontWeight: "bold" }}>
                     {selectedWorkout.elapsedTime ? formatElapsedTime(selectedWorkout.elapsedTime) : `${selectedWorkout.totalTime} min`}
                   </p>
                 </div>
@@ -344,7 +355,7 @@ export default function Home() {
                     borderRadius: "8px",
                     padding: "20px"
                   }}>
-                    <h2 style={{ margin: "0 0 15px 0", color: isDark ? "#1dd1a1" : "#008CFF" }}>
+                    <h2 style={{ margin: "0 0 15px 0", color: "#1dd1a1" }}>
                       {exIdx + 1}. {ex.name}
                     </h2>
                     
@@ -352,7 +363,7 @@ export default function Home() {
                     {ex.series.map((s, sIdx) => (
                       <div key={sIdx} style={{
                         backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
-                        border: `2px solid ${isDark ? "#1dd1a1" : "#008CFF"}`,
+                        border: "2px solid #1dd1a1",
                         borderRadius: "6px",
                         padding: "15px",
                         marginBottom: "10px",
@@ -364,8 +375,8 @@ export default function Home() {
                               width: "40px",
                               height: "40px",
                               borderRadius: "50%",
-                              backgroundColor: isDark ? "#1dd1a1" : "#008CFF",
-                              color: isDark ? "#000" : "#fff",
+                              backgroundColor: "#1dd1a1",
+                              color: "#000",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",

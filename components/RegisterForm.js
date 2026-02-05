@@ -178,7 +178,7 @@ export default function RegisterForm({ onRegister }) {
                 style={{
                   flex: 1,
                   padding: "8px",
-                  backgroundColor: formData.weightUnit === 'kg' ? "#008CFF" : (isDark ? "#2a2a2a" : "#eee"),
+                  backgroundColor: formData.weightUnit === 'kg' ? "#1dd1a1" : (isDark ? "#2a2a2a" : "#eee"),
                   color: formData.weightUnit === 'kg' ? "#fff" : (isDark ? "#fff" : "#333"),
                   border: "none",
                   borderRadius: "6px",
@@ -194,7 +194,7 @@ export default function RegisterForm({ onRegister }) {
                 style={{
                   flex: 1,
                   padding: "8px",
-                  backgroundColor: formData.weightUnit === 'lb' ? "#008CFF" : (isDark ? "#2a2a2a" : "#eee"),
+                  backgroundColor: formData.weightUnit === 'lb' ? "#1dd1a1" : (isDark ? "#2a2a2a" : "#eee"),
                   color: formData.weightUnit === 'lb' ? "#fff" : (isDark ? "#fff" : "#333"),
                   border: "none",
                   borderRadius: "6px",
@@ -232,7 +232,7 @@ export default function RegisterForm({ onRegister }) {
                 style={{
                   flex: 1,
                   padding: "8px",
-                  backgroundColor: formData.heightUnit === 'cm' ? "#008CFF" : (isDark ? "#2a2a2a" : "#eee"),
+                  backgroundColor: formData.heightUnit === 'cm' ? "#1dd1a1" : (isDark ? "#2a2a2a" : "#eee"),
                   color: formData.heightUnit === 'cm' ? "#fff" : (isDark ? "#fff" : "#333"),
                   border: "none",
                   borderRadius: "6px",
@@ -248,7 +248,7 @@ export default function RegisterForm({ onRegister }) {
                 style={{
                   flex: 1,
                   padding: "8px",
-                  backgroundColor: formData.heightUnit === 'ft' ? "#008CFF" : (isDark ? "#2a2a2a" : "#eee"),
+                  backgroundColor: formData.heightUnit === 'ft' ? "#1dd1a1" : (isDark ? "#2a2a2a" : "#eee"),
                   color: formData.heightUnit === 'ft' ? "#fff" : (isDark ? "#fff" : "#333"),
                   border: "none",
                   borderRadius: "6px",

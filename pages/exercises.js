@@ -7,7 +7,7 @@ import { useUser } from "../context/UserContext";
 export default function Exercises() {
   const [search, setSearch] = useState("");
   const [expandedGroups, setExpandedGroups] = useState({});
-  const { theme } = useUser();
+  const { theme, isMobile } = useUser();
   const isDark = theme === 'dark';
 
   // Filtra ejercicios por búsqueda y los agrupa por grupo muscular
@@ -32,7 +32,7 @@ export default function Exercises() {
 
   return (
     <Layout>
-      <h1 style={{ color: isDark ? "#fff" : "#333" }}>Ejercicios</h1>
+      <h1 style={{ color: isDark ? "#fff" : "#333", fontSize: isMobile ? "1.8rem" : "2.5rem" }}>Ejercicios</h1>
       <input
         type="text"
         placeholder="Buscar ejercicio..."
@@ -54,7 +54,7 @@ export default function Exercises() {
         onFocus={(e) => e.target.style.borderColor = "#1dd1a1"}
         onBlur={(e) => e.target.style.borderColor = isDark ? "#333" : "#ddd"}
       />
-      <div style={{ padding: "0 20px", maxWidth: "900px", margin: "0 auto" }}>
+      <div style={{ padding: isMobile ? "0" : "0 20px", maxWidth: "900px", margin: "0 auto" }}>
         {hasResults ? (
           Object.entries(filteredGroups).map(([group, exercises]) => (
             <div key={group} style={{ marginBottom: "1rem" }}>
@@ -78,7 +78,7 @@ export default function Exercises() {
                 }}
                 onMouseOver={(e) => {
                   e.target.style.backgroundColor = isDark ? "#2a2a2a" : "#f0fdf4";
-                  e.target.style.boxShadow = "0 4px 12px rgba(0, 140, 255, 0.3)";
+                  e.target.style.boxShadow = "0 4px 12px rgba(29, 209, 161, 0.3)";
                 }}
                 onMouseOut={(e) => {
                   e.target.style.backgroundColor = isDark ? "#1a1a1a" : "#fff";
@@ -110,7 +110,7 @@ export default function Exercises() {
                       onMouseOver={(e) => {
                         e.target.style.backgroundColor = isDark ? "#2a2a2a" : "#f9f9f9";
                         e.target.style.borderColor = "#1dd1a1";
-                        e.target.style.boxShadow = "0 2px 6px rgba(0, 140, 255, 0.2)";
+                        e.target.style.boxShadow = "0 2px 6px rgba(29, 209, 161, 0.2)";
                         e.target.style.transform = "translateX(4px)";
                       }}
                       onMouseOut={(e) => {

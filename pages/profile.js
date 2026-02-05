@@ -4,14 +4,14 @@ import RegisterForm from "../components/RegisterForm";
 import { useUser } from "../context/UserContext";
 
 export default function Profile() {
-  const { user, saveUser, isLoaded, theme } = useUser();
+  const { user, saveUser, isLoaded, theme, isMobile } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const isDark = theme === 'dark';
 
   if (!isLoaded) {
     return (
       <Layout>
-        <h1 style={{ fontSize: "2rem", marginBottom: "1rem", color: isDark ? "#fff" : "#333" }}>Perfil</h1>
+        <h1 style={{ fontSize: isMobile ? "1.8rem" : "2rem", marginBottom: "1rem", color: isDark ? "#fff" : "#333" }}>Perfil</h1>
         <p style={{ color: isDark ? "#ccc" : "#666" }}>Cargando...</p>
       </Layout>
     );
@@ -20,7 +20,7 @@ export default function Profile() {
   if (!user) {
     return (
       <Layout>
-        <div style={{ padding: "20px" }}>
+        <div style={{ padding: isMobile ? "0" : "20px" }}>
           <RegisterForm onRegister={saveUser} />
         </div>
       </Layout>
@@ -43,14 +43,16 @@ export default function Profile() {
 
   return (
     <Layout>
-      <h1 style={{ fontSize: "2rem", marginBottom: "1rem", color: isDark ? "#fff" : "#333" }}>Perfil</h1>
+      <h1 style={{ fontSize: isMobile ? "1.8rem" : "2rem", marginBottom: "1rem", color: isDark ? "#fff" : "#333" }}>Perfil</h1>
       <div style={{
         backgroundColor: isDark ? "#1a1a1a" : "#fff",
         padding: "20px",
         borderRadius: "10px",
         boxShadow: isDark ? "0 2px 6px rgba(0,0,0,0.3)" : "0 2px 6px rgba(0,0,0,0.05)",
         border: `1px solid ${isDark ? "#333" : "#eee"}`,
-        maxWidth: "600px"
+        maxWidth: "600px",
+        width: isMobile ? "100%" : "auto",
+        boxSizing: "border-box"
       }}>
         <p style={{ color: isDark ? "#fff" : "#333" }}><strong>Nombre:</strong> {user.firstName} {user.lastName}</p>
         <p style={{ color: isDark ? "#ccc" : "#666" }}><strong>Nombre de Usuario:</strong> @{user.username}</p>
@@ -64,8 +66,8 @@ export default function Profile() {
           style={{
             marginTop: "20px",
             padding: "10px 20px",
-            backgroundColor: "#008CFF",
-            color: "#fff",
+            backgroundColor: "#1dd1a1",
+            color: "#000",
             border: "none",
             borderRadius: "8px",
             cursor: "pointer",
@@ -73,10 +75,10 @@ export default function Profile() {
             transition: "all 0.3s ease"
           }}
           onMouseOver={(e) => {
-            e.target.style.backgroundColor = "#0073CC";
+            e.target.style.backgroundColor = "#19b088";
           }}
           onMouseOut={(e) => {
-            e.target.style.backgroundColor = "#008CFF";
+            e.target.style.backgroundColor = "#1dd1a1";
           }}
         >
           Editar Perfil

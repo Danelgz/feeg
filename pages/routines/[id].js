@@ -35,6 +35,16 @@ export default function RoutineDetail() {
   });
   const [savingWorkout, setSavingWorkout] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const handleUpdateReps = (serieIdx, newReps) => {
     const key = `${currentExerciseIndex}-${serieIdx}`;
@@ -228,9 +238,10 @@ export default function RoutineDetail() {
     setShowAddExerciseModal(true);
   };
 
-  const handleSelectExercise = (exerciseName) => {
+  const handleSelectExercise = (exercise) => {
     const newExercise = {
-      name: exerciseName,
+      name: exercise.name,
+      type: exercise.type || "weight_reps",
       rest: 60,
       series: [{ reps: 10, weight: 0 }]
     };
@@ -418,7 +429,8 @@ export default function RoutineDetail() {
                 </p>
                 {exercise.series.map((serie, sIdx) => (
                   <div key={sIdx} style={{ fontSize: "0.9rem", color: isDark ? "#999" : "#888", marginLeft: "10px" }}>
-                    Serie {sIdx + 1}: {serie.reps} reps - {serie.weight}kg
+                    Serie {sIdx + 1}: {serie.reps} {exercise.type === 'time' ? 's' : 'reps'}
+                    {(exercise.type === 'weight_reps' || !exercise.type) && ` - ${serie.weight}kg`}
                   </div>
                 ))}
               </div>
@@ -455,7 +467,7 @@ export default function RoutineDetail() {
         }}>
           <div style={{
             backgroundColor: isDark ? "#1a1a1a" : "#fff",
-            border: `2px solid ${isDark ? "#1dd1a1" : "#008CFF"}`,
+            border: "2px solid #1dd1a1",
             borderRadius: "12px",
             padding: "40px",
             maxWidth: "500px",
@@ -709,35 +721,35 @@ export default function RoutineDetail() {
   if (workoutState === "ongoing") {
     return (
       <Layout>
-        <div style={{ padding: "20px", maxWidth: "900px", margin: "0 auto" }}>
+        <div style={{ padding: isMobile ? "5px" : "20px", maxWidth: "900px", margin: "0 auto" }}>
           {/* Main Routine Timer - Fixed in Corner */}
           <div style={{
             position: "fixed",
-            top: "80px",
-            right: "20px",
+            top: isMobile ? "10px" : "80px",
+            right: isMobile ? "10px" : "20px",
             backgroundColor: countdownActive && countdown > 0 
-              ? (isDark ? "rgba(29, 209, 161, 0.95)" : "rgba(0, 140, 255, 0.95)") 
+              ? (isDark ? "rgba(29, 209, 161, 0.95)" : "rgba(29, 209, 161, 0.95)") 
               : (isDark ? "rgba(26, 26, 26, 0.9)" : "rgba(255, 255, 255, 0.9)"),
             backdropFilter: "blur(4px)",
             color: (countdownActive && countdown > 0) 
               ? (isDark ? "#000" : "#fff") 
               : (isDark ? "#fff" : "#333"),
-            padding: "8px 12px",
+            padding: isMobile ? "6px 10px" : "8px 12px",
             borderRadius: "8px",
             textAlign: "center",
             border: (countdownActive && countdown > 0) 
               ? "2px solid #fff" 
               : `1px solid ${isDark ? "#333" : "#ddd"}`,
             boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
-            zIndex: 1000,
+            zIndex: 1001,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            minWidth: "120px",
+            minWidth: isMobile ? "100px" : "120px",
             transition: "all 0.3s ease"
           }}>
             <div style={{ 
-              fontSize: "0.65rem", 
+              fontSize: isMobile ? "0.6rem" : "0.65rem", 
               color: (countdownActive && countdown > 0) 
                 ? (isDark ? "#000" : "#fff") 
                 : (isDark ? "#aaa" : "#888"), 
@@ -748,7 +760,7 @@ export default function RoutineDetail() {
             }}>
               {countdownActive && countdown > 0 ? "DESCANSO" : "TRABAJO"}
             </div>
-            <div style={{ fontSize: "1.4rem", fontWeight: "bold", fontFamily: "monospace" }}>
+            <div style={{ fontSize: isMobile ? "1.2rem" : "1.4rem", fontWeight: "bold", fontFamily: "monospace" }}>
               {countdownActive && countdown > 0 
                 ? (Math.floor(countdown / 60) > 0
                   ? `${Math.floor(countdown / 60)}:${(countdown % 60).toString().padStart(2, "0")}`
@@ -762,9 +774,10 @@ export default function RoutineDetail() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: "20px"
+            marginBottom: "20px",
+            paddingRight: isMobile ? "120px" : "0" // Evitar que el título choque con el timer
           }}>
-            <h1 style={{ margin: 0, color: isDark ? "#fff" : "#333" }}>
+            <h1 style={{ margin: 0, color: isDark ? "#fff" : "#333", fontSize: isMobile ? "1.5rem" : "2rem" }}>
               {routine.name}
             </h1>
           </div>
@@ -776,7 +789,7 @@ export default function RoutineDetail() {
                 backgroundColor: isDark ? "#1a1a1a" : "#fff",
                 border: `1px solid ${isDark ? "#333" : "#eee"}`,
                 borderRadius: "8px",
-                padding: "20px",
+                padding: isMobile ? "12px" : "20px",
                 marginBottom: "20px",
                 boxShadow: isDark ? "none" : "0 2px 8px rgba(0,0,0,0.05)"
               }}
@@ -1039,9 +1052,11 @@ export default function RoutineDetail() {
                       {isCompleted ? "X" : "✓"}
                     </button>
 
-                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "8px" : "12px" }}>
                           <div>
-                            <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.8rem", marginBottom: "3px" }}>Reps</label>
+                            <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.8rem", marginBottom: "3px" }}>
+                              {exercise.type === 'time' ? (isMobile ? 'Tiemp' : 'Tiempo (s)') : 'Reps'}
+                            </label>
                             <input
                               type="number"
                               value={currentReps[key] || ""}
@@ -1057,40 +1072,44 @@ export default function RoutineDetail() {
                                 border: `1px solid ${isDark ? "#333" : "#ddd"}`,
                                 borderRadius: "4px",
                                 color: isDark ? "#fff" : "#333",
-                                width: "70px",
+                                width: isMobile ? "55px" : "70px",
                                 fontSize: "0.95rem",
                                 textAlign: "center"
                               }}
                             />
                           </div>
 
-                          <div>
-                            <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.8rem", marginBottom: "3px" }}>Peso (kg)</label>
-                            <input
-                              type="number"
-                              value={currentWeight[key] || ""}
-                              onChange={(e) => {
-                                setCurrentWeight({
-                                  ...currentWeight,
-                                  [key]: e.target.value
-                                });
-                              }}
-                              step="0.5"
-                              style={{
-                                padding: "6px 8px",
-                                backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
-                                border: `1px solid ${isDark ? "#333" : "#ddd"}`,
-                                borderRadius: "4px",
-                                color: isDark ? "#fff" : "#333",
-                                width: "70px",
-                                fontSize: "0.95rem",
-                                textAlign: "center"
-                              }}
-                            />
-                          </div>
+                          {(exercise.type === 'weight_reps' || !exercise.type) && (
+                            <div>
+                              <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.8rem", marginBottom: "3px" }}>
+                                {isMobile ? 'Peso' : 'Peso (kg)'}
+                              </label>
+                              <input
+                                type="number"
+                                value={currentWeight[key] || ""}
+                                onChange={(e) => {
+                                  setCurrentWeight({
+                                    ...currentWeight,
+                                    [key]: e.target.value
+                                  });
+                                }}
+                                step="0.5"
+                                style={{
+                                  padding: "6px 8px",
+                                  backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
+                                  border: `1px solid ${isDark ? "#333" : "#ddd"}`,
+                                  borderRadius: "4px",
+                                  color: isDark ? "#fff" : "#333",
+                                  width: isMobile ? "55px" : "70px",
+                                  fontSize: "0.95rem",
+                                  textAlign: "center"
+                                }}
+                              />
+                            </div>
+                          )}
 
-                          <span style={{ color: isDark ? "#aaa" : "#666" }}>
-                            Serie {serieIdx + 1}
+                          <span style={{ color: isDark ? "#aaa" : "#666", fontSize: isMobile ? "0.75rem" : "1rem" }}>
+                            {isMobile ? `S${serieIdx + 1}` : `Serie ${serieIdx + 1}`}
                           </span>
                         </div>
                       </div>
@@ -1160,8 +1179,8 @@ export default function RoutineDetail() {
                   width: "100%",
                   padding: "12px",
                   backgroundColor: isDark ? "#2a2a2a" : "#eee",
-                  color: isDark ? "#1dd1a1" : "#008CFF",
-                  border: `2px dashed ${isDark ? "#1dd1a1" : "#008CFF"}`,
+                  color: "#1dd1a1",
+                  border: "2px dashed #1dd1a1",
                   borderRadius: "6px",
                   cursor: "pointer",
                   fontSize: "0.95rem",
@@ -1291,7 +1310,7 @@ export default function RoutineDetail() {
                       {exercisesData[selectedGroup]?.map((exercise, idx) => (
                         <button
                           key={idx}
-                          onClick={() => handleSelectExercise(exercise.name)}
+                          onClick={() => handleSelectExercise(exercise)}
                           style={{
                             padding: "12px",
                             backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
@@ -1402,8 +1421,8 @@ export default function RoutineDetail() {
                     }}
                     style={{
                       padding: "8px 16px",
-                      backgroundColor: "#008CFF",
-                      color: "#fff",
+                      backgroundColor: "#1dd1a1",
+                      color: "#000",
                       border: "none",
                       borderRadius: "6px",
                       cursor: "pointer",
@@ -1412,10 +1431,10 @@ export default function RoutineDetail() {
                       whiteSpace: "nowrap"
                     }}
                     onMouseOver={(e) => {
-                      e.target.style.backgroundColor = "#0073CC";
+                      e.target.style.backgroundColor = "#19b088";
                     }}
                     onMouseOut={(e) => {
-                      e.target.style.backgroundColor = "#008CFF";
+                      e.target.style.backgroundColor = "#1dd1a1";
                     }}
                   >
                     Editar
@@ -1516,7 +1535,8 @@ export default function RoutineDetail() {
                             color: "#ccc",
                             fontSize: "0.9rem"
                           }}>
-                            Serie {sIdx + 1}: {currentReps[key] || serie.reps} reps - {currentWeight[key] || serie.weight}kg
+                            Serie {sIdx + 1}: {currentReps[key] || serie.reps} {exercise.type === 'time' ? 's' : 'reps'}
+                            {(exercise.type === 'weight_reps' || !exercise.type) && ` - ${currentWeight[key] || serie.weight}kg`}
                           </div>
                         );
                       })}

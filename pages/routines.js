@@ -9,7 +9,7 @@ export default function Routines() {
   const [completedWorkouts, setCompletedWorkouts] = useState([]);
   const [activeTab, setActiveTab] = useState("active"); // active, completed
   const router = useRouter();
-  const { theme } = useUser();
+  const { theme, isMobile } = useUser();
   const isDark = theme === 'dark';
 
   const formatElapsedTime = (seconds) => {
@@ -75,7 +75,7 @@ export default function Routines() {
 
   return (
     <Layout>
-      <h1 style={{ fontSize: "2rem", marginBottom: "20px", color: isDark ? "#fff" : "#333" }}>Rutinas</h1>
+      <h1 style={{ fontSize: isMobile ? "1.8rem" : "2rem", marginBottom: "20px", color: isDark ? "#fff" : "#333" }}>Rutinas</h1>
 
       {/* Tabs */}
       <div style={{
@@ -83,7 +83,10 @@ export default function Routines() {
         gap: "10px",
         marginBottom: "25px",
         borderBottom: `1px solid ${isDark ? "#333" : "#e0e0e0"}`,
-        paddingBottom: "10px"
+        paddingBottom: "10px",
+        overflowX: isMobile ? "auto" : "visible",
+        whiteSpace: "nowrap",
+        WebkitOverflowScrolling: "touch"
       }}>
         <button
           onClick={() => setActiveTab("active")}
@@ -95,7 +98,8 @@ export default function Routines() {
             borderRadius: "6px",
             cursor: "pointer",
             fontWeight: "600",
-            transition: "all 0.3s ease"
+            transition: "all 0.3s ease",
+            flexShrink: 0
           }}
         >
           Rutinas Activas
@@ -110,7 +114,8 @@ export default function Routines() {
             borderRadius: "6px",
             cursor: "pointer",
             fontWeight: "600",
-            transition: "all 0.3s ease"
+            transition: "all 0.3s ease",
+            flexShrink: 0
           }}
         >
           Entrenamientos Completados ({completedWorkouts.length})
@@ -137,7 +142,10 @@ export default function Routines() {
               <h4 style={{ color: isDark ? "#fff" : "#333" }}>Ejercicios:</h4>
               {r.exercises.length === 0 ? <p style={{ color: isDark ? "#ccc" : "#666" }}>No hay ejercicios</p> :
                 r.exercises.map((ex, i) => (
-                  <p key={i} style={{ color: isDark ? "#ccc" : "#666" }}>{ex.name} — Series: {ex.series} | Reps: {ex.reps} | Peso: {ex.weight}</p>
+                  <p key={i} style={{ color: isDark ? "#ccc" : "#666" }}>
+                    {ex.name} — Series: {ex.series} | {ex.type === 'time' ? 'Tiempo' : 'Reps'}: {ex.reps}
+                    {(ex.type === 'weight_reps' || !ex.type) && ` | Peso: ${ex.weight}`}
+                  </p>
                 ))
               }
               <button
@@ -229,7 +237,7 @@ export default function Routines() {
 
                   <div style={{
                     display: "grid",
-                    gridTemplateColumns: "1fr 1fr 1fr 1fr",
+                    gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr 1fr",
                     gap: "10px",
                     marginBottom: "15px"
                   }}>

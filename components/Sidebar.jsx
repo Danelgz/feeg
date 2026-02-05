@@ -76,13 +76,12 @@ export default function Sidebar() {
           transform: isOpen ? "translateY(0)" : "translateY(-100%)"
         }}>
           <img 
-            src="/logo.png" 
+            src={isDark ? "/logo.png" : "/logo2.png"} 
             alt="FEEG Logo" 
             style={{ 
               width: "120px", 
               height: "auto", 
-              marginBottom: "20px",
-              filter: isDark ? "brightness(0) invert(1)" : "none" // Invertir si es negro sobre transparente
+              marginBottom: "20px"
             }} 
           />
           {links.map(link => (
@@ -124,12 +123,11 @@ export default function Sidebar() {
     }}>
       <div style={{ padding: "10px 0", marginBottom: "10px", textAlign: "center" }}>
         <img 
-          src="/logo.png" 
+          src={isDark ? "/logo.png" : "/logo2.png"} 
           alt="FEEG Logo" 
           style={{ 
             width: "80px", 
-            height: "auto",
-            filter: isDark ? "brightness(0) invert(1)" : "none"
+            height: "auto"
           }} 
         />
       </div>

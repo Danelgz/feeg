@@ -39,6 +39,8 @@ export default function Layout({ children }) {
       transition: "background-color 0.3s ease",
     }}>
       <Head>
+        <title>FEEG - Tu App de Entrenamiento</title>
+        <link rel="icon" href="/logo2.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
         <style>{`
           html, body {

@@ -114,24 +114,17 @@ export default function RoutineDetail() {
   };
 
   useEffect(() => {
-    // Para la página de entrenamiento vacío, inicializamos una rutina básica
+    // Para la página de entrenamiento vacío, inicializamos una rutina sin ejercicios
     const emptyRoutine = {
       name: "Entrenamiento Vacío",
       days: "",
-      exercises: [
-        {
-          name: "Añade tu primer ejercicio",
-          type: "weight_reps",
-          series: [{ reps: 0, weight: 0 }],
-          rest: 60
-        }
-      ]
+      exercises: []
     };
     
     setRoutine(emptyRoutine);
-    setSeriesCompleted({ "0-0": false });
-    setCurrentReps({ "0-0": 0 });
-    setCurrentWeight({ "0-0": 0 });
+    setSeriesCompleted({});
+    setCurrentReps({});
+    setCurrentWeight({});
     setRestTime(60);
   }, []);
 
@@ -254,7 +247,7 @@ export default function RoutineDetail() {
   };
 
   const handleDeleteExercise = (exIdx) => {
-    if (routine.exercises.length > 1) {
+    if (routine.exercises.length > 0) {
       const updatedExercises = routine.exercises.filter((_, i) => i !== exIdx);
       setRoutine({ ...routine, exercises: updatedExercises });
       
@@ -407,26 +400,57 @@ export default function RoutineDetail() {
             boxShadow: isDark ? "none" : "0 2px 8px rgba(0,0,0,0.05)"
           }}>
             <h2 style={{ marginTop: 0, color: isDark ? "#fff" : "#333" }}>Resumen de la Rutina</h2>
-            {routine.exercises.map((exercise, idx) => (
-              <div key={idx} style={{
-                backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
+            {routine.exercises.length === 0 ? (
+              <p style={{ color: isDark ? "#ccc" : "#666", textAlign: "center", padding: "20px 0" }}>
+                No hay ejercicios en esta rutina todavía. Puedes añadirlos ahora o durante el entrenamiento.
+              </p>
+            ) : (
+              routine.exercises.map((exercise, idx) => (
+                <div key={idx} style={{
+                  backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
+                  padding: "12px",
+                  marginBottom: "10px",
+                  borderRadius: "6px",
+                  border: `1px solid ${isDark ? "#2a2a2a" : "#eee"}`
+                }}>
+                  <h3 style={{ margin: "0 0 8px 0", color: "#1dd1a1" }}>{exercise.name}</h3>
+                  <p style={{ margin: "0", color: isDark ? "#aaa" : "#666" }}>
+                    {exercise.series.length} series · Descanso: {exercise.rest}s
+                  </p>
+                  {exercise.series.map((serie, sIdx) => (
+                    <div key={sIdx} style={{ fontSize: "0.9rem", color: isDark ? "#999" : "#888", marginLeft: "10px" }}>
+                      Serie {sIdx + 1}: {serie.reps} {exercise.type === 'time' ? 's' : 'reps'}
+                      {(exercise.type === 'weight_reps' || !exercise.type) && ` - ${serie.weight}kg`}
+                    </div>
+                  ))}
+                </div>
+              ))
+            )}
+            
+            <button
+              onClick={handleAddExercise}
+              style={{
+                width: "100%",
                 padding: "12px",
-                marginBottom: "10px",
-                borderRadius: "6px",
-                border: `1px solid ${isDark ? "#2a2a2a" : "#eee"}`
-              }}>
-                <h3 style={{ margin: "0 0 8px 0", color: "#1dd1a1" }}>{exercise.name}</h3>
-                <p style={{ margin: "0", color: isDark ? "#aaa" : "#666" }}>
-                  {exercise.series.length} series · Descanso: {exercise.rest}s
-                </p>
-                {exercise.series.map((serie, sIdx) => (
-                  <div key={sIdx} style={{ fontSize: "0.9rem", color: isDark ? "#999" : "#888", marginLeft: "10px" }}>
-                    Serie {sIdx + 1}: {serie.reps} {exercise.type === 'time' ? 's' : 'reps'}
-                    {(exercise.type === 'weight_reps' || !exercise.type) && ` - ${serie.weight}kg`}
-                  </div>
-                ))}
-              </div>
-            ))}
+                backgroundColor: "transparent",
+                color: "#1dd1a1",
+                border: "2px dashed #1dd1a1",
+                borderRadius: "8px",
+                fontSize: "1rem",
+                fontWeight: "600",
+                cursor: "pointer",
+                marginTop: "10px",
+                transition: "all 0.3s ease"
+              }}
+              onMouseOver={(e) => {
+                e.target.style.backgroundColor = "rgba(29, 209, 161, 0.1)";
+              }}
+              onMouseOut={(e) => {
+                e.target.style.backgroundColor = "transparent";
+              }}
+            >
+              + Añadir Ejercicio
+            </button>
           </div>
 
           <button

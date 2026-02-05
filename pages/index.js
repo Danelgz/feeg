@@ -82,7 +82,7 @@ export default function Home() {
   return (
     <Layout>
       <div style={{ padding: isMobile ? "10px" : "20px", maxWidth: "1000px", margin: "0 auto" }}>
-        <h1 style={{ color: isDark ? "#fff" : "#333", fontSize: isMobile ? "1.8rem" : "2.5rem", marginBottom: "1rem" }}>Bienvenido a tu FEEG App de Entrenamiento</h1>
+        <h1 style={{ color: isDark ? "#fff" : "#333", fontSize: isMobile ? "1.8rem" : "2.5rem", marginBottom: "1rem" }}>Bienvenido a FEEG, tu App de Entrenamiento</h1>
         <p style={{ color: isDark ? "#ccc" : "#666", fontSize: isMobile ? "1rem" : "1.1rem", lineHeight: "1.6" }}>
           Aquí puedes gestionar tus rutinas y ejercicios de forma personalizada.
         </p>

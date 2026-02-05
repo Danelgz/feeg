@@ -3,7 +3,7 @@ import { useUser } from "../context/UserContext";
 import { useState, useEffect } from "react";
 
 export default function Sidebar() {
-  const { theme } = useUser();
+  const { theme, t } = useUser();
   const isDark = theme === 'dark';
   const [isMobile, setIsMobile] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -18,11 +18,11 @@ export default function Sidebar() {
   }, []);
 
   const links = [
-    { name: "Feed", href: "/", icon: "" },
-    { name: "Rutinas", href: "/routines", icon: "" },
-    { name: "Ejercicios", href: "/exercises", icon: "" },
-    { name: "Perfil", href: "/profile", icon: "" },
-    { name: "Ajustes", href: "/settings", icon: "" }
+    { name: t("feed"), href: "/", icon: "" },
+    { name: t("routines"), href: "/routines", icon: "" },
+    { name: t("exercises"), href: "/exercises", icon: "" },
+    { name: t("profile"), href: "/profile", icon: "" },
+    { name: t("settings"), href: "/settings", icon: "" }
   ];
 
   if (isMobile) {

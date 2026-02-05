@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { translations } from '../data/translations';
 
 const UserContext = createContext();
 
@@ -7,6 +8,11 @@ export function UserProvider({ children }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [theme, setTheme] = useState('dark');
   const [language, setLanguage] = useState('es');
+
+  // Función de traducción
+  const t = (key) => {
+    return translations[language][key] || key;
+  };
 
   useEffect(() => {
     // Cargar usuario, tema e idioma desde localStorage al montar
@@ -63,7 +69,8 @@ export function UserProvider({ children }) {
       theme, 
       toggleTheme, 
       language, 
-      updateLanguage 
+      updateLanguage,
+      t
     }}>
       {children}
     </UserContext.Provider>

@@ -9,6 +9,12 @@ export default function Layout({ children }) {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    // Aplicar color de fondo al body para evitar bordes blancos y mejorar el scroll en móvil
+    document.body.style.backgroundColor = isDark ? "#0f0f0f" : "#f0f2f5";
+    document.documentElement.style.backgroundColor = isDark ? "#0f0f0f" : "#f0f2f5";
+  }, [isDark]);
+
+  useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
@@ -30,6 +36,19 @@ export default function Layout({ children }) {
     }}>
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+        <style>{`
+          html, body {
+            margin: 0;
+            padding: 0;
+            background-color: ${isDark ? "#0f0f0f" : "#f0f2f5"};
+            transition: background-color 0.3s ease;
+            height: 100%;
+            width: 100%;
+          }
+          #__next {
+            min-height: 100%;
+          }
+        `}</style>
       </Head>
       <Sidebar />
       <main style={{ 

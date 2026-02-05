@@ -79,7 +79,7 @@ export default function Sidebar() {
             src={isDark ? "/logo.png" : "/logo2.png"} 
             alt="FEEG Logo" 
             style={{ 
-              width: "250px", 
+              width: "150px", 
               height: "auto", 
               marginBottom: "20px"
             }} 
@@ -126,7 +126,7 @@ export default function Sidebar() {
           src={isDark ? "/logo.png" : "/logo2.png"} 
           alt="FEEG Logo" 
           style={{ 
-            width: "180px", 
+            width: "100px", 
             height: "auto"
           }} 
         />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import Layout from "../components/Layout";
 import Link from "next/link";
@@ -11,6 +11,7 @@ export default function Home() {
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
+  const videoRef = useRef(null);
   
   const isDark = theme === 'dark';
 
@@ -21,6 +22,12 @@ export default function Home() {
       setShowIntro(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (showIntro && videoRef.current && isMobile) {
+      videoRef.current.play().catch(err => console.error("Autoplay failed:", err));
+    }
+  }, [showIntro, isMobile]);
 
   const handleCloseIntro = () => {
     setShowIntro(false);
@@ -113,9 +120,12 @@ export default function Home() {
         onClick={(e) => e.stopPropagation()}
         >
           <video 
+            ref={videoRef}
             autoPlay 
             muted 
             playsInline 
+            controls={false}
+            preload="auto"
             onEnded={handleCloseIntro}
             style={{
               width: "100%",

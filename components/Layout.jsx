@@ -5,7 +5,7 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 
 export default function Layout({ children }) {
-  const { theme, isMobile: userIsMobile } = useUser();
+  const { theme, isMobile: userIsMobile, activeRoutine, endRoutine } = useUser();
   const isDark = theme === 'dark';
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
@@ -126,6 +126,101 @@ export default function Layout({ children }) {
       >
         {children}
       </main>
+
+      {/* Pestaña de Rutina Activa */}
+      {activeRoutine && router.asPath !== activeRoutine.path && (
+        <div style={{
+          position: "fixed",
+          bottom: currentIsMobile ? "80px" : "20px",
+          right: "20px",
+          backgroundColor: isDark ? "#1a1a1a" : "#fff",
+          border: "2px solid #1dd1a1",
+          borderRadius: "12px",
+          padding: "15px",
+          boxShadow: "0 8px 25px rgba(0,0,0,0.4)",
+          zIndex: 3000,
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+          minWidth: "220px",
+          animation: "fadeInUp 0.3s ease-out"
+        }}>
+          <style>{`
+            @keyframes fadeInUp {
+              from { opacity: 0; transform: translateY(20px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+          `}</style>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span style={{ 
+                fontSize: "0.75rem", 
+                color: isDark ? "#aaa" : "#666", 
+                textTransform: "uppercase",
+                letterSpacing: "1px",
+                fontWeight: "bold"
+              }}>
+                Rutina en curso
+              </span>
+              <span style={{ 
+                fontWeight: "bold", 
+                color: isDark ? "#fff" : "#333", 
+                fontSize: "1.1rem",
+                marginTop: "2px"
+              }}>
+                {activeRoutine.name}
+              </span>
+            </div>
+            <button 
+              onClick={(e) => { e.stopPropagation(); endRoutine(); }}
+              title="Borrar rutina"
+              style={{
+                background: isDark ? "#333" : "#eee",
+                border: "none",
+                color: "#ff4d4d",
+                cursor: "pointer",
+                width: "24px",
+                height: "24px",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "1rem",
+                fontWeight: "bold",
+                transition: "all 0.2s ease"
+              }}
+              onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.1)"}
+              onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
+            >×</button>
+          </div>
+          <button 
+            onClick={() => router.push(activeRoutine.path)}
+            style={{
+              backgroundColor: "#1dd1a1",
+              color: "#000",
+              border: "none",
+              borderRadius: "8px",
+              padding: "10px",
+              cursor: "pointer",
+              fontWeight: "bold",
+              fontSize: "0.95rem",
+              marginTop: "5px",
+              transition: "all 0.2s ease",
+              boxShadow: "0 4px 10px rgba(29, 209, 161, 0.3)"
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = "#19b088";
+              e.currentTarget.style.transform = "translateY(-2px)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = "#1dd1a1";
+              e.currentTarget.style.transform = "translateY(0)";
+            }}
+          >
+            Continuar Rutina
+          </button>
+        </div>
+      )}
     </div>
   );
 }

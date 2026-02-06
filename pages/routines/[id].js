@@ -6,7 +6,7 @@ import { useUser } from "../../context/UserContext";
 
 export default function RoutineDetail() {
   const router = useRouter();
-  const { theme } = useUser();
+  const { theme, activeRoutine, startRoutine, endRoutine } = useUser();
   const isDark = theme === 'dark';
   const { id } = router.query;
   const [routine, setRoutine] = useState(null);
@@ -142,6 +142,12 @@ export default function RoutineDetail() {
       }
     }
   }, [id]);
+
+  useEffect(() => {
+    if (activeRoutine && activeRoutine.id === id && workoutState === "preview") {
+      setWorkoutState("ongoing");
+    }
+  }, [id, activeRoutine, workoutState]);
 
   // Countdown effect
   useEffect(() => {
@@ -361,6 +367,7 @@ export default function RoutineDetail() {
     localStorage.setItem('completedWorkouts', JSON.stringify(savedWorkouts));
 
     setSavingWorkout(true);
+    endRoutine();
 
     // Redirigir a la página de rutinas después de guardar
     setTimeout(() => {
@@ -438,7 +445,10 @@ export default function RoutineDetail() {
           </div>
 
           <button
-            onClick={() => setWorkoutState("ongoing")}
+            onClick={() => {
+              setWorkoutState("ongoing");
+              startRoutine({ id, name: routine.name, path: router.asPath });
+            }}
             style={{
               ...buttonStyle,
               fontSize: "1.1rem",
@@ -1232,7 +1242,10 @@ export default function RoutineDetail() {
           </button>
 
           <button
-            onClick={() => setWorkoutState("preview")}
+            onClick={() => {
+              setWorkoutState("preview");
+              endRoutine();
+            }}
             style={{
               ...buttonStyle,
               marginTop: "10px",

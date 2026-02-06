@@ -8,6 +8,7 @@ export function UserProvider({ children }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [theme, setTheme] = useState('dark');
   const [language, setLanguage] = useState('es');
+  const [activeRoutine, setActiveRoutine] = useState(null);
 
   // Función de traducción
   const t = (key) => {
@@ -19,6 +20,7 @@ export function UserProvider({ children }) {
     const savedUser = localStorage.getItem('userProfile');
     const savedTheme = localStorage.getItem('theme');
     const savedLanguage = localStorage.getItem('language');
+    const savedActiveRoutine = localStorage.getItem('activeRoutine');
     
     if (savedUser) {
       try {
@@ -34,6 +36,14 @@ export function UserProvider({ children }) {
 
     if (savedLanguage) {
       setLanguage(savedLanguage);
+    }
+
+    if (savedActiveRoutine) {
+      try {
+        setActiveRoutine(JSON.parse(savedActiveRoutine));
+      } catch (e) {
+        console.error('Error parsing saved active routine:', e);
+      }
     }
     
     setIsLoaded(true);
@@ -60,6 +70,16 @@ export function UserProvider({ children }) {
     localStorage.setItem('language', newLang);
   };
 
+  const startRoutine = (routineData) => {
+    setActiveRoutine(routineData);
+    localStorage.setItem('activeRoutine', JSON.stringify(routineData));
+  };
+
+  const endRoutine = () => {
+    setActiveRoutine(null);
+    localStorage.removeItem('activeRoutine');
+  };
+
   return (
     <UserContext.Provider value={{ 
       user, 
@@ -70,6 +90,9 @@ export function UserProvider({ children }) {
       toggleTheme, 
       language, 
       updateLanguage,
+      activeRoutine,
+      startRoutine,
+      endRoutine,
       t
     }}>
       {children}

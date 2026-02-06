@@ -130,6 +130,8 @@ export default function Layout({ children }) {
             autoPlay 
             muted 
             playsInline 
+            webkit-playsinline="true"
+            x5-playsinline="true"
             controls={false}
             preload="auto"
             onEnded={handleCloseIntro}

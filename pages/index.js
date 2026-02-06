@@ -10,29 +10,8 @@ export default function Home() {
   const [completedWorkouts, setCompletedWorkouts] = useState([]);
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [showIntro, setShowIntro] = useState(false);
-  const videoRef = useRef(null);
   
   const isDark = theme === 'dark';
-
-  useEffect(() => {
-    // Verificar si ya se mostró la intro en esta sesión
-    const introShown = sessionStorage.getItem('introShown');
-    if (!introShown) {
-      setShowIntro(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (showIntro && videoRef.current && isMobile) {
-      videoRef.current.play().catch(err => console.error("Autoplay failed:", err));
-    }
-  }, [showIntro, isMobile]);
-
-  const handleCloseIntro = () => {
-    setShowIntro(false);
-    sessionStorage.setItem('introShown', 'true');
-  };
 
   useEffect(() => {
     const checkMobile = () => {
@@ -102,46 +81,6 @@ export default function Home() {
 
   return (
     <Layout>
-      {showIntro && isMobile && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "#000",
-          zIndex: 9999,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: "hidden",
-          touchAction: "none"
-        }}
-        onClick={(e) => e.stopPropagation()}
-        >
-          <video 
-            ref={videoRef}
-            autoPlay 
-            muted 
-            playsInline 
-            controls={false}
-            preload="auto"
-            onEnded={handleCloseIntro}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              pointerEvents: "none",
-              userSelect: "none",
-              WebkitUserSelect: "none",
-              msUserSelect: "none"
-            }}
-          >
-            <source src={isDark ? "/entrada2.mp4" : "/entrada.mp4"} type="video/mp4" />
-            Tu navegador no soporta el elemento de video.
-          </video>
-        </div>
-      )}
       <div style={{ padding: isMobile ? "10px" : "20px", maxWidth: "1000px", margin: "0 auto" }}>
         <h1 style={{ color: isDark ? "#fff" : "#333", fontSize: isMobile ? "1.8rem" : "2.5rem", marginBottom: "1rem" }}>Bienvenido a FEEG, tu App de Entrenamiento</h1>
         <p style={{ color: isDark ? "#ccc" : "#666", fontSize: isMobile ? "1rem" : "1.1rem", lineHeight: "1.6" }}>

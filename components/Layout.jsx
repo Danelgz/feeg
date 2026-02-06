@@ -1,6 +1,6 @@
 import Sidebar from "./Sidebar";
 import { useUser } from "../context/UserContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 
@@ -8,10 +8,40 @@ export default function Layout({ children }) {
   const { theme, isMobile: userIsMobile, activeRoutine, endRoutine } = useUser();
   const isDark = theme === 'dark';
   const [isMobile, setIsMobile] = useState(false);
+  const [showIntro, setShowIntro] = useState(false);
+  const videoRef = useRef(null);
   const router = useRouter();
 
   // Usar la detección de UserContext si está disponible, si no usar el estado local
   const currentIsMobile = userIsMobile !== undefined ? userIsMobile : isMobile;
+
+  useEffect(() => {
+    // Solo mostrar intro en móvil y si no se ha mostrado en esta sesión
+    const introShown = sessionStorage.getItem('introShown');
+    const mobileMatch = window.innerWidth <= 768;
+    if (!introShown && mobileMatch) {
+      setShowIntro(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (showIntro && videoRef.current) {
+      const playVideo = () => {
+        videoRef.current.play().catch(err => {
+          console.log("Autoplay failed, waiting for interaction:", err);
+        });
+      };
+      playVideo();
+      // Un intento extra por si acaso el renderizado tarda
+      const timeout = setTimeout(playVideo, 100);
+      return () => clearTimeout(timeout);
+    }
+  }, [showIntro]);
+
+  const handleCloseIntro = () => {
+    setShowIntro(false);
+    sessionStorage.setItem('introShown', 'true');
+  };
 
   useEffect(() => {
     // Aplicar color de fondo al body para evitar bordes blancos y mejorar el scroll en móvil
@@ -72,6 +102,49 @@ export default function Layout({ children }) {
           }
         `}</style>
       </Head>
+
+      {/* Intro Video (Solo móvil) */}
+      {showIntro && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "#000",
+          zIndex: 10000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+          touchAction: "none"
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          // Forzar play si el navegador lo bloqueó inicialmente
+          if (videoRef.current) videoRef.current.play();
+        }}
+        >
+          <video 
+            ref={videoRef}
+            autoPlay 
+            muted 
+            playsInline 
+            controls={false}
+            preload="auto"
+            onEnded={handleCloseIntro}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              pointerEvents: "none"
+            }}
+          >
+            <source src={isDark ? "/entrada2.mp4" : "/entrada.mp4"} type="video/mp4" />
+          </video>
+        </div>
+      )}
+
       <Sidebar />
       
       {/* Botón de Retroceder */}

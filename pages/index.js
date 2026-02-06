@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Layout from "../components/Layout";
 import Link from "next/link";
@@ -10,8 +10,22 @@ export default function Home() {
   const [completedWorkouts, setCompletedWorkouts] = useState([]);
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [showIntro, setShowIntro] = useState(false);
   
   const isDark = theme === 'dark';
+
+  useEffect(() => {
+    // Verificar si ya se mostró la intro en esta sesión
+    const introShown = sessionStorage.getItem('introShown');
+    if (!introShown) {
+      setShowIntro(true);
+    }
+  }, []);
+
+  const handleCloseIntro = () => {
+    setShowIntro(false);
+    sessionStorage.setItem('introShown', 'true');
+  };
 
   useEffect(() => {
     const checkMobile = () => {
@@ -81,6 +95,58 @@ export default function Home() {
 
   return (
     <Layout>
+      {showIntro && isMobile && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "#000",
+          zIndex: 9999,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden"
+        }}>
+          <video 
+            autoPlay 
+            muted 
+            playsInline 
+            onEnded={handleCloseIntro}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover"
+            }}
+          >
+            <source src={isDark ? "/entrada2.mp4" : "/entrada.mp4"} type="video/mp4" />
+            Tu navegador no soporta el elemento de video.
+          </video>
+          <button 
+            onClick={handleCloseIntro}
+            style={{
+              position: "absolute",
+              bottom: "40px",
+              right: "40px",
+              padding: "10px 25px",
+              backgroundColor: "rgba(29, 209, 161, 0.8)",
+              color: "#000",
+              border: "none",
+              borderRadius: "30px",
+              cursor: "pointer",
+              fontWeight: "bold",
+              fontSize: "1rem",
+              zIndex: 10000,
+              transition: "all 0.3s ease"
+            }}
+            onMouseOver={(e) => e.target.style.backgroundColor = "#1dd1a1"}
+            onMouseOut={(e) => e.target.style.backgroundColor = "rgba(29, 209, 161, 0.8)"}
+          >
+            Saltar Intro
+          </button>
+        </div>
+      )}
       <div style={{ padding: isMobile ? "10px" : "20px", maxWidth: "1000px", margin: "0 auto" }}>
         <h1 style={{ color: isDark ? "#fff" : "#333", fontSize: isMobile ? "1.8rem" : "2.5rem", marginBottom: "1rem" }}>Bienvenido a FEEG, tu App de Entrenamiento</h1>
         <p style={{ color: isDark ? "#ccc" : "#666", fontSize: isMobile ? "1rem" : "1.1rem", lineHeight: "1.6" }}>

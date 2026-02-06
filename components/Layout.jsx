@@ -1,6 +1,6 @@
 import Sidebar from "./Sidebar";
 import { useUser } from "../context/UserContext";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 
@@ -8,40 +8,10 @@ export default function Layout({ children }) {
   const { theme, isMobile: userIsMobile, activeRoutine, endRoutine } = useUser();
   const isDark = theme === 'dark';
   const [isMobile, setIsMobile] = useState(false);
-  const [showIntro, setShowIntro] = useState(false);
-  const videoRef = useRef(null);
   const router = useRouter();
 
   // Usar la detección de UserContext si está disponible, si no usar el estado local
   const currentIsMobile = userIsMobile !== undefined ? userIsMobile : isMobile;
-
-  useEffect(() => {
-    // Solo mostrar intro en móvil y si no se ha mostrado en esta sesión
-    const introShown = sessionStorage.getItem('introShown');
-    const mobileMatch = window.innerWidth <= 768;
-    if (!introShown && mobileMatch) {
-      setShowIntro(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (showIntro && videoRef.current) {
-      const playVideo = () => {
-        videoRef.current.play().catch(err => {
-          console.log("Autoplay failed, waiting for interaction:", err);
-        });
-      };
-      playVideo();
-      // Un intento extra por si acaso el renderizado tarda
-      const timeout = setTimeout(playVideo, 100);
-      return () => clearTimeout(timeout);
-    }
-  }, [showIntro]);
-
-  const handleCloseIntro = () => {
-    setShowIntro(false);
-    sessionStorage.setItem('introShown', 'true');
-  };
 
   useEffect(() => {
     // Aplicar color de fondo al body para evitar bordes blancos y mejorar el scroll en móvil
@@ -100,64 +70,8 @@ export default function Layout({ children }) {
             animation: fadeInPage 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
             will-change: opacity, transform;
           }
-          /* Ocultar botón de play en móviles */
-          video::-webkit-media-controls-start-playback-button,
-          video::-webkit-media-controls-play-button,
-          video::-webkit-media-controls-panel {
-            display: none !important;
-            -webkit-appearance: none !important;
-          }
         `}</style>
       </Head>
-
-      {/* Intro Video (Solo móvil) */}
-      {showIntro && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "#000",
-          zIndex: 10000,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: "hidden",
-          touchAction: "none"
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          // Forzar play si el navegador lo bloqueó inicialmente
-          if (videoRef.current) videoRef.current.play();
-        }}
-        >
-          <video 
-            ref={videoRef}
-            autoPlay 
-            muted 
-            loop
-            playsInline 
-            webkit-playsinline="true"
-            x5-playsinline="true"
-            controls={false}
-            disablePictureInPicture
-            disableRemotePlayback
-            preload="auto"
-            onCanPlay={() => videoRef.current.play()}
-            onEnded={handleCloseIntro}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              pointerEvents: "none"
-            }}
-          >
-            <source src={isDark ? "/entrada2.mp4" : "/entrada.mp4"} type="video/mp4" />
-          </video>
-        </div>
-      )}
-
       <Sidebar />
       
       {/* Botón de Retroceder */}

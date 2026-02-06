@@ -100,6 +100,13 @@ export default function Layout({ children }) {
             animation: fadeInPage 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
             will-change: opacity, transform;
           }
+          /* Ocultar botón de play en móviles */
+          video::-webkit-media-controls-start-playback-button,
+          video::-webkit-media-controls-play-button,
+          video::-webkit-media-controls-panel {
+            display: none !important;
+            -webkit-appearance: none !important;
+          }
         `}</style>
       </Head>
 
@@ -129,11 +136,15 @@ export default function Layout({ children }) {
             ref={videoRef}
             autoPlay 
             muted 
+            loop
             playsInline 
             webkit-playsinline="true"
             x5-playsinline="true"
             controls={false}
+            disablePictureInPicture
+            disableRemotePlayback
             preload="auto"
+            onCanPlay={() => videoRef.current.play()}
             onEnded={handleCloseIntro}
             style={{
               width: "100%",

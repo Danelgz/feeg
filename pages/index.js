@@ -107,8 +107,11 @@ export default function Home() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          overflow: "hidden"
-        }}>
+          overflow: "hidden",
+          touchAction: "none"
+        }}
+        onClick={(e) => e.stopPropagation()}
+        >
           <video 
             autoPlay 
             muted 
@@ -127,28 +130,6 @@ export default function Home() {
             <source src={isDark ? "/entrada2.mp4" : "/entrada.mp4"} type="video/mp4" />
             Tu navegador no soporta el elemento de video.
           </video>
-          <button 
-            onClick={handleCloseIntro}
-            style={{
-              position: "absolute",
-              bottom: "40px",
-              right: "40px",
-              padding: "10px 25px",
-              backgroundColor: "rgba(29, 209, 161, 0.8)",
-              color: "#000",
-              border: "none",
-              borderRadius: "30px",
-              cursor: "pointer",
-              fontWeight: "bold",
-              fontSize: "1rem",
-              zIndex: 10000,
-              transition: "all 0.3s ease"
-            }}
-            onMouseOver={(e) => e.target.style.backgroundColor = "#1dd1a1"}
-            onMouseOut={(e) => e.target.style.backgroundColor = "rgba(29, 209, 161, 0.8)"}
-          >
-            Saltar Intro
-          </button>
         </div>
       )}
       <div style={{ padding: isMobile ? "10px" : "20px", maxWidth: "1000px", margin: "0 auto" }}>

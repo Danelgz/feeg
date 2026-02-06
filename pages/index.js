@@ -117,7 +117,11 @@ export default function Home() {
             style={{
               width: "100%",
               height: "100%",
-              objectFit: "cover"
+              objectFit: "cover",
+              pointerEvents: "none",
+              userSelect: "none",
+              WebkitUserSelect: "none",
+              msUserSelect: "none"
             }}
           >
             <source src={isDark ? "/entrada2.mp4" : "/entrada.mp4"} type="video/mp4" />

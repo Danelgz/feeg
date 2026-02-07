@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useUser } from "../../context/UserContext";
+import { exercisesList } from "../../data/exercises";
 
 export default function RoutineDetail() {
   const router = useRouter();
@@ -63,23 +64,25 @@ export default function RoutineDetail() {
   };
 
   const handleAddSeries = () => {
-    const newSeries = [...currentExercise.series, { reps: "", weight: "" }];
     const updatedExercises = [...routine.exercises];
-    updatedExercises[currentExerciseIndex].series = newSeries;
+    const updatedExercise = { ...updatedExercises[currentExerciseIndex] };
+    updatedExercise.series = [...updatedExercise.series, { reps: "", weight: "" }];
+    updatedExercises[currentExerciseIndex] = updatedExercise;
     
     setRoutine({ ...routine, exercises: updatedExercises });
     
     // Initialize tracking for new series
-    const newKey = `${currentExerciseIndex}-${newSeries.length - 1}`;
+    const newKey = `${currentExerciseIndex}-${updatedExercise.series.length - 1}`;
     setSeriesCompleted({ ...seriesCompleted, [newKey]: false });
     setCurrentReps({ ...currentReps, [newKey]: "" });
     setCurrentWeight({ ...currentWeight, [newKey]: "" });
   };
 
   const handleDeleteSeries = (serieIdx) => {
-    const newSeries = currentExercise.series.filter((_, i) => i !== serieIdx);
     const updatedExercises = [...routine.exercises];
-    updatedExercises[currentExerciseIndex].series = newSeries;
+    const updatedExercise = { ...updatedExercises[currentExerciseIndex] };
+    updatedExercise.series = updatedExercise.series.filter((_, i) => i !== serieIdx);
+    updatedExercises[currentExerciseIndex] = updatedExercise;
     
     setRoutine({ ...routine, exercises: updatedExercises });
     
@@ -224,9 +227,12 @@ export default function RoutineDetail() {
   const timeOptions = [...baseTimeOptions, ...baseTimeOptions, ...baseTimeOptions];
 
   const handleUpdateRestTime = (newTime) => {
-    setRestTime(parseInt(newTime) || 0);
+    const time = parseInt(newTime) || 0;
+    setRestTime(time);
     const updatedExercises = [...routine.exercises];
-    updatedExercises[currentExerciseIndex].rest = parseInt(newTime) || 0;
+    const updatedExercise = { ...updatedExercises[currentExerciseIndex] };
+    updatedExercise.rest = time;
+    updatedExercises[currentExerciseIndex] = updatedExercise;
     setRoutine({ ...routine, exercises: updatedExercises });
   };
 
@@ -236,8 +242,7 @@ export default function RoutineDetail() {
   };
 
   const handleAddExercise = () => {
-    const data = require("../../data/exercises").exercisesList;
-    setExercisesData(data);
+    setExercisesData(exercisesList);
     setShowAddExerciseModal(true);
   };
 
@@ -273,18 +278,29 @@ export default function RoutineDetail() {
         setCurrentExerciseIndex(updatedExercises.length - 1);
       }
       
-      // Clean up tracking objects
+      // Clean up and RE-INDEX tracking objects
       const newSeriesCompleted = {};
       const newCurrentReps = {};
       const newCurrentWeight = {};
       
       Object.keys(seriesCompleted).forEach((key) => {
-        const [exIndexKey] = key.split("-")[0];
-        if (exIndexKey !== exIdx.toString()) {
+        const parts = key.split("-");
+        const exIdxKey = parseInt(parts[0]);
+        const serIdxKey = parseInt(parts[1]);
+        
+        if (exIdxKey < exIdx) {
+          // Keep same key
           newSeriesCompleted[key] = seriesCompleted[key];
           newCurrentReps[key] = currentReps[key];
           newCurrentWeight[key] = currentWeight[key];
+        } else if (exIdxKey > exIdx) {
+          // Shift index down
+          const newKey = `${exIdxKey - 1}-${serIdxKey}`;
+          newSeriesCompleted[newKey] = seriesCompleted[key];
+          newCurrentReps[newKey] = currentReps[key];
+          newCurrentWeight[newKey] = currentWeight[key];
         }
+        // If exIdxKey === exIdx, it is deleted (not added to new objects)
       });
       
       setSeriesCompleted(newSeriesCompleted);

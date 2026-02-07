@@ -116,6 +116,7 @@ export const translations = {
     workout_completed_msg: "Rutina completada exitosamente",
     // Routine Creation
     create_new_routine: "Crear Nueva Rutina",
+    edit_routine: "Editar Rutina",
     routine_name_label: "Nombre de la Rutina",
     routine_name_placeholder: "Ej: Full Body Semana 1",
     routine_days_placeholder: "Días (Lun, Mar...)",

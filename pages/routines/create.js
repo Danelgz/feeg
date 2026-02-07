@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Layout from "../../components/Layout";
 import { exercisesList } from "../../data/exercises";
@@ -6,11 +6,24 @@ import { useUser } from "../../context/UserContext";
 
 export default function CreateRoutine() {
   const router = useRouter();
-  const { theme, t, saveRoutine: contextSaveRoutine } = useUser();
+  const { id } = router.query;
+  const { theme, t, routines, saveRoutine: contextSaveRoutine, updateRoutine: contextUpdateRoutine } = useUser();
   const isDark = theme === 'dark';
 
   const [routineName, setRoutineName] = useState("");
   const [exercises, setExercises] = useState([]);
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  useEffect(() => {
+    if (id && routines.length > 0) {
+      const routineToEdit = routines.find(r => r.id.toString() === id.toString());
+      if (routineToEdit) {
+        setRoutineName(routineToEdit.name);
+        setExercises(routineToEdit.exercises);
+        setIsEditMode(true);
+      }
+    }
+  }, [id, routines]);
 
   const [showSelector, setShowSelector] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState("");
@@ -26,13 +39,21 @@ export default function CreateRoutine() {
       return;
     }
 
-    const newRoutine = {
-      id: Date.now(),
-      name: routineName,
-      exercises,
-    };
-
-    await contextSaveRoutine(newRoutine);
+    if (isEditMode) {
+      const updatedRoutine = {
+        id: Number(id),
+        name: routineName,
+        exercises,
+      };
+      await contextUpdateRoutine(updatedRoutine);
+    } else {
+      const newRoutine = {
+        id: Date.now(),
+        name: routineName,
+        exercises,
+      };
+      await contextSaveRoutine(newRoutine);
+    }
     router.push("/routines");
   };
 
@@ -42,6 +63,7 @@ export default function CreateRoutine() {
       {
         name: exercise.name,
         group: selectedGroup,
+        type: exercise.type || "weight_reps",
         rest: 60,
         series: [
           { reps: 10, weight: 0 }
@@ -56,19 +78,27 @@ export default function CreateRoutine() {
 
   const handleSeriesChange = (exIdx, sIdx, field, value) => {
     const newExercises = [...exercises];
-    newExercises[exIdx].series[sIdx][field] = value;
+    const newExercise = { ...newExercises[exIdx] };
+    const newSeries = [...newExercise.series];
+    newSeries[sIdx] = { ...newSeries[sIdx], [field]: value };
+    newExercise.series = newSeries;
+    newExercises[exIdx] = newExercise;
     setExercises(newExercises);
   };
 
   const addSeries = (exIdx) => {
     const newExercises = [...exercises];
-    newExercises[exIdx].series.push({ reps: 10, weight: 0 });
+    const newExercise = { ...newExercises[exIdx] };
+    newExercise.series = [...newExercise.series, { reps: 10, weight: 0 }];
+    newExercises[exIdx] = newExercise;
     setExercises(newExercises);
   };
 
   const removeSeries = (exIdx, sIdx) => {
     const newExercises = [...exercises];
-    newExercises[exIdx].series.splice(sIdx, 1);
+    const newExercise = { ...newExercises[exIdx] };
+    newExercise.series = newExercise.series.filter((_, i) => i !== sIdx);
+    newExercises[exIdx] = newExercise;
     setExercises(newExercises);
   };
 
@@ -76,7 +106,7 @@ export default function CreateRoutine() {
     <Layout>
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <h1 style={{ fontSize: "2.5rem", fontWeight: "700", marginBottom: "2rem", color: isDark ? "#fff" : "#333" }}>
-          {t("create_new_routine")}
+          {isEditMode ? t("edit_routine") : t("create_new_routine")}
         </h1>
 
         <div style={{
@@ -115,35 +145,6 @@ export default function CreateRoutine() {
 
       {routineName && (
         <>
-          {!showSelector && (
-            <button 
-              onClick={() => setShowSelector(true)}
-              style={{
-                padding: "0.75rem 1.5rem",
-                backgroundColor: "#1dd1a1",
-                color: "#000",
-                border: "none",
-                borderRadius: "8px",
-                fontSize: "1rem",
-                fontWeight: "600",
-                cursor: "pointer",
-                transition: "all 0.3s ease",
-                boxShadow: "0 2px 4px rgba(29, 209, 161, 0.3)",
-                marginBottom: "2rem"
-              }}
-              onMouseOver={(e) => {
-                e.target.style.backgroundColor = "#16a853";
-                e.target.style.boxShadow = "0 4px 8px rgba(29, 209, 161, 0.3)";
-              }}
-              onMouseOut={(e) => {
-                e.target.style.backgroundColor = "#1dd1a1";
-                e.target.style.boxShadow = "0 2px 4px rgba(29, 209, 161, 0.2)";
-              }}
-            >
-              {t("add_exercise")}
-            </button>
-          )}
-
           {showSelector && !selectedGroup && (
             <div style={{
               backgroundColor: isDark ? "#1a1a1a" : "#fff",
@@ -503,9 +504,64 @@ export default function CreateRoutine() {
             </div>
           )}
 
-          {exercises.length > 0 && (
-            <button
-              onClick={saveRoutine}
+          {exercises.length > 0 && !showSelector && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "2rem" }}>
+              <button 
+                onClick={() => setShowSelector(true)}
+                style={{
+                  padding: "1rem 2rem",
+                  backgroundColor: isDark ? "#333" : "#eee",
+                  color: isDark ? "#fff" : "#333",
+                  border: `1px solid ${isDark ? "#444" : "#ddd"}`,
+                  borderRadius: "8px",
+                  fontSize: "1.1rem",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                  width: "100%"
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.backgroundColor = isDark ? "#444" : "#e0e0e0";
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.backgroundColor = isDark ? "#333" : "#eee";
+                }}
+              >
+                {t("add_exercise")}
+              </button>
+
+              <button
+                onClick={saveRoutine}
+                style={{
+                  padding: "1rem 2rem",
+                  backgroundColor: "#1dd1a1",
+                  color: "#000",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "1.1rem",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                  boxShadow: "0 4px 12px rgba(29, 209, 161, 0.4)",
+                  width: "100%"
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.backgroundColor = "#16a853";
+                  e.target.style.boxShadow = "0 6px 16px rgba(29, 209, 161, 0.5)";
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.backgroundColor = "#1dd1a1";
+                  e.target.style.boxShadow = "0 4px 12px rgba(29, 209, 161, 0.4)";
+                }}
+              >
+                {isEditMode ? t("save_routine_btn") : t("save_workout")}
+              </button>
+            </div>
+          )}
+
+          {exercises.length === 0 && routineName && !showSelector && (
+            <button 
+              onClick={() => setShowSelector(true)}
               style={{
                 padding: "1rem 2rem",
                 backgroundColor: "#1dd1a1",
@@ -518,7 +574,7 @@ export default function CreateRoutine() {
                 transition: "all 0.3s ease",
                 boxShadow: "0 4px 12px rgba(29, 209, 161, 0.4)",
                 width: "100%",
-                marginTop: "2rem"
+                marginTop: "1rem"
               }}
               onMouseOver={(e) => {
                 e.target.style.backgroundColor = "#16a853";
@@ -529,7 +585,7 @@ export default function CreateRoutine() {
                 e.target.style.boxShadow = "0 4px 12px rgba(29, 209, 161, 0.4)";
               }}
             >
-              {t("save_workout")}
+              {t("add_exercise")}
             </button>
           )}
         </>

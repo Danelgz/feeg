@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useUser } from "../context/UserContext";
+import { exercisesList } from "../data/exercises";
 
 export default function ExerciseForm({ addExercise }) {
   const [name, setName] = useState("");
@@ -24,10 +25,9 @@ export default function ExerciseForm({ addExercise }) {
     if (!name || !series) return; // mínimo nombre y series
     
     // Buscar tipo de ejercicio en la lista global
-    const exercisesData = require("../data/exercises").exercisesList;
     let exerciseType = "weight_reps";
     
-    Object.values(exercisesData).forEach(group => {
+    Object.values(exercisesList).forEach(group => {
       const found = group.find(ex => ex.name.toLowerCase() === name.toLowerCase());
       if (found) exerciseType = found.type;
     });

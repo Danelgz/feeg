@@ -165,7 +165,7 @@ export default function Home() {
                       overflow: "hidden",
                       textOverflow: "ellipsis"
                     }}>
-                      "{workout.comments}"
+                      &quot;{workout.comments}&quot;
                     </p>
                   )}
 
@@ -293,7 +293,7 @@ export default function Home() {
                   marginBottom: "20px",
                   borderLeft: "4px solid #1dd1a1"
                 }}>
-                  <p style={{ color: isDark ? "#ccc" : "#444", margin: 0, fontStyle: "italic" }}>"{selectedWorkout.comments}"</p>
+                  <p style={{ color: isDark ? "#ccc" : "#444", margin: 0, fontStyle: "italic" }}>&quot;{selectedWorkout.comments}&quot;</p>
                 </div>
               )}
 

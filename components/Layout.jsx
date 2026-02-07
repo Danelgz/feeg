@@ -85,10 +85,12 @@ export default function Layout({ children }) {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          overflow: "hidden"
+          overflow: "hidden",
+          touchAction: "none",
+          pointerEvents: "all"
         }}>
           <video
-            src="/entrada.mp4"
+            src={isDark ? "/entrada2.mp4" : "/entrada.mp4"}
             autoPlay
             muted
             playsInline

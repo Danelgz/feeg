@@ -68,42 +68,57 @@ export default function Sidebar() {
           zIndex: 1500,
           display: "flex",
           flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: "25px",
+          padding: "80px 40px", // Espacio para el botón de cerrar y margen lateral
           transition: "all 0.3s ease-in-out",
           opacity: isOpen ? 1 : 0,
           visibility: isOpen ? "visible" : "hidden",
           transform: isOpen ? "translateY(0)" : "translateY(-100%)"
         }}>
-          <img 
-            src={isDark ? "/logo.png" : "/logo2.png"} 
-            alt="FEEG Logo" 
-            style={{ 
-              width: "150px", 
-              height: "auto", 
-              marginBottom: "20px"
-            }} 
-          />
-          {links.map(link => (
-            <Link 
-              key={link.name} 
-              href={link.href} 
-              onClick={() => setIsOpen(false)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                textDecoration: "none",
-                color: isDark ? "#fff" : "#333",
-                fontSize: "1.5rem",
-                gap: "15px",
-                fontWeight: "600"
-              }}
-            >
-              <span>{link.icon}</span>
-              <span>{link.name}</span>
-            </Link>
-          ))}
+          {/* Enlaces arriba a la izquierda */}
+          <div style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "20px",
+            alignItems: "flex-start",
+            flex: 1
+          }}>
+            {links.map(link => (
+              <Link 
+                key={link.name} 
+                href={link.href} 
+                onClick={() => setIsOpen(false)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  textDecoration: "none",
+                  color: isDark ? "#fff" : "#333",
+                  fontSize: "1.3rem",
+                  gap: "15px",
+                  fontWeight: "600"
+                }}
+              >
+                <span>{link.icon}</span>
+                <span>{link.name}</span>
+              </Link>
+            ))}
+          </div>
+
+          {/* Logo abajo centrado */}
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
+            width: "100%",
+            paddingBottom: "40px"
+          }}>
+            <img 
+              src={isDark ? "/logo.png" : "/logo2.png"} 
+              alt="FEEG Logo" 
+              style={{ 
+                width: "120px", 
+                height: "auto"
+              }} 
+            />
+          </div>
         </div>
       </>
     );

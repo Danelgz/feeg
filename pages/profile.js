@@ -4,7 +4,7 @@ import RegisterForm from "../components/RegisterForm";
 import { useUser } from "../context/UserContext";
 
 export default function Profile() {
-  const { user, saveUser, isLoaded, theme, isMobile, t } = useUser();
+  const { user, authUser, saveUser, isLoaded, theme, isMobile, t, loginWithGoogle, logout } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const isDark = theme === 'dark';
 
@@ -17,11 +17,49 @@ export default function Profile() {
     );
   }
 
-  if (!user) {
+  // Si no hay usuario autenticado, mostrar botón de login con Google
+  if (!authUser) {
+    return (
+      <Layout>
+        <div style={{ padding: isMobile ? "0" : "20px", display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: 500 }}>
+          <h1 style={{ fontSize: isMobile ? "1.8rem" : "2rem", marginBottom: "0.5rem", color: isDark ? "#fff" : "#333" }}>{t("profile_title")}</h1>
+          <button
+            onClick={loginWithGoogle}
+            style={{
+              padding: "12px 16px",
+              backgroundColor: "#fff",
+              color: "#333",
+              border: "1px solid #ddd",
+              borderRadius: 8,
+              cursor: 'pointer',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10
+            }}
+          >
+            <img src="/logo2.png" alt="G" width={20} height={20} />
+            Iniciar sesión con Google
+          </button>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Si autenticado pero sin perfil completado, pedir datos actuales
+  if (authUser && !user) {
     return (
       <Layout>
         <div style={{ padding: isMobile ? "0" : "20px" }}>
-          <RegisterForm onRegister={saveUser} />
+          <RegisterForm onRegister={(data) => {
+            // Guardar junto a metadatos de auth
+            saveUser({
+              ...data,
+              email: authUser.email || null,
+              uid: authUser.uid,
+              photoURL: authUser.photoURL || null,
+            });
+          }} />
         </div>
       </Layout>
     );
@@ -54,6 +92,17 @@ export default function Profile() {
         width: isMobile ? "100%" : "auto",
         boxSizing: "border-box"
       }}>
+        {authUser && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+            {authUser.photoURL && <img src={authUser.photoURL} alt="avatar" style={{ width: 48, height: 48, borderRadius: '50%' }} />}
+            <div style={{ color: isDark ? '#fff' : '#333' }}>
+              <div style={{ fontWeight: 600 }}>{authUser.displayName || `${user.firstName} ${user.lastName}`}</div>
+              {authUser.email && <div style={{ fontSize: 12, color: isDark ? '#aaa' : '#666' }}>{authUser.email}</div>}
+            </div>
+            <div style={{ flex: 1 }} />
+            <button onClick={logout} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #ddd', background: isDark ? '#111' : '#fafafa', color: isDark ? '#fff' : '#333', cursor: 'pointer' }}>Cerrar sesión</button>
+          </div>
+        )}
         <p style={{ color: isDark ? "#fff" : "#333" }}><strong>{t("name_label")}</strong> {user.firstName} {user.lastName}</p>
         <p style={{ color: isDark ? "#ccc" : "#666" }}><strong>{t("username_label")}</strong> @{user.username}</p>
         <p style={{ color: isDark ? "#ccc" : "#666" }}><strong>{t("height_label_full")}</strong> {formatHeight()}</p>

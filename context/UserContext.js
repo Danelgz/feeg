@@ -1,10 +1,12 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { translations } from '../data/translations';
+import { onAuthChange, signInWithGoogle, signOutUser } from '../lib/firebase';
 
 const UserContext = createContext();
 
 export function UserProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null); // Perfil completado (datos adicionales)
+  const [authUser, setAuthUser] = useState(null); // Usuario autenticado (Firebase)
   const [isLoaded, setIsLoaded] = useState(false);
   const [theme, setTheme] = useState('dark');
   const [language, setLanguage] = useState('es');
@@ -45,8 +47,29 @@ export function UserProvider({ children }) {
         console.error('Error parsing saved active routine:', e);
       }
     }
-    
+
+    // Suscribirse a cambios de autenticación de Firebase
+    const unsub = onAuthChange((fbUser) => {
+      if (fbUser) {
+        setAuthUser({
+          uid: fbUser.uid,
+          email: fbUser.email || null,
+          displayName: fbUser.displayName || null,
+          photoURL: fbUser.photoURL || null,
+        });
+      } else {
+        setAuthUser(null);
+      }
+      setIsLoaded(true);
+    });
+
+    // En SSR no existe window, pero este efecto sólo corre en cliente
+    // Establecer cargado aunque no haya autenticación
     setIsLoaded(true);
+
+    return () => {
+      if (typeof unsub === 'function') unsub();
+    };
   }, []);
 
   const saveUser = (userData) => {
@@ -57,6 +80,19 @@ export function UserProvider({ children }) {
   const clearUser = () => {
     setUser(null);
     localStorage.removeItem('userProfile');
+  };
+
+  const loginWithGoogle = async () => {
+    await signInWithGoogle();
+  };
+
+  const logout = async () => {
+    try {
+      await signOutUser();
+    } finally {
+      clearUser();
+      setAuthUser(null);
+    }
   };
 
   const toggleTheme = () => {
@@ -82,9 +118,12 @@ export function UserProvider({ children }) {
 
   return (
     <UserContext.Provider value={{ 
-      user, 
+      user,
+      authUser,
       saveUser, 
       clearUser, 
+      loginWithGoogle,
+      logout,
       isLoaded, 
       theme, 
       toggleTheme, 

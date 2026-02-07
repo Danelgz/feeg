@@ -9,8 +9,6 @@ export default function Home() {
   const { user, completedWorkouts: allWorkouts, isLoaded, theme, t } = useUser();
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [showIntro, setShowIntro] = useState(true);
-  const videoRef = useRef(null);
   
   const isDark = theme === 'dark';
 
@@ -18,46 +16,6 @@ export default function Home() {
   const completedWorkouts = (allWorkouts || [])
     .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
     .slice(0, 5);
-
-  useEffect(() => {
-    if (showIntro && videoRef.current) {
-      const v = videoRef.current;
-      try {
-        // Asegurar flags necesarios para autoplay móvil (iOS/Android)
-        v.muted = true;
-        v.setAttribute('muted', '');
-        v.autoplay = true;
-        v.playsInline = true;
-        v.setAttribute('playsinline', '');
-        v.setAttribute('webkit-playsinline', '');
-        v.removeAttribute('controls');
-        const tryPlay = () => v.play().catch(() => {});
-        if (v.readyState >= 2) {
-          tryPlay();
-        } else {
-          v.addEventListener('loadedmetadata', tryPlay, { once: true });
-          v.addEventListener('canplay', tryPlay, { once: true });
-          v.addEventListener('loadeddata', tryPlay, { once: true });
-        }
-        const id = setTimeout(tryPlay, 250);
-        const id2 = setTimeout(tryPlay, 800);
-        return () => { clearTimeout(id); clearTimeout(id2); };
-      } catch (_) {}
-    }
-  }, [showIntro]);
-
-  useEffect(() => {
-    // Verificar si ya se mostró la intro en esta sesión
-    try {
-      const introShown = sessionStorage.getItem('introShown');
-      setShowIntro(!introShown);
-    } catch {}
-  }, []);
-
-  const handleCloseIntro = () => {
-    setShowIntro(false);
-    sessionStorage.setItem('introShown', 'true');
-  };
 
   useEffect(() => {
     const checkMobile = () => {
@@ -100,43 +58,6 @@ export default function Home() {
 
   return (
     <Layout>
-      {showIntro && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "#000",
-          zIndex: 9999,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: "hidden"
-        }}>
-          <video 
-            ref={videoRef}
-            autoPlay
-            muted
-            playsInline
-            // Evitar UI/overlay de controles y forzar inline/autoplay en móvil
-            controls={false}
-            controlsList="nodownload noplaybackrate nofullscreen noremoteplayback"
-            disablePictureInPicture
-            disableRemotePlayback
-            preload="auto"
-            onEnded={handleCloseIntro}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover"
-            }}
-          >
-            <source src={isDark ? "/entrada2.mp4" : "/entrada.mp4"} type="video/mp4" />
-            Tu navegador no soporta el elemento de video.
-          </video>
-        </div>
-      )}
       <div style={{ padding: isMobile ? "10px" : "20px", maxWidth: "1000px", margin: "0 auto" }}>
         <h1 style={{ color: isDark ? "#fff" : "#333", fontSize: isMobile ? "1.8rem" : "2.5rem", marginBottom: "1rem" }}>{t("welcome_title")}</h1>
         <p style={{ color: isDark ? "#ccc" : "#666", fontSize: isMobile ? "1rem" : "1.1rem", lineHeight: "1.6" }}>

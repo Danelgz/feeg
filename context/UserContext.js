@@ -45,10 +45,12 @@ export function UserProvider({ children }) {
           photoURL: fbUser.photoURL || null,
         });
 
-        // Al iniciar sesión, sincronizar datos desde la nube sin bloquear el isLoaded inicial si es posible
+        // Intentar sincronizar datos desde la nube
         try {
           const cloudData = await getFromCloud(`users/${fbUser.uid}`);
+          
           if (cloudData) {
+            // Si hay datos en la nube, mandan sobre los locales
             if (cloudData.profile) {
               setUser(cloudData.profile);
               localStorage.setItem('userProfile', JSON.stringify(cloudData.profile));
@@ -71,6 +73,17 @@ export function UserProvider({ children }) {
                 localStorage.setItem('language', cloudData.settings.language);
               }
             }
+          } else {
+            // Si NO hay datos en la nube pero sí locales, los subimos (migración)
+            const savedUser = localStorage.getItem('userProfile');
+            if (savedUser) {
+              const localProfile = JSON.parse(savedUser);
+              await saveToCloud(`users/${fbUser.uid}`, { 
+                profile: localProfile,
+                completedWorkouts: JSON.parse(localStorage.getItem('completedWorkouts') || '[]'),
+                routines: JSON.parse(localStorage.getItem('routines') || '[]')
+              });
+            }
           }
         } catch (error) {
           console.error("Error synchronizing cloud data:", error);
@@ -81,15 +94,8 @@ export function UserProvider({ children }) {
       setIsLoaded(true);
     });
 
-    // Si Firebase no está configurado, onAuthChange no hará nada, así que forzamos isLoaded
-    // Esto evita que la app se quede en "Cargando..."
-    const timeout = setTimeout(() => {
-      setIsLoaded(true);
-    }, 2000);
-
     return () => {
       if (typeof unsub === 'function') unsub();
-      clearTimeout(timeout);
     };
   }, []);
 

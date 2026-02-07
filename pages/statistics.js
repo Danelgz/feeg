@@ -8,6 +8,7 @@ export default function Statistics() {
   const isDark = theme === 'dark';
   const [workouts, setWorkouts] = useState([]);
   const [activeView, setActiveView] = useState('overview');
+  const [isNarrow, setIsNarrow] = useState(false);
 
   useEffect(() => {
     try {
@@ -16,6 +17,13 @@ export default function Statistics() {
     } catch (e) {
       console.error('Error reading completedWorkouts', e);
     }
+  }, []);
+
+  useEffect(() => {
+    const check = () => setIsNarrow(window.innerWidth <= 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, []);
 
   const groupMap = {
@@ -106,16 +114,16 @@ export default function Statistics() {
 
   return (
     <Layout>
-      <h1 style={{ fontSize: isMobile ? "1.8rem" : "2rem", marginBottom: "1rem", color: isDark ? "#fff" : "#333" }}>
-        {t("statistics")} <span style={{ color: isDark ? "#aaa" : "#777", fontSize: "0.9rem" }}>{t("stats_in_development")}</span>
+      <h1 style={{ fontSize: isNarrow ? "1.6rem" : "2rem", marginBottom: isNarrow ? "0.8rem" : "1rem", color: isDark ? "#fff" : "#333" }}>
+        {t("statistics")} <span style={{ color: isDark ? "#aaa" : "#777", fontSize: isNarrow ? "0.8rem" : "0.9rem" }}>{t("stats_in_development")}</span>
       </h1>
 
       {/* Botonera de navegación global */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : 'repeat(5, 1fr)',
-        gap: '10px',
-        marginBottom: '16px'
+        gridTemplateColumns: isNarrow ? '1fr' : 'repeat(5, 1fr)',
+        gap: isNarrow ? '8px' : '10px',
+        marginBottom: isNarrow ? '12px' : '16px'
       }}>
         {navButtons.map(btn => (
           <Link key={btn.key}
@@ -145,17 +153,17 @@ export default function Statistics() {
         padding: '16px',
         marginBottom: '16px'
       }}>
-        <h2 style={{ margin: 0, marginBottom: '12px', color: isDark ? '#fff' : '#333', fontSize: '1.05rem' }}>
+        <h2 style={{ margin: 0, marginBottom: '12px', color: isDark ? '#fff' : '#333', fontSize: isNarrow ? '1rem' : '1.05rem' }}>
           Distribución de músculos (cuerpo) {workouts.length === 0 && <span style={{ color: isDark ? '#aaa' : '#777' }}>· {t('stats_no_data')}</span>}
         </h2>
-        <BodyHeatmap seriesByGroup={seriesByGroup} mintFor={mintFor} isDark={isDark} isMobile={isMobile} />
+        <BodyHeatmap seriesByGroup={seriesByGroup} mintFor={mintFor} isDark={isDark} isMobile={isNarrow} />
       </section>
 
       {/* KPIs */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(5, 1fr)',
-        gap: '12px',
+        gridTemplateColumns: isNarrow ? '1fr 1fr' : 'repeat(5, 1fr)',
+        gap: isNarrow ? '10px' : '12px',
         marginBottom: '20px'
       }}>
         <StatCard label={t('completed_workouts')} value={stats.sessions} isDark={isDark} />
@@ -195,7 +203,7 @@ function OverviewSection({ isDark, isMobile, workouts, t }) {
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr',
+      gridTemplateColumns: isNarrow ? '1fr' : '1.2fr 1fr',
       gap: '16px'
     }}>
       <section style={{
@@ -214,7 +222,7 @@ function OverviewSection({ isDark, isMobile, workouts, t }) {
                 backgroundColor: isDark ? '#0f0f0f' : '#f9f9f9',
                 border: isDark ? '1px solid #2a2a2a' : '1px solid #eee',
                 borderRadius: '8px',
-                padding: '12px',
+                padding: isNarrow ? '10px' : '12px',
                 marginBottom: '10px'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -223,7 +231,7 @@ function OverviewSection({ isDark, isMobile, workouts, t }) {
                     {w.completedAt ? new Date(w.completedAt).toLocaleDateString() : ''}
                   </span>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginTop: '8px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '8px', marginTop: '8px' }}>
                   <MiniStat label={t('exercises_count')} value={w.exercises} isDark={isDark} />
                   <MiniStat label={t('series_label')} value={w.series} isDark={isDark} />
                   <MiniStat label={t('reps_label')} value={w.totalReps} isDark={isDark} />
@@ -431,22 +439,22 @@ function BodyHeatmap({ seriesByGroup, mintFor, isDark, isMobile }) {
     <div style={{
       display: 'grid',
       gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
-      gap: '8px'
+      gap: isMobile ? '6px' : '8px'
     }}>
       {Object.entries(seriesByGroup).map(([g, n]) => (
         <div key={g} style={{
           background: mintFor(n),
           border: isDark ? '1px solid #2a2a2a' : '1px solid #d9f7ef',
           borderRadius: '10px',
-          minHeight: 70,
+          minHeight: isMobile ? 60 : 70,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '10px',
+          padding: isMobile ? '8px' : '10px',
           boxShadow: isDark ? 'none' : '0 1px 3px rgba(29,209,161,0.25)'
         }}>
-          <span style={{ color: isDark ? '#eafff8' : '#044a39', fontWeight: 600 }}>{g}</span>
-          <span style={{ color: isDark ? '#c1ffee' : '#06624a' }}>{n}</span>
+          <span style={{ color: isDark ? '#eafff8' : '#044a39', fontWeight: 600, fontSize: isMobile ? '0.95rem' : '1rem' }}>{g}</span>
+          <span style={{ color: isDark ? '#c1ffee' : '#06624a', fontSize: isMobile ? '0.95rem' : '1rem' }}>{n}</span>
         </div>
       ))}
     </div>

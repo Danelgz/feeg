@@ -397,12 +397,6 @@ export default function RoutineDetail() {
     return (
       <Layout>
         <div style={{ padding: "20px", maxWidth: "900px", margin: "0 auto" }}>
-          <Link href="/routines">
-            <button style={{ ...buttonStyle, marginBottom: "20px", backgroundColor: isDark ? "#444" : "#ddd", color: isDark ? "#fff" : "#333" }} {...buttonHoverStyle}>
-              {t("back_to_routines")}
-            </button>
-          </Link>
-
           <h1 style={{ color: isDark ? "#fff" : "#333" }}>{routine.name}</h1>
           <p style={{ color: isDark ? "#aaa" : "#666", marginBottom: "20px" }}>
             {routine.exercises.length} {t("exercises_count")} · {routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0)} {t("total_series")}

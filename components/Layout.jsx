@@ -8,7 +8,16 @@ export default function Layout({ children }) {
   const { theme, isMobile: userIsMobile, activeRoutine, endRoutine } = useUser();
   const isDark = theme === 'dark';
   const [isMobile, setIsMobile] = useState(false);
+  const [showIntro, setShowIntro] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth <= 768 && !sessionStorage.getItem("introPlayed");
+    }
+    return false;
+  });
   const router = useRouter();
+
+  const topLevelPages = ["/", "/routines", "/exercises", "/statistics", "/profile", "/settings", "/statistics/[view]", "/routines/create", "/routines/[id]", "/routines/empty"];
+  const isTopLevel = topLevelPages.includes(router.pathname) || topLevelPages.includes(router.asPath);
 
   // Botón de retroceso inteligente: si no hay historial o la entrada es directa, ir a una ruta de respaldo
   const smartBack = () => {
@@ -63,6 +72,43 @@ export default function Layout({ children }) {
       color: isDark ? "#fff" : "#333",
       transition: "background-color 0.3s ease",
     }}>
+      {/* Video de Introducción (Solo Móvil) */}
+      {showIntro && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          backgroundColor: "#000",
+          zIndex: 10000,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          overflow: "hidden"
+        }}>
+          <video
+            src="/entrada.mp4"
+            autoPlay
+            muted
+            playsInline
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover"
+            }}
+            onEnded={() => {
+              setShowIntro(false);
+              sessionStorage.setItem("introPlayed", "true");
+            }}
+            onError={() => {
+              setShowIntro(false);
+              sessionStorage.setItem("introPlayed", "true");
+            }}
+          />
+        </div>
+      )}
+
       <Head>
         <title>FEEG - Tu App de Entrenamiento</title>
         <link rel="icon" href="/logo3.png" />
@@ -100,7 +146,7 @@ export default function Layout({ children }) {
       <Sidebar />
       
       {/* Botón de Retroceder */}
-      {router.asPath !== "/" && (
+      {!isTopLevel && (
         <button
           onClick={smartBack}
           title="Atrás"

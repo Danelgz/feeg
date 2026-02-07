@@ -1,0 +1,7 @@
+import Sidebar from "./Sidebar";
+import { useUser } from "../context/UserContext";
+import { useState, useEffect } from "react";
+import Head from "head"; // Wait, Next.js uses next/head usually, but the original said "next/head" in imports but was truncated? No, wait.
+import { useRouter } from "next/router";
+
+// I will read the first lines again to be sure about the imports.

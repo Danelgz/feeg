@@ -45,31 +45,35 @@ export function UserProvider({ children }) {
           photoURL: fbUser.photoURL || null,
         });
 
-        // Al iniciar sesión, sincronizar datos desde la nube
-        const cloudData = await getFromCloud(`users/${fbUser.uid}`);
-        if (cloudData) {
-          if (cloudData.profile) {
-            setUser(cloudData.profile);
-            localStorage.setItem('userProfile', JSON.stringify(cloudData.profile));
-          }
-          if (cloudData.completedWorkouts) {
-            setCompletedWorkouts(cloudData.completedWorkouts);
-            localStorage.setItem('completedWorkouts', JSON.stringify(cloudData.completedWorkouts));
-          }
-          if (cloudData.routines) {
-            setRoutines(cloudData.routines);
-            localStorage.setItem('routines', JSON.stringify(cloudData.routines));
-          }
-          if (cloudData.settings) {
-            if (cloudData.settings.theme) {
-              setTheme(cloudData.settings.theme);
-              localStorage.setItem('theme', cloudData.settings.theme);
+        // Al iniciar sesión, sincronizar datos desde la nube sin bloquear el isLoaded inicial si es posible
+        try {
+          const cloudData = await getFromCloud(`users/${fbUser.uid}`);
+          if (cloudData) {
+            if (cloudData.profile) {
+              setUser(cloudData.profile);
+              localStorage.setItem('userProfile', JSON.stringify(cloudData.profile));
             }
-            if (cloudData.settings.language) {
-              setLanguage(cloudData.settings.language);
-              localStorage.setItem('language', cloudData.settings.language);
+            if (cloudData.completedWorkouts) {
+              setCompletedWorkouts(cloudData.completedWorkouts);
+              localStorage.setItem('completedWorkouts', JSON.stringify(cloudData.completedWorkouts));
+            }
+            if (cloudData.routines) {
+              setRoutines(cloudData.routines);
+              localStorage.setItem('routines', JSON.stringify(cloudData.routines));
+            }
+            if (cloudData.settings) {
+              if (cloudData.settings.theme) {
+                setTheme(cloudData.settings.theme);
+                localStorage.setItem('theme', cloudData.settings.theme);
+              }
+              if (cloudData.settings.language) {
+                setLanguage(cloudData.settings.language);
+                localStorage.setItem('language', cloudData.settings.language);
+              }
             }
           }
+        } catch (error) {
+          console.error("Error synchronizing cloud data:", error);
         }
       } else {
         setAuthUser(null);
@@ -77,8 +81,15 @@ export function UserProvider({ children }) {
       setIsLoaded(true);
     });
 
+    // Si Firebase no está configurado, onAuthChange no hará nada, así que forzamos isLoaded
+    // Esto evita que la app se quede en "Cargando..."
+    const timeout = setTimeout(() => {
+      setIsLoaded(true);
+    }, 2000);
+
     return () => {
       if (typeof unsub === 'function') unsub();
+      clearTimeout(timeout);
     };
   }, []);
 

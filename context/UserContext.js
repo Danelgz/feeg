@@ -8,6 +8,7 @@ export function UserProvider({ children }) {
   const [user, setUser] = useState(null); // Perfil completado (datos adicionales)
   const [authUser, setAuthUser] = useState(null); // Usuario autenticado (Firebase)
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [theme, setTheme] = useState('dark');
   const [language, setLanguage] = useState('es');
   const [activeRoutine, setActiveRoutine] = useState(null);
@@ -45,6 +46,7 @@ export function UserProvider({ children }) {
           photoURL: fbUser.photoURL || null,
         });
 
+        setIsSyncing(true);
         // Intentar sincronizar datos desde la nube
         try {
           const cloudData = await getFromCloud(`users/${fbUser.uid}`);
@@ -63,6 +65,10 @@ export function UserProvider({ children }) {
               setRoutines(cloudData.routines);
               localStorage.setItem('routines', JSON.stringify(cloudData.routines));
             }
+            if (cloudData.activeRoutine) {
+              setActiveRoutine(cloudData.activeRoutine);
+              localStorage.setItem('activeRoutine', JSON.stringify(cloudData.activeRoutine));
+            }
             if (cloudData.settings) {
               if (cloudData.settings.theme) {
                 setTheme(cloudData.settings.theme);
@@ -75,9 +81,9 @@ export function UserProvider({ children }) {
             }
           } else {
             // Si NO hay datos en la nube pero sí locales, los subimos (migración)
-            const savedUser = localStorage.getItem('userProfile');
-            if (savedUser) {
-              const localProfile = JSON.parse(savedUser);
+            const savedUserLoc = localStorage.getItem('userProfile');
+            if (savedUserLoc) {
+              const localProfile = JSON.parse(savedUserLoc);
               await saveToCloud(`users/${fbUser.uid}`, { 
                 profile: localProfile,
                 completedWorkouts: JSON.parse(localStorage.getItem('completedWorkouts') || '[]'),
@@ -87,6 +93,8 @@ export function UserProvider({ children }) {
           }
         } catch (error) {
           console.error("Error synchronizing cloud data:", error);
+        } finally {
+          setIsSyncing(false);
         }
       } else {
         setAuthUser(null);
@@ -157,6 +165,15 @@ export function UserProvider({ children }) {
     }
   };
 
+  const deleteCompletedWorkout = async (id) => {
+    const newList = completedWorkouts.filter(w => w.id !== id);
+    setCompletedWorkouts(newList);
+    localStorage.setItem('completedWorkouts', JSON.stringify(newList));
+    if (authUser) {
+      await saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList });
+    }
+  };
+
   const saveRoutine = async (newRoutine) => {
     const newList = [newRoutine, ...routines];
     setRoutines(newList);
@@ -166,14 +183,29 @@ export function UserProvider({ children }) {
     }
   };
 
-  const startRoutine = (routineData) => {
-    setActiveRoutine(routineData);
-    localStorage.setItem('activeRoutine', JSON.stringify(routineData));
+  const deleteRoutine = async (id) => {
+    const newList = routines.filter(r => r.id !== id);
+    setRoutines(newList);
+    localStorage.setItem('routines', JSON.stringify(newList));
+    if (authUser) {
+      await saveToCloud(`users/${authUser.uid}`, { routines: newList });
+    }
   };
 
-  const endRoutine = () => {
+  const startRoutine = async (routineData) => {
+    setActiveRoutine(routineData);
+    localStorage.setItem('activeRoutine', JSON.stringify(routineData));
+    if (authUser) {
+      await saveToCloud(`users/${authUser.uid}`, { activeRoutine: routineData });
+    }
+  };
+
+  const endRoutine = async () => {
     setActiveRoutine(null);
     localStorage.removeItem('activeRoutine');
+    if (authUser) {
+      await saveToCloud(`users/${authUser.uid}`, { activeRoutine: null });
+    }
   };
 
   return (
@@ -185,6 +217,7 @@ export function UserProvider({ children }) {
       loginWithGoogle,
       logout,
       isLoaded, 
+      isSyncing,
       theme, 
       toggleTheme, 
       language, 
@@ -194,8 +227,10 @@ export function UserProvider({ children }) {
       endRoutine,
       completedWorkouts,
       saveCompletedWorkout,
+      deleteCompletedWorkout,
       routines,
       saveRoutine,
+      deleteRoutine,
       t
     }}>
       {children}

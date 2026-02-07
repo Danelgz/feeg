@@ -4,17 +4,8 @@ import { useState, useEffect } from "react";
 import { useUser } from "../../context/UserContext";
 
 export default function Routines() {
-  const [routines, setRoutines] = useState([]);
-  const { theme, t } = useUser();
+  const { routines, deleteRoutine, theme, t } = useUser();
   const isDark = theme === 'dark';
-
-  useEffect(() => {
-    // Cargar rutinas desde localStorage
-    const stored = localStorage.getItem("myRoutines");
-    if (stored) {
-      setRoutines(JSON.parse(stored));
-    }
-  }, []);
 
   return (
     <Layout>
@@ -113,9 +104,9 @@ export default function Routines() {
                   </Link>
                   <button
                     onClick={() => {
-                      const updated = routines.filter((_, i) => i !== index);
-                      setRoutines(updated);
-                      localStorage.setItem("myRoutines", JSON.stringify(updated));
+                      if (confirm(t("confirm_delete_routine"))) {
+                        deleteRoutine(routine.id);
+                      }
                     }}
                     style={{
                       padding: "8px 16px",

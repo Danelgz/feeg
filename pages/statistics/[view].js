@@ -7,19 +7,9 @@ import { useUser } from "../../context/UserContext";
 export default function StatisticsView() {
   const router = useRouter();
   const { view } = router.query;
-  const { t, theme, isMobile } = useUser();
+  const { t, theme, isMobile, completedWorkouts: workouts } = useUser();
   const isDark = theme === 'dark';
-  const [workouts, setWorkouts] = useState([]);
   const [isNarrow, setIsNarrow] = useState(false);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('completedWorkouts');
-      if (saved) setWorkouts(JSON.parse(saved));
-    } catch (e) {
-      console.error('Error reading completedWorkouts', e);
-    }
-  }, []);
 
   useEffect(() => {
     const check = () => setIsNarrow(window.innerWidth <= 768);

@@ -6,7 +6,7 @@ import { useUser } from "../../context/UserContext";
 
 export default function CreateRoutine() {
   const router = useRouter();
-  const { theme, t } = useUser();
+  const { theme, t, saveRoutine: contextSaveRoutine } = useUser();
   const isDark = theme === 'dark';
 
   const [routineName, setRoutineName] = useState("");
@@ -20,13 +20,11 @@ export default function CreateRoutine() {
 
   const groups = Object.keys(exercisesList);
 
-  const saveRoutine = () => {
+  const saveRoutine = async () => {
     if (!routineName || exercises.length === 0) {
       alert(t("alert_fill_fields"));
       return;
     }
-
-    const stored = JSON.parse(localStorage.getItem("myRoutines") || "[]");
 
     const newRoutine = {
       id: Date.now(),
@@ -34,7 +32,7 @@ export default function CreateRoutine() {
       exercises,
     };
 
-    localStorage.setItem("myRoutines", JSON.stringify([...stored, newRoutine]));
+    await contextSaveRoutine(newRoutine);
     router.push("/routines");
   };
 

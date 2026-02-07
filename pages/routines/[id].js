@@ -6,7 +6,7 @@ import { useUser } from "../../context/UserContext";
 
 export default function RoutineDetail() {
   const router = useRouter();
-  const { theme, activeRoutine, startRoutine, endRoutine, t } = useUser();
+  const { theme, routines: allRoutines, activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, t } = useUser();
   const isDark = theme === 'dark';
   const { id } = router.query;
   const [routine, setRoutine] = useState(null);
@@ -114,34 +114,31 @@ export default function RoutineDetail() {
   };
 
   useEffect(() => {
-    if (id !== undefined) {
-      const stored = localStorage.getItem("myRoutines");
-      if (stored) {
-        const routines = JSON.parse(stored);
-        if (routines[id]) {
-          setRoutine(routines[id]);
-          // Initialize tracking objects
-          const seriesTracker = {};
-          const repsTracker = {};
-          const weightTracker = {};
-          
-          routines[id].exercises.forEach((ex, exIdx) => {
-            ex.series.forEach((serie, serieIdx) => {
-              const key = `${exIdx}-${serieIdx}`;
-              seriesTracker[key] = false;
-              repsTracker[key] = serie.reps || "";
-              weightTracker[key] = serie.weight || "";
-            });
+    if (id !== undefined && allRoutines) {
+      const foundRoutine = allRoutines.find(r => r.id.toString() === id.toString());
+      if (foundRoutine) {
+        setRoutine(foundRoutine);
+        // Initialize tracking objects
+        const seriesTracker = {};
+        const repsTracker = {};
+        const weightTracker = {};
+        
+        foundRoutine.exercises.forEach((ex, exIdx) => {
+          ex.series.forEach((serie, serieIdx) => {
+            const key = `${exIdx}-${serieIdx}`;
+            seriesTracker[key] = false;
+            repsTracker[key] = serie.reps || "";
+            weightTracker[key] = serie.weight || "";
           });
-          
-          setSeriesCompleted(seriesTracker);
-          setCurrentReps(repsTracker);
-          setCurrentWeight(weightTracker);
-          setRestTime(routines[id].exercises[0]?.rest || 60);
-        }
+        });
+        
+        setSeriesCompleted(seriesTracker);
+        setCurrentReps(repsTracker);
+        setCurrentWeight(weightTracker);
+        setRestTime(foundRoutine.exercises[0]?.rest || 60);
       }
     }
-  }, [id]);
+  }, [id, allRoutines]);
 
   useEffect(() => {
     if (activeRoutine && activeRoutine.id === id && workoutState === "preview") {
@@ -361,10 +358,8 @@ export default function RoutineDetail() {
       }))
     };
 
-    // Guardar en localStorage
-    const savedWorkouts = JSON.parse(localStorage.getItem('completedWorkouts') || '[]');
-    savedWorkouts.push(completedRoutine);
-    localStorage.setItem('completedWorkouts', JSON.stringify(savedWorkouts));
+    // Guardar usando el contexto (esto también sincroniza con la nube)
+    saveCompletedWorkout(completedRoutine);
 
     setSavingWorkout(true);
     endRoutine();

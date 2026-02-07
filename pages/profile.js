@@ -4,15 +4,17 @@ import RegisterForm from "../components/RegisterForm";
 import { useUser } from "../context/UserContext";
 
 export default function Profile() {
-  const { user, authUser, saveUser, isLoaded, theme, isMobile, t, loginWithGoogle, logout } = useUser();
+  const { user, authUser, saveUser, isLoaded, isSyncing, theme, isMobile, t, loginWithGoogle, logout } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const isDark = theme === 'dark';
 
-  if (!isLoaded) {
+  if (!isLoaded || isSyncing) {
     return (
       <Layout>
-        <h1 style={{ fontSize: isMobile ? "1.8rem" : "2rem", marginBottom: "1rem", color: isDark ? "#fff" : "#333" }}>{t("profile_title")}</h1>
-        <p style={{ color: isDark ? "#ccc" : "#666" }}>{t("loading")}</p>
+        <div style={{ padding: isMobile ? "0" : "20px" }}>
+          <h1 style={{ fontSize: isMobile ? "1.8rem" : "2rem", marginBottom: "1rem", color: isDark ? "#fff" : "#333" }}>{t("profile_title")}</h1>
+          <p style={{ color: isDark ? "#ccc" : "#666" }}>{isSyncing ? "Sincronizando datos con la nube..." : t("loading")}</p>
+        </div>
       </Layout>
     );
   }

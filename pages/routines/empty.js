@@ -6,7 +6,7 @@ import { useUser } from "../../context/UserContext";
 
 export default function RoutineDetail() {
   const router = useRouter();
-  const { theme, activeRoutine, startRoutine, endRoutine, t } = useUser();
+  const { theme, activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, t } = useUser();
   const isDark = theme === 'dark';
   const { id } = router.query;
   const [routine, setRoutine] = useState(null);
@@ -346,10 +346,8 @@ export default function RoutineDetail() {
       }))
     };
 
-    // Guardar en localStorage
-    const savedWorkouts = JSON.parse(localStorage.getItem('completedWorkouts') || '[]');
-    savedWorkouts.push(completedRoutine);
-    localStorage.setItem('completedWorkouts', JSON.stringify(savedWorkouts));
+    // Guardar usando el contexto (esto también sincroniza con la nube)
+    saveCompletedWorkout(completedRoutine);
 
     setSavingWorkout(true);
     endRoutine();

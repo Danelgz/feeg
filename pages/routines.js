@@ -6,11 +6,9 @@ import RoutineForm from "../components/RoutineForm";
 import { useUser } from "../context/UserContext";
 
 export default function Routines() {
-  const [routines, setRoutines] = useState([]);
-  const [completedWorkouts, setCompletedWorkouts] = useState([]);
+  const { routines, completedWorkouts, saveRoutine, deleteRoutine, deleteCompletedWorkout, theme, isMobile, t } = useUser();
   const [activeTab, setActiveTab] = useState("active"); // active, completed
   const router = useRouter();
-  const { theme, isMobile, t } = useUser();
   const isDark = theme === 'dark';
 
   const formatElapsedTime = (seconds) => {
@@ -29,50 +27,12 @@ export default function Routines() {
     return parts.join(" ");
   };
 
-  // Función para cargar entrenamientos completados
-  const loadCompletedWorkouts = () => {
-    const saved = localStorage.getItem('completedWorkouts');
-    if (saved) {
-      setCompletedWorkouts(JSON.parse(saved));
-    }
-  };
-
+  // Efecto para manejar el cambio de tab por URL
   useEffect(() => {
-    // Cargar rutinas completadas al montar el componente
-    loadCompletedWorkouts();
-    
-    // Si hay un parámetro tab en la URL, usarlo para establecer la pestaña activa
     if (router.query.tab) {
       setActiveTab(router.query.tab);
     }
   }, [router.query.tab]);
-
-  // Cargar entrenamientos completados cada vez que la ruta cambia (ej: al volver de [id].js)
-  useEffect(() => {
-    const handleRouteChange = () => {
-      loadCompletedWorkouts();
-    };
-
-    router.events?.on('routeChangeComplete', handleRouteChange);
-    
-    return () => {
-      router.events?.off('routeChangeComplete', handleRouteChange);
-    };
-  }, [router.events]);
-
-  const saveRoutine = (routine) => {
-    setRoutines([...routines, { ...routine, id: Date.now() }]);
-  };
-
-  const deleteRoutine = (id) => {
-    setRoutines(routines.filter(r => r.id !== id));
-  };
-
-  const deleteCompletedWorkout = (id) => {
-    const updated = completedWorkouts.filter(w => w.id !== id);
-    setCompletedWorkouts(updated);
-    localStorage.setItem('completedWorkouts', JSON.stringify(updated));
-  };
 
   return (
     <Layout>

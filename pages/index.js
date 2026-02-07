@@ -6,14 +6,18 @@ import { useUser } from "../context/UserContext";
 
 export default function Home() {
   const router = useRouter();
-  const { user, isLoaded, theme, t } = useUser();
-  const [completedWorkouts, setCompletedWorkouts] = useState([]);
+  const { user, completedWorkouts: allWorkouts, isLoaded, theme, t } = useUser();
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
   const videoRef = useRef(null);
   
   const isDark = theme === 'dark';
+
+  // Obtener solo los últimos 5 entrenamientos
+  const completedWorkouts = (allWorkouts || [])
+    .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
+    .slice(0, 5);
 
   useEffect(() => {
     if (showIntro && videoRef.current) {
@@ -85,33 +89,6 @@ export default function Home() {
       router.push("/profile");
     }
   }, [user, isLoaded, router]);
-
-  useEffect(() => {
-    // Cargar entrenamientos completados de localStorage
-    const saved = localStorage.getItem('completedWorkouts');
-    if (saved) {
-      const workouts = JSON.parse(saved);
-      // Mostrar solo los últimos 5 entrenamientos, ordenados por más reciente primero
-      setCompletedWorkouts(workouts.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt)).slice(0, 5));
-    }
-  }, []);
-
-  // Recargar entrenamientos cuando se vuelve a la página de inicio
-  useEffect(() => {
-    const handleRouteChange = () => {
-      const saved = localStorage.getItem('completedWorkouts');
-      if (saved) {
-        const workouts = JSON.parse(saved);
-        setCompletedWorkouts(workouts.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt)).slice(0, 5));
-      }
-    };
-
-    router.events?.on('routeChangeComplete', handleRouteChange);
-    
-    return () => {
-      router.events?.off('routeChangeComplete', handleRouteChange);
-    };
-  }, [router.events]);
 
   if (!isLoaded) {
     return (

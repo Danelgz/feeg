@@ -120,28 +120,23 @@ export default function Statistics() {
 
       {/* Botonera de navegación global */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: isNarrow ? '1fr' : 'repeat(5, 1fr)',
-        gap: isNarrow ? '8px' : '10px',
         marginBottom: isNarrow ? '12px' : '16px'
       }}>
         {navButtons.map(btn => (
-          <Link key={btn.key}
-            href={btn.href}
-            style={{
-              display: 'block',
-              textAlign: 'center',
-              padding: '10px 12px',
-              backgroundColor: isDark ? '#1a1a1a' : '#f6f6f6',
-              color: isDark ? '#fff' : '#333',
-              border: `1px solid ${isDark ? '#333' : '#ddd'}`,
-              borderRadius: '8px',
-              fontWeight: 600,
-              textDecoration: 'none'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
-            onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
-          >{btn.label}</Link>
+          <p key={btn.key} style={{
+            margin: '0 0 8px 0',
+            lineHeight: 1.5,
+            color: isDark ? '#fff' : '#333',
+            fontSize: isNarrow ? '0.95rem' : '1rem'
+          }}>
+            <Link
+              href={btn.href}
+              style={{
+                color: isDark ? '#9ee9d5' : '#0a6b55',
+                textDecoration: 'underline'
+              }}
+            >{btn.label}</Link>
+          </p>
         ))}
       </div>
 
@@ -203,7 +198,7 @@ function OverviewSection({ isDark, isMobile, workouts, t }) {
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: isNarrow ? '1fr' : '1.2fr 1fr',
+      gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr',
       gap: '16px'
     }}>
       <section style={{
@@ -222,7 +217,7 @@ function OverviewSection({ isDark, isMobile, workouts, t }) {
                 backgroundColor: isDark ? '#0f0f0f' : '#f9f9f9',
                 border: isDark ? '1px solid #2a2a2a' : '1px solid #eee',
                 borderRadius: '8px',
-                padding: isNarrow ? '10px' : '12px',
+                padding: isMobile ? '10px' : '12px',
                 marginBottom: '10px'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -231,7 +226,7 @@ function OverviewSection({ isDark, isMobile, workouts, t }) {
                     {w.completedAt ? new Date(w.completedAt).toLocaleDateString() : ''}
                   </span>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '8px', marginTop: '8px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '8px', marginTop: '8px' }}>
                   <MiniStat label={t('exercises_count')} value={w.exercises} isDark={isDark} />
                   <MiniStat label={t('series_label')} value={w.series} isDark={isDark} />
                   <MiniStat label={t('reps_label')} value={w.totalReps} isDark={isDark} />

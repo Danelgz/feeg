@@ -88,29 +88,23 @@ export default function StatisticsView() {
 
       {/* Botonera de navegación global */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: isNarrow ? '1fr' : 'repeat(5, 1fr)',
-        gap: isNarrow ? '8px' : '10px',
         marginBottom: isNarrow ? '12px' : '16px'
       }}>
         {nav.map(btn => (
-          <Link key={btn.key}
-            href={btn.href}
-            style={{
-              display: 'block',
-              textAlign: 'center',
-              padding: isNarrow ? '10px' : '10px 12px',
-              backgroundColor: isDark ? '#1a1a1a' : '#f6f6f6',
-              color: isDark ? '#fff' : '#333',
-              border: `1px solid ${isDark ? '#333' : '#ddd'}`,
-              borderRadius: '8px',
-              fontWeight: 600,
-              fontSize: isNarrow ? '0.95rem' : '1rem',
-              textDecoration: 'none'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
-            onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
-          >{btn.label}</Link>
+          <p key={btn.key} style={{
+            margin: '0 0 8px 0',
+            lineHeight: 1.5,
+            color: isDark ? '#fff' : '#333',
+            fontSize: isNarrow ? '0.95rem' : '1rem'
+          }}>
+            <Link
+              href={btn.href}
+              style={{
+                color: isDark ? '#9ee9d5' : '#0a6b55',
+                textDecoration: 'underline'
+              }}
+            >{btn.label}</Link>
+          </p>
         ))}
       </div>
 

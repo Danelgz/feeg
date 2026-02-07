@@ -1,4 +1,5 @@
 import Sidebar from "./Sidebar";
+import BottomNavigation from "./BottomNavigation";
 import { useUser } from "../context/UserContext";
 import { useState, useEffect } from "react";
 import Head from "next/head";
@@ -214,6 +215,7 @@ export default function Layout({ children }) {
                 style={{ 
                   flex: 1, 
                   padding: currentIsMobile ? "15px" : "20px", 
+                  paddingBottom: currentIsMobile ? "80px" : "20px",
                   backgroundColor: isDark ? "#0f0f0f" : "#f0f2f5", 
                   color: isDark ? "#fff" : "#333",
                   transition: "background-color 0.3s ease",
@@ -223,6 +225,9 @@ export default function Layout({ children }) {
               >
                 {children}
               </main>
+
+              {/* Navegación Inferior para Móvil */}
+              {currentIsMobile && <BottomNavigation />}
 
               {/* Pestaña de Rutina Activa */}
               {activeRoutine && router.asPath !== activeRoutine.path && (

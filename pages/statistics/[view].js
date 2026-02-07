@@ -1,4 +1,5 @@
-import { useRouter } from "next/router";
+npm run dev
+mejorHimplimport { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Layout from "../../components/Layout";
@@ -7,9 +8,19 @@ import { useUser } from "../../context/UserContext";
 export default function StatisticsView() {
   const router = useRouter();
   const { view } = router.query;
-  const { t, theme, isMobile, completedWorkouts: workouts } = useUser();
+  const { t, theme, isMobile } = useUser();
   const isDark = theme === 'dark';
+  const [workouts, setWorkouts] = useState([]);
   const [isNarrow, setIsNarrow] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('completedWorkouts');
+      if (saved) setWorkouts(JSON.parse(saved));
+    } catch (e) {
+      console.error('Error reading completedWorkouts', e);
+    }
+  }, []);
 
   useEffect(() => {
     const check = () => setIsNarrow(window.innerWidth <= 768);
@@ -72,46 +83,30 @@ export default function StatisticsView() {
 
   return (
     <Layout>
-      <h1 style={{ fontSize: isNarrow ? "1.6rem" : "2rem", marginBottom: isNarrow ? "0.8rem" : "1rem", color: isDark ? "#fff" : "#333" }}>
-        {t('statistics')} <span style={{ color: isDark ? "#aaa" : "#777", fontSize: isNarrow ? "0.8rem" : "0.9rem" }}>{t('stats_in_development')}</span>
+      <h1 style={{ fontSize: isNarrow ? "1.2rem" : "1.8rem", marginBottom: isNarrow ? "0.8rem" : "1rem", color: isDark ? "#fff" : "#333" }}>
+        {t('statistics')} <span style={{ color: isDark ? "#aaa" : "#777", fontSize: isNarrow ? "0.7rem" : "0.8rem" }}>{t('stats_in_development')}</span>
       </h1>
 
       {/* Botonera de navegación global */}
       <div style={{
-        backgroundColor: isDark ? '#0f0f0f' : '#f6fefb',
-        border: `1px solid ${isDark ? '#2a2a2a' : '#d9f7ef'}`,
-        borderRadius: 12,
-        padding: isNarrow ? '8px' : '10px',
         marginBottom: isNarrow ? '12px' : '16px'
       }}>
-        {nav.map(btn => { const isActive = view === btn.key; return (
-          <Link
-            key={btn.key}
-            href={btn.href}
-            role="button"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: isNarrow ? '10px' : '12px',
-              margin: '6px 0',
-              backgroundColor: isActive ? (isDark ? '#161616' : '#fafffd') : (isDark ? '#1a1a1a' : '#ffffff'),
-              border: `1px solid ${isDark ? '#2a2a2a' : '#e4f7f0'}`,
-              borderRadius: 10,
-              boxShadow: isDark ? 'none' : '0 1px 2px rgba(0,0,0,0.06)',
-              color: isDark ? '#eafff8' : '#0a3d31',
-              textDecoration: 'none',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'transform 0.1s ease, box-shadow 0.2s ease, background-color 0.2s ease'
-            }}
-            onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = isDark ? '0 0 0 rgba(0,0,0,0)' : '0 3px 8px rgba(0,0,0,0.10)'; e.currentTarget.style.backgroundColor = isDark ? '#161616' : '#fafffd'; }}
-            onMouseOut={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = isDark ? 'none' : '0 1px 2px rgba(0,0,0,0.06)'; e.currentTarget.style.backgroundColor = isActive ? (isDark ? '#161616' : '#fafffd') : (isDark ? '#1a1a1a' : '#ffffff'); }}
-          >
-            <span aria-hidden="true" style={{ color: '#1dd1a1', opacity: 0.95, fontWeight: 800 }}>›</span>
-            <span style={{ flex: 1 }}>{btn.label}</span>
-          </Link>
-        ); })}
+        {nav.map(btn => (
+          <p key={btn.key} style={{
+            margin: '0 0 8px 0',
+            lineHeight: 1.5,
+            color: isDark ? '#fff' : '#333',
+            fontSize: isNarrow ? '0.8rem' : '0.95rem'
+          }}>
+            <Link
+              href={btn.href}
+              style={{
+                color: isDark ? '#9ee9d5' : '#0a6b55',
+                textDecoration: 'underline'
+              }}
+            >{btn.label}</Link>
+          </p>
+        ))}
       </div>
 
       {view === 'series' && (
@@ -121,12 +116,12 @@ export default function StatisticsView() {
           ) : (
             <div>
               {Object.entries(seriesByGroup).sort((a,b)=>b[1]-a[1]).map(([g,n], i, arr) => (
-                <div key={g} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                  <div style={{ width: '140px', color: isDark ? '#ddd' : '#444' }}>{t(g) || g}</div>
+                <div key={g} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', fontSize: isNarrow ? '0.8rem' : '1rem' }}>
+                  <div style={{ width: isNarrow ? '110px' : '140px', color: isDark ? '#ddd' : '#444' }}>{t(g) || g}</div>
                   <div style={{ flex: 1, height: '10px', background: isDark ? '#0f0f0f' : '#eee', borderRadius: '999px', overflow: 'hidden' }}>
                     <div style={{ width: `${n === 0 ? 2 : Math.min(100, (n/Math.max(1, arr[0][1]))*100)}%`, height: '100%', background: '#1dd1a1' }} />
                   </div>
-                  <div style={{ width: '40px', textAlign: 'right', color: isDark ? '#aaa' : '#666' }}>{n}</div>
+                  <div style={{ width: '30px', textAlign: 'right', color: isDark ? '#aaa' : '#666' }}>{n}</div>
                 </div>
               ))}
             </div>
@@ -138,12 +133,12 @@ export default function StatisticsView() {
         <Section title="Distribución de músculos (gráfico)" isDark={isDark}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
             {Object.entries(seriesByGroup).map(([g,n]) => (
-              <div key={g} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '140px', color: isDark ? '#ddd' : '#444' }}>{t(g) || g}</div>
+              <div key={g} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: isNarrow ? '0.8rem' : '1rem' }}>
+                <div style={{ width: isNarrow ? '110px' : '140px', color: isDark ? '#ddd' : '#444' }}>{t(g) || g}</div>
                 <div style={{ flex: 1, height: '10px', background: isDark ? '#0f0f0f' : '#eee', borderRadius: '999px', overflow: 'hidden' }}>
                   <div style={{ width: `${(n/total)*100}%`, height: '100%', background: '#1dd1a1' }} />
                 </div>
-                <div style={{ width: '60px', textAlign: 'right', color: isDark ? '#aaa' : '#666' }}>{Math.round((n/total)*100)}%</div>
+                <div style={{ width: '40px', textAlign: 'right', color: isDark ? '#aaa' : '#666' }}>{Math.round((n/total)*100)}%</div>
               </div>
             ))}
           </div>
@@ -167,6 +162,12 @@ export default function StatisticsView() {
       {!view && (
         <p style={{ color: isDark ? '#aaa' : '#666' }}>{t('stats_no_data')}</p>
       )}
+
+      <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: '30px', padding: '15px 0', borderTop: isDark ? '1px solid #333' : '1px solid #eee' }}>
+        <Link href="/" style={{ color: isDark ? '#fff' : '#333', textDecoration: 'none', fontSize: isNarrow ? '0.9rem' : '1rem' }}>{t('feed')}</Link>
+        <Link href="/routines" style={{ color: isDark ? '#fff' : '#333', textDecoration: 'none', fontSize: isNarrow ? '0.9rem' : '1rem' }}>{t('routines')}</Link>
+        <Link href="/profile" style={{ color: isDark ? '#fff' : '#333', textDecoration: 'none', fontSize: isNarrow ? '0.9rem' : '1rem' }}>{t('profile')}</Link>
+      </div>
     </Layout>
   );
 }
@@ -179,7 +180,7 @@ function Section({ title, isDark, children }) {
       borderRadius: '10px',
       padding: '16px'
     }}>
-      <h2 style={{ margin: 0, marginBottom: '12px', color: isDark ? '#fff' : '#333', fontSize: '1.1rem' }}>{title}</h2>
+      <h2 style={{ margin: 0, marginBottom: '12px', color: isDark ? '#fff' : '#333', fontSize: '1rem' }}>{title}</h2>
       {children}
     </section>
   );
@@ -197,15 +198,15 @@ function BodyHeatmap({ seriesByGroup, mintFor, isDark, isMobile }) {
           background: mintFor(n),
           border: isDark ? '1px solid #2a2a2a' : '1px solid #d9f7ef',
           borderRadius: '10px',
-          minHeight: isMobile ? 60 : 70,
+          minHeight: isMobile ? 50 : 70,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: isMobile ? '8px' : '10px',
           boxShadow: isDark ? 'none' : '0 1px 3px rgba(29,209,161,0.25)'
         }}>
-          <span style={{ color: isDark ? '#eafff8' : '#044a39', fontWeight: 600, fontSize: isMobile ? '0.95rem' : '1rem' }}>{g}</span>
-          <span style={{ color: isDark ? '#c1ffee' : '#06624a', fontSize: isMobile ? '0.95rem' : '1rem' }}>{n}</span>
+          <span style={{ color: isDark ? '#eafff8' : '#044a39', fontWeight: 600, fontSize: isMobile ? '0.75rem' : '1rem' }}>{g}</span>
+          <span style={{ color: isDark ? '#c1ffee' : '#06624a', fontSize: isMobile ? '0.75rem' : '1rem' }}>{n}</span>
         </div>
       ))}
     </div>
@@ -302,8 +303,8 @@ function ExerciseStats({ isDark, workouts, t, isMobile }) {
 function MiniStat({ label, value, isDark }) {
   return (
     <div style={{ backgroundColor: isDark ? '#111' : '#fff', borderRadius: '6px', padding: '8px' }}>
-      <p style={{ margin: 0, color: isDark ? '#888' : '#777', fontSize: '0.75rem' }}>{label}</p>
-      <p style={{ margin: 0, color: isDark ? '#ddd' : '#333', fontWeight: 600 }}>{value ?? '-'}</p>
+      <p style={{ margin: 0, color: isDark ? '#888' : '#777', fontSize: '0.7rem' }}>{label}</p>
+      <p style={{ margin: 0, color: isDark ? '#ddd' : '#333', fontWeight: 600, fontSize: '0.9rem' }}>{value ?? '-'}</p>
     </div>
   );
 }

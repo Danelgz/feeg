@@ -54,6 +54,16 @@ export default function Layout({ children }) {
   }, [isDark]);
 
   useEffect(() => {
+    if (showIntro) {
+      const timer = setTimeout(() => {
+        setShowIntro(false);
+        sessionStorage.setItem("introPlayed", "true");
+      }, 2500); 
+      return () => clearTimeout(timer);
+    }
+  }, [showIntro]);
+
+  useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
     };
@@ -72,7 +82,7 @@ export default function Layout({ children }) {
       color: isDark ? "#fff" : "#333",
       transition: "background-color 0.3s ease",
     }}>
-      {/* Video de Introducción (Solo Móvil) */}
+      {/* Intro de Logo (Solo Móvil) */}
       {showIntro && (
         <div style={{
           position: "fixed",
@@ -80,7 +90,7 @@ export default function Layout({ children }) {
           left: 0,
           width: "100vw",
           height: "100vh",
-          backgroundColor: "#000",
+          backgroundColor: isDark ? "#0f0f0f" : "#f0f2f5",
           zIndex: 10000,
           display: "flex",
           justifyContent: "center",
@@ -89,25 +99,22 @@ export default function Layout({ children }) {
           touchAction: "none",
           pointerEvents: "all"
         }}>
-          <video
-            src={isDark ? "/entrada2.mp4" : "/entrada.mp4"}
-            autoPlay
-            muted
-            playsInline
+          <img
+            src={isDark ? "/logo.png" : "/logo2.png"}
+            alt="FEEG Logo"
             style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover"
-            }}
-            onEnded={() => {
-              setShowIntro(false);
-              sessionStorage.setItem("introPlayed", "true");
-            }}
-            onError={() => {
-              setShowIntro(false);
-              sessionStorage.setItem("introPlayed", "true");
+              width: "150px",
+              height: "auto",
+              animation: "pulseLogo 2s ease-in-out infinite"
             }}
           />
+          <style>{`
+            @keyframes pulseLogo {
+              0% { transform: scale(0.95); opacity: 0.8; }
+              50% { transform: scale(1.05); opacity: 1; }
+              100% { transform: scale(0.95); opacity: 0.8; }
+            }
+          `}</style>
         </div>
       )}
 

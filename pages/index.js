@@ -10,13 +10,13 @@ export default function Home() {
   const [completedWorkouts, setCompletedWorkouts] = useState([]);
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [showIntro, setShowIntro] = useState(false);
+  const [showIntro, setShowIntro] = useState(true);
   const videoRef = useRef(null);
   
   const isDark = theme === 'dark';
 
   useEffect(() => {
-    if (showIntro && isMobile && videoRef.current) {
+    if (showIntro && videoRef.current) {
       const v = videoRef.current;
       try {
         // Asegurar flags necesarios para autoplay móvil (iOS/Android)
@@ -40,14 +40,14 @@ export default function Home() {
         return () => { clearTimeout(id); clearTimeout(id2); };
       } catch (_) {}
     }
-  }, [showIntro, isMobile]);
+  }, [showIntro]);
 
   useEffect(() => {
     // Verificar si ya se mostró la intro en esta sesión
-    const introShown = sessionStorage.getItem('introShown');
-    if (!introShown) {
-      setShowIntro(true);
-    }
+    try {
+      const introShown = sessionStorage.getItem('introShown');
+      setShowIntro(!introShown);
+    } catch {}
   }, []);
 
   const handleCloseIntro = () => {
@@ -123,7 +123,7 @@ export default function Home() {
 
   return (
     <Layout>
-      {showIntro && isMobile && (
+      {showIntro && (
         <div style={{
           position: "fixed",
           top: 0,

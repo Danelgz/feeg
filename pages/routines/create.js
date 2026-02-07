@@ -6,7 +6,7 @@ import { useUser } from "../../context/UserContext";
 
 export default function CreateRoutine() {
   const router = useRouter();
-  const { theme } = useUser();
+  const { theme, t } = useUser();
   const isDark = theme === 'dark';
 
   const [routineName, setRoutineName] = useState("");
@@ -22,7 +22,7 @@ export default function CreateRoutine() {
 
   const saveRoutine = () => {
     if (!routineName || exercises.length === 0) {
-      alert("Pon nombre a la rutina y añade al menos un ejercicio");
+      alert(t("alert_fill_fields"));
       return;
     }
 
@@ -78,7 +78,7 @@ export default function CreateRoutine() {
     <Layout>
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <h1 style={{ fontSize: "2.5rem", fontWeight: "700", marginBottom: "2rem", color: isDark ? "#fff" : "#333" }}>
-          Crear Nueva Rutina
+          {t("create_new_routine")}
         </h1>
 
         <div style={{
@@ -90,13 +90,13 @@ export default function CreateRoutine() {
           border: `1px solid ${isDark ? "#333" : "#eee"}`
         }}>
           <label style={{ display: "block", fontSize: "1rem", fontWeight: "600", marginBottom: "0.5rem", color: isDark ? "#fff" : "#333" }}>
-            Nombre de la Rutina
+            {t("routine_name_label")}
           </label>
           <input
             type="text"
             value={routineName}
             onChange={(e) => setRoutineName(e.target.value)}
-            placeholder="Ej: Full Body Semana 1"
+            placeholder={t("routine_name_placeholder")}
             style={{
               padding: "0.75rem 1rem",
               borderRadius: "8px",
@@ -142,7 +142,7 @@ export default function CreateRoutine() {
                 e.target.style.boxShadow = "0 2px 4px rgba(29, 209, 161, 0.2)";
               }}
             >
-              Agregar Ejercicio
+              {t("add_exercise")}
             </button>
           )}
 
@@ -156,7 +156,7 @@ export default function CreateRoutine() {
               border: `1px solid ${isDark ? "#333" : "#eee"}`
             }}>
               <h3 style={{ fontSize: "1.3rem", fontWeight: "600", marginBottom: "1.5rem", color: isDark ? "#fff" : "#333" }}>
-                Selecciona Grupo Muscular
+                {t("select_muscle_group")}
               </h3>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "1rem" }}>
                 {groups.map((g) => (
@@ -189,7 +189,7 @@ export default function CreateRoutine() {
                       e.target.style.boxShadow = "none";
                     }}
                   >
-                    {g}
+                    {t(g)}
                   </button>
                 ))}
               </div>
@@ -206,7 +206,7 @@ export default function CreateRoutine() {
               border: `1px solid ${isDark ? "#333" : "#eee"}`
             }}>
               <h3 style={{ fontSize: "1.3rem", fontWeight: "600", marginBottom: "1.5rem", color: isDark ? "#fff" : "#333" }}>
-                Ejercicios de {selectedGroup}
+                {t("exercises_of")} {t(selectedGroup)}
               </h3>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
                 {exercisesList[selectedGroup].map((ex) => (
@@ -235,7 +235,7 @@ export default function CreateRoutine() {
                       e.target.style.transform = "translateY(0)";
                     }}
                   >
-                    {ex.name}
+                    {t(ex.name)}
                   </button>
                 ))}
               </div>
@@ -261,7 +261,7 @@ export default function CreateRoutine() {
                   e.target.style.borderColor = "#dc2626";
                 }}
               >
-                Volver
+                {t("back")}
               </button>
             </div>
           )}
@@ -269,7 +269,7 @@ export default function CreateRoutine() {
           {exercises.length > 0 && (
             <div>
               <h2 style={{ fontSize: "1.8rem", fontWeight: "700", marginBottom: "1.5rem", color: isDark ? "#fff" : "#333" }}>
-                Ejercicios Seleccionados
+                {t("selected_exercises")}
               </h2>
 
               {exercises.map((ex, exIdx) => (
@@ -286,7 +286,7 @@ export default function CreateRoutine() {
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
                     <h3 style={{ fontSize: "1.3rem", fontWeight: "600", color: "#1dd1a1", margin: "0" }}>
-                      {ex.name}
+                      {t(ex.name)}
                     </h3>
                     <span style={{ 
                       backgroundColor: isDark ? "#1a1a1a" : "#f0fdf4", 
@@ -297,7 +297,7 @@ export default function CreateRoutine() {
                       fontWeight: "600", 
                       border: `1px solid #1dd1a1` 
                     }}>
-                      {ex.group}
+                      {t(ex.group)}
                     </span>
                   </div>
 
@@ -309,7 +309,7 @@ export default function CreateRoutine() {
                     border: `1px solid ${isDark ? "#333" : "#eee"}`
                   }}>
                     <label style={{ display: "block", fontSize: "0.95rem", fontWeight: "600", marginBottom: "0.5rem", color: isDark ? "#fff" : "#333" }}>
-                      Descanso del Ejercicio
+                      {t("exercise_rest")}
                     </label>
                     <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
                       <select
@@ -370,10 +370,10 @@ export default function CreateRoutine() {
                   }}>
                     <thead>
                       <tr style={{ backgroundColor: isDark ? "#2a2a2a" : "#f5f5f5", borderBottom: `2px solid ${isDark ? "#444" : "#ddd"}` }}>
-                        <th style={{ padding: "0.75rem", textAlign: "left", fontWeight: "600", color: isDark ? "#fff" : "#333", fontSize: "0.95rem" }}>Serie</th>
-                        <th style={{ padding: "0.75rem", textAlign: "left", fontWeight: "600", color: isDark ? "#fff" : "#333", fontSize: "0.95rem" }}>Reps</th>
-                        <th style={{ padding: "0.75rem", textAlign: "left", fontWeight: "600", color: isDark ? "#fff" : "#333", fontSize: "0.95rem" }}>Peso (kg)</th>
-                        <th style={{ padding: "0.75rem", textAlign: "center", fontWeight: "600", color: isDark ? "#fff" : "#333", fontSize: "0.95rem" }}>Acción</th>
+                        <th style={{ padding: "0.75rem", textAlign: "left", fontWeight: "600", color: isDark ? "#fff" : "#333", fontSize: "0.95rem" }}>{t("series_label")}</th>
+                        <th style={{ padding: "0.75rem", textAlign: "left", fontWeight: "600", color: isDark ? "#fff" : "#333", fontSize: "0.95rem" }}>{t("reps_label")}</th>
+                        <th style={{ padding: "0.75rem", textAlign: "left", fontWeight: "600", color: isDark ? "#fff" : "#333", fontSize: "0.95rem" }}>{t("weight_kg")}</th>
+                        <th style={{ padding: "0.75rem", textAlign: "center", fontWeight: "600", color: isDark ? "#fff" : "#333", fontSize: "0.95rem" }}>{t("action")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -439,7 +439,7 @@ export default function CreateRoutine() {
                                 e.target.style.backgroundColor = "#7f1d1d";
                               }}
                             >
-                              Eliminar
+                              {t("delete")}
                             </button>
                           </td>
                         </tr>
@@ -470,7 +470,7 @@ export default function CreateRoutine() {
                         e.target.style.borderColor = "#22c55e";
                       }}
                     >
-                      Añadir Serie
+                      {t("add_series")}
                     </button>
                     <button
                       onClick={() => {
@@ -497,7 +497,7 @@ export default function CreateRoutine() {
                         e.target.style.borderColor = "#dc2626";
                       }}
                     >
-                      Eliminar Ejercicio
+                      {t("delete_exercise")}
                     </button>
                   </div>
                 </div>
@@ -531,7 +531,7 @@ export default function CreateRoutine() {
                 e.target.style.boxShadow = "0 4px 12px rgba(29, 209, 161, 0.4)";
               }}
             >
-              Guardar Rutina
+              {t("save_workout")}
             </button>
           )}
         </>

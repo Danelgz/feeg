@@ -6,7 +6,7 @@ import { useUser } from "../../context/UserContext";
 
 export default function RoutineDetail() {
   const router = useRouter();
-  const { theme, activeRoutine, startRoutine, endRoutine } = useUser();
+  const { theme, activeRoutine, startRoutine, endRoutine, t } = useUser();
   const isDark = theme === 'dark';
   const { id } = router.query;
   const [routine, setRoutine] = useState(null);
@@ -196,7 +196,7 @@ export default function RoutineDetail() {
     return (
       <Layout>
         <div style={{ padding: "20px" }}>
-          <p>Cargando rutina...</p>
+          <p>{t("loading_routine")}</p>
         </div>
       </Layout>
     );
@@ -404,13 +404,13 @@ export default function RoutineDetail() {
         <div style={{ padding: "20px", maxWidth: "900px", margin: "0 auto" }}>
           <Link href="/routines">
             <button style={{ ...buttonStyle, marginBottom: "20px", backgroundColor: isDark ? "#444" : "#ddd", color: isDark ? "#fff" : "#333" }} {...buttonHoverStyle}>
-              Atrás
+              {t("back_to_routines")}
             </button>
           </Link>
 
           <h1 style={{ color: isDark ? "#fff" : "#333" }}>{routine.name}</h1>
           <p style={{ color: isDark ? "#aaa" : "#666", marginBottom: "20px" }}>
-            {routine.exercises.length} ejercicios · {routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0)} series totales
+            {routine.exercises.length} {t("exercises_count")} · {routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0)} {t("total_series")}
           </p>
 
           <div style={{
@@ -421,7 +421,7 @@ export default function RoutineDetail() {
             marginBottom: "20px",
             boxShadow: isDark ? "none" : "0 2px 8px rgba(0,0,0,0.05)"
           }}>
-            <h2 style={{ marginTop: 0, color: isDark ? "#fff" : "#333" }}>Resumen de la Rutina</h2>
+            <h2 style={{ marginTop: 0, color: isDark ? "#fff" : "#333" }}>{t("workout_summary")}</h2>
             {routine.exercises.map((exercise, idx) => (
               <div key={idx} style={{
                 backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
@@ -430,13 +430,13 @@ export default function RoutineDetail() {
                 borderRadius: "6px",
                 border: `1px solid ${isDark ? "#2a2a2a" : "#eee"}`
               }}>
-                <h3 style={{ margin: "0 0 8px 0", color: "#1dd1a1" }}>{exercise.name}</h3>
+                <h3 style={{ margin: "0 0 8px 0", color: "#1dd1a1" }}>{t(exercise.name)}</h3>
                 <p style={{ margin: "0", color: isDark ? "#aaa" : "#666" }}>
-                  {exercise.series.length} series · Descanso: {exercise.rest}s
+                  {exercise.series.length} {t("series_label")} · {t("rest_between_series")} {exercise.rest}s
                 </p>
                 {exercise.series.map((serie, sIdx) => (
                   <div key={sIdx} style={{ fontSize: "0.9rem", color: isDark ? "#999" : "#888", marginLeft: "10px" }}>
-                    Serie {sIdx + 1}: {serie.reps} {exercise.type === 'time' ? 's' : 'reps'}
+                    {t("series_label")} {sIdx + 1}: {serie.reps} {exercise.type === 'time' ? 's' : t("reps_label")}
                     {(exercise.type === 'weight_reps' || !exercise.type) && ` - ${serie.weight}kg`}
                   </div>
                 ))}
@@ -457,7 +457,7 @@ export default function RoutineDetail() {
             }}
             {...buttonHoverStyle}
           >
-            Iniciar Rutina
+            {t("start_routine")}
           </button>
         </div>
       </Layout>
@@ -485,10 +485,10 @@ export default function RoutineDetail() {
             boxShadow: isDark ? "0 4px 20px rgba(0,0,0,0.5)" : "0 4px 20px rgba(0,0,0,0.1)"
           }}>
             <h2 style={{ color: isDark ? "#1dd1a1" : "#333", marginBottom: "20px", fontSize: "1.5rem" }}>
-              ¿Estás seguro que quieres terminar la rutina?
+              {t("confirm_finish_title")}
             </h2>
             <p style={{ color: isDark ? "#ccc" : "#666", marginBottom: "30px" }}>
-              Podrás editar el nombre, añadir comentarios y revisar el resumen en el siguiente paso.
+              {t("confirm_finish_subtitle")}
             </p>
             <div style={{ display: "flex", gap: "15px" }}>
               <button
@@ -507,7 +507,7 @@ export default function RoutineDetail() {
                 onMouseOver={(e) => e.target.style.backgroundColor = isDark ? "#555" : "#ccc"}
                 onMouseOut={(e) => e.target.style.backgroundColor = isDark ? "#444" : "#ddd"}
               >
-                No, Continuar
+                {t("no_continue")}
               </button>
               <button
                 onClick={handleConfirmFinish}
@@ -525,7 +525,7 @@ export default function RoutineDetail() {
                 onMouseOver={(e) => e.target.style.backgroundColor = "#16a853"}
                 onMouseOut={(e) => e.target.style.backgroundColor = "#1dd1a1"}
               >
-                Sí, Terminar
+                {t("yes_finish")}
               </button>
             </div>
           </div>
@@ -560,18 +560,18 @@ export default function RoutineDetail() {
             boxShadow: isDark ? "0 4px 20px rgba(0,0,0,0.5)" : "0 4px 20px rgba(0,0,0,0.1)"
           }}>
             <h2 style={{ color: isDark ? "#1dd1a1" : "#333", marginBottom: "30px", fontSize: "1.5rem", textAlign: "center" }}>
-              Finalizar Entrenamiento
+              {t("finish_workout")}
             </h2>
 
             <div style={{ marginBottom: "25px" }}>
               <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", marginBottom: "8px" }}>
-                Nombre de la rutina
+                {t("workout_name")}
               </label>
               <input
                 type="text"
                 value={finishFormData.name}
                 onChange={(e) => setFinishFormData({ ...finishFormData, name: e.target.value })}
-                placeholder="Ej: Día de Pecho"
+                placeholder={t("placeholder_workout_name")}
                 style={{
                   width: "100%",
                   padding: "12px",
@@ -587,12 +587,12 @@ export default function RoutineDetail() {
 
             <div style={{ marginBottom: "25px" }}>
               <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", marginBottom: "8px" }}>
-                Comentarios
+                {t("comments")}
               </label>
               <textarea
                 value={finishFormData.comments}
                 onChange={(e) => setFinishFormData({ ...finishFormData, comments: e.target.value })}
-                placeholder="Ej: Me sentí con mucha energía hoy"
+                placeholder={t("placeholder_comments")}
                 style={{
                   width: "100%",
                   padding: "12px",
@@ -611,13 +611,13 @@ export default function RoutineDetail() {
 
             <div style={{ marginBottom: "25px" }}>
               <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", marginBottom: "8px" }}>
-                Tiempo total (minutos)
+                {t("total_time_min")}
               </label>
               <input
                 type="number"
                 value={finishFormData.totalTime}
                 onChange={(e) => setFinishFormData({ ...finishFormData, totalTime: e.target.value })}
-                placeholder="Ej: 45"
+                placeholder={t("placeholder_time")}
                 min="1"
                 style={{
                   width: "100%",
@@ -631,7 +631,7 @@ export default function RoutineDetail() {
                 }}
               />
               <p style={{ margin: "5px 0 0 0", fontSize: "0.85rem", color: "#1dd1a1" }}>
-                Tiempo real: {formatElapsedTime(elapsedTime)}
+                {t("real_time")} {formatElapsedTime(elapsedTime)}
               </p>
             </div>
 
@@ -642,7 +642,7 @@ export default function RoutineDetail() {
               marginBottom: "25px"
             }}>
               <h3 style={{ color: isDark ? "#1dd1a1" : "#333", marginBottom: "15px", fontSize: "1.1rem" }}>
-                Resumen del Entrenamiento
+                {t("workout_summary")}
               </h3>
               <div style={{
                 display: "grid",
@@ -654,7 +654,7 @@ export default function RoutineDetail() {
                     {totalExercises}
                   </div>
                   <div style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem" }}>
-                    Ejercicios
+                    {t("exercises_count")}
                   </div>
                 </div>
                 <div style={{ textAlign: "center" }}>
@@ -662,7 +662,7 @@ export default function RoutineDetail() {
                     {totalSeries}
                   </div>
                   <div style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem" }}>
-                    Series
+                    {t("series_label")}
                   </div>
                 </div>
                 <div style={{ textAlign: "center" }}>
@@ -670,7 +670,7 @@ export default function RoutineDetail() {
                     {totalReps}
                   </div>
                   <div style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem" }}>
-                    Repeticiones
+                    {t("reps_label")}
                   </div>
                 </div>
                 <div style={{ textAlign: "center" }}>
@@ -678,7 +678,7 @@ export default function RoutineDetail() {
                     {totalWeight.toFixed(1)}kg
                   </div>
                   <div style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem" }}>
-                    Volumen Total
+                    {t("total_volume")}
                   </div>
                 </div>
               </div>
@@ -701,7 +701,7 @@ export default function RoutineDetail() {
                   opacity: savingWorkout ? 0.6 : 1
                 }}
               >
-                Cancelar
+                {t("cancel")}
               </button>
               <button
                 onClick={handleSaveFinishedRoutine}
@@ -719,7 +719,7 @@ export default function RoutineDetail() {
                   opacity: savingWorkout ? 0.8 : 1
                 }}
               >
-                {savingWorkout ? "Guardado! Redirigiendo..." : "Guardar Entrenamiento"}
+                {savingWorkout ? t("saving") : t("save_workout")}
               </button>
             </div>
           </div>
@@ -768,7 +768,7 @@ export default function RoutineDetail() {
               letterSpacing: "0.5px",
               marginBottom: "2px"
             }}>
-              {countdownActive && countdown > 0 ? "DESCANSO" : "TRABAJO"}
+              {countdownActive && countdown > 0 ? t("rest") : t("work")}
             </div>
             <div style={{ fontSize: isMobile ? "1.2rem" : "1.4rem", fontWeight: "bold", fontFamily: "monospace" }}>
               {countdownActive && countdown > 0 
@@ -806,7 +806,7 @@ export default function RoutineDetail() {
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
                 <h2 style={{ margin: 0, color: isDark ? "#1dd1a1" : "#333" }}>
-                  {exIdx + 1}. {exercise.name}
+                  {exIdx + 1}. {t(exercise.name)}
                 </h2>
                 {routine.exercises.length > 1 && (
                   <button
@@ -822,13 +822,13 @@ export default function RoutineDetail() {
                       fontWeight: "600"
                     }}
                   >
-                    Eliminar
+                    {t("delete")}
                   </button>
                 )}
               </div>
 
               <div style={{ marginBottom: "15px", padding: "10px", backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9", borderRadius: "6px" }}>
-                <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", marginBottom: "10px" }}>Descanso entre series:</label>
+                <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", marginBottom: "10px" }}>{t("rest_between_series")}</label>
                 <div style={{ position: "relative" }}>
                   <button
                     onClick={() => setOpenTimePickerId(openTimePickerId === exIdx ? null : exIdx)}
@@ -859,7 +859,7 @@ export default function RoutineDetail() {
                             return seconds === 0 ? `${minutes}m` : `${minutes}m${seconds}s`;
                           }
                         })()
-                      ) : "Elegir tiempo de descanso"}
+                      ) : t("choose_rest_time")}
                     </span>
                     <span style={{ fontSize: "0.8rem", color: "#666" }}>▼</span>
                   </button>
@@ -1008,7 +1008,7 @@ export default function RoutineDetail() {
                 </div>
               </div>
 
-              <h3 style={{ margin: "0 0 12px 0", color: "#fff" }}>Series</h3>
+              <h3 style={{ margin: "0 0 12px 0", color: "#fff" }}>{t("series_label")}</h3>
               {exercise.series.map((serie, serieIdx) => {
                 const key = `${exIdx}-${serieIdx}`;
                 const isCompleted = seriesCompleted[key];
@@ -1065,7 +1065,7 @@ export default function RoutineDetail() {
                         <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "8px" : "12px" }}>
                           <div>
                             <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.8rem", marginBottom: "3px" }}>
-                              {exercise.type === 'time' ? (isMobile ? 'Tiemp' : 'Tiempo (s)') : 'Reps'}
+                              {exercise.type === 'time' ? t('time_seconds') : t('reps')}
                             </label>
                             <input
                               type="number"
@@ -1092,7 +1092,7 @@ export default function RoutineDetail() {
                           {(exercise.type === 'weight_reps' || !exercise.type) && (
                             <div>
                               <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.8rem", marginBottom: "3px" }}>
-                                {isMobile ? 'Peso' : 'Peso (kg)'}
+                                {t('weight_kg')}
                               </label>
                               <input
                                 type="number"
@@ -1119,7 +1119,7 @@ export default function RoutineDetail() {
                           )}
 
                           <span style={{ color: isDark ? "#aaa" : "#666", fontSize: isMobile ? "0.75rem" : "1rem" }}>
-                            {isMobile ? `S${serieIdx + 1}` : `Serie ${serieIdx + 1}`}
+                            {`${t('series_label')} ${serieIdx + 1}`}
                           </span>
                         </div>
                       </div>
@@ -1166,7 +1166,7 @@ export default function RoutineDetail() {
                           marginLeft: "10px"
                         }}
                       >
-                        Eliminar Serie
+                        {t('delete_series')}
                       </button>
                     </div>
                   </div>
@@ -1199,7 +1199,7 @@ export default function RoutineDetail() {
                   transition: "all 0.3s ease"
                 }}
               >
-                Agregar Serie
+                {t('add_series')}
               </button>
             </div>
           ))}
@@ -1222,7 +1222,7 @@ export default function RoutineDetail() {
                 e.target.style.boxShadow = "none";
               }}
             >
-              Agregar Ejercicio
+              {t('add_exercise')}
             </button>
           </div>
 
@@ -1238,7 +1238,7 @@ export default function RoutineDetail() {
             }}
             {...buttonHoverStyle}
           >
-            Completar Rutina
+            {t('complete_routine')}
           </button>
 
           <button
@@ -1254,7 +1254,7 @@ export default function RoutineDetail() {
               color: isDark ? "#fff" : "#333"
             }}
           >
-            Cancelar
+            {t('cancel')}
           </button>
 
           {/* Modal para agregar ejercicio */}
@@ -1292,7 +1292,7 @@ export default function RoutineDetail() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <h2 style={{ marginTop: 0, color: isDark ? "#1dd1a1" : "#333", marginBottom: "20px" }}>
-                  {selectedGroup ? `Ejercicios - ${selectedGroup}` : "Selecciona un grupo muscular"}
+                  {selectedGroup ? `${t('exercises')} - ${t(selectedGroup)}` : t('select_muscle_group')}
                 </h2>
 
                 {!selectedGroup ? (
@@ -1313,7 +1313,7 @@ export default function RoutineDetail() {
                           transition: "all 0.3s ease"
                         }}
                       >
-                        {group}
+                        {t(group) || group}
                       </button>
                     ))}
                   </div>
@@ -1337,7 +1337,7 @@ export default function RoutineDetail() {
                             textAlign: "left"
                           }}
                         >
-                          {exercise.name}
+                          {t(exercise.name)}
                         </button>
                       ))}
                     </div>
@@ -1355,7 +1355,7 @@ export default function RoutineDetail() {
                         fontWeight: "600"
                       }}
                     >
-                      Atrás
+                      {t('back')}
                     </button>
                   </div>
                 )}
@@ -1378,7 +1378,7 @@ export default function RoutineDetail() {
                     fontWeight: "600"
                   }}
                 >
-                  Cerrar
+                  {t('close')}
                 </button>
               </div>
             </div>
@@ -1418,13 +1418,13 @@ export default function RoutineDetail() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "20px" }}>
                   <div style={{ flex: 1 }}>
                 <h2 style={{ fontSize: "1.5rem", color: "#1dd1a1", margin: "0 0 10px 0" }}>
-                  ¡Rutina Completada!
+                  {t('workout_completed')}
                 </h2>
                     <p style={{ fontSize: "1rem", color: "#aaa", margin: "0 0 8px 0" }}>
                       <strong>{routine.name}</strong>
                     </p>
                     <p style={{ color: "#999", fontSize: "0.9rem", margin: "0" }}>
-                      {routine.exercises.length} ejercicios · {routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0)} series completadas
+                      {routine.exercises.length} {t('exercises_count')} · {routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0)} {t('series_completed_label')}
                     </p>
                   </div>
                   <button
@@ -1450,7 +1450,7 @@ export default function RoutineDetail() {
                       e.target.style.backgroundColor = "#1dd1a1";
                     }}
                   >
-                    Editar
+                    {t('edit')}
                   </button>
                 </div>
               </div>
@@ -1474,7 +1474,7 @@ export default function RoutineDetail() {
                   e.target.style.backgroundColor = "#2a2a2a";
                 }}
                 >
-                  ← Volver a Mis Rutinas
+                  ← {t("back_to_routines")}
                 </button>
               </Link>
             </>
@@ -1501,7 +1501,7 @@ export default function RoutineDetail() {
                   e.target.style.backgroundColor = "#2a2a2a";
                 }}
               >
-                ← Volver al Resumen
+                ← {t("back_to_summary")}
               </button>
 
               <div style={{
@@ -1521,10 +1521,10 @@ export default function RoutineDetail() {
                     borderBottom: exIdx < routine.exercises.length - 1 ? "1px solid #2a2a2a" : "none"
                   }}>
                     <h3 style={{ color: "#1dd1a1", marginBottom: "12px", fontSize: "1.2rem" }}>
-                      {exercise.name}
+                      {t(exercise.name)}
                     </h3>
                     <p style={{ color: "#aaa", fontSize: "0.9rem", marginBottom: "12px" }}>
-                      Descanso: {(() => {
+                      {t("rest_between_series")} {(() => {
                         if (exercise.rest < 60) {
                           return `${exercise.rest}s`;
                         } else {
@@ -1548,7 +1548,7 @@ export default function RoutineDetail() {
                             color: "#ccc",
                             fontSize: "0.9rem"
                           }}>
-                            Serie {sIdx + 1}: {currentReps[key] || serie.reps} {exercise.type === 'time' ? 's' : 'reps'}
+                            {t("series_label")} {sIdx + 1}: {currentReps[key] || serie.reps} {exercise.type === 'time' ? 's' : t("reps_label")}
                             {(exercise.type === 'weight_reps' || !exercise.type) && ` - ${currentWeight[key] || serie.weight}kg`}
                           </div>
                         );
@@ -1566,7 +1566,7 @@ export default function RoutineDetail() {
                   textAlign: "center"
                 }}>
                   <p style={{ color: "#1dd1a1", fontSize: "1.1rem", margin: "0" }}>
-                    Rutina completada exitosamente
+                    {t("workout_completed_success")}
                   </p>
                 </div>
               </div>
@@ -1590,7 +1590,7 @@ export default function RoutineDetail() {
                   e.target.style.backgroundColor = "#2a2a2a";
                 }}
                 >
-                  ← Volver a Mis Rutinas
+                  {t("back_to_routines")}
                 </button>
               </Link>
             </>

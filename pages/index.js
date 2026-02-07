@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import Layout from "../components/Layout";
 import Link from "next/link";
@@ -6,13 +6,22 @@ import { useUser } from "../context/UserContext";
 
 export default function Home() {
   const router = useRouter();
-  const { user, isLoaded, theme } = useUser();
+  const { user, isLoaded, theme, t } = useUser();
   const [completedWorkouts, setCompletedWorkouts] = useState([]);
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
+  const videoRef = useRef(null);
   
   const isDark = theme === 'dark';
+
+  useEffect(() => {
+    if (showIntro && videoRef.current) {
+      videoRef.current.play().catch(error => {
+        console.log("Autoplay prevented:", error);
+      });
+    }
+  }, [showIntro]);
 
   useEffect(() => {
     // Verificar si ya se mostró la intro en esta sesión
@@ -88,7 +97,7 @@ export default function Home() {
   if (!isLoaded) {
     return (
       <Layout>
-        <p style={{ color: isDark ? "#ccc" : "#666" }}>Cargando...</p>
+        <p style={{ color: isDark ? "#ccc" : "#666" }}>{t("loading")}</p>
       </Layout>
     );
   }
@@ -110,6 +119,7 @@ export default function Home() {
           overflow: "hidden"
         }}>
           <video 
+            ref={videoRef}
             autoPlay 
             muted 
             playsInline 
@@ -123,34 +133,12 @@ export default function Home() {
             <source src={isDark ? "/entrada2.mp4" : "/entrada.mp4"} type="video/mp4" />
             Tu navegador no soporta el elemento de video.
           </video>
-          <button 
-            onClick={handleCloseIntro}
-            style={{
-              position: "absolute",
-              bottom: "40px",
-              right: "40px",
-              padding: "10px 25px",
-              backgroundColor: "rgba(29, 209, 161, 0.8)",
-              color: "#000",
-              border: "none",
-              borderRadius: "30px",
-              cursor: "pointer",
-              fontWeight: "bold",
-              fontSize: "1rem",
-              zIndex: 10000,
-              transition: "all 0.3s ease"
-            }}
-            onMouseOver={(e) => e.target.style.backgroundColor = "#1dd1a1"}
-            onMouseOut={(e) => e.target.style.backgroundColor = "rgba(29, 209, 161, 0.8)"}
-          >
-            Saltar Intro
-          </button>
         </div>
       )}
       <div style={{ padding: isMobile ? "10px" : "20px", maxWidth: "1000px", margin: "0 auto" }}>
-        <h1 style={{ color: isDark ? "#fff" : "#333", fontSize: isMobile ? "1.8rem" : "2.5rem", marginBottom: "1rem" }}>Bienvenido a FEEG, tu App de Entrenamiento</h1>
+        <h1 style={{ color: isDark ? "#fff" : "#333", fontSize: isMobile ? "1.8rem" : "2.5rem", marginBottom: "1rem" }}>{t("welcome_title")}</h1>
         <p style={{ color: isDark ? "#ccc" : "#666", fontSize: isMobile ? "1rem" : "1.1rem", lineHeight: "1.6" }}>
-          Aquí puedes gestionar tus rutinas y ejercicios de forma personalizada.
+          {t("welcome_subtitle")}
         </p>
 
         <div style={{ marginTop: "20px", marginBottom: "40px" }}>
@@ -177,7 +165,7 @@ export default function Home() {
                 e.target.style.boxShadow = "none";
               }}
             >
-              Ir a Mis Rutinas
+              {t("go_to_routines")}
             </button>
           </Link>
         </div>
@@ -186,7 +174,7 @@ export default function Home() {
         {completedWorkouts.length > 0 && (
           <div style={{ marginTop: "40px" }}>
             <h2 style={{ color: "#1dd1a1", fontSize: "1.8rem", marginBottom: "20px" }}>
-              Tus Últimos Entrenamientos
+              {t("last_workouts")}
             </h2>
             
             <div style={{
@@ -233,7 +221,7 @@ export default function Home() {
                     fontSize: "0.85rem",
                     margin: "0 0 12px 0"
                   }}>
-                    {new Date(workout.completedAt).toLocaleDateString('es-ES', {
+                    {new Date(workout.completedAt).toLocaleDateString(t("lang_code"), {
                       year: 'numeric',
                       month: 'short',
                       day: 'numeric',
@@ -270,7 +258,7 @@ export default function Home() {
                       borderRadius: "6px",
                       textAlign: "center"
                     }}>
-                      <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 3px 0", fontSize: "0.75rem" }}>Series</p>
+                      <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 3px 0", fontSize: "0.75rem" }}>{t("series")}</p>
                       <p style={{ color: "#1dd1a1", margin: "0", fontSize: "1.1rem", fontWeight: "bold" }}>
                         {workout.series}
                       </p>
@@ -281,7 +269,7 @@ export default function Home() {
                       borderRadius: "6px",
                       textAlign: "center"
                     }}>
-                      <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 3px 0", fontSize: "0.75rem" }}>Volumen</p>
+                      <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 3px 0", fontSize: "0.75rem" }}>{t("volume")}</p>
                       <p style={{ color: "#1dd1a1", margin: "0", fontSize: "1.1rem", fontWeight: "bold" }}>
                         {workout.totalVolume.toLocaleString()} kg
                       </p>
@@ -295,7 +283,7 @@ export default function Home() {
                       margin: "0",
                       textAlign: "center"
                     }}>
-                      Tiempo: {formatElapsedTime(workout.elapsedTime)}
+                      {t("time")}: {formatElapsedTime(workout.elapsedTime)}
                     </p>
                   ) : workout.totalTime > 0 && (
                     <p style={{
@@ -304,7 +292,7 @@ export default function Home() {
                       margin: "0",
                       textAlign: "center"
                     }}>
-                      Tiempo: {workout.totalTime} min
+                      {t("time")}: {workout.totalTime} min
                     </p>
                   )}
                 </div>
@@ -349,7 +337,7 @@ export default function Home() {
                 <div>
                   <h2 style={{ color: "#1dd1a1", margin: "0 0 5px 0" }}>{selectedWorkout.name}</h2>
                   <p style={{ color: isDark ? "#999" : "#666", margin: 0, fontSize: "0.9rem" }}>
-                    {new Date(selectedWorkout.completedAt).toLocaleDateString('es-ES', {
+                    {new Date(selectedWorkout.completedAt).toLocaleDateString(t("lang_code"), {
                       weekday: 'long',
                       year: 'numeric',
                       month: 'long',
@@ -393,26 +381,26 @@ export default function Home() {
                 marginBottom: "25px"
               }}>
                 <div style={{ backgroundColor: isDark ? "#0f0f0f" : "#f5f5f5", padding: "12px", borderRadius: "8px", textAlign: "center" }}>
-                  <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>Series Totales</p>
+                  <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>{t("total_series")}</p>
                   <p style={{ color: "#1dd1a1", margin: "0", fontSize: "1.2rem", fontWeight: "bold" }}>{selectedWorkout.series}</p>
                 </div>
                 <div style={{ backgroundColor: isDark ? "#0f0f0f" : "#f5f5f5", padding: "12px", borderRadius: "8px", textAlign: "center" }}>
-                  <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>Volumen Total</p>
+                  <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>{t("total_volume")}</p>
                   <p style={{ color: "#1dd1a1", margin: "0", fontSize: "1.2rem", fontWeight: "bold" }}>{selectedWorkout.totalVolume.toLocaleString()} kg</p>
                 </div>
                 <div style={{ backgroundColor: isDark ? "#0f0f0f" : "#f5f5f5", padding: "12px", borderRadius: "8px", textAlign: "center" }}>
-                  <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>Repeticiones</p>
+                  <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>{t("reps")}</p>
                   <p style={{ color: "#1dd1a1", margin: "0", fontSize: "1.2rem", fontWeight: "bold" }}>{selectedWorkout.totalReps}</p>
                 </div>
                 <div style={{ backgroundColor: isDark ? "#0f0f0f" : "#f5f5f5", padding: "12px", borderRadius: "8px", textAlign: "center" }}>
-                  <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>Tiempo</p>
+                  <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>{t("time")}</p>
                   <p style={{ color: "#1dd1a1", margin: "0", fontSize: "1.2rem", fontWeight: "bold" }}>
                     {selectedWorkout.elapsedTime ? formatElapsedTime(selectedWorkout.elapsedTime) : `${selectedWorkout.totalTime} min`}
                   </p>
                 </div>
               </div>
 
-              <h3 style={{ color: isDark ? "#fff" : "#333", borderBottom: `1px solid ${isDark ? "#333" : "#e0e0e0"}`, paddingBottom: "10px", marginBottom: "20px" }}>Ejercicios</h3>
+              <h3 style={{ color: isDark ? "#fff" : "#333", borderBottom: `1px solid ${isDark ? "#333" : "#e0e0e0"}`, paddingBottom: "10px", marginBottom: "20px" }}>{t("exercises_count")}</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                 {selectedWorkout.exerciseDetails ? selectedWorkout.exerciseDetails.map((ex, exIdx) => (
                   <div key={exIdx} style={{
@@ -422,10 +410,10 @@ export default function Home() {
                     padding: "20px"
                   }}>
                     <h2 style={{ margin: "0 0 15px 0", color: "#1dd1a1" }}>
-                      {exIdx + 1}. {ex.name}
+                      {exIdx + 1}. {t(ex.name)}
                     </h2>
                     
-                    <h3 style={{ margin: "0 0 12px 0", color: isDark ? "#fff" : "#333", fontSize: "1.1rem" }}>Series</h3>
+                    <h3 style={{ margin: "0 0 12px 0", color: isDark ? "#fff" : "#333", fontSize: "1.1rem" }}>{t("series")}</h3>
                     {ex.series.map((s, sIdx) => (
                       <div key={sIdx} style={{
                         backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
@@ -454,7 +442,7 @@ export default function Home() {
 
                             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                               <div>
-                                <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.8rem", marginBottom: "3px" }}>Reps</label>
+                                <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.8rem", marginBottom: "3px" }}>{t("reps")}</label>
                                 <div style={{
                                   padding: "6px 8px",
                                   backgroundColor: isDark ? "#1a1a1a" : "#fff",
@@ -471,7 +459,7 @@ export default function Home() {
                               </div>
 
                               <div>
-                                <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.8rem", marginBottom: "3px" }}>Peso (kg)</label>
+                                <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.8rem", marginBottom: "3px" }}>{t("weight_kg")}</label>
                                 <div style={{
                                   padding: "6px 8px",
                                   backgroundColor: isDark ? "#1a1a1a" : "#fff",
@@ -493,7 +481,7 @@ export default function Home() {
                     ))}
                   </div>
                 )) : (
-                  <p style={{ color: isDark ? "#aaa" : "#666" }}>No hay detalles disponibles para este entrenamiento.</p>
+                  <p style={{ color: isDark ? "#aaa" : "#666" }}>{t("workout_details_not_available")}</p>
                 )}
               </div>
               
@@ -515,7 +503,7 @@ export default function Home() {
                 onMouseOver={(e) => e.target.style.opacity = "0.8"}
                 onMouseOut={(e) => e.target.style.opacity = "1"}
               >
-                Cerrar Resumen
+                {t("close_summary")}
               </button>
             </div>
           </div>

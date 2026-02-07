@@ -7,7 +7,7 @@ import { useUser } from "../context/UserContext";
 export default function Exercises() {
   const [search, setSearch] = useState("");
   const [expandedGroups, setExpandedGroups] = useState({});
-  const { theme, isMobile } = useUser();
+  const { theme, isMobile, t } = useUser();
   const isDark = theme === 'dark';
 
   // Filtra ejercicios por búsqueda y los agrupa por grupo muscular
@@ -32,10 +32,10 @@ export default function Exercises() {
 
   return (
     <Layout>
-      <h1 style={{ color: isDark ? "#fff" : "#333", fontSize: isMobile ? "1.8rem" : "2.5rem" }}>Ejercicios</h1>
+      <h1 style={{ color: isDark ? "#fff" : "#333", fontSize: isMobile ? "1.8rem" : "2.5rem" }}>{t("exercises")}</h1>
       <input
         type="text"
-        placeholder="Buscar ejercicio..."
+        placeholder={t("search_exercise")}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         style={{
@@ -85,7 +85,7 @@ export default function Exercises() {
                   e.target.style.boxShadow = "none";
                 }}
               >
-                <span>{group}</span>
+                <span>{t(group) || group}</span>
                 <span style={{ fontSize: "0.8rem", transition: "transform 0.3s ease", transform: expandedGroups[group] ? "rotate(180deg)" : "rotate(0)" }}>
                   V
                 </span>
@@ -120,7 +120,7 @@ export default function Exercises() {
                         e.target.style.transform = "translateX(0)";
                       }}
                     >
-                      {exercise.name}
+                      {t(exercise.name)}
                     </li>
                   ))}
                 </ul>
@@ -128,7 +128,7 @@ export default function Exercises() {
             </div>
           ))
         ) : (
-          <p style={{ color: "#ccc", textAlign: "center", marginTop: "2rem" }}>No se encontraron ejercicios</p>
+          <p style={{ color: "#ccc", textAlign: "center", marginTop: "2rem" }}>{t("no_exercises_found")}</p>
         )}
       </div>
     </Layout>

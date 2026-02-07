@@ -4,15 +4,15 @@ import RegisterForm from "../components/RegisterForm";
 import { useUser } from "../context/UserContext";
 
 export default function Profile() {
-  const { user, saveUser, isLoaded, theme, isMobile } = useUser();
+  const { user, saveUser, isLoaded, theme, isMobile, t } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const isDark = theme === 'dark';
 
   if (!isLoaded) {
     return (
       <Layout>
-        <h1 style={{ fontSize: isMobile ? "1.8rem" : "2rem", marginBottom: "1rem", color: isDark ? "#fff" : "#333" }}>Perfil</h1>
-        <p style={{ color: isDark ? "#ccc" : "#666" }}>Cargando...</p>
+        <h1 style={{ fontSize: isMobile ? "1.8rem" : "2rem", marginBottom: "1rem", color: isDark ? "#fff" : "#333" }}>{t("profile_title")}</h1>
+        <p style={{ color: isDark ? "#ccc" : "#666" }}>{t("loading")}</p>
       </Layout>
     );
   }
@@ -43,7 +43,7 @@ export default function Profile() {
 
   return (
     <Layout>
-      <h1 style={{ fontSize: isMobile ? "1.8rem" : "2rem", marginBottom: "1rem", color: isDark ? "#fff" : "#333" }}>Perfil</h1>
+      <h1 style={{ fontSize: isMobile ? "1.8rem" : "2rem", marginBottom: "1rem", color: isDark ? "#fff" : "#333" }}>{t("profile_title")}</h1>
       <div style={{
         backgroundColor: isDark ? "#1a1a1a" : "#fff",
         padding: "20px",
@@ -54,12 +54,12 @@ export default function Profile() {
         width: isMobile ? "100%" : "auto",
         boxSizing: "border-box"
       }}>
-        <p style={{ color: isDark ? "#fff" : "#333" }}><strong>Nombre:</strong> {user.firstName} {user.lastName}</p>
-        <p style={{ color: isDark ? "#ccc" : "#666" }}><strong>Nombre de Usuario:</strong> @{user.username}</p>
-        <p style={{ color: isDark ? "#ccc" : "#666" }}><strong>Altura:</strong> {formatHeight()}</p>
-        <p style={{ color: isDark ? "#ccc" : "#666" }}><strong>Peso:</strong> {formatWeight()}</p>
-        <p style={{ color: isDark ? "#ccc" : "#666" }}><strong>Objetivo:</strong> {user.goal}</p>
-        <p style={{ color: isDark ? "#999" : "#888", fontSize: "0.85rem" }}><strong>Registrado:</strong> {new Date(user.registeredAt).toLocaleDateString('es-ES')}</p>
+        <p style={{ color: isDark ? "#fff" : "#333" }}><strong>{t("name_label")}</strong> {user.firstName} {user.lastName}</p>
+        <p style={{ color: isDark ? "#ccc" : "#666" }}><strong>{t("username_label")}</strong> @{user.username}</p>
+        <p style={{ color: isDark ? "#ccc" : "#666" }}><strong>{t("height_label_full")}</strong> {formatHeight()}</p>
+        <p style={{ color: isDark ? "#ccc" : "#666" }}><strong>{t("weight_label_full")}</strong> {formatWeight()}</p>
+        <p style={{ color: isDark ? "#ccc" : "#666" }}><strong>{t("goal_label")}</strong> {user.goal}</p>
+        <p style={{ color: isDark ? "#999" : "#888", fontSize: "0.85rem" }}><strong>{t("registered_label")}</strong> {new Date(user.registeredAt).toLocaleDateString(t("language") === 'eu' ? 'eu-ES' : 'es-ES')}</p>
         
         <button
           onClick={() => setIsEditing(true)}
@@ -81,7 +81,7 @@ export default function Profile() {
             e.target.style.backgroundColor = "#1dd1a1";
           }}
         >
-          Editar Perfil
+          {t("edit_profile")}
         </button>
       </div>
 
@@ -110,7 +110,7 @@ export default function Profile() {
             overflowY: "auto"
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <h2 style={{ color: isDark ? "#fff" : "#333", margin: 0 }}>Editar Perfil</h2>
+              <h2 style={{ color: isDark ? "#fff" : "#333", margin: 0 }}>{t("edit_profile")}</h2>
               <button
                 onClick={() => setIsEditing(false)}
                 style={{

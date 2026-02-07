@@ -6,7 +6,7 @@ export default function RoutineForm({ saveRoutine }) {
   const [name, setName] = useState("");
   const [days, setDays] = useState("");
   const [exercises, setExercises] = useState([]);
-  const { theme } = useUser();
+  const { theme, t } = useUser();
   const isDark = theme === 'dark';
   const [isMobile, setIsMobile] = useState(false);
 
@@ -51,18 +51,18 @@ export default function RoutineForm({ saveRoutine }) {
 
   return (
     <div style={{ marginBottom: "30px" }}>
-      <h2 style={{ color: isDark ? "#fff" : "#333" }}>Crear nueva rutina</h2>
+      <h2 style={{ color: isDark ? "#fff" : "#333" }}>{t("create_new_routine")}</h2>
       <form onSubmit={handleSubmit} style={{ marginBottom: "20px", display: "flex", flexWrap: "wrap", gap: isMobile ? "0" : "10px" }}>
         <input
           type="text"
-          placeholder="Nombre de la rutina"
+          placeholder={t("routine_name_label")}
           value={name}
           onChange={(e) => setName(e.target.value)}
           style={inputStyle}
         />
         <input
           type="text"
-          placeholder="Días (Lun, Mar...)"
+          placeholder={t("routine_days_placeholder")}
           value={days}
           onChange={(e) => setDays(e.target.value)}
           style={inputStyle}
@@ -85,13 +85,13 @@ export default function RoutineForm({ saveRoutine }) {
           onMouseOver={(e) => e.target.style.backgroundColor = "#16a085"}
           onMouseOut={(e) => e.target.style.backgroundColor = "#1dd1a1"}
         >
-          Guardar rutina
+          {t("save_routine_btn")}
         </button>
       </form>
 
-      <h3 style={{ color: isDark ? "#fff" : "#333" }}>Ejercicios de esta rutina</h3>
+      <h3 style={{ color: isDark ? "#fff" : "#333" }}>{t("routine_exercises_title")}</h3>
       <ExerciseForm addExercise={addExercise} />
-      {exercises.length === 0 && <p style={{ color: isDark ? "#ccc" : "#666" }}>No hay ejercicios añadidos.</p>}
+      {exercises.length === 0 && <p style={{ color: isDark ? "#ccc" : "#666" }}>{t("no_exercises_added")}</p>}
       {exercises.map((ex, i) => (
         <div key={i} style={{
           backgroundColor: isDark ? "#1a1a1a" : "#f9f9f9",
@@ -105,7 +105,7 @@ export default function RoutineForm({ saveRoutine }) {
           border: `1px solid ${isDark ? "#333" : "#eee"}`
         }}>
           <span style={{ color: isDark ? "#fff" : "#333", fontSize: "0.9rem" }}>
-            {ex.name} — {ex.series} ser. | {ex.reps} {ex.type === 'time' ? 's' : 'rep'}
+            {t(ex.name) || ex.name} — {ex.series} {t("series").toLowerCase()} | {ex.reps} {ex.type === 'time' ? 's' : 'rep'}
             {(ex.type === 'weight_reps' || !ex.type) && ` | ${ex.weight}kg`}
           </span>
           <button
@@ -123,7 +123,7 @@ export default function RoutineForm({ saveRoutine }) {
             onMouseOver={(e) => e.target.style.backgroundColor = "#991b1b"}
             onMouseOut={(e) => e.target.style.backgroundColor = "#dc2626"}
           >
-            Eliminar
+            {t("delete")}
           </button>
         </div>
       ))}

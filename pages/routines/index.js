@@ -5,7 +5,7 @@ import { useUser } from "../../context/UserContext";
 
 export default function Routines() {
   const [routines, setRoutines] = useState([]);
-  const { theme } = useUser();
+  const { theme, t } = useUser();
   const isDark = theme === 'dark';
 
   useEffect(() => {
@@ -19,14 +19,14 @@ export default function Routines() {
   return (
     <Layout>
       <div style={{ padding: "20px", maxWidth: "1000px", margin: "0 auto" }}>
-        <h1 style={{ marginBottom: "10px", color: isDark ? "#fff" : "#333" }}>Mis Rutinas</h1>
+        <h1 style={{ marginBottom: "10px", color: isDark ? "#fff" : "#333" }}>{t("my_routines")}</h1>
         <p style={{ color: isDark ? "#aaa" : "#666", marginBottom: "20px" }}>
-          Crea y ejecuta tus rutinas personalizadas de entrenamiento
+          {t("routines_description")}
         </p>
 
         {routines.length === 0 ? (
-          <div style={{ marginTop: "20px" }}>
-            <p style={{ color: isDark ? "#fff" : "#333" }}>No tienes rutinas aún.</p>
+          <div style={{ marginTop: "20px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            <p style={{ color: isDark ? "#fff" : "#333", width: "100%", marginBottom: "10px" }}>{t("no_routines_yet")}</p>
             <Link href="/routines/create">
               <button
                 style={{
@@ -39,7 +39,22 @@ export default function Routines() {
                   fontWeight: "600"
                 }}
               >
-                Crear nueva rutina
+                {t("create_new_routine")}
+              </button>
+            </Link>
+            <Link href="/routines/empty">
+              <button
+                style={{
+                  padding: "10px 20px",
+                  backgroundColor: isDark ? "#333" : "#eee",
+                  color: isDark ? "#fff" : "#333",
+                  border: `1px solid ${isDark ? "#444" : "#ddd"}`,
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: "600"
+                }}
+              >
+                {t("start_empty_workout")}
               </button>
             </Link>
           </div>
@@ -68,7 +83,7 @@ export default function Routines() {
               >
                 <h3 style={{ margin: "0 0 8px 0", color: isDark ? "#fff" : "#333" }}>{routine.name}</h3>
                 <p style={{ margin: "0 0 12px 0", color: isDark ? "#aaa" : "#666" }}>
-                  {routine.exercises.length} ejercicios · {routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0)} series
+                  {routine.exercises.length} {t("exercises").toLowerCase()} · {routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0)} {t("series").toLowerCase()}
                 </p>
                 <div style={{ display: "flex", gap: "10px" }}>
                   <Link href={`/routines/${index}`}>
@@ -93,7 +108,7 @@ export default function Routines() {
                         e.target.style.boxShadow = "none";
                       }}
                     >
-                      Empezar Rutina
+                      {t("start_routine")}
                     </button>
                   </Link>
                   <button
@@ -120,13 +135,13 @@ export default function Routines() {
                       e.target.style.backgroundColor = "#e74c3c";
                     }}
                   >
-                    Eliminar
+                    {t("delete")}
                   </button>
                 </div>
               </div>
             ))}
 
-            <div style={{ marginTop: "20px" }}>
+            <div style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
               <Link href="/routines/create">
                 <button
                   style={{
@@ -139,7 +154,22 @@ export default function Routines() {
                     fontWeight: "600"
                   }}
                 >
-                  Crear nueva rutina
+                  {t("create_new_routine")}
+                </button>
+              </Link>
+              <Link href="/routines/empty">
+                <button
+                  style={{
+                    padding: "10px 20px",
+                    backgroundColor: isDark ? "#333" : "#eee",
+                    color: isDark ? "#fff" : "#333",
+                    border: `1px solid ${isDark ? "#444" : "#ddd"}`,
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontWeight: "600"
+                  }}
+                >
+                  {t("start_empty_workout")}
                 </button>
               </Link>
             </div>

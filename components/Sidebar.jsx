@@ -21,6 +21,7 @@ export default function Sidebar() {
     { name: t("feed"), href: "/", icon: "" },
     { name: t("routines"), href: "/routines", icon: "" },
     { name: t("exercises"), href: "/exercises", icon: "" },
+    { name: t("statistics"), href: "/statistics", icon: "" },
     { name: t("profile"), href: "/profile", icon: "" },
     { name: t("settings"), href: "/settings", icon: "" }
   ];

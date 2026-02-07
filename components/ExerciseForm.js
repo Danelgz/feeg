@@ -6,7 +6,7 @@ export default function ExerciseForm({ addExercise }) {
   const [series, setSeries] = useState("");
   const [reps, setReps] = useState("");
   const [weight, setWeight] = useState("");
-  const { theme } = useUser();
+  const { theme, t } = useUser();
   const isDark = theme === 'dark';
   const [isMobile, setIsMobile] = useState(false);
 
@@ -62,28 +62,28 @@ export default function ExerciseForm({ addExercise }) {
     <form onSubmit={handleSubmit} style={{ marginBottom: "20px", display: "flex", flexWrap: "wrap", gap: isMobile ? "0" : "5px" }}>
       <input
         type="text"
-        placeholder="Nombre del ejercicio"
+        placeholder={t("exercise_name_placeholder")}
         value={name}
         onChange={(e) => setName(e.target.value)}
         style={inputStyle}
       />
       <input
         type="text"
-        placeholder="Series"
+        placeholder={t("series_placeholder")}
         value={series}
         onChange={(e) => setSeries(e.target.value)}
         style={inputStyle}
       />
       <input
         type="text"
-        placeholder="Repeticiones (opcional)"
+        placeholder={t("reps_optional_placeholder")}
         value={reps}
         onChange={(e) => setReps(e.target.value)}
         style={inputStyle}
       />
       <input
         type="text"
-        placeholder="Peso (opcional)"
+        placeholder={t("weight_optional_placeholder")}
         value={weight}
         onChange={(e) => setWeight(e.target.value)}
         style={inputStyle}
@@ -107,7 +107,7 @@ export default function ExerciseForm({ addExercise }) {
         onMouseOver={(e) => e.target.style.backgroundColor = "#16a085"}
         onMouseOut={(e) => e.target.style.backgroundColor = "#1dd1a1"}
       >
-        Añadir ejercicio
+        {t("add_exercise_btn")}
       </button>
     </form>
   );

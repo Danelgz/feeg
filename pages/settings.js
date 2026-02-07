@@ -2,18 +2,18 @@ import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 
 export default function Settings() {
-  const { theme, toggleTheme, isMobile, language, updateLanguage } = useUser();
+  const { theme, toggleTheme, isMobile, language, updateLanguage, t } = useUser();
   const isDark = theme === 'dark';
 
   const languages = [
     { code: 'es', name: 'Español' },
-    { code: 'eu', name: 'Euskera' }
+    { code: 'eu', name: 'Euskera (en desarrollo)' }
   ];
 
   return (
     <Layout>
       <h1 style={{ fontSize: isMobile ? "1.8rem" : "2rem", marginBottom: "1rem", color: isDark ? "#fff" : "#333" }}>
-        {language === 'eu' ? 'Ezarpenak' : 'Ajustes'}
+        {t("settings")}
       </h1>
       <div style={{
         backgroundColor: isDark ? "#1a1a1a" : "#fff",
@@ -35,7 +35,7 @@ export default function Settings() {
           gap: isMobile ? "15px" : "0"
         }}>
           <span style={{ color: isDark ? "#fff" : "#333", fontSize: "1.1rem" }}>
-            {language === 'eu' ? `Modu ${isDark ? "iluna" : "argia"}` : `Modo ${isDark ? "oscuro" : "claro"}`}
+            {isDark ? t("dark_mode") : t("light_mode")}
           </span>
           <button 
             onClick={toggleTheme}
@@ -53,7 +53,7 @@ export default function Settings() {
             onMouseOver={(e) => e.target.style.opacity = "0.8"}
             onMouseOut={(e) => e.target.style.opacity = "1"}
           >
-            {language === 'eu' ? `Aldatu modu ${isDark ? "argira" : "ilunera"}` : `Cambiar a modo ${isDark ? "claro" : "oscuro"}`}
+            {isDark ? t("change_to_light") : t("change_to_dark")}
           </button>
         </div>
 
@@ -69,7 +69,7 @@ export default function Settings() {
           gap: isMobile ? "15px" : "0"
         }}>
           <span style={{ color: isDark ? "#fff" : "#333", fontSize: "1.1rem" }}>
-            {language === 'eu' ? 'Hizkuntza' : 'Idioma'}
+            {t("language")}
           </span>
           <select
             value={language}

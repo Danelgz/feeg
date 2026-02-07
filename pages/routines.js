@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import Link from "next/link";
 import Layout from "../components/Layout";
 import RoutineForm from "../components/RoutineForm";
 import { useUser } from "../context/UserContext";
@@ -9,7 +10,7 @@ export default function Routines() {
   const [completedWorkouts, setCompletedWorkouts] = useState([]);
   const [activeTab, setActiveTab] = useState("active"); // active, completed
   const router = useRouter();
-  const { theme, isMobile } = useUser();
+  const { theme, isMobile, t } = useUser();
   const isDark = theme === 'dark';
 
   const formatElapsedTime = (seconds) => {
@@ -75,7 +76,7 @@ export default function Routines() {
 
   return (
     <Layout>
-      <h1 style={{ fontSize: isMobile ? "1.8rem" : "2rem", marginBottom: "20px", color: isDark ? "#fff" : "#333" }}>Rutinas</h1>
+      <h1 style={{ fontSize: isMobile ? "1.8rem" : "2rem", marginBottom: "20px", color: isDark ? "#fff" : "#333" }}>{t("routines_title")}</h1>
 
       {/* Tabs */}
       <div style={{
@@ -102,7 +103,7 @@ export default function Routines() {
             flexShrink: 0
           }}
         >
-          Rutinas Activas
+          {t("active_routines")}
         </button>
         <button
           onClick={() => setActiveTab("completed")}
@@ -118,7 +119,7 @@ export default function Routines() {
             flexShrink: 0
           }}
         >
-          Entrenamientos Completados ({completedWorkouts.length})
+          {t("completed_workouts")} ({completedWorkouts.length})
         </button>
       </div>
 
@@ -154,14 +155,14 @@ export default function Routines() {
                   e.currentTarget.style.transform = "translateY(0)";
                 }}
               >
-                Iniciar Entrenamiento Vacío
+                {t("start_empty_workout")}
               </button>
             </Link>
           </div>
 
           <RoutineForm saveRoutine={saveRoutine} />
 
-          {routines.length === 0 && <p style={{ color: isDark ? "#ccc" : "#666" }}>No hay rutinas guardadas.</p>}
+          {routines.length === 0 && <p style={{ color: isDark ? "#ccc" : "#666" }}>{t("no_saved_routines")}</p>}
           {routines.map(r => (
             <div key={r.id} style={{
               backgroundColor: isDark ? "#1a1a1a" : "#fff",
@@ -172,13 +173,13 @@ export default function Routines() {
               border: isDark ? "1px solid #333" : "1px solid #e0e0e0"
             }}>
               <h3 style={{ color: isDark ? "#fff" : "#333" }}>{r.name}</h3>
-              <p style={{ color: isDark ? "#ccc" : "#666" }}>Días: {r.days}</p>
-              <h4 style={{ color: isDark ? "#fff" : "#333" }}>Ejercicios:</h4>
-              {r.exercises.length === 0 ? <p style={{ color: isDark ? "#ccc" : "#666" }}>No hay ejercicios</p> :
+              <p style={{ color: isDark ? "#ccc" : "#666" }}>{t("days")}: {r.days}</p>
+              <h4 style={{ color: isDark ? "#fff" : "#333" }}>{t("exercises")}:</h4>
+              {r.exercises.length === 0 ? <p style={{ color: isDark ? "#ccc" : "#666" }}>{t("no_exercises")}</p> :
                 r.exercises.map((ex, i) => (
                   <p key={i} style={{ color: isDark ? "#ccc" : "#666" }}>
-                    {ex.name} — Series: {ex.series} | {ex.type === 'time' ? 'Tiempo' : 'Reps'}: {ex.reps}
-                    {(ex.type === 'weight_reps' || !ex.type) && ` | Peso: ${ex.weight}`}
+                    {ex.name} — {t("series_label")}: {ex.series} | {ex.type === 'time' ? t("time_label") : t("reps_label")}: {ex.reps}
+                    {(ex.type === 'weight_reps' || !ex.type) && ` | ${t("weight_label")}: ${ex.weight}`}
                   </p>
                 ))
               }
@@ -196,7 +197,7 @@ export default function Routines() {
                 onMouseOver={(e) => e.target.style.backgroundColor = "#991b1b"}
                 onMouseOut={(e) => e.target.style.backgroundColor = "#dc2626"}
               >
-                Eliminar rutina
+                {t("delete_routine")}
               </button>
             </div>
           ))}
@@ -208,7 +209,7 @@ export default function Routines() {
         <>
           {completedWorkouts.length === 0 ? (
             <p style={{ color: isDark ? "#ccc" : "#666", textAlign: "center", padding: "40px 20px" }}>
-              Aún no hay entrenamientos completados. ¡Empieza a entrenar!
+              {t("no_completed_workouts")}
             </p>
           ) : (
             <div>
@@ -235,7 +236,7 @@ export default function Routines() {
                     <div>
                       <h3 style={{ color: "#1dd1a1", margin: "0 0 8px 0" }}>{workout.name}</h3>
                       <p style={{ color: isDark ? "#999" : "#666", fontSize: "0.85rem", margin: "0" }}>
-                        {new Date(workout.completedAt).toLocaleDateString('es-ES', {
+                        {new Date(workout.completedAt).toLocaleDateString(t("language") === 'eu' ? 'eu-ES' : 'es-ES', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric',
@@ -259,7 +260,7 @@ export default function Routines() {
                       onMouseOver={(e) => e.target.style.backgroundColor = "#c0392b"}
                       onMouseOut={(e) => e.target.style.backgroundColor = "#e74c3c"}
                     >
-                      Eliminar
+                      {t("delete")}
                     </button>
                   </div>
 
@@ -276,25 +277,25 @@ export default function Routines() {
                     marginBottom: "15px"
                   }}>
                     <div style={{ backgroundColor: isDark ? "#0f0f0f" : "#f5f5f5", padding: "12px", borderRadius: "6px" }}>
-                      <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>Ejercicios</p>
+                      <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>{t("exercises_count")}</p>
                       <p style={{ color: "#1dd1a1", margin: "0", fontSize: "1.3rem", fontWeight: "bold" }}>
                         {workout.exercises}
                       </p>
                     </div>
                     <div style={{ backgroundColor: isDark ? "#0f0f0f" : "#f5f5f5", padding: "12px", borderRadius: "6px" }}>
-                      <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>Series</p>
+                      <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>{t("series_label")}</p>
                       <p style={{ color: "#1dd1a1", margin: "0", fontSize: "1.3rem", fontWeight: "bold" }}>
                         {workout.series}
                       </p>
                     </div>
                     <div style={{ backgroundColor: isDark ? "#0f0f0f" : "#f5f5f5", padding: "12px", borderRadius: "6px" }}>
-                      <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>Reps</p>
+                      <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>{t("reps_label")}</p>
                       <p style={{ color: "#1dd1a1", margin: "0", fontSize: "1.3rem", fontWeight: "bold" }}>
                         {workout.totalReps}
                       </p>
                     </div>
                     <div style={{ backgroundColor: isDark ? "#0f0f0f" : "#f5f5f5", padding: "12px", borderRadius: "6px" }}>
-                      <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>Volumen (kg)</p>
+                      <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>{t("total_volume_kg")}</p>
                       <p style={{ color: "#1dd1a1", margin: "0", fontSize: "1.3rem", fontWeight: "bold" }}>
                         {workout.totalVolume.toLocaleString()}
                       </p>
@@ -303,11 +304,11 @@ export default function Routines() {
 
                   {workout.elapsedTime !== undefined ? (
                     <p style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", margin: "0" }}>
-                      Tiempo: {formatElapsedTime(workout.elapsedTime)}
+                      {t("time_label")}: {formatElapsedTime(workout.elapsedTime)}
                     </p>
                   ) : workout.totalTime > 0 && (
                     <p style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", margin: "0" }}>
-                      Tiempo: {workout.totalTime} minutos
+                      {t("time_label")}: {workout.totalTime} {t("minutes")}
                     </p>
                   )}
                 </div>

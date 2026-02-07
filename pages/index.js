@@ -16,24 +16,31 @@ export default function Home() {
   const isDark = theme === 'dark';
 
   useEffect(() => {
-    if (showIntro && videoRef.current) {
+    if (showIntro && isMobile && videoRef.current) {
       const v = videoRef.current;
       try {
         // Asegurar flags necesarios para autoplay móvil (iOS/Android)
         v.muted = true;
         v.setAttribute('muted', '');
+        v.autoplay = true;
         v.playsInline = true;
+        v.setAttribute('playsinline', '');
+        v.setAttribute('webkit-playsinline', '');
+        v.removeAttribute('controls');
         const tryPlay = () => v.play().catch(() => {});
         if (v.readyState >= 2) {
           tryPlay();
         } else {
+          v.addEventListener('loadedmetadata', tryPlay, { once: true });
+          v.addEventListener('canplay', tryPlay, { once: true });
           v.addEventListener('loadeddata', tryPlay, { once: true });
         }
-      } catch (error) {
-        console.log("Autoplay prevented:", error);
-      }
+        const id = setTimeout(tryPlay, 250);
+        const id2 = setTimeout(tryPlay, 800);
+        return () => { clearTimeout(id); clearTimeout(id2); };
+      } catch (_) {}
     }
-  }, [showIntro]);
+  }, [showIntro, isMobile]);
 
   useEffect(() => {
     // Verificar si ya se mostró la intro en esta sesión

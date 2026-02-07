@@ -58,10 +58,14 @@ export default function Layout({ children }) {
       const timer = setTimeout(() => {
         setShowIntro(false);
         sessionStorage.setItem("introPlayed", "true");
+        // Asegurar que después de la intro estemos en el Feed (/) si es la primera vez
+        if (router.pathname !== "/") {
+          router.push("/");
+        }
       }, 2500); 
       return () => clearTimeout(timer);
     }
-  }, [showIntro]);
+  }, [showIntro, router]);
 
   useEffect(() => {
     const checkMobile = () => {

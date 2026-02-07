@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { translations } from '../data/translations';
-import { onAuthChange, signInWithGoogle, signOutUser } from '../lib/firebase';
+import { onAuthChange, signInWithGoogle, signOutUser, saveToCloud, getFromCloud } from '../lib/firebase';
 
 const UserContext = createContext();
 
@@ -11,45 +11,32 @@ export function UserProvider({ children }) {
   const [theme, setTheme] = useState('dark');
   const [language, setLanguage] = useState('es');
   const [activeRoutine, setActiveRoutine] = useState(null);
+  const [completedWorkouts, setCompletedWorkouts] = useState([]);
+  const [routines, setRoutines] = useState([]);
 
   // Función de traducción
   const t = (key) => {
     return translations[language][key] || key;
   };
 
+  // Cargar datos iniciales desde localStorage (para rapidez)
   useEffect(() => {
-    // Cargar usuario, tema e idioma desde localStorage al montar
     const savedUser = localStorage.getItem('userProfile');
     const savedTheme = localStorage.getItem('theme');
     const savedLanguage = localStorage.getItem('language');
     const savedActiveRoutine = localStorage.getItem('activeRoutine');
+    const savedWorkouts = localStorage.getItem('completedWorkouts');
+    const savedRoutines = localStorage.getItem('routines');
     
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
-        console.error('Error parsing saved user:', e);
-      }
-    }
-    
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-
-    if (savedLanguage) {
-      setLanguage(savedLanguage);
-    }
-
-    if (savedActiveRoutine) {
-      try {
-        setActiveRoutine(JSON.parse(savedActiveRoutine));
-      } catch (e) {
-        console.error('Error parsing saved active routine:', e);
-      }
-    }
+    if (savedUser) try { setUser(JSON.parse(savedUser)); } catch (e) {}
+    if (savedTheme) setTheme(savedTheme);
+    if (savedLanguage) setLanguage(savedLanguage);
+    if (savedActiveRoutine) try { setActiveRoutine(JSON.parse(savedActiveRoutine)); } catch (e) {}
+    if (savedWorkouts) try { setCompletedWorkouts(JSON.parse(savedWorkouts)); } catch (e) {}
+    if (savedRoutines) try { setRoutines(JSON.parse(savedRoutines)); } catch (e) {}
 
     // Suscribirse a cambios de autenticación de Firebase
-    const unsub = onAuthChange((fbUser) => {
+    const unsub = onAuthChange(async (fbUser) => {
       if (fbUser) {
         setAuthUser({
           uid: fbUser.uid,
@@ -57,29 +44,61 @@ export function UserProvider({ children }) {
           displayName: fbUser.displayName || null,
           photoURL: fbUser.photoURL || null,
         });
+
+        // Al iniciar sesión, sincronizar datos desde la nube
+        const cloudData = await getFromCloud(`users/${fbUser.uid}`);
+        if (cloudData) {
+          if (cloudData.profile) {
+            setUser(cloudData.profile);
+            localStorage.setItem('userProfile', JSON.stringify(cloudData.profile));
+          }
+          if (cloudData.completedWorkouts) {
+            setCompletedWorkouts(cloudData.completedWorkouts);
+            localStorage.setItem('completedWorkouts', JSON.stringify(cloudData.completedWorkouts));
+          }
+          if (cloudData.routines) {
+            setRoutines(cloudData.routines);
+            localStorage.setItem('routines', JSON.stringify(cloudData.routines));
+          }
+          if (cloudData.settings) {
+            if (cloudData.settings.theme) {
+              setTheme(cloudData.settings.theme);
+              localStorage.setItem('theme', cloudData.settings.theme);
+            }
+            if (cloudData.settings.language) {
+              setLanguage(cloudData.settings.language);
+              localStorage.setItem('language', cloudData.settings.language);
+            }
+          }
+        }
       } else {
         setAuthUser(null);
       }
       setIsLoaded(true);
     });
 
-    // En SSR no existe window, pero este efecto sólo corre en cliente
-    // Establecer cargado aunque no haya autenticación
-    setIsLoaded(true);
-
     return () => {
       if (typeof unsub === 'function') unsub();
     };
   }, []);
 
-  const saveUser = (userData) => {
+  const saveUser = async (userData) => {
     setUser(userData);
     localStorage.setItem('userProfile', JSON.stringify(userData));
+    if (authUser) {
+      await saveToCloud(`users/${authUser.uid}`, { profile: userData });
+    }
   };
 
   const clearUser = () => {
     setUser(null);
     localStorage.removeItem('userProfile');
+    localStorage.removeItem('completedWorkouts');
+    localStorage.removeItem('routines');
+    localStorage.removeItem('activeRoutine');
+    setCompletedWorkouts([]);
+    setRoutines([]);
+    setActiveRoutine(null);
   };
 
   const loginWithGoogle = async () => {
@@ -95,15 +114,39 @@ export function UserProvider({ children }) {
     }
   };
 
-  const toggleTheme = () => {
+  const toggleTheme = async () => {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
+    if (authUser) {
+      await saveToCloud(`users/${authUser.uid}`, { settings: { theme: newTheme, language } });
+    }
   };
 
-  const updateLanguage = (newLang) => {
+  const updateLanguage = async (newLang) => {
     setLanguage(newLang);
     localStorage.setItem('language', newLang);
+    if (authUser) {
+      await saveToCloud(`users/${authUser.uid}`, { settings: { theme, language: newLang } });
+    }
+  };
+
+  const saveCompletedWorkout = async (workout) => {
+    const newList = [workout, ...completedWorkouts];
+    setCompletedWorkouts(newList);
+    localStorage.setItem('completedWorkouts', JSON.stringify(newList));
+    if (authUser) {
+      await saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList });
+    }
+  };
+
+  const saveRoutine = async (newRoutine) => {
+    const newList = [newRoutine, ...routines];
+    setRoutines(newList);
+    localStorage.setItem('routines', JSON.stringify(newList));
+    if (authUser) {
+      await saveToCloud(`users/${authUser.uid}`, { routines: newList });
+    }
   };
 
   const startRoutine = (routineData) => {
@@ -132,6 +175,10 @@ export function UserProvider({ children }) {
       activeRoutine,
       startRoutine,
       endRoutine,
+      completedWorkouts,
+      saveCompletedWorkout,
+      routines,
+      saveRoutine,
       t
     }}>
       {children}

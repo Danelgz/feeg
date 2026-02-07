@@ -17,9 +17,21 @@ export default function Home() {
 
   useEffect(() => {
     if (showIntro && videoRef.current) {
-      videoRef.current.play().catch(error => {
+      const v = videoRef.current;
+      try {
+        // Asegurar flags necesarios para autoplay móvil (iOS/Android)
+        v.muted = true;
+        v.setAttribute('muted', '');
+        v.playsInline = true;
+        const tryPlay = () => v.play().catch(() => {});
+        if (v.readyState >= 2) {
+          tryPlay();
+        } else {
+          v.addEventListener('loadeddata', tryPlay, { once: true });
+        }
+      } catch (error) {
         console.log("Autoplay prevented:", error);
-      });
+      }
     }
   }, [showIntro]);
 
@@ -120,9 +132,15 @@ export default function Home() {
         }}>
           <video 
             ref={videoRef}
-            autoPlay 
-            muted 
-            playsInline 
+            autoPlay
+            muted
+            playsInline
+            // Evitar UI/overlay de controles y forzar inline/autoplay en móvil
+            controls={false}
+            controlsList="nodownload noplaybackrate nofullscreen noremoteplayback"
+            disablePictureInPicture
+            disableRemotePlayback
+            preload="auto"
             onEnded={handleCloseIntro}
             style={{
               width: "100%",

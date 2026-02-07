@@ -88,24 +88,40 @@ export default function StatisticsView() {
 
       {/* Botonera de navegación global */}
       <div style={{
+        backgroundColor: isDark ? '#0f0f0f' : '#f6fefb',
+        border: `1px solid ${isDark ? '#2a2a2a' : '#d9f7ef'}`,
+        borderRadius: 12,
+        padding: isNarrow ? '8px' : '10px',
         marginBottom: isNarrow ? '12px' : '16px'
       }}>
-        {nav.map(btn => (
-          <p key={btn.key} style={{
-            margin: '0 0 8px 0',
-            lineHeight: 1.5,
-            color: isDark ? '#fff' : '#333',
-            fontSize: isNarrow ? '0.95rem' : '1rem'
-          }}>
-            <Link
-              href={btn.href}
-              style={{
-                color: isDark ? '#9ee9d5' : '#0a6b55',
-                textDecoration: 'underline'
-              }}
-            >{btn.label}</Link>
-          </p>
-        ))}
+        {nav.map(btn => { const isActive = view === btn.key; return (
+          <Link
+            key={btn.key}
+            href={btn.href}
+            role="button"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: isNarrow ? '10px' : '12px',
+              margin: '6px 0',
+              backgroundColor: isActive ? (isDark ? '#161616' : '#fafffd') : (isDark ? '#1a1a1a' : '#ffffff'),
+              border: `1px solid ${isDark ? '#2a2a2a' : '#e4f7f0'}`,
+              borderRadius: 10,
+              boxShadow: isDark ? 'none' : '0 1px 2px rgba(0,0,0,0.06)',
+              color: isDark ? '#eafff8' : '#0a3d31',
+              textDecoration: 'none',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'transform 0.1s ease, box-shadow 0.2s ease, background-color 0.2s ease'
+            }}
+            onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = isDark ? '0 0 0 rgba(0,0,0,0)' : '0 3px 8px rgba(0,0,0,0.10)'; e.currentTarget.style.backgroundColor = isDark ? '#161616' : '#fafffd'; }}
+            onMouseOut={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = isDark ? 'none' : '0 1px 2px rgba(0,0,0,0.06)'; e.currentTarget.style.backgroundColor = isActive ? (isDark ? '#161616' : '#fafffd') : (isDark ? '#1a1a1a' : '#ffffff'); }}
+          >
+            <span aria-hidden="true" style={{ color: '#1dd1a1', opacity: 0.95, fontWeight: 800 }}>›</span>
+            <span style={{ flex: 1 }}>{btn.label}</span>
+          </Link>
+        ); })}
       </div>
 
       {view === 'series' && (

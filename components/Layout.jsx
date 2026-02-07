@@ -10,6 +10,31 @@ export default function Layout({ children }) {
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
 
+  // Botón de retroceso inteligente: si no hay historial o la entrada es directa, ir a una ruta de respaldo
+  const smartBack = () => {
+    try {
+      if (typeof window !== 'undefined') {
+        const canGoBack = window.history.length > 1;
+        const ref = document.referrer || '';
+        const sameOrigin = ref && ref.startsWith(window.location.origin);
+        if (canGoBack && sameOrigin) {
+          router.back();
+          return;
+        }
+      }
+    } catch (_) {}
+
+    const p = router.asPath || '';
+    let fallback = '/';
+    if (p.startsWith('/statistics')) fallback = '/statistics';
+    else if (p.startsWith('/routines')) fallback = '/routines';
+    else if (p.startsWith('/exercises')) fallback = '/exercises';
+    else if (p.startsWith('/profile')) fallback = '/profile';
+    else if (p.startsWith('/settings')) fallback = '/settings';
+
+    router.push(fallback);
+  };
+
   // Usar la detección de UserContext si está disponible, si no usar el estado local
   const currentIsMobile = userIsMobile !== undefined ? userIsMobile : isMobile;
 
@@ -77,14 +102,16 @@ export default function Layout({ children }) {
       {/* Botón de Retroceder */}
       {router.asPath !== "/" && (
         <button
-          onClick={() => router.back()}
+          onClick={smartBack}
+          title="Atrás"
+          aria-label="Atrás"
           style={{
             position: "fixed",
             top: "15px",
             left: currentIsMobile ? "15px" : "235px", // Ajustado para no solapar el sidebar en PC
             zIndex: 2000,
-            width: "45px",
-            height: "45px",
+            width: currentIsMobile ? "36px" : "45px",
+            height: currentIsMobile ? "36px" : "45px",
             borderRadius: "50%",
             backgroundColor: isDark ? "#1a1a1a" : "#ffffff",
             border: `2px solid #1dd1a1`,
@@ -93,7 +120,7 @@ export default function Layout({ children }) {
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            fontSize: "1.2rem",
+            fontSize: currentIsMobile ? "1rem" : "1.2rem",
             fontWeight: "bold",
             boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
             transition: "all 0.2s ease"

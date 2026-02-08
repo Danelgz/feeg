@@ -8,7 +8,17 @@ export default function CreateRoutine() {
   const router = useRouter();
   const { id } = router.query;
   const { theme, t, routines, saveRoutine: contextSaveRoutine, updateRoutine: contextUpdateRoutine } = useUser();
+  const [isMobile, setIsMobile] = useState(false);
   const isDark = theme === 'dark';
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const [routineName, setRoutineName] = useState("");
   const [exercises, setExercises] = useState([]);
@@ -104,17 +114,17 @@ export default function CreateRoutine() {
 
   return (
     <Layout>
-      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-        <h1 style={{ fontSize: "2.5rem", fontWeight: "700", marginBottom: "2rem", color: isDark ? "#fff" : "#333" }}>
+      <div style={{ maxWidth: isMobile ? "100%" : "1200px", margin: isMobile ? "0" : "0 auto", padding: isMobile ? "0" : "20px" }}>
+        <h1 style={{ fontSize: isMobile ? "1.8rem" : "2.5rem", fontWeight: "700", marginBottom: isMobile ? "1rem" : "2rem", color: isDark ? "#fff" : "#333" }}>
           {isEditMode ? t("edit_routine") : t("create_new_routine")}
         </h1>
 
         <div style={{
           backgroundColor: isDark ? "#1a1a1a" : "#fff",
           borderRadius: "12px",
-          padding: "2rem",
+          padding: isMobile ? "1rem" : "2rem",
           boxShadow: isDark ? "0 4px 12px rgba(0, 0, 0, 0.5)" : "0 4px 12px rgba(0, 0, 0, 0.05)",
-          marginBottom: "2rem",
+          marginBottom: isMobile ? "1rem" : "2rem",
           border: `1px solid ${isDark ? "#333" : "#eee"}`
         }}>
           <label style={{ display: "block", fontSize: "1rem", fontWeight: "600", marginBottom: "0.5rem", color: isDark ? "#fff" : "#333" }}>

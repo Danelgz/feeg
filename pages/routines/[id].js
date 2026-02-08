@@ -18,6 +18,7 @@ export default function RoutineDetail() {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [workoutState, setWorkoutState] = useState("preview"); // preview, ongoing, completed
   const [seriesCompleted, setSeriesCompleted] = useState({});
+  const [seriesTypes, setSeriesTypes] = useState({}); // "W", "N", "D"
   const [currentReps, setCurrentReps] = useState({});
   const [currentWeight, setCurrentWeight] = useState({});
   const [restTime, setRestTime] = useState(null);
@@ -30,6 +31,7 @@ export default function RoutineDetail() {
   const [countdown, setCountdown] = useState(null);
   const [countdownActive, setCountdownActive] = useState(false);
   const [openTimePickerId, setOpenTimePickerId] = useState(null);
+  const [showTypeSelector, setShowTypeSelector] = useState(null); // { exIdx, serieIdx }
   const [wheelScrollPositions, setWheelScrollPositions] = useState({});
   const [showFinishConfirmation, setShowFinishConfirmation] = useState(false);
   const [showFinishForm, setShowFinishForm] = useState(false);
@@ -44,6 +46,7 @@ export default function RoutineDetail() {
   const [restTimerActive, setRestTimerActive] = useState(false);
   const [restCountdown, setRestCountdown] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [previousData, setPreviousData] = useState({}); // key: exerciseName, value: { weight, reps }
 
   // Load persistent timer state on mount
   useEffect(() => {
@@ -65,6 +68,30 @@ export default function RoutineDetail() {
       }
     }
   }, [id, workoutState]);
+
+  // Load previous performance data
+  useEffect(() => {
+    if (completedWorkouts && routine) {
+      const prevData = {};
+      routine.exercises.forEach(ex => {
+        // Find last workout that contained this exercise
+        const lastWorkout = completedWorkouts.find(w => 
+          w.exerciseDetails && w.exerciseDetails.some(ed => ed.name === ex.name)
+        );
+        
+        if (lastWorkout) {
+          const exDetail = lastWorkout.exerciseDetails.find(ed => ed.name === ex.name);
+          // Get the first non-warmup series if possible, or just the first one
+          const mainSeries = exDetail.series[0]; 
+          prevData[ex.name] = {
+            weight: mainSeries.weight,
+            reps: mainSeries.reps
+          };
+        }
+      });
+      setPreviousData(prevData);
+    }
+  }, [completedWorkouts, routine]);
 
   // Auto-start timer when workout begins
   useEffect(() => {
@@ -106,71 +133,77 @@ export default function RoutineDetail() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const handleUpdateReps = (serieIdx, newReps) => {
-    const key = `${currentExerciseIndex}-${serieIdx}`;
+  const handleUpdateReps = (exIdx, serieIdx, newReps) => {
+    const key = `${exIdx}-${serieIdx}`;
     setCurrentReps({
       ...currentReps,
       [key]: newReps
     });
   };
 
-  const handleUpdateWeight = (serieIdx, newWeight) => {
-    const key = `${currentExerciseIndex}-${serieIdx}`;
+  const handleUpdateWeight = (exIdx, serieIdx, newWeight) => {
+    const key = `${exIdx}-${serieIdx}`;
     setCurrentWeight({
       ...currentWeight,
       [key]: newWeight
     });
   };
 
-  const handleAddSeries = () => {
+  const handleAddSeries = (exIdx) => {
     const updatedExercises = [...routine.exercises];
-    const updatedExercise = { ...updatedExercises[currentExerciseIndex] };
+    const updatedExercise = { ...updatedExercises[exIdx] };
     updatedExercise.series = [...updatedExercise.series, { reps: "", weight: "" }];
-    updatedExercises[currentExerciseIndex] = updatedExercise;
+    updatedExercises[exIdx] = updatedExercise;
     
     setRoutine({ ...routine, exercises: updatedExercises });
     
     // Initialize tracking for new series
-    const newKey = `${currentExerciseIndex}-${updatedExercise.series.length - 1}`;
+    const newKey = `${exIdx}-${updatedExercise.series.length - 1}`;
     setSeriesCompleted({ ...seriesCompleted, [newKey]: false });
+    setSeriesTypes({ ...seriesTypes, [newKey]: "N" }); // Default to Normal
     setCurrentReps({ ...currentReps, [newKey]: "" });
     setCurrentWeight({ ...currentWeight, [newKey]: "" });
   };
 
-  const handleDeleteSeries = (serieIdx) => {
+  const handleDeleteSeries = (exIdx, serieIdx) => {
     const updatedExercises = [...routine.exercises];
-    const updatedExercise = { ...updatedExercises[currentExerciseIndex] };
+    const updatedExercise = { ...updatedExercises[exIdx] };
     updatedExercise.series = updatedExercise.series.filter((_, i) => i !== serieIdx);
-    updatedExercises[currentExerciseIndex] = updatedExercise;
+    updatedExercises[exIdx] = updatedExercise;
     
     setRoutine({ ...routine, exercises: updatedExercises });
     
     // Clean up tracking objects for deleted series
     const newSeriesCompleted = {};
+    const newSeriesTypes = {};
     const newCurrentReps = {};
     const newCurrentWeight = {};
     
     Object.keys(seriesCompleted).forEach((key) => {
-      const [exIdx, serIdx] = key.split("-").map(Number);
-      if (exIdx === currentExerciseIndex) {
-        if (serIdx < serieIdx) {
+      const [eIdx, sIdx] = key.split("-").map(Number);
+      if (eIdx === exIdx) {
+        if (sIdx < serieIdx) {
           newSeriesCompleted[key] = seriesCompleted[key];
+          newSeriesTypes[key] = seriesTypes[key];
           newCurrentReps[key] = currentReps[key];
           newCurrentWeight[key] = currentWeight[key];
-        } else if (serIdx > serieIdx) {
-          const newKey = `${exIdx}-${serIdx - 1}`;
+        } else if (sIdx > serieIdx) {
+          const newKey = `${eIdx}-${sIdx - 1}`;
           newSeriesCompleted[newKey] = seriesCompleted[key];
+          newSeriesTypes[newKey] = seriesTypes[key];
           newCurrentReps[newKey] = currentReps[key];
           newCurrentWeight[newKey] = currentWeight[key];
         }
       } else {
         newSeriesCompleted[key] = seriesCompleted[key];
+        newSeriesTypes[key] = seriesTypes[key];
         newCurrentReps[key] = currentReps[key];
         newCurrentWeight[key] = currentWeight[key];
       }
     });
     
     setSeriesCompleted(newSeriesCompleted);
+    setSeriesTypes(newSeriesTypes);
     setCurrentReps(newCurrentReps);
     setCurrentWeight(newCurrentWeight);
   };
@@ -182,6 +215,7 @@ export default function RoutineDetail() {
         setRoutine(foundRoutine);
         // Initialize tracking objects
         const seriesTracker = {};
+        const typeTracker = {};
         const repsTracker = {};
         const weightTracker = {};
         
@@ -189,12 +223,16 @@ export default function RoutineDetail() {
           ex.series.forEach((serie, serieIdx) => {
             const key = `${exIdx}-${serieIdx}`;
             seriesTracker[key] = false;
+            // First 2 series are typically warmups by default in many apps, 
+            // but let's stick to user request. Default is "N" (Normal)
+            typeTracker[key] = serieIdx < 2 ? "W" : "N"; 
             repsTracker[key] = serie.reps || "";
             weightTracker[key] = serie.weight || "";
           });
         });
         
         setSeriesCompleted(seriesTracker);
+        setSeriesTypes(typeTracker);
         setCurrentReps(repsTracker);
         setCurrentWeight(weightTracker);
         setRestTime(foundRoutine.exercises[0]?.rest || 60);
@@ -316,13 +354,12 @@ export default function RoutineDetail() {
   // Crear array con repetición para efecto de bucle infinito
   const timeOptions = [...baseTimeOptions, ...baseTimeOptions, ...baseTimeOptions];
 
-  const handleUpdateRestTime = (newTime) => {
+  const handleUpdateRestTime = (exIdx, newTime) => {
     const time = parseInt(newTime) || 0;
-    setRestTime(time);
     const updatedExercises = [...routine.exercises];
-    const updatedExercise = { ...updatedExercises[currentExerciseIndex] };
+    const updatedExercise = { ...updatedExercises[exIdx] };
     updatedExercise.rest = time;
-    updatedExercises[currentExerciseIndex] = updatedExercise;
+    updatedExercises[exIdx] = updatedExercise;
     setRoutine({ ...routine, exercises: updatedExercises });
   };
 
@@ -1014,19 +1051,58 @@ export default function RoutineDetail() {
                 }}>
                   <span>⏱️</span>
                   <span 
-                    onClick={() => setOpenTimePickerId(openTimePickerId === exIdx ? null : exIdx)}
+                    onClick={() => {
+                      setOpenTimePickerId(openTimePickerId === exIdx ? null : exIdx);
+                      // Pre-fill tempRestTime with current value
+                      setTempRestTime(exercise.rest.toString());
+                    }}
                     style={{ cursor: "pointer", fontWeight: "500" }}
                   >
                     Descanso: {exercise.rest < 60 ? `${exercise.rest}s` : `${Math.floor(exercise.rest/60)}min ${exercise.rest%60}s`}
                   </span>
                   <span style={{ color: "#f1c40f" }}>⚠️</span>
+                  
+                  {openTimePickerId === exIdx && (
+                    <div style={{ 
+                      display: "flex", 
+                      alignItems: "center", 
+                      gap: "5px", 
+                      marginLeft: "10px",
+                      backgroundColor: "#1a1a1a",
+                      padding: "2px 8px",
+                      borderRadius: "4px"
+                    }}>
+                      <input 
+                        type="number" 
+                        value={tempRestTime} 
+                        onChange={(e) => setTempRestTime(e.target.value)}
+                        style={{ 
+                          width: "40px", 
+                          background: "none", 
+                          border: "none", 
+                          color: "#fff", 
+                          fontSize: "0.9rem",
+                          textAlign: "center"
+                        }}
+                      />
+                      <button 
+                        onClick={() => {
+                          handleUpdateRestTime(exIdx, parseInt(tempRestTime) || 0);
+                          setOpenTimePickerId(null);
+                        }}
+                        style={{ background: "none", border: "none", color: mint, cursor: "pointer" }}
+                      >
+                        OK
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Tabla de Series */}
                 <div style={{ marginBottom: "15px" }}>
                   <div style={{ 
                     display: "grid", 
-                    gridTemplateColumns: "50px 1fr 80px 80px 40px", 
+                    gridTemplateColumns: "50px 1fr 60px 60px 40px 30px", 
                     gap: "10px", 
                     marginBottom: "10px",
                     color: "#666",
@@ -1040,18 +1116,27 @@ export default function RoutineDetail() {
                     <div style={{ textAlign: "center" }}>🏋️ KG</div>
                     <div style={{ textAlign: "center" }}>REPS</div>
                     <div style={{ textAlign: "right" }}>✓</div>
+                    <div style={{ textAlign: "right" }}></div>
                   </div>
 
                   {exercise.series.map((serie, serieIdx) => {
                     const key = `${exIdx}-${serieIdx}`;
                     const isCompleted = seriesCompleted[key];
+                    const type = seriesTypes[key] || "N";
+                    const prev = previousData[exercise.name];
                     
+                    // Calcular el número de serie efectiva (N)
+                    let effectiveIndex = 0;
+                    for (let i = 0; i < serieIdx; i++) {
+                      if (seriesTypes[`${exIdx}-${i}`] === "N") effectiveIndex++;
+                    }
+
                     return (
                       <div
                         key={serieIdx}
                         style={{
                           display: "grid", 
-                          gridTemplateColumns: "50px 1fr 80px 80px 40px", 
+                          gridTemplateColumns: "50px 1fr 60px 60px 40px 30px", 
                           gap: "10px",
                           alignItems: "center",
                           height: "45px",
@@ -1059,23 +1144,31 @@ export default function RoutineDetail() {
                           transition: "background 0.2s"
                         }}
                       >
-                        <div style={{ 
-                          color: serieIdx < 2 ? "#f1c40f" : "#fff", 
-                          fontWeight: "bold",
-                          fontSize: "1rem" 
-                        }}>
-                          {serieIdx < 2 ? "W" : serieIdx - 1}
+                        <div 
+                          onClick={() => setShowTypeSelector({ exIdx, serieIdx })}
+                          style={{ 
+                            color: type === "N" ? "#fff" : mint, 
+                            fontWeight: "bold",
+                            fontSize: "1rem",
+                            cursor: "pointer",
+                            backgroundColor: "#1a1a1a",
+                            borderRadius: "4px",
+                            textAlign: "center",
+                            padding: "4px 0"
+                          }}
+                        >
+                          {type === "W" ? "W" : type === "D" ? "D" : effectiveIndex + 1}
                         </div>
                         
                         <div style={{ color: "#666", fontSize: "0.9rem" }}>
-                          {serie.weight}kg x {serie.reps}
+                          {prev ? `${prev.weight}kg x ${prev.reps}` : "—"}
                         </div>
                         
                         <div>
                           <input
                             type="number"
                             value={currentWeight[key] || ""}
-                            onChange={(e) => handleUpdateWeight(serieIdx, e.target.value)}
+                            onChange={(e) => handleUpdateWeight(exIdx, serieIdx, e.target.value)}
                             style={{
                               width: "100%",
                               background: isCompleted ? "rgba(46, 230, 197, 0.1)" : "#1a1a1a",
@@ -1093,7 +1186,7 @@ export default function RoutineDetail() {
                           <input
                             type="number"
                             value={currentReps[key] || ""}
-                            onChange={(e) => handleUpdateReps(serieIdx, e.target.value)}
+                            onChange={(e) => handleUpdateReps(exIdx, serieIdx, e.target.value)}
                             style={{
                               width: "100%",
                               background: isCompleted ? "rgba(46, 230, 197, 0.1)" : "#1a1a1a",
@@ -1134,6 +1227,26 @@ export default function RoutineDetail() {
                             ✓
                           </button>
                         </div>
+
+                        <div style={{ textAlign: "right" }}>
+                          <button
+                            onClick={() => handleDeleteSeries(exIdx, serieIdx)}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: mint,
+                              cursor: "pointer",
+                              fontSize: "1.2rem",
+                              fontWeight: "bold",
+                              padding: 0,
+                              display: "flex",
+                              justifyContent: "center",
+                              alignItems: "center"
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
@@ -1141,7 +1254,7 @@ export default function RoutineDetail() {
 
                 {/* Botón Agregar Serie */}
                 <button
-                  onClick={handleAddSeries}
+                  onClick={() => handleAddSeries(exIdx)}
                   style={{
                     width: "100%",
                     padding: "10px",
@@ -1162,6 +1275,74 @@ export default function RoutineDetail() {
                 </button>
               </div>
             ))}
+
+            {/* Selector de Tipo de Serie */}
+            {showTypeSelector && (
+              <div style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: "rgba(0,0,0,0.8)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                zIndex: 2100
+              }}>
+                <div style={{
+                  backgroundColor: "#1a1a1a",
+                  borderRadius: "12px",
+                  padding: "20px",
+                  width: "250px",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.5)"
+                }}>
+                  <h3 style={{ margin: "0 0 15px 0", color: "#fff", textAlign: "center", fontSize: "1rem" }}>Tipo de Serie</h3>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    {[
+                      { label: "Calentamiento (W)", value: "W" },
+                      { label: "Serie Efectiva", value: "N" },
+                      { label: "Drop Set (D)", value: "D" }
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => {
+                          const key = `${showTypeSelector.exIdx}-${showTypeSelector.serieIdx}`;
+                          setSeriesTypes({ ...seriesTypes, [key]: opt.value });
+                          setShowTypeSelector(null);
+                        }}
+                        style={{
+                          padding: "12px",
+                          backgroundColor: "#333",
+                          color: opt.value === "N" ? "#fff" : mint,
+                          border: "none",
+                          borderRadius: "8px",
+                          fontWeight: "bold",
+                          cursor: "pointer",
+                          textAlign: "left"
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setShowTypeSelector(null)}
+                      style={{
+                        padding: "10px",
+                        backgroundColor: "transparent",
+                        color: "#666",
+                        border: "none",
+                        marginTop: "10px",
+                        cursor: "pointer"
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
 
             <button
               onClick={handleAddExercise}

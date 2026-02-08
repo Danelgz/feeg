@@ -46,6 +46,7 @@ export default function RoutineDetail() {
   const [savingWorkout, setSavingWorkout] = useState(false);
   const [exerciseSearchQuery, setExerciseSearchQuery] = useState("");
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [isTimerLoaded, setIsTimerLoaded] = useState(false);
   const [backgroundTimerActive, setBackgroundTimerActive] = useState(false);
   const [restTimerActive, setRestTimerActive] = useState(false);
   const [restCountdown, setRestCountdown] = useState(0);
@@ -56,22 +57,54 @@ export default function RoutineDetail() {
   useEffect(() => {
     const savedTimerState = localStorage.getItem('workoutTimerState');
     if (savedTimerState) {
-      const { elapsedTime: saved, isActive, routineId: savedRoutineId } = JSON.parse(savedTimerState);
-      
-      // Only restore if it's the same routine and not completed
-      if (savedRoutineId === id && workoutState !== "completed") {
-        setElapsedTime(saved);
-        setBackgroundTimerActive(true); // Always set to true when restoring
+      try {
+        const { elapsedTime: saved, isActive, routineId: savedRoutineId } = JSON.parse(savedTimerState);
         
-        // Calculate elapsed time since last save
-        const lastSaveTime = localStorage.getItem('workoutTimerLastSave');
-        if (lastSaveTime) {
-          const additionalTime = Math.floor((Date.now() - parseInt(lastSaveTime)) / 1000);
-          setElapsedTime(saved + additionalTime);
+        if (savedRoutineId === id?.toString()) {
+          // Calculate elapsed time since last save if it was active
+          const lastSaveTime = localStorage.getItem('workoutTimerLastSave');
+          let currentElapsed = saved;
+          
+          if (lastSaveTime && isActive) {
+            const additionalTime = Math.floor((Date.now() - parseInt(lastSaveTime)) / 1000);
+            currentElapsed = saved + additionalTime;
+          }
+          
+          setElapsedTime(currentElapsed);
+          if (isActive) {
+            setBackgroundTimerActive(true);
+            setWorkoutState("ongoing");
+          }
         }
+      } catch (e) {
+        console.error("Error restoring timer", e);
       }
     }
-  }, [id, workoutState]);
+    setIsTimerLoaded(true);
+  }, [id]);
+
+  // Save timer state periodically and on unmount
+  useEffect(() => {
+    if (!isTimerLoaded || !id) return;
+
+    const saveTimerState = () => {
+      const timerState = {
+        elapsedTime,
+        isActive: backgroundTimerActive,
+        routineId: id.toString()
+      };
+      localStorage.setItem('workoutTimerState', JSON.stringify(timerState));
+      localStorage.setItem('workoutTimerLastSave', Date.now().toString());
+    };
+
+    saveTimerState();
+    const interval = setInterval(saveTimerState, 1000); // Save every second for better precision
+    
+    return () => {
+      clearInterval(interval);
+      saveTimerState();
+    };
+  }, [elapsedTime, backgroundTimerActive, id, isTimerLoaded]);
 
   // Load previous performance data
   useEffect(() => {
@@ -92,37 +125,6 @@ export default function RoutineDetail() {
       setPreviousData(prevData);
     }
   }, [completedWorkouts, routine]);
-
-  // Auto-start timer when workout begins
-  useEffect(() => {
-    if (workoutState === "ongoing") {
-      setBackgroundTimerActive(true);
-    }
-  }, [workoutState]);
-
-  // Save timer state periodically and on unmount
-  useEffect(() => {
-    const saveTimerState = () => {
-      const timerState = {
-        elapsedTime,
-        isActive: backgroundTimerActive,
-        routineId: id
-      };
-      localStorage.setItem('workoutTimerState', JSON.stringify(timerState));
-      localStorage.setItem('workoutTimerLastSave', Date.now().toString());
-    };
-
-    // Save immediately when state changes
-    saveTimerState();
-    
-    // Set up periodic saves
-    const interval = setInterval(saveTimerState, 5000); // Save every 5 seconds
-    
-    return () => {
-      clearInterval(interval);
-      saveTimerState(); // Final save on unmount
-    };
-  }, [elapsedTime, backgroundTimerActive, id]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -250,13 +252,6 @@ export default function RoutineDetail() {
     }
     return () => clearInterval(interval);
   }, [backgroundTimerActive]);
-
-  // Auto-start timer when workout begins
-  useEffect(() => {
-    if (workoutState === "ongoing") {
-      setBackgroundTimerActive(true);
-    }
-  }, [workoutState]);
 
   // Ensure timer is always active when workout is ongoing
   useEffect(() => {

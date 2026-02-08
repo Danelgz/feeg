@@ -50,17 +50,24 @@ export default function RoutineDetail() {
       // Only restore if it's the same routine and not completed
       if (savedRoutineId === id && workoutState !== "completed") {
         setElapsedTime(saved);
-        setBackgroundTimerActive(isActive);
+        setBackgroundTimerActive(true); // Always set to true when restoring
         
         // Calculate elapsed time since last save
         const lastSaveTime = localStorage.getItem('workoutTimerLastSave');
-        if (lastSaveTime && isActive) {
+        if (lastSaveTime) {
           const additionalTime = Math.floor((Date.now() - parseInt(lastSaveTime)) / 1000);
           setElapsedTime(saved + additionalTime);
         }
       }
     }
   }, [id, workoutState]);
+
+  // Auto-start timer when workout begins
+  useEffect(() => {
+    if (workoutState === "ongoing") {
+      setBackgroundTimerActive(true);
+    }
+  }, [workoutState]);
 
   // Save timer state periodically and on unmount
   useEffect(() => {
@@ -191,13 +198,7 @@ export default function RoutineDetail() {
     }
   }, [id, allRoutines]);
 
-  useEffect(() => {
-    if (activeRoutine && activeRoutine.id === id && workoutState === "preview") {
-      setWorkoutState("ongoing");
-      setBackgroundTimerActive(true); // Start background timer automatically
-    }
-  }, [id, activeRoutine, workoutState]);
-
+  // Background workout timer effect
   useEffect(() => {
     let interval;
     if (backgroundTimerActive) {
@@ -207,6 +208,28 @@ export default function RoutineDetail() {
     }
     return () => clearInterval(interval);
   }, [backgroundTimerActive]);
+
+  // Auto-start timer when workout begins
+  useEffect(() => {
+    if (workoutState === "ongoing") {
+      setBackgroundTimerActive(true);
+    }
+  }, [workoutState]);
+
+  // Ensure timer is always active when workout is ongoing
+  useEffect(() => {
+    if (workoutState === "ongoing" && !backgroundTimerActive) {
+      setBackgroundTimerActive(true);
+    }
+  }, [workoutState, backgroundTimerActive]);
+
+  // Auto-start timer and workout when routine is activated
+  useEffect(() => {
+    if (activeRoutine && activeRoutine.id === id && workoutState === "preview") {
+      setWorkoutState("ongoing");
+      setBackgroundTimerActive(true); // Start timer immediately
+    }
+  }, [id, activeRoutine, workoutState]);
 
   useEffect(() => {
     let interval;
@@ -308,7 +331,8 @@ export default function RoutineDetail() {
   };
 
   const stopBackgroundTimer = () => {
-    setBackgroundTimerActive(false);
+    // Don't allow manual stopping - timer only stops when workout is completed
+    // This function is kept for compatibility but won't actually stop the timer
   };
 
   const clearPersistentTimer = () => {
@@ -870,23 +894,6 @@ export default function RoutineDetail() {
             </div>
             <div style={{ fontSize: isMobile ? "1.2rem" : "1.4rem", fontWeight: "bold", fontFamily: "monospace" }}>
               {formatElapsedTime(elapsedTime)}
-            </div>
-            <div style={{ display: "flex", gap: "5px", marginTop: "4px" }}>
-              <button
-                onClick={backgroundTimerActive ? stopBackgroundTimer : startBackgroundTimer}
-                style={{
-                  backgroundColor: backgroundTimerActive ? "#ff4d4d" : "#1dd1a1",
-                  color: "#000",
-                  border: "none",
-                  borderRadius: "3px",
-                  padding: "1px 4px",
-                  fontSize: "0.5rem",
-                  cursor: "pointer",
-                  fontWeight: "bold"
-                }}
-              >
-                {backgroundTimerActive ? t("stop") : t("start")}
-              </button>
             </div>
           </div>
 

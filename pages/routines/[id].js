@@ -1060,36 +1060,71 @@ export default function RoutineDetail() {
                   
                   {openTimePickerId === exIdx && (
                     <div style={{ 
-                      display: "flex", 
-                      alignItems: "center", 
-                      gap: "5px", 
-                      marginLeft: "10px",
-                      backgroundColor: "#1a1a1a",
-                      padding: "2px 8px",
-                      borderRadius: "4px"
+                      position: "fixed",
+                      top: 0, left: 0, right: 0, bottom: 0,
+                      backgroundColor: "rgba(0,0,0,0.8)",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      zIndex: 2100
                     }}>
-                      <input 
-                        type="number" 
-                        value={tempRestTime} 
-                        onChange={(e) => setTempRestTime(e.target.value)}
-                        style={{ 
-                          width: "40px", 
-                          background: "none", 
-                          border: "none", 
-                          color: "#fff", 
-                          fontSize: "0.9rem",
-                          textAlign: "center"
-                        }}
-                      />
-                      <button 
-                        onClick={() => {
-                          handleUpdateRestTime(exIdx, parseInt(tempRestTime) || 0);
-                          setOpenTimePickerId(null);
-                        }}
-                        style={{ background: "none", border: "none", color: mint, cursor: "pointer" }}
-                      >
-                        OK
-                      </button>
+                      <div style={{
+                        backgroundColor: "#1a1a1a",
+                        borderRadius: "15px",
+                        width: "280px",
+                        padding: "20px",
+                        textAlign: "center"
+                      }}>
+                        <h3 style={{ color: "#fff", margin: "0 0 20px 0" }}>Editar Descanso</h3>
+                        
+                        <div style={{ 
+                          height: "150px", 
+                          overflowY: "scroll", 
+                          position: "relative",
+                          scrollbarWidth: "none",
+                          msOverflowStyle: "none",
+                          padding: "60px 0"
+                        }}>
+                          {baseTimeOptions.map((opt) => (
+                            <div 
+                              key={opt.value}
+                              onClick={() => {
+                                handleUpdateRestTime(exIdx, opt.value);
+                                setOpenTimePickerId(null);
+                              }}
+                              style={{
+                                padding: "10px 0",
+                                color: exercise.rest === opt.value ? mint : "#666",
+                                fontSize: exercise.rest === opt.value ? "1.5rem" : "1.1rem",
+                                fontWeight: exercise.rest === opt.value ? "bold" : "normal",
+                                cursor: "pointer",
+                                transition: "all 0.2s"
+                              }}
+                            >
+                              {opt.label}
+                            </div>
+                          ))}
+                        </div>
+                        
+                        <div style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
+                          <button 
+                            onClick={() => setOpenTimePickerId(null)}
+                            style={{
+                              flex: 1,
+                              padding: "12px",
+                              backgroundColor: "#333",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: "10px",
+                              fontWeight: "bold",
+                              cursor: "pointer"
+                            }}
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>

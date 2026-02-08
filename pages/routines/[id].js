@@ -219,7 +219,7 @@ export default function RoutineDetail() {
     // Initialize tracking for new series
     const newKey = `${exIdx}-${updatedExercise.series.length - 1}`;
     setSeriesCompleted({ ...seriesCompleted, [newKey]: false });
-    setSeriesTypes({ ...seriesTypes, [newKey]: "N" }); // Default to Normal
+    setSeriesTypes({ ...seriesTypes, [newKey]: "N" });
     setCurrentReps({ ...currentReps, [newKey]: "" });
     setCurrentWeight({ ...currentWeight, [newKey]: "" });
   };
@@ -282,9 +282,7 @@ export default function RoutineDetail() {
           ex.series.forEach((serie, serieIdx) => {
             const key = `${exIdx}-${serieIdx}`;
             seriesTracker[key] = false;
-            // First 2 series are typically warmups by default in many apps, 
-            // but let's stick to user request. Default is "N" (Normal)
-            typeTracker[key] = serieIdx < 2 ? "W" : "N"; 
+            typeTracker[key] = "N";
             repsTracker[key] = serie.reps || "";
             weightTracker[key] = serie.weight || "";
           });

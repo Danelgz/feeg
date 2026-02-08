@@ -25,6 +25,9 @@ export default function RoutineDetail() {
   const [editingRestTime, setEditingRestTime] = useState(false);
   const [tempRestTime, setTempRestTime] = useState("");
   const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
+  const [activeExerciseMenu, setActiveExerciseMenu] = useState(null); // exIdx
+  const [showDeleteExerciseConfirm, setShowDeleteExerciseConfirm] = useState(null); // exIdx
+  const [substitutingExerciseIdx, setSubstitutingExerciseIdx] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [exercisesData, setExercisesData] = useState(null);
   const [showFullSummary, setShowFullSummary] = useState(false);
@@ -414,19 +417,30 @@ export default function RoutineDetail() {
       series: [{ reps: 10, weight: 0 }]
     };
     
-    const updatedExercises = [...routine.exercises, newExercise];
+    let updatedExercises;
+    let targetIdx;
+
+    if (substitutingExerciseIdx !== null) {
+      updatedExercises = [...routine.exercises];
+      updatedExercises[substitutingExerciseIdx] = newExercise;
+      targetIdx = substitutingExerciseIdx;
+    } else {
+      updatedExercises = [...routine.exercises, newExercise];
+      targetIdx = updatedExercises.length - 1;
+    }
+
     setRoutine({ ...routine, exercises: updatedExercises });
     
-    // Initialize tracking for new exercise
-    const newExIdx = updatedExercises.length - 1;
-    const newKey = `${newExIdx}-0`;
+    // Initialize tracking for exercise
+    const newKey = `${targetIdx}-0`;
     setSeriesCompleted({ ...seriesCompleted, [newKey]: false });
     setCurrentReps({ ...currentReps, [newKey]: 10 });
     setCurrentWeight({ ...currentWeight, [newKey]: 0 });
     
-    // Close modal
+    // Close modal and reset substitution state
     setShowAddExerciseModal(false);
     setSelectedGroup(null);
+    setSubstitutingExerciseIdx(null);
   };
 
   const handleDeleteExercise = (exIdx) => {
@@ -1012,8 +1026,129 @@ export default function RoutineDetail() {
                       {t(exercise.name)}
                     </h2>
                   </div>
-                  <button style={{ background: "none", border: "none", color: "#fff", fontSize: "1.5rem", cursor: "pointer" }}>⋮</button>
+                  <div style={{ position: "relative" }}>
+                    <button 
+                      onClick={() => setActiveExerciseMenu(activeExerciseMenu === exIdx ? null : exIdx)}
+                      style={{ background: "none", border: "none", color: "#fff", fontSize: "1.5rem", cursor: "pointer" }}
+                    >
+                      ⋮
+                    </button>
+                    
+                    {activeExerciseMenu === exIdx && (
+                      <div style={{
+                        position: "absolute",
+                        top: "30px",
+                        right: 0,
+                        backgroundColor: "#1a1a1a",
+                        border: "1px solid #333",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+                        zIndex: 100,
+                        width: "160px",
+                        overflow: "hidden"
+                      }}>
+                        <button
+                          onClick={() => {
+                            setSubstitutingExerciseIdx(exIdx);
+                            setExercisesData(exercisesList);
+                            setShowAddExerciseModal(true);
+                            setActiveExerciseMenu(null);
+                          }}
+                          style={{
+                            width: "100%",
+                            padding: "12px",
+                            background: "none",
+                            border: "none",
+                            color: "#fff",
+                            textAlign: "left",
+                            cursor: "pointer",
+                            fontSize: "0.9rem",
+                            borderBottom: "1px solid #333"
+                          }}
+                        >
+                          Sustituir ejercicio
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowDeleteExerciseConfirm(exIdx);
+                            setActiveExerciseMenu(null);
+                          }}
+                          style={{
+                            width: "100%",
+                            padding: "12px",
+                            background: "none",
+                            border: "none",
+                            color: "#ff4d4d",
+                            textAlign: "left",
+                            cursor: "pointer",
+                            fontSize: "0.9rem"
+                          }}
+                        >
+                          Eliminar ejercicio
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {/* Confirmación de eliminación de ejercicio */}
+                {showDeleteExerciseConfirm === exIdx && (
+                  <div style={{
+                    position: "fixed",
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: "rgba(0,0,0,0.8)",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    zIndex: 2100
+                  }}>
+                    <div style={{
+                      backgroundColor: "#1a1a1a",
+                      borderRadius: "12px",
+                      padding: "25px",
+                      width: "300px",
+                      textAlign: "center"
+                    }}>
+                      <h3 style={{ color: "#fff", margin: "0 0 15px 0" }}>¿Eliminar ejercicio?</h3>
+                      <p style={{ color: "#aaa", fontSize: "0.9rem", marginBottom: "20px" }}>
+                        Esta acción no se puede deshacer.
+                      </p>
+                      <div style={{ display: "flex", gap: "10px" }}>
+                        <button
+                          onClick={() => setShowDeleteExerciseConfirm(null)}
+                          style={{
+                            flex: 1,
+                            padding: "10px",
+                            backgroundColor: "#333",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: "8px",
+                            cursor: "pointer"
+                          }}
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleDeleteExercise(exIdx);
+                            setShowDeleteExerciseConfirm(null);
+                          }}
+                          style={{
+                            flex: 1,
+                            padding: "10px",
+                            backgroundColor: "#ff4d4d",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: "8px",
+                            cursor: "pointer"
+                          }}
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Notas */}
                 <div style={{ marginBottom: "15px" }}>

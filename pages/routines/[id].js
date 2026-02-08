@@ -933,9 +933,6 @@ export default function RoutineDetail() {
             </div>
             
             <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "1.2rem" }}>🕒</span>
-              </div>
               <button
                 onClick={handleCompleteWorkout}
                 style={{
@@ -973,9 +970,6 @@ export default function RoutineDetail() {
             <div>
               <div style={{ color: "#666", fontSize: "0.75rem", marginBottom: "4px" }}>Series</div>
               <div style={{ color: "#fff", fontSize: "1.1rem", fontWeight: "500" }}>{totalCompletedSeries}</div>
-            </div>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <span style={{ fontSize: "1.5rem", opacity: 0.8 }}>🚶‍♂️</span>
             </div>
           </div>
 
@@ -1045,7 +1039,6 @@ export default function RoutineDetail() {
                   marginBottom: "20px",
                   fontSize: "0.95rem"
                 }}>
-                  <span>⏱️</span>
                   <span 
                     onClick={() => {
                       setOpenTimePickerId(openTimePickerId === exIdx ? null : exIdx);
@@ -1056,7 +1049,6 @@ export default function RoutineDetail() {
                   >
                     Descanso: {exercise.rest < 60 ? `${exercise.rest}s` : `${Math.floor(exercise.rest/60)}min ${exercise.rest%60}s`}
                   </span>
-                  <span style={{ color: "#f1c40f" }}>⚠️</span>
                   
                   {openTimePickerId === exIdx && (
                     <div style={{ 
@@ -1094,12 +1086,15 @@ export default function RoutineDetail() {
                                 setOpenTimePickerId(null);
                               }}
                               style={{
-                                padding: "10px 0",
-                                color: exercise.rest === opt.value ? mint : "#666",
-                                fontSize: exercise.rest === opt.value ? "1.5rem" : "1.1rem",
+                                padding: "12px 0",
+                                color: exercise.rest === opt.value ? "#000" : "#666",
+                                backgroundColor: exercise.rest === opt.value ? mint : "transparent",
+                                borderRadius: "8px",
+                                fontSize: exercise.rest === opt.value ? "1.4rem" : "1.1rem",
                                 fontWeight: exercise.rest === opt.value ? "bold" : "normal",
                                 cursor: "pointer",
-                                transition: "all 0.2s"
+                                transition: "all 0.2s",
+                                margin: "2px 0"
                               }}
                             >
                               {opt.label}
@@ -1144,7 +1139,7 @@ export default function RoutineDetail() {
                   }}>
                     <div>SERIE</div>
                     <div>ANTERIOR</div>
-                    <div style={{ textAlign: "center" }}>🏋️ KG</div>
+                    <div style={{ textAlign: "center" }}>KG</div>
                     <div style={{ textAlign: "center" }}>REPS</div>
                     <div style={{ textAlign: "right" }}>✓</div>
                     <div style={{ textAlign: "right" }}></div>

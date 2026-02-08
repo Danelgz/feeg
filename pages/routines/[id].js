@@ -1587,23 +1587,44 @@ export default function RoutineDetail() {
                 </h2>
 
                 {!selectedGroup ? (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
                     {Object.keys(exercisesData).map((group) => (
                       <button
                         key={group}
                         onClick={() => setSelectedGroup(group)}
                         style={{
-                          padding: "12px",
+                          padding: "15px",
                           backgroundColor: isDark ? "#2a2a2a" : "#f1f1f1",
-                          color: isDark ? "#1dd1a1" : "#333",
-                          border: `1px solid ${isDark ? "#1dd1a1" : "#ddd"}`,
-                          borderRadius: "6px",
+                          color: isDark ? mint : "#333",
+                          border: `1px solid ${isDark ? "#333" : "#ddd"}`,
+                          borderRadius: "12px",
                           cursor: "pointer",
                           fontSize: "0.95rem",
                           fontWeight: "600",
-                          transition: "all 0.3s ease"
+                          transition: "all 0.3s ease",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: "10px"
                         }}
                       >
+                        <div style={{
+                          width: "60px",
+                          height: "60px",
+                          borderRadius: "50%",
+                          backgroundColor: "#fff",
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          overflow: "hidden"
+                        }}>
+                          <img 
+                            src={`/muscle_groups/${group.toLowerCase().replace(/ /g, "_")}.png`} 
+                            onError={(e) => { e.target.src = "/logo3.png"; }}
+                            alt="" 
+                            style={{ width: "80%", height: "auto" }} 
+                          />
+                        </div>
                         {t(group) || group}
                       </button>
                     ))}

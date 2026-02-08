@@ -863,576 +863,351 @@ export default function RoutineDetail() {
   }
 
   if (workoutState === "ongoing") {
+    // Calcular estadísticas en tiempo real
+    const totalCompletedSeries = Object.keys(seriesCompleted).filter(key => seriesCompleted[key]).length;
+    const totalVolume = Object.keys(seriesCompleted).reduce((sum, key) => {
+      if (!seriesCompleted[key]) return sum;
+      const weight = parseFloat(currentWeight[key]) || 0;
+      const reps = parseInt(currentReps[key]) || 0;
+      return sum + (weight * reps);
+    }, 0);
+
     return (
       <Layout>
-        <div style={{ padding: isMobile ? "0" : "20px", maxWidth: isMobile ? "100%" : "900px", margin: isMobile ? "0" : "0 auto" }}>
-          {/* Background Workout Timer - Fixed in Corner */}
+        <div style={{ 
+          padding: 0, 
+          maxWidth: "900px", 
+          margin: "0 auto", 
+          backgroundColor: "#000", 
+          minHeight: "100vh",
+          color: "#fff",
+          fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+        }}>
+          {/* Header Superior Estilo Captura */}
           <div style={{
-            position: "fixed",
-            top: isMobile ? "10px" : "80px",
-            right: isMobile ? "10px" : "20px",
-            backgroundColor: isDark ? "rgba(20, 20, 20, 0.92)" : "rgba(255, 255, 255, 0.92)",
-            backdropFilter: "blur(4px)",
-            color: isDark ? "#fff" : "#333",
-            padding: isMobile ? "4px 8px" : "8px 12px",
-            borderRadius: "8px",
-            textAlign: "center",
-            border: `1px solid ${isDark ? "#333" : "#ddd"}`,
-            boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
-            zIndex: 1001,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            minWidth: isMobile ? "80px" : "120px",
-            transition: "all 0.3s ease"
-          }}>
-            <div style={{ 
-              fontSize: isMobile ? "0.5rem" : "0.65rem", 
-              color: isDark ? "#aaa" : "#888", 
-              fontWeight: "800", 
-              textTransform: "uppercase", 
-              letterSpacing: "0.5px",
-              marginBottom: "2px"
-            }}>
-              {t("time")}
-            </div>
-            <div style={{ fontSize: isMobile ? "1.2rem" : "1.4rem", fontWeight: "bold", fontFamily: "monospace" }}>
-              {formatElapsedTime(elapsedTime)}
-            </div>
-          </div>
-
-          {/* Rest Timer - Fixed Below Workout Timer */}
-          {(restTimerActive || restCountdown > 0) && (
-            <div style={{
-              position: "fixed",
-              top: isMobile ? "60px" : "140px",
-              right: isMobile ? "10px" : "20px",
-              backgroundColor: "rgba(46, 230, 197, 0.95)",
-              backdropFilter: "blur(4px)",
-              color: "#000",
-              padding: isMobile ? "4px 8px" : "8px 12px",
-              borderRadius: "8px",
-              textAlign: "center",
-              border: "2px solid #fff",
-              boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
-              zIndex: 1001,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              minWidth: isMobile ? "80px" : "120px",
-              transition: "all 0.3s ease"
-            }}>
-              <div style={{ 
-                fontSize: isMobile ? "0.5rem" : "0.65rem", 
-                color: "#000", 
-                fontWeight: "800", 
-                textTransform: "uppercase", 
-                letterSpacing: "0.5px",
-                marginBottom: "2px"
-              }}>
-                {t("rest")}
-              </div>
-              <div style={{ fontSize: isMobile ? "0.9rem" : "1.4rem", fontWeight: "bold", fontFamily: "monospace" }}>
-                {formatRestTime(restCountdown)}
-              </div>
-              <div style={{ display: "flex", gap: "5px", marginTop: "4px" }}>
-                <button
-                  onClick={stopRestTimer}
-                  style={{
-                    backgroundColor: "#ff4d4d",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "3px",
-                    padding: "1px 4px",
-                    fontSize: "0.5rem",
-                    cursor: "pointer",
-                    fontWeight: "bold"
-                  }}
-                >
-                  {t("stop")}
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div style={{
+            padding: "15px 20px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: "20px",
-            paddingRight: isMobile ? "120px" : "0" // Evitar que el título choque con el timer
+            backgroundColor: "#000",
+            position: "sticky",
+            top: 0,
+            zIndex: 1002
           }}>
-            <h1 style={{ margin: 0, color: isDark ? "#fff" : "#333", fontSize: isMobile ? "1.5rem" : "2rem" }}>
-              {routine.name}
-            </h1>
-          </div>
-
-          {routine.exercises.map((exercise, exIdx) => (
-            <div
-              key={exIdx}
-              style={{
-                backgroundColor: surface,
-                border: `1px solid ${isDark ? "#242424" : "#eee"}`,
-                borderRadius: "12px",
-                padding: isMobile ? "12px" : "20px",
-                marginBottom: "20px",
-                boxShadow: isDark ? "none" : "0 2px 8px rgba(0,0,0,0.05)"
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-                <h2 style={{ margin: 0, color: isDark ? mint : "#333" }}>
-                  {exIdx + 1}. {t(exercise.name)}
-                </h2>
-                {routine.exercises.length > 1 && (
-                  <button
-                    onClick={() => handleDeleteExercise(exIdx)}
-                    style={{
-                      padding: "6px 10px",
-                      backgroundColor: "#ff4d4d",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "8px",
-                      cursor: "pointer",
-                      fontSize: "0.85rem",
-                      fontWeight: "600"
-                    }}
-                  >
-                    {t("delete")}
-                  </button>
-                )}
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ fontSize: "1.2rem", color: "#fff" }}>∨</span>
+              <span style={{ fontSize: "1.1rem", fontWeight: "500", color: "#fff" }}>Entreno</span>
+            </div>
+            
+            <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ fontSize: "1.2rem" }}>🕒</span>
               </div>
-
-              <div style={{ marginBottom: "15px", padding: "10px", backgroundColor: surface2, borderRadius: "10px", border: `1px solid ${isDark ? "#222" : "#eee"}` }}>
-                <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", marginBottom: "10px" }}>{t("rest_between_series")}</label>
-                <div style={{ position: "relative" }}>
-                  <button
-                    onClick={() => setOpenTimePickerId(openTimePickerId === exIdx ? null : exIdx)}
-                    style={{
-                      width: "100%",
-                      padding: "10px 15px",
-                      backgroundColor: isDark ? "#1b1b1b" : "#eee",
-                      color: isDark ? mint : "#333",
-                      border: `1px solid ${isDark ? "#2a2a2a" : "#ddd"}`,
-                      borderRadius: "10px",
-                      cursor: "pointer",
-                      fontSize: "0.95rem",
-                      fontWeight: "600",
-                      textAlign: "left",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center"
-                    }}
-                  >
-                    <span>
-                      {exercise.rest ? (
-                        (() => {
-                          if (exercise.rest < 60) {
-                            return `${exercise.rest}s`;
-                          } else {
-                            const minutes = Math.floor(exercise.rest / 60);
-                            const seconds = exercise.rest % 60;
-                            return seconds === 0 ? `${minutes}m` : `${minutes}m${seconds}s`;
-                          }
-                        })()
-                      ) : t("choose_rest_time")}
-                    </span>
-                    <span style={{ fontSize: "0.8rem", color: "#666" }}>▼</span>
-                  </button>
-
-                  {openTimePickerId === exIdx && (
-                    <div style={{
-                      position: "absolute",
-                      top: "100%",
-                      left: 0,
-                      right: 0,
-                      marginTop: "8px",
-                      backgroundColor: "#1a1a1a",
-                      border: "1px solid #333",
-                      borderRadius: "8px",
-                      overflow: "hidden",
-                      zIndex: 1000,
-                      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.5)",
-                      padding: "8px 0"
-                    }}>
-                      {/* Rueda tipo spinner */}
-                      <div style={{
-                        height: "150px",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        position: "relative"
-                      }}>
-                        {/* Área scrollable tipo rueda */}
-                        <div
-                          data-wheel-picker={exIdx}
-                          ref={(el) => {
-                            if (el && !wheelScrollPositions[exIdx]) {
-                              const baseLength = baseTimeOptions.length;
-                              const selectedOptionIdx = baseTimeOptions.findIndex(opt => opt.value === exercise.rest);
-                              if (selectedOptionIdx !== -1) {
-                                // Empezar en la segunda repetición para tener arriba y abajo
-                                setTimeout(() => {
-                                  el.scrollTop = (baseLength + selectedOptionIdx) * 30 - 60;
-                                }, 0);
-                              }
-                            }
-                          }}
-                          onWheel={(e) => {
-                            e.preventDefault();
-                            const wheelElement = e.currentTarget;
-                            const scrollSpeed = 30;
-                            const direction = e.deltaY > 0 ? 1 : -1;
-                            wheelElement.scrollTop += direction * scrollSpeed;
-                          }}
-                          onScroll={(e) => {
-                            const baseLength = baseTimeOptions.length;
-                            setWheelScrollPositions({
-                              ...wheelScrollPositions,
-                              [exIdx]: e.target.scrollTop
-                            });
-                            // Detectar el elemento del centro (snap)
-                            const itemHeight = 30;
-                            const centerPos = e.target.scrollTop + 60;
-                            const selectedIdx = Math.round(centerPos / itemHeight);
-                            
-                            // Usar módulo para el bucle infinito
-                            const actualIdx = selectedIdx % baseLength;
-                            if (actualIdx >= 0 && actualIdx < baseLength) {
-                              const updatedExercises = [...routine.exercises];
-                              updatedExercises[exIdx].rest = baseTimeOptions[actualIdx].value;
-                              setRoutine({ ...routine, exercises: updatedExercises });
-                            }
-
-                            // Detectar si necesitamos hacer scroll infinito
-                            if (selectedIdx >= baseLength * 2.5) {
-                              setTimeout(() => {
-                                e.target.scrollTop = selectedIdx % baseLength * 30 + baseLength * 30 - 60;
-                              }, 0);
-                            } else if (selectedIdx <= baseLength * 0.5) {
-                              setTimeout(() => {
-                                e.target.scrollTop = (selectedIdx % baseLength + baseLength) * 30 - 60;
-                              }, 0);
-                            }
-                          }}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            overflowY: "scroll",
-                            overflowX: "hidden",
-                            scrollBehavior: "auto",
-                            scrollSnapType: "y mandatory",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center"
-                          }}
-                        >
-                          {/* Espaciador arriba - permite llegar al primer elemento */}
-                          <div style={{ height: "60px", flexShrink: 0 }} />
-                          
-                          {/* Opciones */}
-                          {timeOptions.map((option, idx) => {
-                            const baseLength = baseTimeOptions.length;
-                            const currentScrollTop = wheelScrollPositions[exIdx] || 0;
-                            const itemTop = idx * 30;
-                            const distanceFromCenter = Math.abs(itemTop - (currentScrollTop + 60));
-                            const isCenter = distanceFromCenter < 20;
-                            const opacity = 1 - (distanceFromCenter / 160);
-                            
-                            return (
-                              <div
-                                key={`${option.value}-${idx}`}
-                                onClick={() => {
-                                  // Actualizar valor inmediatamente
-                                  const baseLength = baseTimeOptions.length;
-                                  const actualIdx = idx % baseLength;
-                                  const updatedExercises = [...routine.exercises];
-                                  updatedExercises[exIdx].rest = baseTimeOptions[actualIdx].value;
-                                  setRoutine({ ...routine, exercises: updatedExercises });
-                                  // Cerrar la ruleta
-                                  setOpenTimePickerId(null);
-                                }}
-                                style={{
-                                  height: "30px",
-                                  width: "100%",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  flexShrink: 0,
-                                  cursor: "pointer",
-                                  scrollSnapAlign: "center",
-                                  scrollSnapStop: "always",
-                                  fontSize: isCenter ? "0.95rem" : "0.75rem",
-                                  fontWeight: isCenter ? "700" : "400",
-                                  color: isCenter ? "#1dd1a1" : `rgba(170, 170, 170, ${Math.max(0.3, opacity)})`,
-                                  transition: "all 0.15s ease",
-                                  textShadow: isCenter ? "0 0 10px rgba(29, 209, 161, 0.4)" : "none",
-                                  transform: isCenter ? "scale(1.1)" : "scale(1)"
-                                }}
-                              >
-                                {option.label}
-                              </div>
-                            );
-                          })}
-
-                          {/* Espaciador abajo - permite llegar al último elemento */}
-                          <div style={{ height: "60px", flexShrink: 0 }} />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <h3 style={{ margin: "0 0 12px 0", color: "#fff" }}>{t("series_label")}</h3>
-              {exercise.series.map((serie, serieIdx) => {
-                const key = `${exIdx}-${serieIdx}`;
-                const isCompleted = seriesCompleted[key];
-                
-                return (
-                  <div
-                    key={serieIdx}
-                    style={{
-                      backgroundColor: isCompleted ? mintSoft : surface2,
-                      border: isCompleted ? `1px solid ${mint}` : `1px solid ${isDark ? "#242424" : "#eee"}`,
-                      borderRadius: "12px",
-                      padding: isMobile ? "12px" : "15px",
-                      marginBottom: "10px",
-                      transition: "all 0.3s ease",
-                      opacity: isCompleted ? 0.8 : 1
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "15px", flex: 1 }}>
-                        <button
-                          onClick={() => {
-                            const newSeriesCompleted = { ...seriesCompleted };
-                            const isNowCompleted = !newSeriesCompleted[key];
-                            newSeriesCompleted[key] = isNowCompleted;
-                            setSeriesCompleted(newSeriesCompleted);
-                            
-                            // Si se marca como completada, inicia el temporizador de descanso
-                            if (isNowCompleted && exercise.rest) {
-                              startRestTimer(exercise.rest);
-                            }
-                            
-                            // Si se desmarca, detiene el temporizador de descanso
-                            if (!isNowCompleted) {
-                              stopRestTimer();
-                            }
-                          }}
-                          style={{
-                            width: isMobile ? "32px" : "40px",
-                            height: isMobile ? "32px" : "40px",
-                            borderRadius: "50%",
-                            backgroundColor: isCompleted ? mint : (isDark ? "#1f1f1f" : "#ddd"),
-                            color: isCompleted ? "#000" : (isDark ? "#999" : "#888"),
-                            border: "none",
-                            fontWeight: "bold",
-                            fontSize: isMobile ? "0.8rem" : "1rem",
-                            cursor: "pointer",
-                            transition: "all 0.3s ease"
-                          }}
-                        >
-                      {isCompleted ? "X" : "✓"}
-                    </button>
-
-                        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "8px" : "12px" }}>
-                          <div>
-                            <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.8rem", marginBottom: "3px" }}>
-                              {exercise.type === 'time' ? t('time_seconds') : t('reps')}
-                            </label>
-                            <input
-                              type="number"
-                              value={currentReps[key] || ""}
-                              onChange={(e) => {
-                                setCurrentReps({
-                                  ...currentReps,
-                                  [key]: e.target.value
-                                });
-                              }}
-                              style={{
-                                padding: "6px 8px",
-                                backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
-                                border: `1px solid ${isDark ? "#333" : "#ddd"}`,
-                                borderRadius: "4px",
-                                color: isDark ? "#fff" : "#333",
-                                width: isMobile ? "45px" : "70px",
-                                fontSize: isMobile ? "0.85rem" : "0.95rem",
-                                textAlign: "center"
-                              }}
-                            />
-                          </div>
-
-                          {(exercise.type === 'weight_reps' || !exercise.type) && (
-                            <div>
-                              <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.8rem", marginBottom: "3px" }}>
-                                {t('weight_kg')}
-                              </label>
-                              <input
-                                type="number"
-                                value={currentWeight[key] || ""}
-                                onChange={(e) => {
-                                  setCurrentWeight({
-                                    ...currentWeight,
-                                    [key]: e.target.value
-                                  });
-                                }}
-                                step="0.5"
-                                style={{
-                                  padding: "6px 8px",
-                                  backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
-                                  border: `1px solid ${isDark ? "#333" : "#ddd"}`,
-                                  borderRadius: "4px",
-                                  color: isDark ? "#fff" : "#333",
-                                  width: isMobile ? "45px" : "70px",
-                                  fontSize: isMobile ? "0.85rem" : "0.95rem",
-                                  textAlign: "center"
-                                }}
-                              />
-                            </div>
-                          )}
-
-                          <span style={{ color: isDark ? "#aaa" : "#666", fontSize: isMobile ? "0.75rem" : "1rem" }}>
-                            {`${serieIdx + 1}`}
-                          </span>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => {
-                          const newSeries = exercise.series.filter((_, i) => i !== serieIdx);
-                          const updatedExercises = [...routine.exercises];
-                          updatedExercises[exIdx].series = newSeries;
-                          setRoutine({ ...routine, exercises: updatedExercises });
-
-                          // Clean up tracking
-                          const newSeriesCompleted = {};
-                          const newCurrentReps = {};
-                          const newCurrentWeight = {};
-
-                          Object.keys(seriesCompleted).forEach((k) => {
-                            const [exIndexKey, serIdx] = k.split("-").map(Number);
-                            if (exIndexKey === exIdx && serIdx !== serieIdx) {
-                              const newKey = serIdx > serieIdx ? `${exIdx}-${serIdx - 1}` : k;
-                              newSeriesCompleted[newKey] = seriesCompleted[k];
-                              newCurrentReps[newKey] = currentReps[k];
-                              newCurrentWeight[newKey] = currentWeight[k];
-                            } else if (exIndexKey !== exIdx) {
-                              newSeriesCompleted[k] = seriesCompleted[k];
-                              newCurrentReps[k] = currentReps[k];
-                              newCurrentWeight[k] = currentWeight[k];
-                            }
-                          });
-
-                          setSeriesCompleted(newSeriesCompleted);
-                          setCurrentReps(newCurrentReps);
-                          setCurrentWeight(newCurrentWeight);
-                        }}
-                        style={{
-                          padding: "6px 10px",
-                          backgroundColor: "#ff4d4d",
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: "4px",
-                          cursor: "pointer",
-                          fontSize: "0.85rem",
-                          fontWeight: "600",
-                          marginLeft: "10px"
-                        }}
-                      >
-                        {t('delete_series')}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-
               <button
-                onClick={() => {
-                  const newSeries = [...exercise.series, { reps: "", weight: "" }];
-                  const updatedExercises = [...routine.exercises];
-                  updatedExercises[exIdx].series = newSeries;
-                  setRoutine({ ...routine, exercises: updatedExercises });
-
-                  const newKey = `${exIdx}-${newSeries.length - 1}`;
-                  setSeriesCompleted({ ...seriesCompleted, [newKey]: false });
-                  setCurrentReps({ ...currentReps, [newKey]: "" });
-                  setCurrentWeight({ ...currentWeight, [newKey]: "" });
-                }}
+                onClick={handleCompleteWorkout}
                 style={{
-                  width: "100%",
-                  padding: "12px",
-                  backgroundColor: isDark ? "#1b1b1b" : "#eee",
-                  color: mint,
-                  border: `1px solid ${mint}`,
-                  borderRadius: "12px",
-                  cursor: "pointer",
-                  fontSize: "0.95rem",
+                  backgroundColor: mint,
+                  color: "#000",
+                  border: "none",
+                  borderRadius: "8px",
+                  padding: "8px 16px",
+                  fontSize: "1rem",
                   fontWeight: "600",
-                  marginTop: "10px",
-                  transition: "all 0.3s ease"
+                  cursor: "pointer"
                 }}
               >
-                {t('add_series')}
+                Terminar
               </button>
             </div>
-          ))}
+          </div>
 
-          <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+          {/* Fila de Estadísticas */}
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            padding: "0 20px 20px 20px",
+            backgroundColor: "#000",
+            borderBottom: "1px solid #1a1a1a"
+          }}>
+            <div>
+              <div style={{ color: "#666", fontSize: "0.75rem", marginBottom: "4px" }}>Duración</div>
+              <div style={{ color: mint, fontSize: "1.1rem", fontWeight: "500" }}>{formatElapsedTime(elapsedTime)}</div>
+            </div>
+            <div>
+              <div style={{ color: "#666", fontSize: "0.75rem", marginBottom: "4px" }}>Volumen</div>
+              <div style={{ color: "#fff", fontSize: "1.1rem", fontWeight: "500" }}>{totalVolume.toLocaleString()} kg</div>
+            </div>
+            <div>
+              <div style={{ color: "#666", fontSize: "0.75rem", marginBottom: "4px" }}>Series</div>
+              <div style={{ color: "#fff", fontSize: "1.1rem", fontWeight: "500" }}>{totalCompletedSeries}</div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <span style={{ fontSize: "1.5rem", opacity: 0.8 }}>🚶‍♂️</span>
+            </div>
+          </div>
+
+          <div style={{ padding: "20px 15px" }}>
+            {routine.exercises.map((exercise, exIdx) => (
+              <div
+                key={exIdx}
+                style={{
+                  marginBottom: "40px",
+                }}
+              >
+                {/* Título del Ejercicio con Imagen */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+                    <div style={{
+                      width: "45px",
+                      height: "45px",
+                      borderRadius: "50%",
+                      backgroundColor: "#fff",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      overflow: "hidden"
+                    }}>
+                      <img 
+                        src={`/exercises/${exercise.name.toLowerCase().replace(/ /g, "_")}.png`} 
+                        onError={(e) => { e.target.src = "/logo3.png"; }}
+                        alt="" 
+                        style={{ width: "80%", height: "auto" }} 
+                      />
+                    </div>
+                    <h2 style={{ 
+                      margin: 0, 
+                      color: mint, 
+                      fontSize: "1.15rem", 
+                      fontWeight: "500",
+                      lineHeight: "1.2"
+                    }}>
+                      {t(exercise.name)}
+                    </h2>
+                  </div>
+                  <button style={{ background: "none", border: "none", color: "#fff", fontSize: "1.5rem", cursor: "pointer" }}>⋮</button>
+                </div>
+
+                {/* Notas */}
+                <div style={{ marginBottom: "15px" }}>
+                  <input 
+                    type="text" 
+                    placeholder="Agregar notas aquí..." 
+                    style={{ 
+                      width: "100%", 
+                      background: "none", 
+                      border: "none", 
+                      color: "#666", 
+                      fontSize: "0.95rem",
+                      padding: "5px 0"
+                    }} 
+                  />
+                </div>
+
+                {/* Temporizador de Descanso Estilo Captura */}
+                <div style={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: "10px", 
+                  color: mint, 
+                  marginBottom: "20px",
+                  fontSize: "0.95rem"
+                }}>
+                  <span>⏱️</span>
+                  <span 
+                    onClick={() => setOpenTimePickerId(openTimePickerId === exIdx ? null : exIdx)}
+                    style={{ cursor: "pointer", fontWeight: "500" }}
+                  >
+                    Descanso: {exercise.rest < 60 ? `${exercise.rest}s` : `${Math.floor(exercise.rest/60)}min ${exercise.rest%60}s`}
+                  </span>
+                  <span style={{ color: "#f1c40f" }}>⚠️</span>
+                </div>
+
+                {/* Tabla de Series */}
+                <div style={{ marginBottom: "15px" }}>
+                  <div style={{ 
+                    display: "grid", 
+                    gridTemplateColumns: "50px 1fr 80px 80px 40px", 
+                    gap: "10px", 
+                    marginBottom: "10px",
+                    color: "#666",
+                    fontSize: "0.75rem",
+                    fontWeight: "600",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px"
+                  }}>
+                    <div>SERIE</div>
+                    <div>ANTERIOR</div>
+                    <div style={{ textAlign: "center" }}>🏋️ KG</div>
+                    <div style={{ textAlign: "center" }}>REPS</div>
+                    <div style={{ textAlign: "right" }}>✓</div>
+                  </div>
+
+                  {exercise.series.map((serie, serieIdx) => {
+                    const key = `${exIdx}-${serieIdx}`;
+                    const isCompleted = seriesCompleted[key];
+                    
+                    return (
+                      <div
+                        key={serieIdx}
+                        style={{
+                          display: "grid", 
+                          gridTemplateColumns: "50px 1fr 80px 80px 40px", 
+                          gap: "10px",
+                          alignItems: "center",
+                          height: "45px",
+                          marginBottom: "5px",
+                          transition: "background 0.2s"
+                        }}
+                      >
+                        <div style={{ 
+                          color: serieIdx < 2 ? "#f1c40f" : "#fff", 
+                          fontWeight: "bold",
+                          fontSize: "1rem" 
+                        }}>
+                          {serieIdx < 2 ? "W" : serieIdx - 1}
+                        </div>
+                        
+                        <div style={{ color: "#666", fontSize: "0.9rem" }}>
+                          {serie.weight}kg x {serie.reps}
+                        </div>
+                        
+                        <div>
+                          <input
+                            type="number"
+                            value={currentWeight[key] || ""}
+                            onChange={(e) => handleUpdateWeight(serieIdx, e.target.value)}
+                            style={{
+                              width: "100%",
+                              background: isCompleted ? "rgba(46, 230, 197, 0.1)" : "#1a1a1a",
+                              border: "none",
+                              borderRadius: "4px",
+                              color: "#fff",
+                              textAlign: "center",
+                              padding: "6px 0",
+                              fontSize: "1rem"
+                            }}
+                          />
+                        </div>
+
+                        <div>
+                          <input
+                            type="number"
+                            value={currentReps[key] || ""}
+                            onChange={(e) => handleUpdateReps(serieIdx, e.target.value)}
+                            style={{
+                              width: "100%",
+                              background: isCompleted ? "rgba(46, 230, 197, 0.1)" : "#1a1a1a",
+                              border: "none",
+                              borderRadius: "4px",
+                              color: "#fff",
+                              textAlign: "center",
+                              padding: "6px 0",
+                              fontSize: "1rem"
+                            }}
+                          />
+                        </div>
+
+                        <div style={{ textAlign: "right" }}>
+                          <button
+                            onClick={() => {
+                              const newSeriesCompleted = { ...seriesCompleted };
+                              const isNowCompleted = !newSeriesCompleted[key];
+                              newSeriesCompleted[key] = isNowCompleted;
+                              setSeriesCompleted(newSeriesCompleted);
+                              if (isNowCompleted && exercise.rest) startRestTimer(exercise.rest);
+                              else stopRestTimer();
+                            }}
+                            style={{
+                              width: "28px",
+                              height: "28px",
+                              borderRadius: "6px",
+                              backgroundColor: isCompleted ? mint : "#333",
+                              color: isCompleted ? "#000" : "#666",
+                              border: "none",
+                              cursor: "pointer",
+                              display: "flex",
+                              justifyContent: "center",
+                              alignItems: "center",
+                              fontSize: "0.9rem"
+                            }}
+                          >
+                            ✓
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Botón Agregar Serie */}
+                <button
+                  onClick={handleAddSeries}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    backgroundColor: "#1a1a1a",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "1rem",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    gap: "8px"
+                  }}
+                >
+                  <span style={{ fontSize: "1.2rem" }}>+</span> Agregar Serie
+                </button>
+              </div>
+            ))}
+
             <button
               onClick={handleAddExercise}
               style={{
-                ...buttonStyle,
-                flex: 1,
-                backgroundColor: "#1dd1a1",
-                color: "#000"
-              }}
-              onMouseOver={(e) => {
-                e.target.style.backgroundColor = "#16a853";
-                e.target.style.boxShadow = "0 4px 12px rgba(29, 209, 161, 0.4)";
-              }}
-              onMouseOut={(e) => {
-                e.target.style.backgroundColor = "#1dd1a1";
-                e.target.style.boxShadow = "none";
+                width: "100%",
+                padding: "15px",
+                backgroundColor: "#1a1a1a",
+                color: mint,
+                border: `1px dashed ${mint}`,
+                borderRadius: "10px",
+                fontSize: "1rem",
+                fontWeight: "600",
+                cursor: "pointer",
+                marginBottom: "20px"
               }}
             >
-              {t('add_exercise')}
+              + Agregar Ejercicio
             </button>
           </div>
 
-          <button
-            onClick={handleCompleteWorkout}
-            style={{
-              ...buttonStyle,
-              fontSize: "1.1rem",
-              padding: "12px 30px",
-              width: "100%",
-              backgroundColor: "#2ecc71",
-              marginBottom: "15px"
-            }}
-            {...buttonHoverStyle}
-          >
-            {t('complete_routine')}
-          </button>
+          {/* Rest Timer Floating (Solo si está activo y no es el de arriba) */}
+          {restTimerActive && (
+            <div style={{
+              position: "fixed",
+              bottom: "20px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              backgroundColor: mint,
+              color: "#000",
+              padding: "12px 24px",
+              borderRadius: "30px",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+              display: "flex",
+              alignItems: "center",
+              gap: "15px",
+              zIndex: 2000
+            }}>
+              <span style={{ fontWeight: "bold" }}>Descanso: {formatRestTime(restCountdown)}</span>
+              <button 
+                onClick={stopRestTimer}
+                style={{ background: "#000", color: "#fff", border: "none", borderRadius: "50%", width: "24px", height: "24px", cursor: "pointer" }}
+              >×</button>
+            </div>
+          )}
 
-          <button
-            onClick={() => {
-              setWorkoutState("preview");
-              endRoutine();
-              clearPersistentTimer();
-            }}
-            style={{
-              ...buttonStyle,
-              marginTop: "10px",
-              width: "100%",
-              backgroundColor: isDark ? "#444" : "#ddd",
-              color: isDark ? "#fff" : "#333"
-            }}
-          >
-            {t('cancel')}
-          </button>
-
-          {/* Modal para agregar ejercicio */}
+          {/* Modal para agregar ejercicio (Mantenemos la lógica existente) */}
           {showAddExerciseModal && exercisesData && (
             <div
               style={{

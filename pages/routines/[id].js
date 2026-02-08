@@ -9,6 +9,10 @@ export default function RoutineDetail() {
   const router = useRouter();
   const { theme, routines: allRoutines, activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, t } = useUser();
   const isDark = theme === 'dark';
+  const mint = "#2EE6C5";
+  const mintSoft = "rgba(46, 230, 197, 0.12)";
+  const surface = isDark ? "#141414" : "#fff";
+  const surface2 = isDark ? "#0f0f0f" : "#f9f9f9";
   const { id } = router.query;
   const [routine, setRoutine] = useState(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
@@ -867,7 +871,7 @@ export default function RoutineDetail() {
             position: "fixed",
             top: isMobile ? "10px" : "80px",
             right: isMobile ? "10px" : "20px",
-            backgroundColor: isDark ? "rgba(26, 26, 26, 0.9)" : "rgba(255, 255, 255, 0.9)",
+            backgroundColor: isDark ? "rgba(20, 20, 20, 0.92)" : "rgba(255, 255, 255, 0.92)",
             backdropFilter: "blur(4px)",
             color: isDark ? "#fff" : "#333",
             padding: isMobile ? "4px 8px" : "8px 12px",
@@ -903,7 +907,7 @@ export default function RoutineDetail() {
               position: "fixed",
               top: isMobile ? "60px" : "140px",
               right: isMobile ? "10px" : "20px",
-              backgroundColor: "rgba(29, 209, 161, 0.95)",
+              backgroundColor: "rgba(46, 230, 197, 0.95)",
               backdropFilter: "blur(4px)",
               color: "#000",
               padding: isMobile ? "4px 8px" : "8px 12px",
@@ -967,16 +971,16 @@ export default function RoutineDetail() {
             <div
               key={exIdx}
               style={{
-                backgroundColor: isDark ? "#1a1a1a" : "#fff",
-                border: `1px solid ${isDark ? "#333" : "#eee"}`,
-                borderRadius: "8px",
+                backgroundColor: surface,
+                border: `1px solid ${isDark ? "#242424" : "#eee"}`,
+                borderRadius: "12px",
                 padding: isMobile ? "12px" : "20px",
                 marginBottom: "20px",
                 boxShadow: isDark ? "none" : "0 2px 8px rgba(0,0,0,0.05)"
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-                <h2 style={{ margin: 0, color: isDark ? "#1dd1a1" : "#333" }}>
+                <h2 style={{ margin: 0, color: isDark ? mint : "#333" }}>
                   {exIdx + 1}. {t(exercise.name)}
                 </h2>
                 {routine.exercises.length > 1 && (
@@ -987,7 +991,7 @@ export default function RoutineDetail() {
                       backgroundColor: "#ff4d4d",
                       color: "#fff",
                       border: "none",
-                      borderRadius: "4px",
+                      borderRadius: "8px",
                       cursor: "pointer",
                       fontSize: "0.85rem",
                       fontWeight: "600"
@@ -998,7 +1002,7 @@ export default function RoutineDetail() {
                 )}
               </div>
 
-              <div style={{ marginBottom: "15px", padding: "10px", backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9", borderRadius: "6px" }}>
+              <div style={{ marginBottom: "15px", padding: "10px", backgroundColor: surface2, borderRadius: "10px", border: `1px solid ${isDark ? "#222" : "#eee"}` }}>
                 <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", marginBottom: "10px" }}>{t("rest_between_series")}</label>
                 <div style={{ position: "relative" }}>
                   <button
@@ -1006,10 +1010,10 @@ export default function RoutineDetail() {
                     style={{
                       width: "100%",
                       padding: "10px 15px",
-                      backgroundColor: isDark ? "#2a2a2a" : "#eee",
-                      color: isDark ? "#1dd1a1" : "#333",
-                      border: `1px solid ${isDark ? "#333" : "#ddd"}`,
-                      borderRadius: "8px",
+                      backgroundColor: isDark ? "#1b1b1b" : "#eee",
+                      color: isDark ? mint : "#333",
+                      border: `1px solid ${isDark ? "#2a2a2a" : "#ddd"}`,
+                      borderRadius: "10px",
                       cursor: "pointer",
                       fontSize: "0.95rem",
                       fontWeight: "600",
@@ -1188,10 +1192,10 @@ export default function RoutineDetail() {
                   <div
                     key={serieIdx}
                     style={{
-                      backgroundColor: isCompleted ? "rgba(29, 209, 161, 0.1)" : "#0f0f0f",
-                      border: isCompleted ? "2px solid #1dd1a1" : "1px solid #2a2a2a",
-                      borderRadius: "6px",
-                      padding: "15px",
+                      backgroundColor: isCompleted ? mintSoft : surface2,
+                      border: isCompleted ? `1px solid ${mint}` : `1px solid ${isDark ? "#242424" : "#eee"}`,
+                      borderRadius: "12px",
+                      padding: isMobile ? "12px" : "15px",
                       marginBottom: "10px",
                       transition: "all 0.3s ease",
                       opacity: isCompleted ? 0.8 : 1
@@ -1220,7 +1224,7 @@ export default function RoutineDetail() {
                             width: isMobile ? "32px" : "40px",
                             height: isMobile ? "32px" : "40px",
                             borderRadius: "50%",
-                            backgroundColor: isCompleted ? "#1dd1a1" : (isDark ? "#2a2a2a" : "#ddd"),
+                            backgroundColor: isCompleted ? mint : (isDark ? "#1f1f1f" : "#ddd"),
                             color: isCompleted ? "#000" : (isDark ? "#999" : "#888"),
                             border: "none",
                             fontWeight: "bold",
@@ -1358,10 +1362,10 @@ export default function RoutineDetail() {
                 style={{
                   width: "100%",
                   padding: "12px",
-                  backgroundColor: isDark ? "#2a2a2a" : "#eee",
-                  color: "#1dd1a1",
-                  border: "2px dashed #1dd1a1",
-                  borderRadius: "6px",
+                  backgroundColor: isDark ? "#1b1b1b" : "#eee",
+                  color: mint,
+                  border: `1px solid ${mint}`,
+                  borderRadius: "12px",
                   cursor: "pointer",
                   fontSize: "0.95rem",
                   fontWeight: "600",

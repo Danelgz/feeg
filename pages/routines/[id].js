@@ -46,6 +46,9 @@ export default function RoutineDetail() {
   const [savingWorkout, setSavingWorkout] = useState(false);
   const [exerciseSearchQuery, setExerciseSearchQuery] = useState("");
   const [showRoutineActiveAlert, setShowRoutineActiveAlert] = useState(false);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(null); // exerciseName
+  const [selectedGraphPoint, setSelectedGraphPoint] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isTimerLoaded, setIsTimerLoaded] = useState(false);
   const [backgroundTimerActive, setBackgroundTimerActive] = useState(false);
@@ -156,6 +159,39 @@ export default function RoutineDetail() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  const getExerciseHistory = (exerciseName) => {
+    if (!completedWorkouts) return [];
+    
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const historyMap = {}; // Mantener solo el peso máximo por día
+    
+    completedWorkouts.forEach(w => {
+      if (!w.completedAt) return;
+      const workoutDate = new Date(w.completedAt);
+      if (workoutDate >= thirtyDaysAgo) {
+        const details = w.exerciseDetails || w.details || [];
+        const exDetail = details.find(ed => (ed.name || ed.exercise) === exerciseName);
+        if (exDetail && Array.isArray(exDetail.series)) {
+          const maxWeight = Math.max(...exDetail.series.map(s => parseFloat(s.weight) || 0));
+          if (maxWeight > 0) {
+            const dateKey = workoutDate.toDateString();
+            if (!historyMap[dateKey] || historyMap[dateKey].weight < maxWeight) {
+              historyMap[dateKey] = {
+                date: workoutDate,
+                weight: maxWeight,
+                formattedDate: `${workoutDate.getDate()}/${workoutDate.getMonth() + 1}`
+              };
+            }
+          }
+        }
+      }
+    });
+    
+    return Object.values(historyMap).sort((a, b) => a.date - b.date);
+  };
+
   const handleUpdateReps = (exIdx, serieIdx, newReps) => {
     const key = `${exIdx}-${serieIdx}`;
     setCurrentReps({
@@ -232,7 +268,7 @@ export default function RoutineDetail() {
   };
 
   useEffect(() => {
-    if (id !== undefined && allRoutines) {
+    if (isTimerLoaded && id !== undefined && allRoutines && workoutState === "preview") {
       const foundRoutine = allRoutines.find(r => r.id.toString() === id.toString());
       if (foundRoutine) {
         setRoutine(foundRoutine);
@@ -261,7 +297,7 @@ export default function RoutineDetail() {
         setRestTime(foundRoutine.exercises[0]?.rest || 60);
       }
     }
-  }, [id, allRoutines]);
+  }, [id, allRoutines, workoutState, isTimerLoaded]);
 
   // Background workout timer effect
   useEffect(() => {
@@ -397,6 +433,12 @@ export default function RoutineDetail() {
     localStorage.removeItem('workoutTimerLastSave');
     setElapsedTime(0);
     setBackgroundTimerActive(false);
+  };
+
+  const handleDiscardWorkout = () => {
+    clearPersistentTimer();
+    endRoutine();
+    router.push('/routines');
   };
 
   const startRestTimer = (seconds) => {
@@ -1003,7 +1045,10 @@ export default function RoutineDetail() {
             top: 0,
             zIndex: 1002
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div 
+              onClick={() => setShowDiscardConfirm(true)}
+              style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
+            >
               <span style={{ fontSize: "1.2rem", color: "#fff" }}>∨</span>
               <span style={{ fontSize: "1.1rem", fontWeight: "500", color: "#fff" }}>Entreno</span>
             </div>
@@ -1026,6 +1071,39 @@ export default function RoutineDetail() {
               </button>
             </div>
           </div>
+
+          {/* Modal de Confirmación para Descartar/Cancelar */}
+          {showDiscardConfirm && (
+            <div style={{
+              position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.8)", display: "flex",
+              justifyContent: "center", alignItems: "center", zIndex: 3000
+            }}>
+              <div style={{
+                backgroundColor: "#1a1a1a", borderRadius: "15px", padding: "30px", width: "320px",
+                textAlign: "center", border: "2px solid #ff4d4d"
+              }}>
+                <h3 style={{ color: "#fff", margin: "0 0 15px 0" }}>¿Cancelar entrenamiento?</h3>
+                <p style={{ color: "#aaa", fontSize: "0.95rem", marginBottom: "25px" }}>
+                  Se perderán todos los datos registrados en esta sesión.
+                </p>
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <button 
+                    onClick={() => setShowDiscardConfirm(false)} 
+                    style={{ flex: 1, padding: "12px", backgroundColor: "#333", color: "#fff", border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}
+                  >
+                    No, continuar
+                  </button>
+                  <button 
+                    onClick={handleDiscardWorkout} 
+                    style={{ flex: 1, padding: "12px", backgroundColor: "#ff4d4d", color: "#fff", border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}
+                  >
+                    Sí, cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Fila de Estadísticas */}
           <div style={{
@@ -1077,13 +1155,17 @@ export default function RoutineDetail() {
                         style={{ width: "80%", height: "auto" }} 
                       />
                     </div>
-                    <h2 style={{ 
-                      margin: 0, 
-                      color: mint, 
-                      fontSize: "1.15rem", 
-                      fontWeight: "500",
-                      lineHeight: "1.2"
-                    }}>
+                    <h2 
+                      onClick={() => setShowHistoryModal(exercise.name)}
+                      style={{ 
+                        margin: 0, 
+                        color: mint, 
+                        fontSize: "1.15rem", 
+                        fontWeight: "500",
+                        lineHeight: "1.2",
+                        cursor: "pointer"
+                      }}
+                    >
                       {t(exercise.name)}
                     </h2>
                   </div>
@@ -1790,6 +1872,134 @@ export default function RoutineDetail() {
               </div>
             </div>
           )}
+
+          {showHistoryModal && (() => {
+            const history = getExerciseHistory(showHistoryModal);
+            
+            // Dimensiones del gráfico SVG
+            const w = isMobile ? 280 : 350;
+            const h = 180;
+            const p = 30;
+
+            let content;
+            if (history.length < 2) {
+              content = (
+                <div style={{ padding: "40px 20px", textAlign: "center", color: "#aaa" }}>
+                  <p>No hay datos suficientes para generar un gráfico.</p>
+                  <p style={{ fontSize: "0.8rem", marginTop: "10px" }}>Se necesitan al menos 2 sesiones en los últimos 30 días.</p>
+                </div>
+              );
+            } else {
+              const weights = history.map(d => d.weight);
+              const minW = Math.min(...weights) * 0.9;
+              const maxW = Math.max(...weights) * 1.1;
+              const rangeW = maxW - minW || 1;
+              
+              const getX = (i) => p + (i * (w - 2 * p) / (history.length - 1));
+              const getY = (weight) => h - p - ((weight - minW) * (h - 2 * p) / rangeW);
+              
+              const points = history.map((d, i) => `${getX(i)},${getY(d.weight)}`).join(" ");
+              
+              content = (
+                <div style={{ position: "relative", marginTop: "10px", padding: "10px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", color: "#666", fontSize: "0.7rem", padding: `0 ${p}px` }}>
+                    <span>{minW.toFixed(1)}kg</span>
+                    <span>{maxW.toFixed(1)}kg</span>
+                  </div>
+                  <svg width={w} height={h} style={{ overflow: "visible", display: "block", margin: "0 auto" }}>
+                    {/* Ejes */}
+                    <line x1={p} y1={p} x2={p} y2={h - p} stroke="#333" strokeWidth="1" />
+                    <line x1={p} y1={h - p} x2={w - p} y2={h - p} stroke="#333" strokeWidth="1" />
+                    
+                    {/* La línea del gráfico */}
+                    <polyline
+                      fill="none"
+                      stroke={mint}
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      points={points}
+                      style={{ filter: "drop-shadow(0 0 4px rgba(46, 230, 197, 0.3))" }}
+                    />
+                    
+                    {/* Puntos interactivos */}
+                    {history.map((d, i) => (
+                      <g key={i} onClick={(e) => { e.stopPropagation(); setSelectedGraphPoint(i); }} style={{ cursor: "pointer" }}>
+                        <circle
+                          cx={getX(i)}
+                          cy={getY(d.weight)}
+                          r={selectedGraphPoint === i ? 7 : 5}
+                          fill={selectedGraphPoint === i ? "#fff" : mint}
+                          stroke={mint}
+                          strokeWidth="2"
+                        />
+                      </g>
+                    ))}
+                  </svg>
+                  
+                  {selectedGraphPoint !== null && (
+                    <div style={{
+                      position: "absolute",
+                      top: getY(history[selectedGraphPoint].weight) - 55,
+                      left: Math.max(0, Math.min(w - 80, getX(selectedGraphPoint) - 40)),
+                      backgroundColor: "#222",
+                      color: "#fff",
+                      padding: "6px 10px",
+                      borderRadius: "8px",
+                      fontSize: "0.85rem",
+                      textAlign: "center",
+                      zIndex: 10,
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+                      border: `1px solid ${mint}`,
+                      pointerEvents: "none"
+                    }}>
+                      <div style={{ fontWeight: "bold", color: mint }}>{history[selectedGraphPoint].weight} kg</div>
+                      <div style={{ fontSize: "0.75rem", opacity: 0.8 }}>{history[selectedGraphPoint].formattedDate}</div>
+                    </div>
+                  )}
+                  
+                  <p style={{ textAlign: "center", color: "#666", fontSize: "0.8rem", marginTop: "15px" }}>
+                    Pulsa en los puntos para ver detalles
+                  </p>
+                </div>
+              );
+            }
+
+            return (
+              <div style={{
+                position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+                backgroundColor: "rgba(0,0,0,0.85)", display: "flex",
+                justifyContent: "center", alignItems: "center", zIndex: 3000
+              }} onClick={() => { setShowHistoryModal(null); setSelectedGraphPoint(null); }}>
+                <div style={{
+                  backgroundColor: "#1a1a1a", borderRadius: "15px", padding: "20px", 
+                  width: isMobile ? "90%" : "400px", border: `1px solid #333`
+                }} onClick={e => e.stopPropagation()}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+                    <h3 style={{ color: mint, margin: 0, fontSize: "1.2rem" }}>Historial: {t(showHistoryModal)}</h3>
+                    <button 
+                      onClick={() => { setShowHistoryModal(null); setSelectedGraphPoint(null); }}
+                      style={{ background: "none", border: "none", color: "#fff", fontSize: "1.5rem", cursor: "pointer", lineHeight: 1 }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                  
+                  {content}
+                  
+                  <button 
+                    onClick={() => { setShowHistoryModal(null); setSelectedGraphPoint(null); }}
+                    style={{
+                      width: "100%", padding: "12px", backgroundColor: "#333", color: "#fff",
+                      border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer", marginTop: "10px"
+                    }}
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </Layout>
     );

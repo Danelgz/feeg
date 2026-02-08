@@ -36,6 +36,9 @@ export default function RoutineDetail() {
   });
   const [savingWorkout, setSavingWorkout] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [backgroundTimerActive, setBackgroundTimerActive] = useState(false);
+  const [restTimerActive, setRestTimerActive] = useState(false);
+  const [restCountdown, setRestCountdown] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -146,13 +149,39 @@ export default function RoutineDetail() {
   useEffect(() => {
     if (activeRoutine && activeRoutine.id === id && workoutState === "preview") {
       setWorkoutState("ongoing");
+      setBackgroundTimerActive(true); // Start background timer automatically
     }
   }, [id, activeRoutine, workoutState]);
 
-  // Countdown effect
   useEffect(() => {
     let interval;
-    if (countdownActive && countdown > 0) {
+    if (backgroundTimerActive) {
+      interval = setInterval(() => {
+        setElapsedTime((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [backgroundTimerActive]);
+
+  useEffect(() => {
+    let interval;
+    if (restTimerActive && restCountdown > 0) {
+      interval = setInterval(() => {
+        setRestCountdown((prev) => prev - 1);
+      }, 1000);
+    } else if (restCountdown === 0 && restTimerActive) {
+      setRestTimerActive(false);
+      // Play notification sound or vibrate when rest ends
+      if ('vibrate' in navigator) {
+        navigator.vibrate([200, 100, 200]);
+      }
+    }
+    return () => clearInterval(interval);
+  }, [restTimerActive, restCountdown]);
+
+  useEffect(() => {
+    let interval;
+    if (countdownActive && countdown !== null) {
       interval = setInterval(() => {
         setCountdown((prev) => {
           if (prev <= 1) {
@@ -165,17 +194,6 @@ export default function RoutineDetail() {
     }
     return () => clearInterval(interval);
   }, [countdownActive, countdown]);
-
-  // Routine timer effect
-  useEffect(() => {
-    let interval;
-    if (workoutState === "ongoing") {
-      interval = setInterval(() => {
-        setElapsedTime((prev) => prev + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [workoutState]);
 
   const formatElapsedTime = (seconds) => {
     const d = Math.floor(seconds / (3600 * 24));
@@ -234,6 +252,34 @@ export default function RoutineDetail() {
     updatedExercise.rest = time;
     updatedExercises[currentExerciseIndex] = updatedExercise;
     setRoutine({ ...routine, exercises: updatedExercises });
+  };
+
+  // Timer control functions
+  const startBackgroundTimer = () => {
+    setBackgroundTimerActive(true);
+    if (workoutState !== "ongoing") {
+      setWorkoutState("ongoing");
+    }
+  };
+
+  const stopBackgroundTimer = () => {
+    setBackgroundTimerActive(false);
+  };
+
+  const startRestTimer = (seconds) => {
+    setRestCountdown(seconds);
+    setRestTimerActive(true);
+  };
+
+  const stopRestTimer = () => {
+    setRestTimerActive(false);
+    setRestCountdown(0);
+  };
+
+  const formatRestTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return m > 0 ? `${m}:${s.toString().padStart(2, '0')}` : `${s}s`;
   };
 
   const handleStartCountdown = (seconds) => {
@@ -737,24 +783,18 @@ export default function RoutineDetail() {
     return (
       <Layout>
         <div style={{ padding: isMobile ? "5px" : "20px", maxWidth: "900px", margin: "0 auto" }}>
-          {/* Main Routine Timer - Fixed in Corner */}
+          {/* Background Workout Timer - Fixed in Corner */}
           <div style={{
             position: "fixed",
             top: isMobile ? "10px" : "80px",
             right: isMobile ? "10px" : "20px",
-            backgroundColor: countdownActive && countdown > 0 
-              ? (isDark ? "rgba(29, 209, 161, 0.95)" : "rgba(29, 209, 161, 0.95)") 
-              : (isDark ? "rgba(26, 26, 26, 0.9)" : "rgba(255, 255, 255, 0.9)"),
+            backgroundColor: isDark ? "rgba(26, 26, 26, 0.9)" : "rgba(255, 255, 255, 0.9)",
             backdropFilter: "blur(4px)",
-            color: (countdownActive && countdown > 0) 
-              ? (isDark ? "#000" : "#fff") 
-              : (isDark ? "#fff" : "#333"),
+            color: isDark ? "#fff" : "#333",
             padding: isMobile ? "6px 10px" : "8px 12px",
             borderRadius: "8px",
             textAlign: "center",
-            border: (countdownActive && countdown > 0) 
-              ? "2px solid #fff" 
-              : `1px solid ${isDark ? "#333" : "#ddd"}`,
+            border: `1px solid ${isDark ? "#333" : "#ddd"}`,
             boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
             zIndex: 1001,
             display: "flex",
@@ -765,25 +805,89 @@ export default function RoutineDetail() {
           }}>
             <div style={{ 
               fontSize: isMobile ? "0.6rem" : "0.65rem", 
-              color: (countdownActive && countdown > 0) 
-                ? (isDark ? "#000" : "#fff") 
-                : (isDark ? "#aaa" : "#888"), 
+              color: isDark ? "#aaa" : "#888", 
               fontWeight: "800", 
               textTransform: "uppercase", 
               letterSpacing: "0.5px",
               marginBottom: "2px"
             }}>
-              {countdownActive && countdown > 0 ? t("rest") : t("work")}
+              {t("work")}
             </div>
             <div style={{ fontSize: isMobile ? "1.2rem" : "1.4rem", fontWeight: "bold", fontFamily: "monospace" }}>
-              {countdownActive && countdown > 0 
-                ? (Math.floor(countdown / 60) > 0
-                  ? `${Math.floor(countdown / 60)}:${(countdown % 60).toString().padStart(2, "0")}`
-                  : `${countdown}s`)
-                : formatElapsedTime(elapsedTime)
-              }
+              {formatElapsedTime(elapsedTime)}
+            </div>
+            <div style={{ display: "flex", gap: "5px", marginTop: "4px" }}>
+              <button
+                onClick={backgroundTimerActive ? stopBackgroundTimer : startBackgroundTimer}
+                style={{
+                  backgroundColor: backgroundTimerActive ? "#ff4d4d" : "#1dd1a1",
+                  color: "#000",
+                  border: "none",
+                  borderRadius: "4px",
+                  padding: "2px 6px",
+                  fontSize: "0.6rem",
+                  cursor: "pointer",
+                  fontWeight: "bold"
+                }}
+              >
+                {backgroundTimerActive ? t("stop") : t("start")}
+              </button>
             </div>
           </div>
+
+          {/* Rest Timer - Fixed Below Workout Timer */}
+          {(restTimerActive || restCountdown > 0) && (
+            <div style={{
+              position: "fixed",
+              top: isMobile ? "70px" : "140px",
+              right: isMobile ? "10px" : "20px",
+              backgroundColor: "rgba(29, 209, 161, 0.95)",
+              backdropFilter: "blur(4px)",
+              color: "#000",
+              padding: isMobile ? "6px 10px" : "8px 12px",
+              borderRadius: "8px",
+              textAlign: "center",
+              border: "2px solid #fff",
+              boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
+              zIndex: 1001,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              minWidth: isMobile ? "100px" : "120px",
+              transition: "all 0.3s ease"
+            }}>
+              <div style={{ 
+                fontSize: isMobile ? "0.6rem" : "0.65rem", 
+                color: "#000", 
+                fontWeight: "800", 
+                textTransform: "uppercase", 
+                letterSpacing: "0.5px",
+                marginBottom: "2px"
+              }}>
+                {t("rest")}
+              </div>
+              <div style={{ fontSize: isMobile ? "1.2rem" : "1.4rem", fontWeight: "bold", fontFamily: "monospace" }}>
+                {formatRestTime(restCountdown)}
+              </div>
+              <div style={{ display: "flex", gap: "5px", marginTop: "4px" }}>
+                <button
+                  onClick={stopRestTimer}
+                  style={{
+                    backgroundColor: "#ff4d4d",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "2px 6px",
+                    fontSize: "0.6rem",
+                    cursor: "pointer",
+                    fontWeight: "bold"
+                  }}
+                >
+                  {t("stop")}
+                </button>
+              </div>
+            </div>
+          )}
 
           <div style={{
             display: "flex",
@@ -1013,6 +1117,58 @@ export default function RoutineDetail() {
                 </div>
               </div>
 
+              {/* Manual Rest Timer Controls */}
+              <div style={{ marginBottom: "15px", padding: "10px", backgroundColor: isDark ? "#1a1a1a" : "#f9f9f9", borderRadius: "6px", border: `1px solid ${isDark ? "#333" : "#ddd"}` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                  <span style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", fontWeight: "600" }}>
+                    {t("manual_rest_timer")}
+                  </span>
+                  {(restTimerActive || restCountdown > 0) && (
+                    <span style={{ color: "#1dd1a1", fontSize: "0.9rem", fontWeight: "bold", fontFamily: "monospace" }}>
+                      {formatRestTime(restCountdown)}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    onClick={() => startRestTimer(exercise.rest || 60)}
+                    disabled={restTimerActive}
+                    style={{
+                      flex: 1,
+                      padding: "8px 12px",
+                      backgroundColor: restTimerActive ? (isDark ? "#333" : "#ccc") : "#1dd1a1",
+                      color: restTimerActive ? (isDark ? "#666" : "#888") : "#000",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: restTimerActive ? "not-allowed" : "pointer",
+                      fontSize: "0.85rem",
+                      fontWeight: "600",
+                      transition: "all 0.2s ease"
+                    }}
+                  >
+                    {t("start_rest")}
+                  </button>
+                  <button
+                    onClick={stopRestTimer}
+                    disabled={!restTimerActive && restCountdown === 0}
+                    style={{
+                      flex: 1,
+                      padding: "8px 12px",
+                      backgroundColor: (!restTimerActive && restCountdown === 0) ? (isDark ? "#333" : "#ccc") : "#ff4d4d",
+                      color: (!restTimerActive && restCountdown === 0) ? (isDark ? "#666" : "#888") : "#fff",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: (!restTimerActive && restCountdown === 0) ? "not-allowed" : "pointer",
+                      fontSize: "0.85rem",
+                      fontWeight: "600",
+                      transition: "all 0.2s ease"
+                    }}
+                  >
+                    {t("stop_rest")}
+                  </button>
+                </div>
+              </div>
+
               <h3 style={{ margin: "0 0 12px 0", color: "#fff" }}>{t("series_label")}</h3>
               {exercise.series.map((serie, serieIdx) => {
                 const key = `${exIdx}-${serieIdx}`;
@@ -1040,15 +1196,14 @@ export default function RoutineDetail() {
                             newSeriesCompleted[key] = isNowCompleted;
                             setSeriesCompleted(newSeriesCompleted);
                             
-                            // Si se marca como completada, inicia o reinicia el countdown
+                            // Si se marca como completada, inicia el temporizador de descanso
                             if (isNowCompleted && exercise.rest) {
-                              handleStartCountdown(exercise.rest);
+                              startRestTimer(exercise.rest);
                             }
                             
-                            // Si se desmarca, detiene el countdown
+                            // Si se desmarca, detiene el temporizador de descanso
                             if (!isNowCompleted) {
-                              setCountdown(null);
-                              setCountdownActive(false);
+                              stopRestTimer();
                             }
                           }}
                           style={{

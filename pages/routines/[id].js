@@ -7,7 +7,7 @@ import { exercisesList } from "../../data/exercises";
 
 export default function RoutineDetail() {
   const router = useRouter();
-  const { theme, routines: allRoutines, activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, t } = useUser();
+  const { theme, routines: allRoutines, activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, completedWorkouts, t } = useUser();
   const isDark = theme === 'dark';
   const mint = "#2EE6C5";
   const mintSoft = "rgba(46, 230, 197, 0.12)";
@@ -81,12 +81,8 @@ export default function RoutineDetail() {
         
         if (lastWorkout) {
           const exDetail = lastWorkout.exerciseDetails.find(ed => ed.name === ex.name);
-          // Get the first non-warmup series if possible, or just the first one
-          const mainSeries = exDetail.series[0]; 
-          prevData[ex.name] = {
-            weight: mainSeries.weight,
-            reps: mainSeries.reps
-          };
+          // Store all series for this exercise
+          prevData[ex.name] = exDetail.series;
         }
       });
       setPreviousData(prevData);
@@ -1102,7 +1098,7 @@ export default function RoutineDetail() {
                 <div style={{ marginBottom: "15px" }}>
                   <div style={{ 
                     display: "grid", 
-                    gridTemplateColumns: "50px 1fr 60px 60px 40px 30px", 
+                    gridTemplateColumns: "50px 1fr 70px 70px 45px", 
                     gap: "10px", 
                     marginBottom: "10px",
                     color: "#666",
@@ -1136,7 +1132,7 @@ export default function RoutineDetail() {
                         key={serieIdx}
                         style={{
                           display: "grid", 
-                          gridTemplateColumns: "50px 1fr 60px 60px 40px 30px", 
+                          gridTemplateColumns: "50px 1fr 70px 70px 45px", 
                           gap: "10px",
                           alignItems: "center",
                           height: "45px",
@@ -1161,7 +1157,7 @@ export default function RoutineDetail() {
                         </div>
                         
                         <div style={{ color: "#666", fontSize: "0.9rem" }}>
-                          {prev ? `${prev.weight}kg x ${prev.reps}` : "—"}
+                          {prev && prev[serieIdx] ? `${prev[serieIdx].weight}kg x ${prev[serieIdx].reps}` : "—"}
                         </div>
                         
                         <div>
@@ -1211,8 +1207,8 @@ export default function RoutineDetail() {
                               else stopRestTimer();
                             }}
                             style={{
-                              width: "28px",
-                              height: "28px",
+                              width: "100%",
+                              height: "32px",
                               borderRadius: "6px",
                               backgroundColor: isCompleted ? mint : "#333",
                               color: isCompleted ? "#000" : "#666",
@@ -1225,26 +1221,6 @@ export default function RoutineDetail() {
                             }}
                           >
                             ✓
-                          </button>
-                        </div>
-
-                        <div style={{ textAlign: "right" }}>
-                          <button
-                            onClick={() => handleDeleteSeries(exIdx, serieIdx)}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: mint,
-                              cursor: "pointer",
-                              fontSize: "1.2rem",
-                              fontWeight: "bold",
-                              padding: 0,
-                              display: "flex",
-                              justifyContent: "center",
-                              alignItems: "center"
-                            }}
-                          >
-                            ×
                           </button>
                         </div>
                       </div>
@@ -1325,6 +1301,29 @@ export default function RoutineDetail() {
                         {opt.label}
                       </button>
                     ))}
+                    
+                    <button
+                      onClick={() => {
+                        handleDeleteSeries(showTypeSelector.exIdx, showTypeSelector.serieIdx);
+                        setShowTypeSelector(null);
+                      }}
+                      style={{
+                        padding: "12px",
+                        backgroundColor: "#333",
+                        color: "#ff4d4d",
+                        border: "none",
+                        borderRadius: "8px",
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                        textAlign: "left",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center"
+                      }}
+                    >
+                      Eliminar Serie <span style={{ color: mint }}>×</span>
+                    </button>
+
                     <button
                       onClick={() => setShowTypeSelector(null)}
                       style={{

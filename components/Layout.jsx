@@ -230,7 +230,7 @@ export default function Layout({ children }) {
               {currentIsMobile && <BottomNavigation />}
 
               {/* Pestaña de Rutina Activa */}
-              {activeRoutine && router.asPath !== activeRoutine.path && (
+              {activeRoutine && router.asPath !== (activeRoutine?.id ? `/routines/${activeRoutine.id}` : activeRoutine.path) && (
                 <div style={{
                   position: "fixed",
                   bottom: currentIsMobile ? "80px" : "20px",
@@ -296,7 +296,7 @@ export default function Layout({ children }) {
                     >×</button>
                   </div>
                   <button 
-                    onClick={() => router.push(activeRoutine.path)}
+                    onClick={() => router.push(activeRoutine?.id ? `/routines/${activeRoutine.id}` : activeRoutine.path)}
                     style={{
                       backgroundColor: "#1dd1a1",
                       color: "#000",

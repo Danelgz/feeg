@@ -471,7 +471,7 @@ export default function RoutineDetail() {
           <button
             onClick={() => {
               setWorkoutState("ongoing");
-              startRoutine({ id, name: routine.name, path: router.asPath });
+              startRoutine({ id: id?.toString?.() || id, name: routine.name, path: `/routines/${id}` });
             }}
             style={{
               ...buttonStyle,

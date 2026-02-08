@@ -225,7 +225,7 @@ export default function RoutineDetail() {
 
   // Auto-start timer and workout when routine is activated
   useEffect(() => {
-    if (activeRoutine && activeRoutine.id === id && workoutState === "preview") {
+    if (activeRoutine && activeRoutine.id?.toString?.() === id?.toString?.() && workoutState === "preview") {
       setWorkoutState("ongoing");
       setBackgroundTimerActive(true); // Start timer immediately
     }
@@ -577,7 +577,7 @@ export default function RoutineDetail() {
           <button
             onClick={() => {
               setWorkoutState("ongoing");
-              startRoutine({ id, name: routine.name, path: router.asPath });
+              startRoutine({ id: id?.toString?.() || id, name: routine.name, path: `/routines/${id}` });
             }}
             style={{
               ...buttonStyle,

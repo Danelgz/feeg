@@ -12,7 +12,7 @@ export default function RoutineDetail() {
   const { id } = router.query;
   const [routine, setRoutine] = useState(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
-  const [workoutState, setWorkoutState] = useState("preview"); // preview, ongoing, completed
+  const [workoutState, setWorkoutState] = useState("ongoing"); // preview, ongoing, completed
   const [seriesCompleted, setSeriesCompleted] = useState({});
   const [currentReps, setCurrentReps] = useState({});
   const [currentWeight, setCurrentWeight] = useState({});
@@ -129,6 +129,8 @@ export default function RoutineDetail() {
     setCurrentReps({});
     setCurrentWeight({});
     setRestTime(60);
+    setWorkoutState("ongoing");
+    startRoutine({ id: "empty", name: emptyRoutine.name, path: "/routines/empty" });
   }, [t]);
 
   // Countdown effect

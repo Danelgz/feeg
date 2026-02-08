@@ -94,7 +94,7 @@ export default function Routines() {
         {activeTab === "active" ? (
           <>
             <div style={{ marginBottom: "25px" }}>
-              <Link href="/routines/empty">
+              <Link href="/routines/empty" style={{ textDecoration: "none" }}>
                 <button
                   style={{
                     width: "100%",

@@ -45,6 +45,7 @@ export default function RoutineDetail() {
   });
   const [savingWorkout, setSavingWorkout] = useState(false);
   const [exerciseSearchQuery, setExerciseSearchQuery] = useState("");
+  const [showRoutineActiveAlert, setShowRoutineActiveAlert] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isTimerLoaded, setIsTimerLoaded] = useState(false);
   const [backgroundTimerActive, setBackgroundTimerActive] = useState(false);
@@ -53,15 +54,24 @@ export default function RoutineDetail() {
   const [isMobile, setIsMobile] = useState(false);
   const [previousData, setPreviousData] = useState({}); // key: exerciseName, value: { weight, reps }
 
-  // Load persistent timer state on mount
+  // Load persistent state on mount
   useEffect(() => {
-    const savedTimerState = localStorage.getItem('workoutTimerState');
-    if (savedTimerState) {
+    const savedState = localStorage.getItem('workoutTimerState');
+    if (savedState) {
       try {
-        const { elapsedTime: saved, isActive, routineId: savedRoutineId } = JSON.parse(savedTimerState);
+        const parsed = JSON.parse(savedState);
+        const { 
+          elapsedTime: saved, 
+          isActive, 
+          routineId: savedRoutineId,
+          seriesCompleted: savedSeries,
+          seriesTypes: savedTypes,
+          currentReps: savedReps,
+          currentWeight: savedWeights,
+          routine: savedRoutine
+        } = parsed;
         
         if (savedRoutineId === id?.toString()) {
-          // Calculate elapsed time since last save if it was active
           const lastSaveTime = localStorage.getItem('workoutTimerLastSave');
           let currentElapsed = saved;
           
@@ -71,40 +81,51 @@ export default function RoutineDetail() {
           }
           
           setElapsedTime(currentElapsed);
+          if (savedSeries) setSeriesCompleted(savedSeries);
+          if (savedTypes) setSeriesTypes(savedTypes);
+          if (savedReps) setCurrentReps(savedReps);
+          if (savedWeights) setCurrentWeight(savedWeights);
+          if (savedRoutine) setRoutine(savedRoutine);
+
           if (isActive) {
             setBackgroundTimerActive(true);
             setWorkoutState("ongoing");
           }
         }
       } catch (e) {
-        console.error("Error restoring timer", e);
+        console.error("Error restoring workout state", e);
       }
     }
     setIsTimerLoaded(true);
   }, [id]);
 
-  // Save timer state periodically and on unmount
+  // Save workout state periodically and on unmount
   useEffect(() => {
-    if (!isTimerLoaded || !id) return;
+    if (!isTimerLoaded || !id || workoutState === "preview") return;
 
-    const saveTimerState = () => {
-      const timerState = {
+    const saveWorkoutState = () => {
+      const state = {
         elapsedTime,
         isActive: backgroundTimerActive,
-        routineId: id.toString()
+        routineId: id.toString(),
+        seriesCompleted,
+        seriesTypes,
+        currentReps,
+        currentWeight,
+        routine
       };
-      localStorage.setItem('workoutTimerState', JSON.stringify(timerState));
+      localStorage.setItem('workoutTimerState', JSON.stringify(state));
       localStorage.setItem('workoutTimerLastSave', Date.now().toString());
     };
 
-    saveTimerState();
-    const interval = setInterval(saveTimerState, 1000); // Save every second for better precision
+    saveWorkoutState();
+    const interval = setInterval(saveWorkoutState, 1000);
     
     return () => {
       clearInterval(interval);
-      saveTimerState();
+      saveWorkoutState();
     };
-  }, [elapsedTime, backgroundTimerActive, id, isTimerLoaded]);
+  }, [elapsedTime, backgroundTimerActive, id, isTimerLoaded, seriesCompleted, seriesTypes, currentReps, currentWeight, routine, workoutState]);
 
   // Load previous performance data
   useEffect(() => {
@@ -623,8 +644,12 @@ export default function RoutineDetail() {
 
           <button
             onClick={() => {
-              setWorkoutState("ongoing");
-              startRoutine({ id: id?.toString?.() || id, name: routine.name, path: `/routines/${id}` });
+              if (activeRoutine && activeRoutine.id?.toString() !== id?.toString()) {
+                setShowRoutineActiveAlert(true);
+              } else {
+                setWorkoutState("ongoing");
+                startRoutine({ id: id?.toString?.() || id, name: routine.name, path: `/routines/${id}` });
+              }
             }}
             style={{
               ...buttonStyle,
@@ -636,6 +661,47 @@ export default function RoutineDetail() {
           >
             {t("start_routine")}
           </button>
+
+          {showRoutineActiveAlert && (
+            <div style={{
+              position: "fixed",
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.8)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 3000
+            }}>
+              <div style={{
+                backgroundColor: "#1a1a1a",
+                borderRadius: "15px",
+                padding: "30px",
+                width: "320px",
+                textAlign: "center",
+                border: "2px solid #ff4d4d"
+              }}>
+                <h3 style={{ color: "#fff", margin: "0 0 15px 0" }}>Ya tienes una rutina iniciada</h3>
+                <p style={{ color: "#aaa", fontSize: "0.95rem", marginBottom: "25px", lineHeight: "1.4" }}>
+                  Debes terminar o cancelar la rutina de <strong>{activeRoutine?.name}</strong> antes de empezar una nueva.
+                </p>
+                <button
+                  onClick={() => setShowRoutineActiveAlert(false)}
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    backgroundColor: mint,
+                    color: "#000",
+                    border: "none",
+                    borderRadius: "10px",
+                    fontWeight: "bold",
+                    cursor: "pointer"
+                  }}
+                >
+                  Entendido
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </Layout>
     );

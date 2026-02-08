@@ -41,6 +41,51 @@ export default function RoutineDetail() {
   const [restCountdown, setRestCountdown] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Load persistent timer state on mount
+  useEffect(() => {
+    const savedTimerState = localStorage.getItem('workoutTimerState');
+    if (savedTimerState) {
+      const { elapsedTime: saved, isActive, routineId: savedRoutineId } = JSON.parse(savedTimerState);
+      
+      // Only restore if it's the same routine and not completed
+      if (savedRoutineId === id && workoutState !== "completed") {
+        setElapsedTime(saved);
+        setBackgroundTimerActive(isActive);
+        
+        // Calculate elapsed time since last save
+        const lastSaveTime = localStorage.getItem('workoutTimerLastSave');
+        if (lastSaveTime && isActive) {
+          const additionalTime = Math.floor((Date.now() - parseInt(lastSaveTime)) / 1000);
+          setElapsedTime(saved + additionalTime);
+        }
+      }
+    }
+  }, [id, workoutState]);
+
+  // Save timer state periodically and on unmount
+  useEffect(() => {
+    const saveTimerState = () => {
+      const timerState = {
+        elapsedTime,
+        isActive: backgroundTimerActive,
+        routineId: id
+      };
+      localStorage.setItem('workoutTimerState', JSON.stringify(timerState));
+      localStorage.setItem('workoutTimerLastSave', Date.now().toString());
+    };
+
+    // Save immediately when state changes
+    saveTimerState();
+    
+    // Set up periodic saves
+    const interval = setInterval(saveTimerState, 5000); // Save every 5 seconds
+    
+    return () => {
+      clearInterval(interval);
+      saveTimerState(); // Final save on unmount
+    };
+  }, [elapsedTime, backgroundTimerActive, id]);
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -266,6 +311,13 @@ export default function RoutineDetail() {
     setBackgroundTimerActive(false);
   };
 
+  const clearPersistentTimer = () => {
+    localStorage.removeItem('workoutTimerState');
+    localStorage.removeItem('workoutTimerLastSave');
+    setElapsedTime(0);
+    setBackgroundTimerActive(false);
+  };
+
   const startRestTimer = (seconds) => {
     setRestCountdown(seconds);
     setRestTimerActive(true);
@@ -390,6 +442,9 @@ export default function RoutineDetail() {
   };
 
   const handleSaveFinishedRoutine = () => {
+    // Clear persistent timer when workout is completed
+    clearPersistentTimer();
+    
     // Calcular estadísticas
     const totalSeries = routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0);
     const totalReps = Object.values(currentReps).reduce((sum, val) => sum + (parseInt(val) || 0), 0);
@@ -811,7 +866,7 @@ export default function RoutineDetail() {
               letterSpacing: "0.5px",
               marginBottom: "2px"
             }}>
-              {t("work")}
+              {t("time")}
             </div>
             <div style={{ fontSize: isMobile ? "1.2rem" : "1.4rem", fontWeight: "bold", fontFamily: "monospace" }}>
               {formatElapsedTime(elapsedTime)}
@@ -1227,7 +1282,7 @@ export default function RoutineDetail() {
                           )}
 
                           <span style={{ color: isDark ? "#aaa" : "#666", fontSize: isMobile ? "0.75rem" : "1rem" }}>
-                            {`${t('series_label')} ${serieIdx + 1}`}
+                            {`${serieIdx + 1}`}
                           </span>
                         </div>
                       </div>
@@ -1353,6 +1408,7 @@ export default function RoutineDetail() {
             onClick={() => {
               setWorkoutState("preview");
               endRoutine();
+              clearPersistentTimer();
             }}
             style={{
               ...buttonStyle,

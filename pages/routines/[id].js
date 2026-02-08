@@ -41,6 +41,7 @@ export default function RoutineDetail() {
     totalTime: 0
   });
   const [savingWorkout, setSavingWorkout] = useState(false);
+  const [exerciseSearchQuery, setExerciseSearchQuery] = useState("");
   const [elapsedTime, setElapsedTime] = useState(0);
   const [backgroundTimerActive, setBackgroundTimerActive] = useState(false);
   const [restTimerActive, setRestTimerActive] = useState(false);
@@ -1479,11 +1480,33 @@ export default function RoutineDetail() {
                   </div>
                 ) : (
                   <div>
+                    <input 
+                      type="text"
+                      placeholder="Buscar ejercicio..."
+                      value={exerciseSearchQuery}
+                      onChange={(e) => setExerciseSearchQuery(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "12px",
+                        backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
+                        border: `1px solid ${isDark ? "#333" : "#ddd"}`,
+                        borderRadius: "8px",
+                        color: isDark ? "#fff" : "#333",
+                        marginBottom: "15px",
+                        fontSize: "1rem",
+                        boxSizing: "border-box"
+                      }}
+                    />
                     <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "15px" }}>
-                      {exercisesData[selectedGroup]?.map((exercise, idx) => (
+                      {exercisesData[selectedGroup]
+                        ?.filter(ex => t(ex.name).toLowerCase().includes(exerciseSearchQuery.toLowerCase()))
+                        .map((exercise, idx) => (
                         <button
                           key={idx}
-                          onClick={() => handleSelectExercise(exercise)}
+                          onClick={() => {
+                            handleSelectExercise(exercise);
+                            setExerciseSearchQuery("");
+                          }}
                           style={{
                             padding: "12px",
                             backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
@@ -1500,9 +1523,15 @@ export default function RoutineDetail() {
                           {t(exercise.name)}
                         </button>
                       ))}
+                      {exercisesData[selectedGroup]?.filter(ex => t(ex.name).toLowerCase().includes(exerciseSearchQuery.toLowerCase())).length === 0 && (
+                        <p style={{ textAlign: "center", color: "#666", padding: "10px" }}>No se encontraron ejercicios</p>
+                      )}
                     </div>
                     <button
-                      onClick={() => setSelectedGroup(null)}
+                      onClick={() => {
+                        setSelectedGroup(null);
+                        setExerciseSearchQuery("");
+                      }}
                       style={{
                         width: "100%",
                         padding: "10px",
@@ -1524,6 +1553,7 @@ export default function RoutineDetail() {
                   onClick={() => {
                     setShowAddExerciseModal(false);
                     setSelectedGroup(null);
+                    setExerciseSearchQuery("");
                   }}
                   style={{
                     width: "100%",

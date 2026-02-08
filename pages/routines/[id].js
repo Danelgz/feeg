@@ -791,7 +791,7 @@ export default function RoutineDetail() {
             backgroundColor: isDark ? "rgba(26, 26, 26, 0.9)" : "rgba(255, 255, 255, 0.9)",
             backdropFilter: "blur(4px)",
             color: isDark ? "#fff" : "#333",
-            padding: isMobile ? "6px 10px" : "8px 12px",
+            padding: isMobile ? "4px 8px" : "8px 12px",
             borderRadius: "8px",
             textAlign: "center",
             border: `1px solid ${isDark ? "#333" : "#ddd"}`,
@@ -800,11 +800,11 @@ export default function RoutineDetail() {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            minWidth: isMobile ? "100px" : "120px",
+            minWidth: isMobile ? "80px" : "120px",
             transition: "all 0.3s ease"
           }}>
             <div style={{ 
-              fontSize: isMobile ? "0.6rem" : "0.65rem", 
+              fontSize: isMobile ? "0.5rem" : "0.65rem", 
               color: isDark ? "#aaa" : "#888", 
               fontWeight: "800", 
               textTransform: "uppercase", 
@@ -823,9 +823,9 @@ export default function RoutineDetail() {
                   backgroundColor: backgroundTimerActive ? "#ff4d4d" : "#1dd1a1",
                   color: "#000",
                   border: "none",
-                  borderRadius: "4px",
-                  padding: "2px 6px",
-                  fontSize: "0.6rem",
+                  borderRadius: "3px",
+                  padding: "1px 4px",
+                  fontSize: "0.5rem",
                   cursor: "pointer",
                   fontWeight: "bold"
                 }}
@@ -839,12 +839,12 @@ export default function RoutineDetail() {
           {(restTimerActive || restCountdown > 0) && (
             <div style={{
               position: "fixed",
-              top: isMobile ? "70px" : "140px",
+              top: isMobile ? "60px" : "140px",
               right: isMobile ? "10px" : "20px",
               backgroundColor: "rgba(29, 209, 161, 0.95)",
               backdropFilter: "blur(4px)",
               color: "#000",
-              padding: isMobile ? "6px 10px" : "8px 12px",
+              padding: isMobile ? "4px 8px" : "8px 12px",
               borderRadius: "8px",
               textAlign: "center",
               border: "2px solid #fff",
@@ -853,11 +853,11 @@ export default function RoutineDetail() {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              minWidth: isMobile ? "100px" : "120px",
+              minWidth: isMobile ? "80px" : "120px",
               transition: "all 0.3s ease"
             }}>
               <div style={{ 
-                fontSize: isMobile ? "0.6rem" : "0.65rem", 
+                fontSize: isMobile ? "0.5rem" : "0.65rem", 
                 color: "#000", 
                 fontWeight: "800", 
                 textTransform: "uppercase", 
@@ -866,7 +866,7 @@ export default function RoutineDetail() {
               }}>
                 {t("rest")}
               </div>
-              <div style={{ fontSize: isMobile ? "1.2rem" : "1.4rem", fontWeight: "bold", fontFamily: "monospace" }}>
+              <div style={{ fontSize: isMobile ? "0.9rem" : "1.4rem", fontWeight: "bold", fontFamily: "monospace" }}>
                 {formatRestTime(restCountdown)}
               </div>
               <div style={{ display: "flex", gap: "5px", marginTop: "4px" }}>
@@ -876,9 +876,9 @@ export default function RoutineDetail() {
                     backgroundColor: "#ff4d4d",
                     color: "#fff",
                     border: "none",
-                    borderRadius: "4px",
-                    padding: "2px 6px",
-                    fontSize: "0.6rem",
+                    borderRadius: "3px",
+                    padding: "1px 4px",
+                    fontSize: "0.5rem",
                     cursor: "pointer",
                     fontWeight: "bold"
                   }}
@@ -1117,58 +1117,6 @@ export default function RoutineDetail() {
                 </div>
               </div>
 
-              {/* Manual Rest Timer Controls */}
-              <div style={{ marginBottom: "15px", padding: "10px", backgroundColor: isDark ? "#1a1a1a" : "#f9f9f9", borderRadius: "6px", border: `1px solid ${isDark ? "#333" : "#ddd"}` }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                  <span style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", fontWeight: "600" }}>
-                    {t("manual_rest_timer")}
-                  </span>
-                  {(restTimerActive || restCountdown > 0) && (
-                    <span style={{ color: "#1dd1a1", fontSize: "0.9rem", fontWeight: "bold", fontFamily: "monospace" }}>
-                      {formatRestTime(restCountdown)}
-                    </span>
-                  )}
-                </div>
-                <div style={{ display: "flex", gap: "8px" }}>
-                  <button
-                    onClick={() => startRestTimer(exercise.rest || 60)}
-                    disabled={restTimerActive}
-                    style={{
-                      flex: 1,
-                      padding: "8px 12px",
-                      backgroundColor: restTimerActive ? (isDark ? "#333" : "#ccc") : "#1dd1a1",
-                      color: restTimerActive ? (isDark ? "#666" : "#888") : "#000",
-                      border: "none",
-                      borderRadius: "6px",
-                      cursor: restTimerActive ? "not-allowed" : "pointer",
-                      fontSize: "0.85rem",
-                      fontWeight: "600",
-                      transition: "all 0.2s ease"
-                    }}
-                  >
-                    {t("start_rest")}
-                  </button>
-                  <button
-                    onClick={stopRestTimer}
-                    disabled={!restTimerActive && restCountdown === 0}
-                    style={{
-                      flex: 1,
-                      padding: "8px 12px",
-                      backgroundColor: (!restTimerActive && restCountdown === 0) ? (isDark ? "#333" : "#ccc") : "#ff4d4d",
-                      color: (!restTimerActive && restCountdown === 0) ? (isDark ? "#666" : "#888") : "#fff",
-                      border: "none",
-                      borderRadius: "6px",
-                      cursor: (!restTimerActive && restCountdown === 0) ? "not-allowed" : "pointer",
-                      fontSize: "0.85rem",
-                      fontWeight: "600",
-                      transition: "all 0.2s ease"
-                    }}
-                  >
-                    {t("stop_rest")}
-                  </button>
-                </div>
-              </div>
-
               <h3 style={{ margin: "0 0 12px 0", color: "#fff" }}>{t("series_label")}</h3>
               {exercise.series.map((serie, serieIdx) => {
                 const key = `${exIdx}-${serieIdx}`;
@@ -1207,14 +1155,14 @@ export default function RoutineDetail() {
                             }
                           }}
                           style={{
-                            width: "40px",
-                            height: "40px",
+                            width: isMobile ? "32px" : "40px",
+                            height: isMobile ? "32px" : "40px",
                             borderRadius: "50%",
                             backgroundColor: isCompleted ? "#1dd1a1" : (isDark ? "#2a2a2a" : "#ddd"),
                             color: isCompleted ? "#000" : (isDark ? "#999" : "#888"),
                             border: "none",
                             fontWeight: "bold",
-                            fontSize: "1rem",
+                            fontSize: isMobile ? "0.8rem" : "1rem",
                             cursor: "pointer",
                             transition: "all 0.3s ease"
                           }}
@@ -1242,8 +1190,8 @@ export default function RoutineDetail() {
                                 border: `1px solid ${isDark ? "#333" : "#ddd"}`,
                                 borderRadius: "4px",
                                 color: isDark ? "#fff" : "#333",
-                                width: isMobile ? "55px" : "70px",
-                                fontSize: "0.95rem",
+                                width: isMobile ? "45px" : "70px",
+                                fontSize: isMobile ? "0.85rem" : "0.95rem",
                                 textAlign: "center"
                               }}
                             />
@@ -1270,8 +1218,8 @@ export default function RoutineDetail() {
                                   border: `1px solid ${isDark ? "#333" : "#ddd"}`,
                                   borderRadius: "4px",
                                   color: isDark ? "#fff" : "#333",
-                                  width: isMobile ? "55px" : "70px",
-                                  fontSize: "0.95rem",
+                                  width: isMobile ? "45px" : "70px",
+                                  fontSize: isMobile ? "0.85rem" : "0.95rem",
                                   textAlign: "center"
                                 }}
                               />

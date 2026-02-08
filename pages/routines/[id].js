@@ -782,7 +782,7 @@ export default function RoutineDetail() {
   if (workoutState === "ongoing") {
     return (
       <Layout>
-        <div style={{ padding: isMobile ? "5px" : "20px", maxWidth: "900px", margin: "0 auto" }}>
+        <div style={{ padding: isMobile ? "0" : "20px", maxWidth: isMobile ? "100%" : "900px", margin: isMobile ? "0" : "0 auto" }}>
           {/* Background Workout Timer - Fixed in Corner */}
           <div style={{
             position: "fixed",

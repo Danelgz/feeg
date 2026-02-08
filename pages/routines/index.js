@@ -8,6 +8,7 @@ export default function Routines() {
   const router = useRouter();
   const { routines, completedWorkouts, deleteRoutine, deleteCompletedWorkout, theme, t } = useUser();
   const [activeTab, setActiveTab] = useState("active"); // active, completed
+  const [isMobile, setIsMobile] = useState(false);
   const isDark = theme === 'dark';
 
   useEffect(() => {
@@ -15,6 +16,15 @@ export default function Routines() {
       setActiveTab(router.query.tab);
     }
   }, [router.query.tab, activeTab]);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const formatElapsedTime = (seconds) => {
     if (!seconds && seconds !== 0) return null;
@@ -34,7 +44,7 @@ export default function Routines() {
 
   return (
     <Layout>
-      <div style={{ padding: "20px", maxWidth: "1000px", margin: "0 auto" }}>
+      <div style={{ padding: isMobile ? "0" : "20px", maxWidth: isMobile ? "100%" : "1000px", margin: isMobile ? "0" : "0 auto" }}>
         <h1 style={{ marginBottom: "20px", color: isDark ? "#fff" : "#333" }}>{t("routines_title")}</h1>
 
         {/* Tabs */}
@@ -141,16 +151,16 @@ export default function Routines() {
                 </Link>
               </div>
             ) : (
-              <div style={{ marginTop: "20px" }}>
+              <div style={{ marginTop: isMobile ? "10px" : "20px" }}>
                 {routines.map((routine) => (
                   <div
                     key={routine.id}
                     style={{
-                      padding: "15px",
+                      padding: isMobile ? "12px" : "15px",
                       backgroundColor: isDark ? "#1a1a1a" : "#fff",
                       border: `1px solid ${isDark ? "#333" : "#eee"}`,
                       borderRadius: "8px",
-                      marginBottom: "15px",
+                      marginBottom: isMobile ? "10px" : "15px",
                       transition: "all 0.3s ease",
                       boxShadow: isDark ? "none" : "0 2px 8px rgba(0,0,0,0.05)"
                     }}
@@ -276,8 +286,8 @@ export default function Routines() {
                     backgroundColor: isDark ? "#1a1a1a" : "#fff",
                     border: isDark ? "1px solid #333" : "1px solid #e0e0e0",
                     borderRadius: "10px",
-                    padding: "20px",
-                    marginBottom: "15px",
+                    padding: isMobile ? "15px" : "20px",
+                    marginBottom: isMobile ? "10px" : "15px",
                     transition: "all 0.3s ease",
                     boxShadow: isDark ? "none" : "0 2px 8px rgba(0,0,0,0.05)"
                   }}

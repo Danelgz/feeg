@@ -24,6 +24,7 @@ export default function Profile() {
     followers,
     following
   } = useUser();
+  const isDark = theme === 'dark';
   const [isEditing, setIsEditing] = useState(false);
   const [chartFilter, setChartFilter] = useState("3_months");
   const [chartMode, setChartMode] = useState("duration"); // duration, volume, reps

@@ -1,12 +1,14 @@
 export const translations = {
   es: {
     // Sidebar
-    feed: "Feed",
-    routines: "Rutinas",
+    feed: "Inicio",
+    routines: "Entrenamiento",
     exercises: "Ejercicios",
     profile: "Perfil",
     settings: "Ajustes",
     statistics: "Estadísticas",
+    measures: "Medidas",
+    calendar: "Calendario",
     stats_overview: "Resumen",
     stats_recent: "Actividad reciente",
     stats_no_data: "Aún no hay datos suficientes.",

@@ -16,6 +16,17 @@ export function UserProvider({ children }) {
   const [routines, setRoutines] = useState([]);
   const [following, setFollowing] = useState([]);
   const [followers, setFollowers] = useState([]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detectar móvil
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Función de traducción
   const t = (key) => {
@@ -268,6 +279,7 @@ export function UserProvider({ children }) {
       deleteRoutine,
       following,
       followers,
+      isMobile,
       handleFollow,
       handleUnfollow,
       t

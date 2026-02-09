@@ -6,22 +6,19 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 
 export default function Layout({ children }) {
-  const { theme, isMobile: userIsMobile, activeRoutine, endRoutine } = useUser();
+  const { theme, isMobile, activeRoutine, endRoutine } = useUser();
   const isDark = theme === 'dark';
-  const [isMobile, setIsMobile] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     setIsMounted(true);
-    const mobile = window.innerWidth <= 768;
-    setIsMobile(mobile);
     const introPlayed = sessionStorage.getItem("introPlayed");
-    if (mobile && !introPlayed) {
+    if (isMobile && !introPlayed) {
       setShowIntro(true);
     }
-  }, []);
+  }, [isMobile]);
 
   const topLevelPages = ["/", "/routines", "/exercises", "/statistics", "/profile", "/settings", "/statistics/[view]", "/routines/create", "/routines/[id]", "/routines/empty"];
   const isTopLevel = topLevelPages.includes(router.pathname) || topLevelPages.includes(router.asPath);
@@ -51,8 +48,7 @@ export default function Layout({ children }) {
     router.push(fallback);
   };
 
-  // Usar la detección de UserContext si está disponible, si no usar el estado local
-  const currentIsMobile = userIsMobile !== undefined ? userIsMobile : isMobile;
+  const currentIsMobile = isMobile;
 
   useEffect(() => {
     // Aplicar color de fondo al body para evitar bordes blancos y mejorar el scroll en móvil
@@ -73,15 +69,6 @@ export default function Layout({ children }) {
       return () => clearTimeout(timer);
     }
   }, [showIntro, router]);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   return (
     <div style={{ 

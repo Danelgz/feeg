@@ -18,7 +18,9 @@ export default function Profile() {
     loginWithGoogle, 
     logout,
     completedWorkouts,
-    deleteCompletedWorkout
+    deleteCompletedWorkout,
+    followers,
+    following
   } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [chartFilter, setChartFilter] = useState("3_months");
@@ -27,11 +29,22 @@ export default function Profile() {
   const [confirmDelete, setConfirmDelete] = useState(null);
 
   const [editData, setEditData] = useState({
-    username: user?.username || "",
-    firstName: user?.firstName || "",
-    description: user?.description || "Sin descripción",
-    photoURL: user?.photoURL || authUser?.photoURL || ""
+    username: "",
+    firstName: "",
+    description: "",
+    photoURL: ""
   });
+
+  useEffect(() => {
+    if (user) {
+      setEditData({
+        username: user.username || "",
+        firstName: user.firstName || "",
+        description: user.description || "Sin descripción",
+        photoURL: user.photoURL || authUser?.photoURL || ""
+      });
+    }
+  }, [user, authUser]);
 
   // Procesar datos para el gráfico
   const getChartData = () => {

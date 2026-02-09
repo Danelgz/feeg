@@ -74,8 +74,8 @@ export default function Home() {
               <button
                 onClick={handleCreatePost}
                 style={{
-                  backgroundColor: "#008CFF",
-                  color: "#fff",
+                  backgroundColor: "#1dd1a1",
+                  color: "#000",
                   border: "none",
                   padding: "8px 20px",
                   borderRadius: "20px",
@@ -113,7 +113,7 @@ export default function Home() {
                   style={{
                     background: "none",
                     border: "none",
-                    color: post.likes?.includes(authUser?.uid) ? "#008CFF" : "#888",
+                    color: post.likes?.includes(authUser?.uid) ? "#1dd1a1" : "#888",
                     display: "flex",
                     alignItems: "center",
                     gap: "5px",
@@ -162,7 +162,7 @@ export default function Home() {
                     />
                     <button
                       onClick={() => handleAddComment(post.id)}
-                      style={{ backgroundColor: "#008CFF", color: "#fff", border: "none", padding: "8px 15px", borderRadius: "20px", cursor: "pointer" }}
+                      style={{ backgroundColor: "#1dd1a1", color: "#000", border: "none", padding: "8px 15px", borderRadius: "20px", cursor: "pointer", fontWeight: "bold" }}
                     >
                       Enviar
                     </button>

@@ -25,6 +25,18 @@ export default function Home() {
     fetchFeed();
   }, [authUser, following]);
 
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchTerm.trim()) {
+        handleSearch();
+      } else {
+        setSearchResults([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
+
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
     const results = await searchUsers(searchTerm);
@@ -94,7 +106,10 @@ export default function Home() {
             <div style={{ marginTop: "15px", backgroundColor: "#1a1a1a", borderRadius: "12px", padding: "10px" }}>
               {searchResults.map(u => (
                 <div key={u.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px", borderBottom: "1px solid #333" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <div 
+                    onClick={() => router.push(`/user/${u.id}`)}
+                    style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", flex: 1 }}
+                  >
                     <div style={{ width: "35px", height: "35px", borderRadius: "50%", backgroundColor: "#333", overflow: "hidden" }}>
                       {u.profile?.photoURL && <img src={u.profile.photoURL} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
                     </div>

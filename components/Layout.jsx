@@ -20,7 +20,7 @@ export default function Layout({ children }) {
     }
   }, [isMobile]);
 
-  const topLevelPages = ["/", "/routines", "/exercises", "/statistics", "/profile", "/settings", "/statistics/[view]", "/routines/create", "/routines/[id]", "/routines/empty"];
+  const topLevelPages = ["/", "/routines", "/exercises", "/statistics", "/profile", "/settings", "/statistics/[view]", "/routines/create", "/routines/[id]", "/routines/empty", "/user/[uid]"];
   const isTopLevel = topLevelPages.includes(router.pathname) || topLevelPages.includes(router.asPath);
 
   // Botón de retroceso inteligente: si no hay historial o la entrada es directa, ir a una ruta de respaldo

@@ -2,13 +2,18 @@ import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 
 export default function Settings() {
-  const { theme, toggleTheme, isMobile, language, updateLanguage, t } = useUser();
+  const { theme, toggleTheme, isMobile, language, updateLanguage, t, authUser, loginWithGoogle, logout } = useUser();
   const isDark = theme === 'dark';
 
   const languages = [
     { code: 'es', name: 'Español' },
     { code: 'eu', name: 'Euskera (en desarrollo)' }
   ];
+
+  const handleSwitchAccount = async () => {
+    await logout();
+    await loginWithGoogle();
+  };
 
   return (
     <Layout>
@@ -26,6 +31,90 @@ export default function Settings() {
         flexDirection: "column",
         gap: "25px"
       }}>
+        {/* Apartado de Cuenta */}
+        <div style={{ 
+          display: "flex", 
+          flexDirection: "column",
+          gap: "15px"
+        }}>
+          <span style={{ color: isDark ? "#fff" : "#333", fontSize: "1.1rem", fontWeight: "bold" }}>
+            Cuenta de Google
+          </span>
+          
+          {authUser ? (
+            <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: "15px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div style={{ width: "40px", height: "40px", borderRadius: "50%", overflow: "hidden", backgroundColor: "#333" }}>
+                  {authUser.photoURL && <img src={authUser.photoURL} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+                </div>
+                <div>
+                  <div style={{ color: isDark ? "#fff" : "#333", fontWeight: "600" }}>{authUser.displayName || "Usuario"}</div>
+                  <div style={{ color: "#888", fontSize: "0.85rem" }}>{authUser.email}</div>
+                </div>
+              </div>
+              <button 
+                onClick={handleSwitchAccount}
+                style={{
+                  padding: "10px 16px",
+                  backgroundColor: isDark ? "#2a2a2a" : "#f0f0f0",
+                  color: isDark ? "#fff" : "#333",
+                  border: `1px solid ${isDark ? "#444" : "#ddd"}`,
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: "600",
+                  transition: "all 0.2s",
+                  width: isMobile ? "100%" : "auto"
+                }}
+                onMouseOver={(e) => { e.target.style.borderColor = "#1dd1a1"; e.target.style.color = "#1dd1a1"; }}
+                onMouseOut={(e) => { e.target.style.borderColor = isDark ? "#444" : "#ddd"; e.target.style.color = isDark ? "#fff" : "#333"; }}
+              >
+                Cambiar cuenta
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "10px" }}>
+              <button 
+                onClick={loginWithGoogle}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  backgroundColor: "#1dd1a1",
+                  color: "#000",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "10px"
+                }}
+              >
+                <img src="/logo2.png" alt="G" width={18} height={18} />
+                Iniciar sesión
+              </button>
+              <button 
+                onClick={loginWithGoogle}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  backgroundColor: "transparent",
+                  color: isDark ? "#fff" : "#333",
+                  border: `2px solid ${isDark ? "#333" : "#ddd"}`,
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: "bold"
+                }}
+              >
+                Registrarse
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Separador */}
+        <div style={{ height: "1px", backgroundColor: isDark ? "#333" : "#eee" }} />
+
         {/* Apartado de Tema */}
         <div style={{ 
           display: "flex", 

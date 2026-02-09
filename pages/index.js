@@ -111,11 +111,11 @@ export default function Home() {
                     style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", flex: 1 }}
                   >
                     <div style={{ width: "35px", height: "35px", borderRadius: "50%", backgroundColor: "#333", overflow: "hidden" }}>
-                      {u.profile?.photoURL && <img src={u.profile.photoURL} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+                      {u.photoURL && <img src={u.photoURL} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
                     </div>
                     <div>
-                      <div style={{ fontWeight: "bold" }}>@{u.profile?.username}</div>
-                      <div style={{ fontSize: "0.8rem", color: "#888" }}>{u.profile?.firstName}</div>
+                      <div style={{ fontWeight: "bold" }}>@{u.username}</div>
+                      <div style={{ fontSize: "0.8rem", color: "#888" }}>{u.firstName}</div>
                     </div>
                   </div>
                   {u.id !== authUser?.uid && (

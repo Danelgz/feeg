@@ -36,7 +36,8 @@ export default function UserProfile() {
   const fetchUserData = async () => {
     setLoading(true);
     try {
-      const userData = await getFromCloud(`users/${uid}`);
+      // Ahora cargamos de la colección PÚBLICA para que no falle por las reglas
+      const userData = await getFromCloud(`usersPublic/${uid}`);
       if (userData) {
         setTargetUser(userData);
         const userWorkouts = await getUserWorkouts(uid);
@@ -95,7 +96,7 @@ export default function UserProfile() {
     );
   }
 
-  const profile = targetUser.profile;
+  const profile = targetUser; // En usersPublic los datos están al nivel raíz
   const isFollowing = following.includes(uid);
 
   return (
@@ -122,11 +123,11 @@ export default function UserProfile() {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: "bold", fontSize: "1.2rem" }}>@{profile?.username || "usuario"}</div>
-            <div style={{ color: "#aaa", fontSize: "0.9rem" }}>{profile?.firstName} {profile?.lastName}</div>
+            <div style={{ color: "#aaa", fontSize: "0.9rem" }}>{profile?.firstName}</div>
             <div style={{ display: "flex", gap: "15px", marginTop: "10px" }}>
               <div><span style={{ fontWeight: "bold" }}>{workouts.length}</span> Entrenos</div>
-              <div><span style={{ fontWeight: "bold" }}>{targetUser.followers?.length || 0}</span> Seguidores</div>
-              <div><span style={{ fontWeight: "bold" }}>{targetUser.following?.length || 0}</span> Siguiendo</div>
+              <div><span style={{ fontWeight: "bold" }}>{targetUser.followersCount || 0}</span> Seguidores</div>
+              <div><span style={{ fontWeight: "bold" }}>{targetUser.followingCount || 0}</span> Siguiendo</div>
             </div>
           </div>
         </div>

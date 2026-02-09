@@ -126,7 +126,18 @@ export function UserProvider({ children }) {
     setUser(userData);
     localStorage.setItem('userProfile', JSON.stringify(userData));
     if (authUser) {
+      // Guardar datos privados
       await saveToCloud(`users/${authUser.uid}`, { profile: userData });
+      // Guardar datos públicos (nombre, foto, bio, username)
+      await saveToCloud(`usersPublic/${authUser.uid}`, {
+        username: userData.username,
+        firstName: userData.firstName,
+        photoURL: userData.photoURL || authUser.photoURL,
+        description: userData.description || "",
+        uid: authUser.uid,
+        followersCount: followers.length,
+        followingCount: following.length
+      });
     }
   };
 

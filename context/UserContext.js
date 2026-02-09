@@ -152,14 +152,15 @@ export function UserProvider({ children }) {
     if (authUser) {
       // Guardar datos privados
       await saveToCloud(`users/${authUser.uid}`, { profile: userData });
-      // Guardar datos públicos (nombre, foto, bio, username)
+      // Guardar datos públicos con usernameLowercase para búsqueda eficiente
       await saveToCloud(`usersPublic/${authUser.uid}`, {
         username: userData.username,
+        usernameLowercase: userData.username.toLowerCase(),
         firstName: userData.firstName,
         photoURL: userData.photoURL || authUser.photoURL,
         description: userData.description || "",
         uid: authUser.uid,
-        following: following // Guardar lista de IDs para que sea consultable
+        following: following
       });
     }
   };

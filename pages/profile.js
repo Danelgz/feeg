@@ -126,7 +126,26 @@ export default function Profile() {
     setIsEditing(false);
   };
 
-  const isDark = true; // Always dark per image
+  const [viewingSummary, setViewingSummary] = useState(null);
+
+  const WorkoutCard = ({ workout }) => (
+    <div style={{ backgroundColor: "#1a1a1a", padding: "15px", borderRadius: "12px", marginBottom: "15px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
+        <div>
+          <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#1dd1a1" }}>{workout.name}</div>
+          <div style={{ fontSize: "0.8rem", color: "#888" }}>{new Date(workout.completedAt).toLocaleString()}</div>
+        </div>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button onClick={() => setViewingSummary(workout)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1dd1a1", fontSize: "0.85rem" }}>Resumen</button>
+          <button onClick={() => router.push(`/routines?edit=${workout.routineId || workout.id}`)} style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: "0.85rem" }}>Editar</button>
+          <button onClick={() => setConfirmDelete(workout.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ff4757", fontSize: "0.85rem" }}>Borrar</button>
+        </div>
+      </div>
+      <div style={{ fontSize: "0.9rem", color: "#ccc" }}>
+        {workout.series} series • {workout.totalVolume?.toLocaleString()} kg • {workout.totalReps} reps
+      </div>
+    </div>
+  );
 
   if (!isLoaded || isSyncing) {
     return (
@@ -442,56 +461,41 @@ export default function Profile() {
             [...completedWorkouts]
               .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
               .map(workout => (
-                <div key={workout.id} style={{
-                  backgroundColor: "#1a1a1a",
-                  padding: "18px",
-                  borderRadius: "15px",
-                  border: "1px solid #333",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "12px",
-                  transition: "transform 0.2s ease"
-                }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <div>
-                      <div style={{ fontWeight: "bold", fontSize: "1.1rem", color: "#1dd1a1" }}>{workout.name}</div>
-                      <div style={{ fontSize: "0.85rem", color: "#888", marginTop: "4px" }}>
-                        {new Date(workout.completedAt).toLocaleDateString()} • {workout.series} series
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", gap: "8px" }}>
-                      <button 
-                        onClick={() => router.push(`/statistics/${workout.id}`)}
-                        style={{ backgroundColor: "#222", border: "1px solid #333", color: "#1dd1a1", padding: "8px", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                        title="Resumen"
-                      >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
-                      </button>
-                      <button 
-                        onClick={() => router.push(`/routines/create?edit=${workout.id}`)}
-                        style={{ backgroundColor: "#222", border: "1px solid #333", color: "#fff", padding: "8px", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                        title="Editar"
-                      >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                      </button>
-                      <button 
-                        onClick={() => setConfirmDelete(workout.id)}
-                        style={{ backgroundColor: "#222", border: "1px solid #333", color: "#ff4757", padding: "8px", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                        title="Borrar"
-                      >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                      </button>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", gap: "15px", fontSize: "0.9rem", color: "#ccc" }}>
-                    <span>{workout.totalVolume?.toLocaleString()} kg</span>
-                    <span style={{ color: "#444" }}>|</span>
-                    <span>{workout.totalReps} reps</span>
-                  </div>
-                </div>
+                <WorkoutCard key={workout.id} workout={workout} />
               ))
           )}
         </div>
+
+        {viewingSummary && (
+          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 3000, padding: "20px" }}>
+            <div style={{ backgroundColor: "#1a1a1a", padding: "25px", borderRadius: "15px", width: "100%", maxWidth: "500px", maxHeight: "80vh", overflowY: "auto" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                <h2 style={{ color: "#1dd1a1", margin: 0 }}>{viewingSummary.name}</h2>
+                <button onClick={() => setViewingSummary(null)} style={{ background: "none", border: "none", color: "#fff", fontSize: "1.5rem", cursor: "pointer" }}>&times;</button>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+                  <div style={{ backgroundColor: "#222", padding: "15px", borderRadius: "10px" }}>
+                    <div style={{ color: "#888", fontSize: "0.8rem" }}>Volumen</div>
+                    <div style={{ fontSize: "1.2rem", fontWeight: "bold" }}>{viewingSummary.totalVolume?.toLocaleString()} kg</div>
+                  </div>
+                  <div style={{ backgroundColor: "#222", padding: "15px", borderRadius: "10px" }}>
+                    <div style={{ color: "#888", fontSize: "0.8rem" }}>Series</div>
+                    <div style={{ fontSize: "1.2rem", fontWeight: "bold" }}>{viewingSummary.series}</div>
+                  </div>
+                </div>
+                {viewingSummary.exercises && viewingSummary.exercises.map((ex, i) => (
+                  <div key={i} style={{ backgroundColor: "#222", padding: "15px", borderRadius: "10px" }}>
+                    <div style={{ fontWeight: "bold", marginBottom: "8px" }}>{ex.name}</div>
+                    <div style={{ fontSize: "0.85rem", color: "#ccc" }}>
+                      {ex.series ? ex.series.map((s, si) => `${s.weight}kg x ${s.reps}`).join(" • ") : `${ex.reps} reps`}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Confirm Delete Modal */}
@@ -523,6 +527,37 @@ export default function Profile() {
             <h2 style={{ color: "#fff", marginBottom: "20px" }}>Editar Perfil</h2>
             
             <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#333', overflow: 'hidden', border: '2px solid #1dd1a1' }}>
+                  {editData.photoURL ? <img src={editData.photoURL} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                </div>
+                <label style={{ 
+                  backgroundColor: '#222', 
+                  color: '#1dd1a1', 
+                  padding: '8px 15px', 
+                  borderRadius: '8px', 
+                  cursor: 'pointer', 
+                  fontSize: '0.85rem',
+                  border: '1px solid #333'
+                }}>
+                  Cambiar foto
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    style={{ display: 'none' }} 
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setEditData({ ...editData, photoURL: reader.result });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
               <div>
                 <label style={{ color: "#888", fontSize: "0.8rem" }}>Usuario</label>
                 <input 

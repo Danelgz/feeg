@@ -17,6 +17,7 @@ export default function Profile() {
     isMobile, 
     t, 
     loginWithGoogle, 
+    isLoggingIn,
     logout,
     completedWorkouts,
     deleteCompletedWorkout,
@@ -148,25 +149,27 @@ export default function Profile() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <button
               onClick={loginWithGoogle}
+              disabled={isLoggingIn}
               style={{
                 padding: "14px 16px",
-                backgroundColor: "#1dd1a1",
+                backgroundColor: isLoggingIn ? "#19b088" : "#1dd1a1",
                 color: "#000",
                 border: "none",
                 borderRadius: 10,
-                cursor: 'pointer',
+                cursor: isLoggingIn ? 'default' : 'pointer',
                 fontWeight: 700,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 10,
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                opacity: isLoggingIn ? 0.7 : 1
               }}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#19b088"}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#1dd1a1"}
+              onMouseOver={(e) => !isLoggingIn && (e.currentTarget.style.backgroundColor = "#19b088")}
+              onMouseOut={(e) => !isLoggingIn && (e.currentTarget.style.backgroundColor = "#1dd1a1")}
             >
               <img src="/logo2.png" alt="G" width={20} height={20} />
-              Iniciar Sesión con Google
+              {isLoggingIn ? "Cargando..." : "Iniciar Sesión con Google"}
             </button>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '10px 0' }}>

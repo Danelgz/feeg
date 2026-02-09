@@ -178,8 +178,15 @@ export function UserProvider({ children }) {
     setFollowers([]);
   };
 
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
   const loginWithGoogle = async () => {
-    await signInWithGoogle();
+    setIsLoggingIn(true);
+    try {
+      await signInWithGoogle();
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
   const logout = async () => {
@@ -297,6 +304,7 @@ export function UserProvider({ children }) {
       saveUser, 
       clearUser, 
       loginWithGoogle,
+      isLoggingIn,
       logout,
       isLoaded, 
       isSyncing,

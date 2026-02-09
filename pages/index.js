@@ -81,42 +81,72 @@ export default function Home() {
     <Layout>
       <div style={{ backgroundColor: "#000", color: "#fff", minHeight: "100vh", padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
         
-        {/* Buscador de usuarios */}
-        <div style={{ marginBottom: "30px" }}>
+        {/* Buscador de usuarios interactivo */}
+        <div style={{ marginBottom: "30px", position: "relative" }}>
           <div style={{ display: "flex", gap: "10px" }}>
-            <input
-              placeholder="Buscar gente para seguir..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              style={{
-                flex: 1,
-                backgroundColor: "#1a1a1a",
-                border: "1px solid #333",
-                borderRadius: "20px",
-                padding: "10px 20px",
-                color: "#fff",
-                outline: "none"
-              }}
-            />
-            <button
-              onClick={handleSearch}
-              style={{ backgroundColor: "#1dd1a1", color: "#000", border: "none", padding: "10px 20px", borderRadius: "20px", fontWeight: "bold", cursor: "pointer" }}
-            >
-              Buscar
-            </button>
+            <div style={{ position: "relative", flex: 1 }}>
+              <input
+                placeholder="Buscar usuarios..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{
+                  width: "100%",
+                  backgroundColor: "#1a1a1a",
+                  border: "1px solid #333",
+                  borderRadius: "20px",
+                  padding: "12px 20px",
+                  color: "#fff",
+                  outline: "none",
+                  fontSize: "1rem"
+                }}
+              />
+              {searchTerm && (
+                <button 
+                  onClick={() => setSearchTerm("")}
+                  style={{ position: "absolute", right: "15px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#666", cursor: "pointer", fontSize: "1.2rem" }}
+                >
+                  &times;
+                </button>
+              )}
+            </div>
           </div>
 
-          {searchResults.length > 0 && (
-            <div style={{ marginTop: "15px", backgroundColor: "#1a1a1a", borderRadius: "12px", padding: "10px" }}>
+          {searchResults.length > 0 && (searchTerm || searchResults.length > 0) && (
+            <div style={{ 
+              marginTop: "10px", 
+              backgroundColor: "#1a1a1a", 
+              borderRadius: "15px", 
+              border: "1px solid #333",
+              maxHeight: "300px", 
+              overflowY: "auto",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+              zIndex: 100,
+              position: searchTerm ? "absolute" : "relative",
+              left: 0,
+              right: 0
+            }}>
+              <div style={{ padding: "10px 15px", fontSize: "0.8rem", color: "#1dd1a1", borderBottom: "1px solid #333", fontWeight: "bold" }}>
+                {searchTerm ? "Resultados de búsqueda" : "Gente que podrías seguir"}
+              </div>
               {searchResults.map(u => (
-                <div key={u.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px", borderBottom: "1px solid #333" }}>
-                  <div 
-                    onClick={() => router.push(`/user/${u.id}`)}
-                    style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", flex: 1 }}
-                  >
-                    <div style={{ width: "35px", height: "35px", borderRadius: "50%", backgroundColor: "#333", overflow: "hidden" }}>
-                      {u.photoURL && <img src={u.photoURL} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+                <div 
+                  key={u.id} 
+                  onClick={() => router.push(`/user/${u.id}`)}
+                  style={{ 
+                    display: "flex", 
+                    alignItems: "center", 
+                    justifyContent: "space-between", 
+                    padding: "12px 15px", 
+                    borderBottom: "1px solid #222",
+                    cursor: "pointer",
+                    transition: "background 0.2s"
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#222"}
+                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "#333", overflow: "hidden" }}>
+                      {u.photoURL ? <img src={u.photoURL} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#888" }}>?</div>}
                     </div>
                     <div>
                       <div style={{ fontWeight: "bold" }}>@{u.username}</div>
@@ -125,14 +155,17 @@ export default function Home() {
                   </div>
                   {u.id !== authUser?.uid && (
                     <button
-                      onClick={() => following.includes(u.id) ? handleUnfollow(u.id) : handleFollow(u.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        following.includes(u.id) ? handleUnfollow(u.id) : handleFollow(u.id);
+                      }}
                       style={{
                         backgroundColor: following.includes(u.id) ? "transparent" : "#1dd1a1",
                         color: following.includes(u.id) ? "#fff" : "#000",
-                        border: following.includes(u.id) ? "1px solid #333" : "none",
-                        padding: "5px 15px",
+                        border: following.includes(u.id) ? "1px solid #444" : "none",
+                        padding: "6px 14px",
                         borderRadius: "15px",
-                        fontSize: "0.85rem",
+                        fontSize: "0.8rem",
                         fontWeight: "bold",
                         cursor: "pointer"
                       }}
@@ -146,7 +179,10 @@ export default function Home() {
           )}
         </div>
 
-        <h1 style={{ fontSize: "1.8rem", fontWeight: "bold", marginBottom: "20px" }}>Inicio</h1>
+        <h1 style={{ fontSize: "1.8rem", fontWeight: "bold", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
+          <span style={{ width: "4px", height: "24px", backgroundColor: "#1dd1a1", borderRadius: "2px" }}></span>
+          Actividad
+        </h1>
 
         {/* Feed de Entrenamientos */}
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>

@@ -63,42 +63,46 @@ export default function Profile() {
     }
   }, [user, authUser]);
 
-  // Procesar datos para el gráfico
+  // Procesar datos para el gráfico con seguridad extra
   const getChartData = () => {
-    if (!completedWorkouts || completedWorkouts.length === 0) return [];
+    if (!completedWorkouts || !Array.isArray(completedWorkouts) || completedWorkouts.length === 0) return [];
 
-    const now = new Date();
-    let startDate = new Date();
-    if (chartFilter === "3_months") startDate.setMonth(now.getMonth() - 3);
-    else if (chartFilter === "6_months") startDate.setMonth(now.getMonth() - 6);
-    else if (chartFilter === "1_year") startDate.setFullYear(now.getFullYear() - 1);
-    else startDate = new Date(0); // Siempre
+    try {
+      const now = new Date();
+      let startDate = new Date();
+      if (chartFilter === "3_months") startDate.setMonth(now.getMonth() - 3);
+      else if (chartFilter === "6_months") startDate.setMonth(now.getMonth() - 6);
+      else if (chartFilter === "1_year") startDate.setFullYear(now.getFullYear() - 1);
+      else startDate = new Date(0);
 
-    // Agrupar por semana (Lunes a Domingo)
-    const weeks = {};
-    
-    completedWorkouts.forEach(w => {
-      const date = new Date(w.completedAt);
-      if (date < startDate) return;
-
-      // Obtener el lunes de esa semana
-      const day = date.getDay();
-      const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-      const monday = new Date(date.setDate(diff));
-      monday.setHours(0,0,0,0);
-      const weekKey = monday.toISOString().split('T')[0];
-
-      if (!weeks[weekKey]) {
-        weeks[weekKey] = { duration: 0, volume: 0, reps: 0, count: 0, date: monday };
-      }
+      const weeks = {};
       
-      weeks[weekKey].duration += (w.elapsedTime || (w.totalTime * 60) || 0) / 3600; // horas
-      weeks[weekKey].volume += w.totalVolume || 0;
-      weeks[weekKey].reps += w.totalReps || 0;
-      weeks[weekKey].count += 1;
-    });
+      completedWorkouts.forEach(w => {
+        if (!w || !w.completedAt) return;
+        const date = new Date(w.completedAt);
+        if (isNaN(date.getTime()) || date < startDate) return;
 
-    return Object.values(weeks).sort((a, b) => a.date - b.date);
+        const day = date.getDay();
+        const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+        const monday = new Date(new Date(date).setDate(diff));
+        monday.setHours(0,0,0,0);
+        const weekKey = monday.toISOString().split('T')[0];
+
+        if (!weeks[weekKey]) {
+          weeks[weekKey] = { duration: 0, volume: 0, reps: 0, count: 0, date: monday };
+        }
+        
+        weeks[weekKey].duration += (Number(w.elapsedTime) || (Number(w.totalTime) * 60) || 0) / 3600;
+        weeks[weekKey].volume += Number(w.totalVolume) || 0;
+        weeks[weekKey].reps += Number(w.totalReps) || 0;
+        weeks[weekKey].count += 1;
+      });
+
+      return Object.values(weeks).sort((a, b) => a.date - b.date);
+    } catch (e) {
+      console.error("Error generating chart data:", e);
+      return [];
+    }
   };
 
   const chartData = getChartData();
@@ -420,61 +424,66 @@ export default function Profile() {
 
         {/* Workouts Section */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-          <h3 style={{ fontSize: "1.1rem", color: "#888", margin: 0 }}>Entrenamientos</h3>
+          <h3 style={{ fontSize: "1.2rem", fontWeight: "bold", margin: 0, display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ width: "4px", height: "20px", backgroundColor: "#1dd1a1", borderRadius: "2px" }}></span>
+            Entrenamientos
+          </h3>
         </div>
         
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
           {(!completedWorkouts || completedWorkouts.length === 0) ? (
-            <div style={{ color: "#444" }}>No hay entrenamientos registrados</div>
+            <div style={{ padding: "30px", textAlign: "center", backgroundColor: "#1a1a1a", borderRadius: "12px", color: "#666" }}>
+              No hay entrenamientos registrados aún.
+            </div>
           ) : (
             [...completedWorkouts]
               .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
               .map(workout => (
                 <div key={workout.id} style={{
                   backgroundColor: "#1a1a1a",
-                  padding: "15px",
-                  borderRadius: "10px",
+                  padding: "18px",
+                  borderRadius: "15px",
+                  border: "1px solid #333",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "10px"
+                  gap: "12px",
+                  transition: "transform 0.2s ease"
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <div>
-                      <div style={{ fontWeight: "bold", fontSize: "1rem", color: "#1dd1a1" }}>{workout.name}</div>
-                      <div style={{ fontSize: "0.8rem", color: "#888" }}>
-                        {new Date(workout.completedAt).toLocaleDateString()} - {workout.totalVolume?.toLocaleString()}kg - {workout.series} series
+                      <div style={{ fontWeight: "bold", fontSize: "1.1rem", color: "#1dd1a1" }}>{workout.name}</div>
+                      <div style={{ fontSize: "0.85rem", color: "#888", marginTop: "4px" }}>
+                        {new Date(workout.completedAt).toLocaleDateString()} • {workout.series} series
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: "10px" }}>
+                    <div style={{ display: "flex", gap: "8px" }}>
                       <button 
-                        onClick={() => router.push(`/routines/${workout.routineId || "empty"}`)}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: "#888" }}
-                        title="Ver entrenamiento"
-                      >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                      </button>
-                      <button 
-                        onClick={() => router.push("/")} // Summary is in Home
-                        style={{ background: "none", border: "none", cursor: "pointer", color: "#888" }}
+                        onClick={() => router.push(`/statistics/${workout.id}`)}
+                        style={{ backgroundColor: "#222", border: "1px solid #333", color: "#1dd1a1", padding: "8px", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                         title="Resumen"
                       >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="9"></line><line x1="9" y1="13" x2="15" y2="13"></line><line x1="9" y1="17" x2="15" y2="17"></line></svg>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
                       </button>
                       <button 
                         onClick={() => router.push(`/routines/create?edit=${workout.id}`)}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: "#888" }}
+                        style={{ backgroundColor: "#222", border: "1px solid #333", color: "#fff", padding: "8px", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                         title="Editar"
                       >
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                       </button>
                       <button 
                         onClick={() => setConfirmDelete(workout.id)}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: "#ff4d4d" }}
+                        style={{ backgroundColor: "#222", border: "1px solid #333", color: "#ff4757", padding: "8px", borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                         title="Borrar"
                       >
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                       </button>
                     </div>
+                  </div>
+                  <div style={{ display: "flex", gap: "15px", fontSize: "0.9rem", color: "#ccc" }}>
+                    <span>{workout.totalVolume?.toLocaleString()} kg</span>
+                    <span style={{ color: "#444" }}>|</span>
+                    <span>{workout.totalReps} reps</span>
                   </div>
                 </div>
               ))

@@ -1,6 +1,17 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { translations } from '../data/translations';
-import { onAuthChange, signInWithGoogle, signOutUser, saveToCloud, getFromCloud } from '../lib/firebase';
+import { 
+  onAuthChange, 
+  signInWithGoogle, 
+  signOutUser, 
+  saveToCloud, 
+  getFromCloud, 
+  followUser, 
+  unfollowUser, 
+  getFollowersCount,
+  getFollowersList,
+  getFollowingList
+} from '../lib/firebase';
 
 const UserContext = createContext();
 
@@ -63,6 +74,7 @@ export function UserProvider({ children }) {
         // Intentar sincronizar datos desde la nube
         try {
           const cloudData = await getFromCloud(`users/${fbUser.uid}`);
+          const publicData = await getFromCloud(`usersPublic/${fbUser.uid}`);
           
           if (cloudData) {
             // Si hay datos en la nube, mandan sobre los locales
@@ -82,8 +94,20 @@ export function UserProvider({ children }) {
               setActiveRoutine(cloudData.activeRoutine);
               localStorage.setItem('activeRoutine', JSON.stringify(cloudData.activeRoutine));
             }
-            if (cloudData.following) setFollowing(cloudData.following);
-            if (cloudData.followers) setFollowers(cloudData.followers);
+            
+            // Following viene de usersPublic para ser consultable
+            if (publicData && publicData.following) {
+              setFollowing(publicData.following);
+            } else if (cloudData.following) {
+              setFollowing(cloudData.following); // Fallback migración
+            }
+
+            // Followers se calcula siempre
+            const fCount = await getFollowersCount(fbUser.uid);
+            // Si queremos la lista:
+            const fList = await getFollowersList(fbUser.uid);
+            setFollowers(fList.map(u => u.id));
+
             if (cloudData.settings) {
               if (cloudData.settings.theme) {
                 setTheme(cloudData.settings.theme);
@@ -135,8 +159,7 @@ export function UserProvider({ children }) {
         photoURL: userData.photoURL || authUser.photoURL,
         description: userData.description || "",
         uid: authUser.uid,
-        followersCount: followers.length,
-        followingCount: following.length
+        following: following // Guardar lista de IDs para que sea consultable
       });
     }
   };
@@ -150,6 +173,8 @@ export function UserProvider({ children }) {
     setCompletedWorkouts([]);
     setRoutines([]);
     setActiveRoutine(null);
+    setFollowing([]);
+    setFollowers([]);
   };
 
   const loginWithGoogle = async () => {
@@ -193,7 +218,9 @@ export function UserProvider({ children }) {
         ...workout, 
         userId: authUser.uid,
         userName: user?.username || authUser.displayName,
-        userPhoto: user?.photoURL || authUser.photoURL
+        userPhoto: user?.photoURL || authUser.photoURL,
+        likes: [],
+        commentsList: []
       });
     }
   };
@@ -252,16 +279,14 @@ export function UserProvider({ children }) {
 
   const handleFollow = async (targetId) => {
     if (!authUser) return;
-    await saveToCloud(`users/${authUser.uid}`, { following: [...following, targetId] });
-    await saveToCloud(`users/${targetId}`, { followers: [...followers, authUser.uid] }); // Simple for now
+    await followUser(authUser.uid, targetId);
     setFollowing(prev => [...prev, targetId]);
   };
 
   const handleUnfollow = async (targetId) => {
     if (!authUser) return;
-    const newFollowing = following.filter(id => id !== targetId);
-    await saveToCloud(`users/${authUser.uid}`, { following: newFollowing });
-    setFollowing(newFollowing);
+    await unfollowUser(authUser.uid, targetId);
+    setFollowing(prev => prev.filter(id => id !== targetId));
   };
 
   return (

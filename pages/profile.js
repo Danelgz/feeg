@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import Layout from "../components/Layout";
 import RegisterForm from "../components/RegisterForm";
 import { useUser } from "../context/UserContext";
+import { getFollowersList, getFollowingList } from "../lib/firebase";
 
 export default function Profile() {
   const router = useRouter();
@@ -27,6 +28,22 @@ export default function Profile() {
   const [chartMode, setChartMode] = useState("duration"); // duration, volume, reps
   const [activeBar, setActiveBar] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [showFollowers, setShowFollowers] = useState(false);
+  const [showFollowing, setShowFollowing] = useState(false);
+  const [followersList, setFollowersList] = useState([]);
+  const [followingList, setFollowingList] = useState([]);
+
+  const handleOpenFollowers = async () => {
+    setShowFollowers(true);
+    const list = await getFollowersList(authUser.uid);
+    setFollowersList(list);
+  };
+
+  const handleOpenFollowing = async () => {
+    setShowFollowing(true);
+    const list = await getFollowingList(authUser.uid);
+    setFollowingList(list);
+  };
 
   const [editData, setEditData] = useState({
     username: "",
@@ -263,15 +280,15 @@ export default function Profile() {
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: "bold", fontSize: "1.1rem" }}>{user?.firstName || "Nombre"}</div>
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: "10px", textAlign: "center" }}>
-              <div>
+              <div style={{ cursor: "pointer" }}>
                 <div style={{ color: "#aaa", fontSize: "0.8rem" }}>Entrenos</div>
                 <div style={{ fontSize: "1.1rem", fontWeight: "bold" }}>{completedWorkouts?.length || 0}</div>
               </div>
-              <div>
+              <div onClick={handleOpenFollowers} style={{ cursor: "pointer" }}>
                 <div style={{ color: "#aaa", fontSize: "0.8rem" }}>Seguidores</div>
                 <div style={{ fontSize: "1.1rem", fontWeight: "bold" }}>{followers?.length || 0}</div>
               </div>
-              <div>
+              <div onClick={handleOpenFollowing} style={{ cursor: "pointer" }}>
                 <div style={{ color: "#aaa", fontSize: "0.8rem" }}>Siguiendo</div>
                 <div style={{ fontSize: "1.1rem", fontWeight: "bold" }}>{following?.length || 0}</div>
               </div>
@@ -523,6 +540,49 @@ export default function Profile() {
                 <button onClick={() => setIsEditing(false)} style={{ flex: 1, padding: "12px", borderRadius: "8px", border: "1px solid #333", backgroundColor: "transparent", color: "#fff" }}>Cancelar</button>
                 <button onClick={handleEditSave} style={{ flex: 1, padding: "12px", borderRadius: "8px", border: "none", backgroundColor: "#1dd1a1", color: "#000", fontWeight: "bold" }}>Guardar</button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Follow Modals */}
+      {(showFollowers || showFollowing) && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center",
+          justifyContent: "center", zIndex: 4000, padding: "20px"
+        }}>
+          <div style={{ backgroundColor: "#1a1a1a", padding: "25px", borderRadius: "15px", width: "100%", maxWidth: "400px", maxHeight: "80vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <h2 style={{ color: "#fff", margin: 0 }}>{showFollowers ? "Seguidores" : "Siguiendo"}</h2>
+              <button onClick={() => { setShowFollowers(false); setShowFollowing(false); }} style={{ background: "none", border: "none", color: "#fff", fontSize: "1.5rem", cursor: "pointer" }}>&times;</button>
+            </div>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+              {(showFollowers ? followersList : followingList).length === 0 ? (
+                <p style={{ color: "#888", textAlign: "center" }}>No hay nadie aquí todavía.</p>
+              ) : (
+                (showFollowers ? followersList : followingList).map(u => (
+                  <div 
+                    key={u.id} 
+                    onClick={() => {
+                      router.push(`/user/${u.id}`);
+                      setShowFollowers(false);
+                      setShowFollowing(false);
+                    }}
+                    style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer", padding: "8px", borderRadius: "8px", transition: "background 0.2s" }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#2a2a2a"}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+                  >
+                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "#333", overflow: "hidden" }}>
+                      {u.photoURL && <img src={u.photoURL} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: "bold", color: "#fff" }}>@{u.username}</div>
+                      <div style={{ fontSize: "0.8rem", color: "#888" }}>{u.firstName}</div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

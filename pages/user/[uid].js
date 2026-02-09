@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Layout from "../../components/Layout";
 import { useUser } from "../../context/UserContext";
-import { getFromCloud, getUserWorkouts, likeWorkout, addWorkoutComment } from "../../lib/firebase";
+import { getFromCloud, getUserWorkouts, likeWorkout, addWorkoutComment, getFollowersCount, getFollowersList, getFollowingList } from "../../lib/firebase";
 
 export default function UserProfile() {
   const router = useRouter();
@@ -21,7 +21,23 @@ export default function UserProfile() {
   const [workouts, setWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [commentingOn, setCommentingOn] = useState(null);
+  const [showFollowers, setShowFollowers] = useState(false);
+  const [showFollowing, setShowFollowing] = useState(false);
+  const [followersList, setFollowersList] = useState([]);
+  const [followingList, setFollowingList] = useState([]);
   const [newComment, setNewComment] = useState("");
+
+  const handleOpenFollowers = async () => {
+    setShowFollowers(true);
+    const list = await getFollowersList(uid);
+    setFollowersList(list);
+  };
+
+  const handleOpenFollowing = async () => {
+    setShowFollowing(true);
+    const list = await getFollowingList(uid);
+    setFollowingList(list);
+  };
 
   useEffect(() => {
     if (uid) {
@@ -39,7 +55,10 @@ export default function UserProfile() {
       // Ahora cargamos de la colección PÚBLICA para que no falle por las reglas
       const userData = await getFromCloud(`usersPublic/${uid}`);
       if (userData) {
-        setTargetUser(userData);
+        // Calcular seguidores en tiempo real
+        const fCount = await getFollowersCount(uid);
+        setTargetUser({ ...userData, followersCount: fCount });
+        
         const userWorkouts = await getUserWorkouts(uid);
         setWorkouts(userWorkouts);
       }
@@ -126,8 +145,8 @@ export default function UserProfile() {
             <div style={{ color: "#aaa", fontSize: "0.9rem" }}>{profile?.firstName}</div>
             <div style={{ display: "flex", gap: "15px", marginTop: "10px" }}>
               <div><span style={{ fontWeight: "bold" }}>{workouts.length}</span> Entrenos</div>
-              <div><span style={{ fontWeight: "bold" }}>{targetUser.followersCount || 0}</span> Seguidores</div>
-              <div><span style={{ fontWeight: "bold" }}>{targetUser.followingCount || 0}</span> Siguiendo</div>
+              <div onClick={handleOpenFollowers} style={{ cursor: "pointer" }}><span style={{ fontWeight: "bold" }}>{targetUser.followersCount || 0}</span> Seguidores</div>
+              <div onClick={handleOpenFollowing} style={{ cursor: "pointer" }}><span style={{ fontWeight: "bold" }}>{targetUser.following?.length || 0}</span> Siguiendo</div>
             </div>
           </div>
         </div>
@@ -255,6 +274,55 @@ export default function UserProfile() {
           )}
         </div>
       </div>
+      {/* Follow Modals */}
+      {(showFollowers || showFollowing) && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center",
+          justifyContent: "center", zIndex: 4000, padding: "20px"
+        }}>
+          <div style={{ backgroundColor: "#1a1a1a", padding: "25px", borderRadius: "15px", width: "100%", maxWidth: "400px", maxHeight: "80vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <h2 style={{ color: "#fff", margin: 0 }}>{showFollowers ? "Seguidores" : "Siguiendo"}</h2>
+              <button onClick={() => { setShowFollowers(false); setShowFollowing(false); }} style={{ background: "none", border: "none", color: "#fff", fontSize: "1.5rem", cursor: "pointer" }}>&times;</button>
+            </div>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+              {(showFollowers ? followersList : followingList).length === 0 ? (
+                <p style={{ color: "#888", textAlign: "center" }}>No hay nadie aquí todavía.</p>
+              ) : (
+                (showFollowers ? followersList : followingList).map(u => (
+                  <div 
+                    key={u.id} 
+                    onClick={() => {
+                      if (u.id === authUser?.uid) {
+                        router.push("/profile");
+                      } else {
+                        router.push(`/user/${u.id}`);
+                        // Trigger re-fetch for new user
+                        setTargetUser(null);
+                      }
+                      setShowFollowers(false);
+                      setShowFollowing(false);
+                    }}
+                    style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer", padding: "8px", borderRadius: "8px", transition: "background 0.2s" }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#2a2a2a"}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+                  >
+                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "#333", overflow: "hidden" }}>
+                      {u.photoURL && <img src={u.photoURL} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: "bold", color: "#fff" }}>@{u.username}</div>
+                      <div style={{ fontSize: "0.8rem", color: "#888" }}>{u.firstName}</div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }

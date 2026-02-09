@@ -26,19 +26,24 @@ export default function Home() {
   }, [authUser, following]);
 
   useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      if (searchTerm.trim()) {
-        handleSearch();
-      } else {
-        setSearchResults([]);
+    const loadInitialUsers = async () => {
+      if (isLoaded && !searchTerm.trim()) {
+        const results = await searchUsers("");
+        setSearchResults(results);
       }
+    };
+    loadInitialUsers();
+  }, [isLoaded]);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      handleSearch();
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
 
   const handleSearch = async () => {
-    if (!searchTerm.trim()) return;
     const results = await searchUsers(searchTerm);
     setSearchResults(results);
   };

@@ -256,11 +256,11 @@ export default function Profile() {
               </div>
               <div>
                 <div style={{ color: "#aaa", fontSize: "0.8rem" }}>Seguidores</div>
-                <div style={{ fontSize: "1.1rem", fontWeight: "bold" }}>8</div>
+                <div style={{ fontSize: "1.1rem", fontWeight: "bold" }}>{followers?.length || 0}</div>
               </div>
               <div>
                 <div style={{ color: "#aaa", fontSize: "0.8rem" }}>Siguiendo</div>
-                <div style={{ fontSize: "1.1rem", fontWeight: "bold" }}>13</div>
+                <div style={{ fontSize: "1.1rem", fontWeight: "bold" }}>{following?.length || 0}</div>
               </div>
             </div>
           </div>

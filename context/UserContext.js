@@ -14,6 +14,8 @@ export function UserProvider({ children }) {
   const [activeRoutine, setActiveRoutine] = useState(null);
   const [completedWorkouts, setCompletedWorkouts] = useState([]);
   const [routines, setRoutines] = useState([]);
+  const [following, setFollowing] = useState([]);
+  const [followers, setFollowers] = useState([]);
 
   // Función de traducción
   const t = (key) => {
@@ -69,6 +71,8 @@ export function UserProvider({ children }) {
               setActiveRoutine(cloudData.activeRoutine);
               localStorage.setItem('activeRoutine', JSON.stringify(cloudData.activeRoutine));
             }
+            if (cloudData.following) setFollowing(cloudData.following);
+            if (cloudData.followers) setFollowers(cloudData.followers);
             if (cloudData.settings) {
               if (cloudData.settings.theme) {
                 setTheme(cloudData.settings.theme);
@@ -162,6 +166,13 @@ export function UserProvider({ children }) {
     localStorage.setItem('completedWorkouts', JSON.stringify(newList));
     if (authUser) {
       await saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList });
+      // Guardar también en colección global para el feed
+      await saveToCloud(`workouts/${workout.id}`, { 
+        ...workout, 
+        userId: authUser.uid,
+        userName: user?.username || authUser.displayName,
+        userPhoto: user?.photoURL || authUser.photoURL
+      });
     }
   };
 
@@ -217,6 +228,20 @@ export function UserProvider({ children }) {
     }
   };
 
+  const handleFollow = async (targetId) => {
+    if (!authUser) return;
+    await saveToCloud(`users/${authUser.uid}`, { following: [...following, targetId] });
+    await saveToCloud(`users/${targetId}`, { followers: [...followers, authUser.uid] }); // Simple for now
+    setFollowing(prev => [...prev, targetId]);
+  };
+
+  const handleUnfollow = async (targetId) => {
+    if (!authUser) return;
+    const newFollowing = following.filter(id => id !== targetId);
+    await saveToCloud(`users/${authUser.uid}`, { following: newFollowing });
+    setFollowing(newFollowing);
+  };
+
   return (
     <UserContext.Provider value={{ 
       user,
@@ -241,6 +266,10 @@ export function UserProvider({ children }) {
       saveRoutine,
       updateRoutine,
       deleteRoutine,
+      following,
+      followers,
+      handleFollow,
+      handleUnfollow,
       t
     }}>
       {children}

@@ -242,6 +242,16 @@ export function UserProvider({ children }) {
     }
   };
 
+  const updateCompletedWorkout = async (updatedWorkout) => {
+    const newList = completedWorkouts.map(w => w.id === updatedWorkout.id ? updatedWorkout : w);
+    setCompletedWorkouts(newList);
+    localStorage.setItem('completedWorkouts', JSON.stringify(newList));
+    if (authUser) {
+      await saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList });
+      await saveToCloud(`workouts/${updatedWorkout.id}`, updatedWorkout);
+    }
+  };
+
   const saveRoutine = async (newRoutine) => {
     const newList = [newRoutine, ...routines];
     setRoutines(newList);
@@ -318,6 +328,7 @@ export function UserProvider({ children }) {
       completedWorkouts,
       saveCompletedWorkout,
       deleteCompletedWorkout,
+      updateCompletedWorkout,
       routines,
       saveRoutine,
       updateRoutine,

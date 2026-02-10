@@ -171,7 +171,7 @@ export default function Profile() {
         </div>
         <div style={{ display: "flex", gap: "10px" }}>
           <button onClick={() => setViewingSummary(workout)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1dd1a1", fontSize: "0.85rem" }}>Resumen</button>
-          <button onClick={() => router.push(`/routines?edit=${workout.routineId || workout.id}`)} style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: "0.85rem" }}>Editar</button>
+          <button onClick={() => router.push(`/routines/create?editWorkout=${workout.id}`)} style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: "0.85rem" }}>Editar</button>
           <button onClick={() => setConfirmDelete(workout.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ff4757", fontSize: "0.85rem" }}>Borrar</button>
         </div>
       </div>
@@ -304,22 +304,6 @@ export default function Profile() {
         padding: "20px",
         fontFamily: "Arial, sans-serif"
       }}>
-        {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", margin: 0 }}>{user?.username || "Nombre_usuario"}</h1>
-          <div style={{ display: "flex", gap: "15px" }}>
-            <button onClick={() => setIsEditing(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "#fff" }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-            </button>
-            <button style={{ background: "none", border: "none", cursor: "pointer", color: "#fff" }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
-            </button>
-            <button onClick={() => router.push("/settings")} style={{ background: "none", border: "none", cursor: "pointer", color: "#fff" }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            </button>
-          </div>
-        </div>
-
         {/* Profile Info */}
         <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "20px" }}>
           <div 
@@ -358,6 +342,22 @@ export default function Profile() {
                 <div style={{ fontSize: "1.1rem", fontWeight: "bold" }}>{following?.length || 0}</div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+          <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", margin: 0 }}>{user?.username || "Nombre_usuario"}</h1>
+          <div style={{ display: "flex", gap: "15px" }}>
+            <button onClick={() => setIsEditing(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "#fff" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+            </button>
+            <button style={{ background: "none", border: "none", cursor: "pointer", color: "#fff" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+            </button>
+            <button onClick={() => router.push("/settings")} style={{ background: "none", border: "none", cursor: "pointer", color: "#fff" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </button>
           </div>
         </div>
 
@@ -541,11 +541,13 @@ export default function Profile() {
                     <div style={{ fontSize: "1.2rem", fontWeight: "bold" }}>{viewingSummary.series}</div>
                   </div>
                 </div>
-                {viewingSummary.exercises && viewingSummary.exercises.map((ex, i) => (
+                {(viewingSummary.details || viewingSummary.exercises) && (viewingSummary.details || viewingSummary.exercises).map((ex, i) => (
                   <div key={i} style={{ backgroundColor: "#222", padding: "15px", borderRadius: "10px" }}>
                     <div style={{ fontWeight: "bold", marginBottom: "8px" }}>{ex.name}</div>
                     <div style={{ fontSize: "0.85rem", color: "#ccc" }}>
-                      {ex.series ? ex.series.map((s, si) => `${s.weight}kg x ${s.reps}`).join(" • ") : `${ex.reps} reps`}
+                      {ex.series && Array.isArray(ex.series) 
+                        ? ex.series.map((s, si) => `${s.weight}kg x ${s.reps}`).join(" • ") 
+                        : `${ex.reps || 0} reps x ${ex.series || 0} series`}
                     </div>
                   </div>
                 ))}

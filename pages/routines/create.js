@@ -6,8 +6,8 @@ import { useUser } from "../../context/UserContext";
 
 export default function CreateRoutine() {
   const router = useRouter();
-  const { id } = router.query;
-  const { theme, t, routines, saveRoutine: contextSaveRoutine, updateRoutine: contextUpdateRoutine } = useUser();
+  const { id, editWorkout } = router.query;
+  const { theme, t, routines, completedWorkouts, saveRoutine: contextSaveRoutine, updateRoutine: contextUpdateRoutine, updateCompletedWorkout } = useUser();
   const [isMobile, setIsMobile] = useState(false);
   const isDark = theme === 'dark';
 
@@ -23,6 +23,7 @@ export default function CreateRoutine() {
   const [routineName, setRoutineName] = useState("");
   const [exercises, setExercises] = useState([]);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isWorkoutEditMode, setIsWorkoutEditMode] = useState(false);
 
   useEffect(() => {
     if (id && routines.length > 0) {
@@ -34,6 +35,18 @@ export default function CreateRoutine() {
       }
     }
   }, [id, routines]);
+
+  useEffect(() => {
+    if (editWorkout && completedWorkouts.length > 0) {
+      const workoutToEdit = completedWorkouts.find(w => w.id.toString() === editWorkout.toString());
+      if (workoutToEdit) {
+        setRoutineName(workoutToEdit.name);
+        // Completed workouts use 'details', routines use 'exercises'
+        setExercises(workoutToEdit.details || workoutToEdit.exercises || []);
+        setIsWorkoutEditMode(true);
+      }
+    }
+  }, [editWorkout, completedWorkouts]);
 
   const [showSelector, setShowSelector] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState("");
@@ -49,13 +62,41 @@ export default function CreateRoutine() {
       return;
     }
 
-    if (isEditMode) {
+    if (isWorkoutEditMode) {
+      // Calcular estadísticas del entrenamiento para consistencia
+      let totalVolume = 0;
+      let totalReps = 0;
+      let totalSeries = 0;
+
+      exercises.forEach(ex => {
+        if (ex.series && Array.isArray(ex.series)) {
+          ex.series.forEach(s => {
+            totalVolume += (Number(s.weight) || 0) * (Number(s.reps) || 0);
+            totalReps += Number(s.reps) || 0;
+            totalSeries += 1;
+          });
+        }
+      });
+
+      const updatedWorkout = {
+        ...completedWorkouts.find(w => w.id.toString() === editWorkout.toString()),
+        name: routineName,
+        details: exercises, // Los entrenamientos usan 'details'
+        totalVolume,
+        totalReps,
+        series: totalSeries,
+        exercises: exercises.length
+      };
+      await updateCompletedWorkout(updatedWorkout);
+      router.push("/profile");
+    } else if (isEditMode) {
       const updatedRoutine = {
         id: Number(id),
         name: routineName,
         exercises,
       };
       await contextUpdateRoutine(updatedRoutine);
+      router.push("/routines");
     } else {
       const newRoutine = {
         id: Date.now(),
@@ -63,8 +104,8 @@ export default function CreateRoutine() {
         exercises,
       };
       await contextSaveRoutine(newRoutine);
+      router.push("/routines");
     }
-    router.push("/routines");
   };
 
   const addExercise = (exercise) => {
@@ -116,7 +157,7 @@ export default function CreateRoutine() {
     <Layout>
       <div style={{ maxWidth: isMobile ? "100%" : "1200px", margin: isMobile ? "0" : "0 auto", padding: isMobile ? "0" : "20px" }}>
         <h1 style={{ fontSize: isMobile ? "1.8rem" : "2.5rem", fontWeight: "700", marginBottom: isMobile ? "1rem" : "2rem", color: isDark ? "#fff" : "#333" }}>
-          {isEditMode ? t("edit_routine") : t("create_new_routine")}
+          {isWorkoutEditMode ? "Editar entrenamiento" : (isEditMode ? t("edit_routine") : t("create_new_routine"))}
         </h1>
 
         <div style={{

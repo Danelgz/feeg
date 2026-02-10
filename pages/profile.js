@@ -34,6 +34,7 @@ export default function Profile() {
   const [showFollowing, setShowFollowing] = useState(false);
   const [followersList, setFollowersList] = useState([]);
   const [followingList, setFollowingList] = useState([]);
+  const [isPhotoFullScreen, setIsPhotoFullScreen] = useState(false);
 
   const handleOpenFollowers = async () => {
     setShowFollowers(true);
@@ -140,7 +141,7 @@ export default function Profile() {
   const overallRange = chartData.length > 0 
     ? `(${formatRangeDate(chartData[0].date)}, ${formatRangeDate(new Date())})`
     : "";
-  const maxVal = Math.max(...chartData.map(d => d[chartMode]), 1);
+  const maxVal = Math.max(chartMode === 'duration' ? 5 : 1, ...chartData.map(d => d[chartMode]), 1);
 
   const handleDeleteWorkout = async (id) => {
     await deleteCompletedWorkout(id);
@@ -321,19 +322,24 @@ export default function Profile() {
 
         {/* Profile Info */}
         <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "20px" }}>
-          <div style={{
-            width: "100px",
-            height: "100px",
-            borderRadius: "50%",
-            backgroundColor: "#fff",
-            color: "#000",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "1.2rem",
-            fontWeight: "bold",
-            overflow: "hidden"
-          }}>
+          <div 
+            onClick={() => setIsPhotoFullScreen(true)}
+            style={{
+              width: "100px",
+              height: "100px",
+              borderRadius: "50%",
+              backgroundColor: "#fff",
+              color: "#000",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "1.2rem",
+              fontWeight: "bold",
+              overflow: "hidden",
+              cursor: "pointer",
+              border: "2px solid #1dd1a1"
+            }}
+          >
             {user?.photoURL ? <img src={user.photoURL} alt="Perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "Perfil"}
           </div>
           <div style={{ flex: 1 }}>
@@ -397,18 +403,20 @@ export default function Profile() {
                     position: "relative"
                   }} 
                 >
-                  <div style={{
-                    position: "absolute",
-                    bottom: "105%",
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    color: "#555",
-                    fontSize: "0.6rem",
-                    whiteSpace: "nowrap",
-                    fontWeight: "bold"
-                  }}>
-                    {d.range}
-                  </div>
+                  {i % 2 === 0 && (
+                    <div style={{
+                      position: "absolute",
+                      bottom: "105%",
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      color: "#555",
+                      fontSize: "0.6rem",
+                      whiteSpace: "nowrap",
+                      fontWeight: "bold"
+                    }}>
+                      {d.range}
+                    </div>
+                  )}
                   {activeBar === i && (
                     <div style={{
                       position: "absolute",
@@ -680,6 +688,36 @@ export default function Profile() {
                 ))
               )}
             </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Full Screen Photo Modal */}
+      {isPhotoFullScreen && (
+        <div 
+          onClick={() => setIsPhotoFullScreen(false)}
+          style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.95)", display: "flex", alignItems: "center",
+            justifyContent: "center", zIndex: 5000, padding: "20px", cursor: "pointer"
+          }}
+        >
+          <div style={{ position: "relative", maxWidth: "90vw", maxHeight: "90vh" }}>
+            <button 
+              onClick={(e) => { e.stopPropagation(); setIsPhotoFullScreen(false); }}
+              style={{
+                position: "absolute", top: "-40px", right: "0",
+                background: "none", border: "none", color: "#fff",
+                fontSize: "2rem", cursor: "pointer"
+              }}
+            >
+              &times;
+            </button>
+            <img 
+              src={user?.photoURL || "/logo2.png"} 
+              alt="Profile Full" 
+              style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "10px" }}
+            />
           </div>
         </div>
       )}

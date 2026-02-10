@@ -67,7 +67,7 @@ export default function Profile() {
 
   // Procesar datos para el gráfico con seguridad extra
   const getChartData = () => {
-    if (!completedWorkouts || !Array.isArray(completedWorkouts) || completedWorkouts.length === 0) return [];
+    if (!completedWorkouts || !Array.isArray(completedWorkouts)) return [];
 
     try {
       const now = new Date();
@@ -77,7 +77,35 @@ export default function Profile() {
       else if (chartFilter === "1_year") startDate.setFullYear(now.getFullYear() - 1);
       else startDate = new Date(0);
 
-      const weeks = {};
+      // Alinear startDate al lunes de esa semana
+      const startDay = startDate.getDay();
+      const startDiff = startDate.getDate() - startDay + (startDay === 0 ? -6 : 1);
+      startDate = new Date(new Date(startDate).setDate(startDiff));
+      startDate.setHours(0,0,0,0);
+
+      const weeks = [];
+      const weeksMap = {};
+      
+      // Generar todas las semanas desde startDate hasta hoy
+      let current = new Date(startDate);
+      while (current <= now) {
+        const weekKey = current.toISOString().split('T')[0];
+        const weekEnd = new Date(current);
+        weekEnd.setDate(current.getDate() + 6);
+        
+        const weekObj = { 
+          duration: 0, 
+          volume: 0, 
+          reps: 0, 
+          count: 0, 
+          date: new Date(current),
+          range: `${current.getDate()}-${weekEnd.getDate()}`
+        };
+        weeksMap[weekKey] = weekObj;
+        weeks.push(weekObj);
+        
+        current.setDate(current.getDate() + 7);
+      }
       
       completedWorkouts.forEach(w => {
         if (!w || !w.completedAt) return;
@@ -90,24 +118,28 @@ export default function Profile() {
         monday.setHours(0,0,0,0);
         const weekKey = monday.toISOString().split('T')[0];
 
-        if (!weeks[weekKey]) {
-          weeks[weekKey] = { duration: 0, volume: 0, reps: 0, count: 0, date: monday };
+        if (weeksMap[weekKey]) {
+          weeksMap[weekKey].duration += (Number(w.elapsedTime) || (Number(w.totalTime) * 60) || 0) / 3600;
+          weeksMap[weekKey].volume += Number(w.totalVolume) || 0;
+          weeksMap[weekKey].reps += Number(w.totalReps) || 0;
+          weeksMap[weekKey].count += 1;
         }
-        
-        weeks[weekKey].duration += (Number(w.elapsedTime) || (Number(w.totalTime) * 60) || 0) / 3600;
-        weeks[weekKey].volume += Number(w.totalVolume) || 0;
-        weeks[weekKey].reps += Number(w.totalReps) || 0;
-        weeks[weekKey].count += 1;
       });
 
-      return Object.values(weeks).sort((a, b) => a.date - b.date);
+      return weeks;
     } catch (e) {
       console.error("Error generating chart data:", e);
       return [];
     }
   };
 
+  const spanishMonths = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  const formatRangeDate = (date) => date ? `${date.getDate()} ${spanishMonths[date.getMonth()]}` : "";
+
   const chartData = getChartData();
+  const overallRange = chartData.length > 0 
+    ? `(${formatRangeDate(chartData[0].date)}, ${formatRangeDate(new Date())})`
+    : "";
   const maxVal = Math.max(...chartData.map(d => d[chartMode]), 1);
 
   const handleDeleteWorkout = async (id) => {
@@ -331,7 +363,9 @@ export default function Profile() {
         {/* Graph Section */}
         <div style={{ marginBottom: "30px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-            <h2 style={{ fontSize: "1.1rem", margin: 0 }}>Gráfico horas por semana</h2>
+            <h2 style={{ fontSize: "1.1rem", margin: 0 }}>
+              Gráfico horas por semana <span style={{ color: "#888", fontSize: "0.8rem", marginLeft: "5px" }}>{overallRange}</span>
+            </h2>
             <select 
               value={chartFilter}
               onChange={(e) => setChartFilter(e.target.value)}
@@ -344,7 +378,7 @@ export default function Profile() {
             </select>
           </div>
           
-          <div style={{ height: "150px", display: "flex", alignItems: "flex-end", gap: "8px", marginBottom: "10px", position: "relative" }}>
+          <div style={{ height: "150px", display: "flex", alignItems: "flex-end", gap: "8px", marginBottom: "10px", position: "relative", paddingTop: "20px" }}>
             {chartData.length === 0 ? (
               <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#444" }}>Sin datos suficientes</div>
             ) : (
@@ -354,14 +388,27 @@ export default function Profile() {
                   onClick={() => setActiveBar(activeBar === i ? null : i)}
                   style={{ 
                     flex: 1, 
-                    backgroundColor: activeBar === i ? "#fff" : "#1dd1a1", 
-                    height: `${(d[chartMode] / maxVal) * 100}%`, 
+                    backgroundColor: activeBar === i ? "#fff" : (d[chartMode] > 0 ? "#1dd1a1" : "#1a1a1a"), 
+                    border: d[chartMode] === 0 ? "1px solid #333" : "none",
+                    height: `${Math.max(5, (d[chartMode] / maxVal) * 100)}%`, 
                     borderRadius: "2px",
                     cursor: "pointer",
                     transition: "all 0.2s ease",
                     position: "relative"
                   }} 
                 >
+                  <div style={{
+                    position: "absolute",
+                    bottom: "105%",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    color: "#555",
+                    fontSize: "0.6rem",
+                    whiteSpace: "nowrap",
+                    fontWeight: "bold"
+                  }}>
+                    {d.range}
+                  </div>
                   {activeBar === i && (
                     <div style={{
                       position: "absolute",
@@ -375,7 +422,8 @@ export default function Profile() {
                       fontSize: "0.75rem",
                       whiteSpace: "nowrap",
                       zIndex: 10,
-                      fontWeight: "bold"
+                      fontWeight: "bold",
+                      boxShadow: "0 2px 5px rgba(0,0,0,0.5)"
                     }}>
                       {chartMode === 'duration' ? `${d.duration.toFixed(1)}h` : 
                        chartMode === 'volume' ? `${d.volume.toLocaleString()}kg` : 

@@ -171,7 +171,7 @@ export default function Profile() {
         </div>
         <div style={{ display: "flex", gap: "10px" }}>
           <button onClick={() => setViewingSummary(workout)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1dd1a1", fontSize: "0.85rem" }}>Resumen</button>
-          <button onClick={() => router.push(`/routines/create?editWorkout=${workout.id}`)} style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: "0.85rem" }}>Editar</button>
+          <button onClick={() => router.push(`/routines/${workout.routineId || 'edit'}?editWorkoutId=${workout.id}`)} style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: "0.85rem" }}>Editar</button>
           <button onClick={() => setConfirmDelete(workout.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ff4757", fontSize: "0.85rem" }}>Borrar</button>
         </div>
       </div>

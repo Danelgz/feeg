@@ -7,14 +7,15 @@ import { exercisesList } from "../../data/exercises";
 
 export default function RoutineDetail() {
   const router = useRouter();
-  const { theme, routines: allRoutines, activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, completedWorkouts, t } = useUser();
+  const { theme, routines: allRoutines, activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, updateCompletedWorkout, completedWorkouts, t } = useUser();
   const isDark = theme === 'dark';
   const mint = "#2EE6C5";
   const mintSoft = "rgba(46, 230, 197, 0.12)";
   const surface = isDark ? "#141414" : "#fff";
   const surface2 = isDark ? "#0f0f0f" : "#f9f9f9";
-  const { id } = router.query;
+  const { id, editWorkoutId } = router.query;
   const [routine, setRoutine] = useState(null);
+  const [isEditingOldWorkout, setIsEditingOldWorkout] = useState(false);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [workoutState, setWorkoutState] = useState("preview"); // preview, ongoing, completed
   const [seriesCompleted, setSeriesCompleted] = useState({});
@@ -269,6 +270,49 @@ export default function RoutineDetail() {
 
   useEffect(() => {
     if (isTimerLoaded && id !== undefined && allRoutines && workoutState === "preview") {
+      // Si estamos editando un entrenamiento existente
+      if (editWorkoutId && completedWorkouts) {
+        const oldWorkout = completedWorkouts.find(w => w.id.toString() === editWorkoutId.toString());
+        if (oldWorkout) {
+          const exercises = oldWorkout.details || oldWorkout.exerciseDetails || [];
+          setRoutine({
+            id: oldWorkout.routineId || id,
+            name: oldWorkout.name,
+            exercises: exercises.map(ex => ({
+              ...ex,
+              group: ex.group || ex.muscleGroup || "Otros",
+              series: ex.series || []
+            }))
+          });
+          
+          const seriesTracker = {};
+          const typeTracker = {};
+          const repsTracker = {};
+          const weightTracker = {};
+          
+          exercises.forEach((ex, exIdx) => {
+            if (ex.series) {
+              ex.series.forEach((serie, serieIdx) => {
+                const key = `${exIdx}-${serieIdx}`;
+                seriesTracker[key] = true; // Marcar como completadas ya que es un entreno viejo
+                typeTracker[key] = serie.type || "N";
+                repsTracker[key] = serie.reps || "";
+                weightTracker[key] = serie.weight || "";
+              });
+            }
+          });
+          
+          setSeriesCompleted(seriesTracker);
+          setSeriesTypes(typeTracker);
+          setCurrentReps(repsTracker);
+          setCurrentWeight(weightTracker);
+          setElapsedTime(oldWorkout.elapsedTime || (oldWorkout.totalTime * 60) || 0);
+          setWorkoutState("ongoing");
+          setIsEditingOldWorkout(true);
+          return;
+        }
+      }
+
       const foundRoutine = allRoutines.find(r => r.id.toString() === id.toString());
       if (foundRoutine) {
         setRoutine(foundRoutine);
@@ -436,7 +480,11 @@ export default function RoutineDetail() {
   const handleDiscardWorkout = () => {
     clearPersistentTimer();
     endRoutine();
-    router.push('/routines');
+    if (isEditingOldWorkout) {
+      router.push('/profile');
+    } else {
+      router.push('/routines');
+    }
   };
 
   const startRestTimer = (seconds) => {
@@ -588,27 +636,35 @@ export default function RoutineDetail() {
 
     // Guardar rutina completada
     const completedRoutine = {
-      id: Date.now(),
+      id: isEditingOldWorkout ? Number(editWorkoutId) : Date.now(),
       name: finishFormData.name,
       comments: finishFormData.comments,
-      completedAt: new Date().toISOString(),
+      completedAt: isEditingOldWorkout 
+        ? completedWorkouts.find(w => w.id.toString() === editWorkoutId.toString())?.completedAt || new Date().toISOString()
+        : new Date().toISOString(),
       totalTime: finishFormData.totalTime,
       elapsedTime: elapsedTime,
       exercises: routine.exercises.length,
       series: totalSeries,
       totalReps: totalReps,
       totalVolume: totalVolume,
-      exerciseDetails: routine.exercises.map((ex, exIdx) => ({
+      details: routine.exercises.map((ex, exIdx) => ({
         name: ex.name,
+        group: ex.group || ex.muscleGroup,
         series: ex.series.map((s, sIdx) => ({
           reps: currentReps[`${exIdx}-${sIdx}`] || s.reps,
-          weight: currentWeight[`${exIdx}-${sIdx}`] || s.weight
+          weight: currentWeight[`${exIdx}-${sIdx}`] || s.weight,
+          type: seriesTypes[`${exIdx}-${sIdx}`] || "N"
         }))
       }))
     };
 
     // Guardar usando el contexto (esto también sincroniza con la nube)
-    saveCompletedWorkout(completedRoutine);
+    if (isEditingOldWorkout) {
+      updateCompletedWorkout(completedRoutine);
+    } else {
+      saveCompletedWorkout(completedRoutine);
+    }
 
     setSavingWorkout(true);
     endRoutine();
@@ -1048,10 +1104,29 @@ export default function RoutineDetail() {
               style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
             >
               <span style={{ fontSize: "1.2rem", color: "#fff" }}>∨</span>
-              <span style={{ fontSize: "1.1rem", fontWeight: "500", color: "#fff" }}>Entreno</span>
+              <span style={{ fontSize: "1.1rem", fontWeight: "500", color: "#fff" }}>
+                {isEditingOldWorkout ? "Editando Entreno" : "Entreno"}
+              </span>
             </div>
             
-            <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              {isEditingOldWorkout && (
+                <button
+                  onClick={() => setShowDiscardConfirm(true)}
+                  style={{
+                    backgroundColor: "transparent",
+                    color: "#ff4d4d",
+                    border: "1px solid #ff4d4d",
+                    borderRadius: "8px",
+                    padding: "8px 16px",
+                    fontSize: "0.9rem",
+                    fontWeight: "600",
+                    cursor: "pointer"
+                  }}
+                >
+                  Cancelar
+                </button>
+              )}
               <button
                 onClick={handleCompleteWorkout}
                 style={{
@@ -1065,7 +1140,7 @@ export default function RoutineDetail() {
                   cursor: "pointer"
                 }}
               >
-                Terminar
+                {isEditingOldWorkout ? "Guardar" : "Terminar"}
               </button>
             </div>
           </div>
@@ -1081,22 +1156,26 @@ export default function RoutineDetail() {
                 backgroundColor: "#1a1a1a", borderRadius: "15px", padding: "30px", width: "320px",
                 textAlign: "center", border: "2px solid #ff4d4d"
               }}>
-                <h3 style={{ color: "#fff", margin: "0 0 15px 0" }}>¿Cancelar entrenamiento?</h3>
+                <h3 style={{ color: "#fff", margin: "0 0 15px 0" }}>
+                  {isEditingOldWorkout ? "¿Cancelar edición?" : "¿Cancelar entrenamiento?"}
+                </h3>
                 <p style={{ color: "#aaa", fontSize: "0.95rem", marginBottom: "25px" }}>
-                  Se perderán todos los datos registrados en esta sesión.
+                  {isEditingOldWorkout 
+                    ? "Se descartarán los cambios y el entrenamiento volverá a su estado original." 
+                    : "Se perderán todos los datos registrados en esta sesión."}
                 </p>
                 <div style={{ display: "flex", gap: "10px" }}>
                   <button 
                     onClick={() => setShowDiscardConfirm(false)} 
                     style={{ flex: 1, padding: "12px", backgroundColor: "#333", color: "#fff", border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}
                   >
-                    No, continuar
+                    Continuar
                   </button>
                   <button 
                     onClick={handleDiscardWorkout} 
                     style={{ flex: 1, padding: "12px", backgroundColor: "#ff4d4d", color: "#fff", border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}
                   >
-                    Sí, cancelar
+                    {isEditingOldWorkout ? "Descartar" : "Salir"}
                   </button>
                 </div>
               </div>

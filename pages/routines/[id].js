@@ -897,23 +897,24 @@ export default function RoutineDetail() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          minHeight: "calc(100vh - 100px)"
+          minHeight: "calc(100vh - 100px)",
+          backgroundColor: "#000"
         }}>
           <div style={{
-            backgroundColor: isDark ? "#1a1a1a" : "#fff",
-            border: `2px solid ${isDark ? "#1dd1a1" : "#eee"}`,
-            borderRadius: "12px",
-            padding: "40px",
-            maxWidth: "600px",
+            backgroundColor: "#111",
+            border: `1px solid #222`,
+            borderRadius: "24px",
+            padding: "35px",
+            maxWidth: "500px",
             width: "100%",
-            boxShadow: isDark ? "0 4px 20px rgba(0,0,0,0.5)" : "0 4px 20px rgba(0,0,0,0.1)"
+            boxShadow: "0 20px 50px rgba(0,0,0,0.5)"
           }}>
-            <h2 style={{ color: isDark ? "#1dd1a1" : "#333", marginBottom: "30px", fontSize: "1.5rem", textAlign: "center" }}>
+            <h2 style={{ color: mint, marginBottom: "30px", fontSize: "1.6rem", textAlign: "center", fontWeight: "800" }}>
               {t("finish_workout")}
             </h2>
 
-            <div style={{ marginBottom: "25px" }}>
-              <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", marginBottom: "8px" }}>
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ display: "block", color: "#666", fontSize: "0.75rem", fontWeight: "700", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "1px" }}>
                 {t("workout_name")}
               </label>
               <input
@@ -923,19 +924,20 @@ export default function RoutineDetail() {
                 placeholder={t("placeholder_workout_name")}
                 style={{
                   width: "100%",
-                  padding: "12px",
-                  backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
-                  border: `1px solid ${isDark ? "#333" : "#ddd"}`,
-                  borderRadius: "6px",
-                  color: isDark ? "#fff" : "#333",
+                  padding: "14px",
+                  backgroundColor: "#1a1a1a",
+                  border: "1px solid #333",
+                  borderRadius: "12px",
+                  color: "#fff",
                   fontSize: "1rem",
-                  boxSizing: "border-box"
+                  boxSizing: "border-box",
+                  outline: "none"
                 }}
               />
             </div>
 
-            <div style={{ marginBottom: "25px" }}>
-              <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", marginBottom: "8px" }}>
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ display: "block", color: "#666", fontSize: "0.75rem", fontWeight: "700", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "1px" }}>
                 {t("comments")}
               </label>
               <textarea
@@ -944,110 +946,62 @@ export default function RoutineDetail() {
                 placeholder={t("placeholder_comments")}
                 style={{
                   width: "100%",
-                  padding: "12px",
-                  backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
-                  border: `1px solid ${isDark ? "#333" : "#ddd"}`,
-                  borderRadius: "6px",
-                  color: isDark ? "#fff" : "#333",
+                  padding: "14px",
+                  backgroundColor: "#1a1a1a",
+                  border: "1px solid #333",
+                  borderRadius: "12px",
+                  color: "#fff",
                   fontSize: "1rem",
-                  minHeight: "80px",
+                  minHeight: "100px",
                   fontFamily: "inherit",
                   boxSizing: "border-box",
-                  resize: "vertical"
+                  resize: "none",
+                  outline: "none"
                 }}
               />
-            </div>
-
-            <div style={{ marginBottom: "25px" }}>
-              <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", marginBottom: "8px" }}>
-                {t("total_time_min")}
-              </label>
-              <input
-                type="number"
-                value={finishFormData.totalTime}
-                onChange={(e) => setFinishFormData({ ...finishFormData, totalTime: e.target.value })}
-                placeholder={t("placeholder_time")}
-                min="1"
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
-                  border: `1px solid ${isDark ? "#333" : "#ddd"}`,
-                  borderRadius: "6px",
-                  color: isDark ? "#fff" : "#333",
-                  fontSize: "1rem",
-                  boxSizing: "border-box"
-                }}
-              />
-              <p style={{ margin: "5px 0 0 0", fontSize: "0.85rem", color: "#1dd1a1" }}>
-                {t("real_time")} {formatElapsedTime(elapsedTime)}
-              </p>
             </div>
 
             <div style={{
-              backgroundColor: isDark ? "#0f0f0f" : "#f1f1f1",
-              borderRadius: "8px",
+              backgroundColor: "#1a1a1a",
+              borderRadius: "16px",
               padding: "20px",
-              marginBottom: "25px"
+              marginBottom: "30px",
+              border: "1px solid #333"
             }}>
-              <h3 style={{ color: isDark ? "#1dd1a1" : "#333", marginBottom: "15px", fontSize: "1.1rem" }}>
-                {t("workout_summary")}
-              </h3>
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "15px"
-              }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ color: "#1dd1a1", fontSize: "1.8rem", fontWeight: "700" }}>
-                    {totalExercises}
-                  </div>
-                  <div style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem" }}>
-                    {t("exercises_count")}
-                  </div>
+                  <div style={{ color: "#666", fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", marginBottom: "5px" }}>Ejercicios</div>
+                  <div style={{ color: "#fff", fontSize: "1.4rem", fontWeight: "800" }}>{totalExercises}</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ color: "#1dd1a1", fontSize: "1.8rem", fontWeight: "700" }}>
-                    {totalSeries}
-                  </div>
-                  <div style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem" }}>
-                    {t("series_label")}
-                  </div>
+                  <div style={{ color: "#666", fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", marginBottom: "5px" }}>Series</div>
+                  <div style={{ color: "#fff", fontSize: "1.4rem", fontWeight: "800" }}>{totalSeries}</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ color: "#1dd1a1", fontSize: "1.8rem", fontWeight: "700" }}>
-                    {totalReps}
-                  </div>
-                  <div style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem" }}>
-                    {t("reps_label")}
-                  </div>
+                  <div style={{ color: "#666", fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", marginBottom: "5px" }}>Volumen</div>
+                  <div style={{ color: mint, fontSize: "1.4rem", fontWeight: "800" }}>{totalWeight.toFixed(0)} <span style={{ fontSize: "0.8rem" }}>kg</span></div>
                 </div>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ color: "#1dd1a1", fontSize: "1.8rem", fontWeight: "700" }}>
-                    {totalWeight.toFixed(1)}kg
-                  </div>
-                  <div style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem" }}>
-                    {t("total_volume")}
-                  </div>
+                  <div style={{ color: "#666", fontSize: "0.65rem", fontWeight: "700", textTransform: "uppercase", marginBottom: "5px" }}>Tiempo</div>
+                  <div style={{ color: "#fff", fontSize: "1.4rem", fontWeight: "800" }}>{Math.floor(elapsedTime / 60)} <span style={{ fontSize: "0.8rem" }}>min</span></div>
                 </div>
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: "15px" }}>
+            <div style={{ display: "flex", gap: "12px" }}>
               <button
                 onClick={() => setShowFinishForm(false)}
                 disabled={savingWorkout}
                 style={{
                   flex: 1,
-                  padding: "12px",
-                  backgroundColor: isDark ? (savingWorkout ? "#333" : "#444") : (savingWorkout ? "#ddd" : "#ccc"),
-                  color: isDark ? "#fff" : "#333",
-                  border: "none",
-                  borderRadius: "8px",
+                  padding: "16px",
+                  backgroundColor: "transparent",
+                  color: "#666",
+                  border: "1px solid #333",
+                  borderRadius: "14px",
                   cursor: savingWorkout ? "not-allowed" : "pointer",
-                  fontWeight: "600",
-                  transition: "all 0.3s ease",
-                  opacity: savingWorkout ? 0.6 : 1
+                  fontWeight: "700",
+                  transition: "all 0.3s ease"
                 }}
               >
                 {t("cancel")}
@@ -1056,19 +1010,19 @@ export default function RoutineDetail() {
                 onClick={handleSaveFinishedRoutine}
                 disabled={savingWorkout}
                 style={{
-                  flex: 1,
-                  padding: "12px",
-                  backgroundColor: savingWorkout ? "#16a853" : "#1dd1a1",
-                  color: savingWorkout ? "#fff" : "#000",
+                  flex: 2,
+                  padding: "16px",
+                  backgroundColor: mint,
+                  color: "#000",
                   border: "none",
-                  borderRadius: "8px",
+                  borderRadius: "14px",
                   cursor: savingWorkout ? "not-allowed" : "pointer",
-                  fontWeight: "600",
+                  fontWeight: "800",
                   transition: "all 0.3s ease",
-                  opacity: savingWorkout ? 0.8 : 1
+                  boxShadow: `0 10px 20px rgba(46, 230, 197, 0.2)`
                 }}
               >
-                {savingWorkout ? t("saving") : t("save_workout")}
+                {savingWorkout ? "Guardando..." : "GUARDAR ENTRENAMIENTO"}
               </button>
             </div>
           </div>
@@ -1192,75 +1146,87 @@ export default function RoutineDetail() {
             </div>
           )}
 
-          {/* Fila de Estadísticas */}
+          {/* Fila de Estadísticas Estilo Dashboard */}
           <div style={{
-            display: "flex",
-            justifyContent: "space-between",
-            padding: "0 20px 20px 20px",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            gap: "10px",
+            padding: "10px 15px 20px 15px",
             backgroundColor: "#000",
+            position: "sticky",
+            top: "60px",
+            zIndex: 1001,
             borderBottom: "1px solid #1a1a1a"
           }}>
-            <div>
-              <div style={{ color: "#666", fontSize: "0.75rem", marginBottom: "4px" }}>Duración</div>
-              <div style={{ color: mint, fontSize: "1.1rem", fontWeight: "500" }}>{formatElapsedTime(elapsedTime)}</div>
+            <div style={{ backgroundColor: "#111", padding: "12px", borderRadius: "12px", textAlign: "center", border: "1px solid #222" }}>
+              <div style={{ color: "#666", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Tiempo</div>
+              <div style={{ color: mint, fontSize: "1rem", fontWeight: "700" }}>{formatElapsedTime(elapsedTime)}</div>
             </div>
-            <div>
-              <div style={{ color: "#666", fontSize: "0.75rem", marginBottom: "4px" }}>Volumen</div>
-              <div style={{ color: "#fff", fontSize: "1.1rem", fontWeight: "500" }}>{totalVolume.toLocaleString()} kg</div>
+            <div style={{ backgroundColor: "#111", padding: "12px", borderRadius: "12px", textAlign: "center", border: "1px solid #222" }}>
+              <div style={{ color: "#666", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Volumen</div>
+              <div style={{ color: "#fff", fontSize: "1rem", fontWeight: "700" }}>{totalVolume.toLocaleString()} <span style={{ fontSize: "0.7rem" }}>kg</span></div>
             </div>
-            <div>
-              <div style={{ color: "#666", fontSize: "0.75rem", marginBottom: "4px" }}>Series</div>
-              <div style={{ color: "#fff", fontSize: "1.1rem", fontWeight: "500" }}>{totalCompletedSeries}</div>
+            <div style={{ backgroundColor: "#111", padding: "12px", borderRadius: "12px", textAlign: "center", border: "1px solid #222" }}>
+              <div style={{ color: "#666", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Series</div>
+              <div style={{ color: "#fff", fontSize: "1rem", fontWeight: "700" }}>{totalCompletedSeries}</div>
             </div>
           </div>
 
-          <div style={{ padding: "20px 15px" }}>
+          <div style={{ padding: "15px" }}>
             {routine.exercises.map((exercise, exIdx) => (
               <div
                 key={exIdx}
                 style={{
-                  marginBottom: "40px",
+                  backgroundColor: "#111",
+                  borderRadius: "20px",
+                  padding: "20px",
+                  marginBottom: "25px",
+                  border: "1px solid #222"
                 }}
               >
                 {/* Título del Ejercicio con Imagen */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                     <div style={{
-                      width: "45px",
-                      height: "45px",
-                      borderRadius: "50%",
-                      backgroundColor: "#fff",
+                      width: "50px",
+                      height: "50px",
+                      borderRadius: "14px",
+                      backgroundColor: "#1a1a1a",
                       display: "flex",
                       justifyContent: "center",
                       alignItems: "center",
-                      overflow: "hidden"
+                      overflow: "hidden",
+                      border: "1px solid #333"
                     }}>
                       <img 
                         src={`/exercises/${exercise.name.toLowerCase().replace(/ /g, "_")}.png`} 
                         onError={(e) => { e.target.src = "/logo3.png"; }}
                         alt="" 
-                        style={{ width: "80%", height: "auto" }} 
+                        style={{ width: "70%", height: "auto" }} 
                       />
                     </div>
-                    <h2 
-                      onClick={() => setShowHistoryModal(exercise.name)}
-                      style={{ 
-                        margin: 0, 
-                        color: mint, 
-                        fontSize: "1.15rem", 
-                        fontWeight: "500",
-                        lineHeight: "1.2",
-                        cursor: "pointer"
-                      }}
-                    >
-                      {t(exercise.name)}
-                    </h2>
+                    <div>
+                      <h2 
+                        onClick={() => setShowHistoryModal(exercise.name)}
+                        style={{ 
+                          margin: 0, 
+                          color: mint, 
+                          fontSize: "1.1rem", 
+                          fontWeight: "700",
+                          lineHeight: "1.2",
+                          cursor: "pointer"
+                        }}
+                      >
+                        {t(exercise.name)}
+                      </h2>
+                      <div style={{ fontSize: "0.8rem", color: "#666", marginTop: "2px" }}>{exercise.group || "Ejercicio"}</div>
+                    </div>
                   </div>
                   {!isReadOnly && (
                     <div style={{ position: "relative" }}>
                       <button 
                         onClick={() => setActiveExerciseMenu(activeExerciseMenu === exIdx ? null : exIdx)}
-                        style={{ background: "none", border: "none", color: "#fff", fontSize: "1.5rem", cursor: "pointer" }}
+                        style={{ background: "#1a1a1a", border: "none", color: "#666", width: "32px", height: "32px", borderRadius: "8px", cursor: "pointer", display: "flex", justifyContent: "center", alignItems: "center" }}
                       >
                         ⋮
                       </button>
@@ -1268,14 +1234,14 @@ export default function RoutineDetail() {
                       {activeExerciseMenu === exIdx && (
                         <div style={{
                           position: "absolute",
-                          top: "30px",
+                          top: "40px",
                           right: 0,
                           backgroundColor: "#1a1a1a",
                           border: "1px solid #333",
-                          borderRadius: "8px",
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+                          borderRadius: "12px",
+                          boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
                           zIndex: 100,
-                          width: "160px",
+                          width: "180px",
                           overflow: "hidden"
                         }}>
                           <button
@@ -1287,7 +1253,7 @@ export default function RoutineDetail() {
                             }}
                             style={{
                               width: "100%",
-                              padding: "12px",
+                              padding: "14px",
                               background: "none",
                               border: "none",
                               color: "#fff",
@@ -1306,7 +1272,7 @@ export default function RoutineDetail() {
                             }}
                             style={{
                               width: "100%",
-                              padding: "12px",
+                              padding: "14px",
                               background: "none",
                               border: "none",
                               color: "#ff4d4d",
@@ -1382,32 +1348,39 @@ export default function RoutineDetail() {
                   </div>
                 )}
 
-                {/* Notas */}
+                {/* Notas Rediseñadas */}
                 <div style={{ marginBottom: "15px" }}>
                   <input 
                     type="text" 
-                    placeholder={isReadOnly ? "" : "Agregar notas aquí..."} 
+                    placeholder={isReadOnly ? "" : "Escribe una nota para este ejercicio..."} 
                     readOnly={isReadOnly}
                     style={{ 
                       width: "100%", 
-                      background: "none", 
+                      background: "rgba(255,255,255,0.03)", 
                       border: "none", 
-                      color: "#666", 
-                      fontSize: "0.95rem",
-                      padding: "5px 0"
+                      color: "#888", 
+                      fontSize: "0.85rem",
+                      padding: "10px 14px",
+                      borderRadius: "8px",
+                      outline: "none",
+                      fontStyle: "italic"
                     }} 
                   />
                 </div>
 
-                {/* Temporizador de Descanso Estilo Captura */}
+                {/* Temporizador de Descanso Estilo Dashboard */}
                 <div style={{ 
                   display: "flex", 
                   alignItems: "center", 
-                  gap: "10px", 
+                  gap: "8px", 
                   color: mint, 
                   marginBottom: "20px",
-                  fontSize: "0.95rem"
+                  fontSize: "0.85rem",
+                  fontWeight: "700",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px"
                 }}>
+                  <div style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: mint }}></div>
                   <span 
                     onClick={() => {
                       if (isReadOnly) return;
@@ -1415,9 +1388,9 @@ export default function RoutineDetail() {
                       // Pre-fill tempRestTime with current value
                       setTempRestTime(exercise.rest.toString());
                     }}
-                    style={{ cursor: isReadOnly ? "default" : "pointer", fontWeight: "500" }}
+                    style={{ cursor: isReadOnly ? "default" : "pointer" }}
                   >
-                    Descanso: {exercise.rest < 60 ? `${exercise.rest}s` : `${Math.floor(exercise.rest/60)}min ${exercise.rest%60}s`}
+                    Descanso: {exercise.rest < 60 ? `${exercise.rest}s` : `${Math.floor(exercise.rest/60)}m ${exercise.rest%60}s`}
                   </span>
                   
                   {openTimePickerId === exIdx && (
@@ -1494,24 +1467,23 @@ export default function RoutineDetail() {
                   )}
                 </div>
 
-                {/* Tabla de Series */}
+                {/* Tabla de Series Rediseñada */}
                 <div style={{ marginBottom: "15px" }}>
                   <div style={{ 
                     display: "grid", 
-                    gridTemplateColumns: "50px 1fr 70px 70px 45px", 
+                    gridTemplateColumns: "50px 1fr 75px 75px 50px", 
                     gap: "10px", 
-                    marginBottom: "10px",
-                    color: "#666",
-                    fontSize: "0.75rem",
-                    fontWeight: "600",
+                    marginBottom: "12px",
+                    color: "#444",
+                    fontSize: "0.7rem",
+                    fontWeight: "700",
                     textTransform: "uppercase",
-                    letterSpacing: "0.5px"
+                    letterSpacing: "1px"
                   }}>
-                    <div>SERIE</div>
+                    <div style={{ textAlign: "center" }}>SERIE</div>
                     <div>ANTERIOR</div>
                     <div style={{ textAlign: "center" }}>KG</div>
                     <div style={{ textAlign: "center" }}>REPS</div>
-                    <div style={{ textAlign: "right" }}>✓</div>
                     <div style={{ textAlign: "right" }}></div>
                   </div>
 
@@ -1532,12 +1504,13 @@ export default function RoutineDetail() {
                         key={serieIdx}
                         style={{
                           display: "grid", 
-                          gridTemplateColumns: "50px 1fr 70px 70px 45px", 
+                          gridTemplateColumns: "50px 1fr 75px 75px 50px", 
                           gap: "10px",
                           alignItems: "center",
-                          height: "45px",
-                          marginBottom: "5px",
-                          transition: "background 0.2s"
+                          marginBottom: "8px",
+                          backgroundColor: isCompleted ? "rgba(46, 230, 197, 0.03)" : "transparent",
+                          borderRadius: "8px",
+                          transition: "all 0.3s ease"
                         }}
                       >
                         <div 
@@ -1546,20 +1519,24 @@ export default function RoutineDetail() {
                             setShowTypeSelector({ exIdx, serieIdx });
                           }}
                           style={{ 
-                            color: type === "N" ? "#fff" : mint, 
-                            fontWeight: "bold",
-                            fontSize: "1rem",
+                            color: isCompleted ? mint : type === "N" ? "#fff" : mint, 
+                            fontWeight: "800",
+                            fontSize: "0.9rem",
                             cursor: isReadOnly ? "default" : "pointer",
-                            backgroundColor: "#1a1a1a",
-                            borderRadius: "4px",
+                            backgroundColor: isCompleted ? "rgba(46, 230, 197, 0.1)" : "#1a1a1a",
+                            borderRadius: "10px",
                             textAlign: "center",
-                            padding: "4px 0"
+                            height: "38px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            border: isCompleted ? `1px solid ${mintSoft}` : "1px solid #333"
                           }}
                         >
                           {type === "W" ? "W" : type === "D" ? "D" : effectiveIndex + 1}
                         </div>
                         
-                        <div style={{ color: "#666", fontSize: "0.9rem" }}>
+                        <div style={{ color: "#444", fontSize: "0.85rem", fontWeight: "500" }}>
                           {prev && prev[serieIdx] ? `${prev[serieIdx].weight}kg x ${prev[serieIdx].reps}` : "—"}
                         </div>
                         
@@ -1569,15 +1546,18 @@ export default function RoutineDetail() {
                             value={currentWeight[key] || ""}
                             onChange={(e) => !isReadOnly && handleUpdateWeight(exIdx, serieIdx, e.target.value)}
                             readOnly={isReadOnly}
+                            placeholder="0"
                             style={{
                               width: "100%",
-                              background: isCompleted ? "rgba(46, 230, 197, 0.1)" : "#1a1a1a",
-                              border: "none",
-                              borderRadius: "4px",
-                              color: "#fff",
+                              background: "#1a1a1a",
+                              border: isCompleted ? `1px solid ${mintSoft}` : "1px solid #333",
+                              borderRadius: "10px",
+                              color: isCompleted ? mint : "#fff",
                               textAlign: "center",
-                              padding: "6px 0",
-                              fontSize: "1rem"
+                              height: "38px",
+                              fontSize: "1rem",
+                              fontWeight: "600",
+                              transition: "all 0.2s"
                             }}
                           />
                         </div>
@@ -1588,15 +1568,18 @@ export default function RoutineDetail() {
                             value={currentReps[key] || ""}
                             onChange={(e) => !isReadOnly && handleUpdateReps(exIdx, serieIdx, e.target.value)}
                             readOnly={isReadOnly}
+                            placeholder="0"
                             style={{
                               width: "100%",
-                              background: isCompleted ? "rgba(46, 230, 197, 0.1)" : "#1a1a1a",
-                              border: "none",
-                              borderRadius: "4px",
-                              color: "#fff",
+                              background: "#1a1a1a",
+                              border: isCompleted ? `1px solid ${mintSoft}` : "1px solid #333",
+                              borderRadius: "10px",
+                              color: isCompleted ? mint : "#fff",
                               textAlign: "center",
-                              padding: "6px 0",
-                              fontSize: "1rem"
+                              height: "38px",
+                              fontSize: "1rem",
+                              fontWeight: "600",
+                              transition: "all 0.2s"
                             }}
                           />
                         </div>
@@ -1613,17 +1596,19 @@ export default function RoutineDetail() {
                               else stopRestTimer();
                             }}
                             style={{
-                              width: "100%",
-                              height: "32px",
-                              borderRadius: "6px",
-                              backgroundColor: isCompleted ? mint : "#333",
-                              color: isCompleted ? "#000" : "#666",
-                              border: "none",
+                              width: "38px",
+                              height: "38px",
+                              borderRadius: "10px",
+                              backgroundColor: isCompleted ? mint : "#1a1a1a",
+                              color: isCompleted ? "#000" : "#333",
+                              border: isCompleted ? "none" : "1px solid #333",
                               cursor: isReadOnly ? "default" : "pointer",
                               display: "flex",
                               justifyContent: "center",
                               alignItems: "center",
-                              fontSize: "0.9rem"
+                              fontSize: "1.1rem",
+                              fontWeight: "bold",
+                              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                             }}
                           >
                             ✓
@@ -1634,27 +1619,30 @@ export default function RoutineDetail() {
                   })}
                 </div>
 
-                {/* Botón Agregar Serie */}
+                {/* Botón Agregar Serie Rediseñado */}
                 {!isReadOnly && (
                   <button
                     onClick={() => handleAddSeries(exIdx)}
                     style={{
                       width: "100%",
-                      padding: "10px",
-                      backgroundColor: "#1a1a1a",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "8px",
-                      fontSize: "1rem",
-                      fontWeight: "500",
+                      padding: "12px",
+                      backgroundColor: "rgba(46, 230, 197, 0.05)",
+                      color: mint,
+                      border: `1px dashed ${mintSoft}`,
+                      borderRadius: "12px",
+                      fontSize: "0.85rem",
+                      fontWeight: "800",
                       cursor: "pointer",
                       display: "flex",
                       justifyContent: "center",
                       alignItems: "center",
-                      gap: "8px"
+                      gap: "8px",
+                      transition: "all 0.2s",
+                      marginTop: "10px",
+                      letterSpacing: "1px"
                     }}
                   >
-                    <span style={{ fontSize: "1.2rem" }}>+</span> Agregar Serie
+                    + AGREGAR SERIE
                   </button>
                 )}
               </div>
@@ -1756,18 +1744,24 @@ export default function RoutineDetail() {
                 onClick={handleAddExercise}
                 style={{
                   width: "100%",
-                  padding: "15px",
-                  backgroundColor: "#1a1a1a",
+                  padding: "18px",
+                  backgroundColor: "#111",
                   color: mint,
-                  border: `1px dashed ${mint}`,
-                  borderRadius: "10px",
+                  border: `1px solid ${mint}`,
+                  borderRadius: "16px",
                   fontSize: "1rem",
-                  fontWeight: "600",
+                  fontWeight: "900",
                   cursor: "pointer",
-                  marginBottom: "20px"
+                  marginBottom: "40px",
+                  boxShadow: `0 8px 25px rgba(46, 230, 197, 0.15)`,
+                  letterSpacing: "1px",
+                  transition: "all 0.3s ease",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center"
                 }}
               >
-                + Agregar Ejercicio
+                + AGREGAR EJERCICIO
               </button>
             )}
           </div>

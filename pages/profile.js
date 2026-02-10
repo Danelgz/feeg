@@ -170,7 +170,7 @@ export default function Profile() {
           <div style={{ fontSize: "0.8rem", color: "#888" }}>{new Date(workout.completedAt).toLocaleString()}</div>
         </div>
         <div style={{ display: "flex", gap: "10px" }}>
-          <button onClick={() => setViewingSummary(workout)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1dd1a1", fontSize: "0.85rem" }}>Resumen</button>
+          <button onClick={() => router.push(`/routines/${workout.routineId || 'view'}?viewWorkoutId=${workout.id}`)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1dd1a1", fontSize: "0.85rem" }}>Resumen</button>
           <button onClick={() => router.push(`/routines/${workout.routineId || 'edit'}?editWorkoutId=${workout.id}`)} style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: "0.85rem" }}>Editar</button>
           <button onClick={() => setConfirmDelete(workout.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ff4757", fontSize: "0.85rem" }}>Borrar</button>
         </div>
@@ -522,39 +522,6 @@ export default function Profile() {
               ))
           )}
         </div>
-
-        {viewingSummary && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 3000, padding: "20px" }}>
-            <div style={{ backgroundColor: "#1a1a1a", padding: "25px", borderRadius: "15px", width: "100%", maxWidth: "500px", maxHeight: "80vh", overflowY: "auto" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                <h2 style={{ color: "#1dd1a1", margin: 0 }}>{viewingSummary.name}</h2>
-                <button onClick={() => setViewingSummary(null)} style={{ background: "none", border: "none", color: "#fff", fontSize: "1.5rem", cursor: "pointer" }}>&times;</button>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
-                  <div style={{ backgroundColor: "#222", padding: "15px", borderRadius: "10px" }}>
-                    <div style={{ color: "#888", fontSize: "0.8rem" }}>Volumen</div>
-                    <div style={{ fontSize: "1.2rem", fontWeight: "bold" }}>{viewingSummary.totalVolume?.toLocaleString()} kg</div>
-                  </div>
-                  <div style={{ backgroundColor: "#222", padding: "15px", borderRadius: "10px" }}>
-                    <div style={{ color: "#888", fontSize: "0.8rem" }}>Series</div>
-                    <div style={{ fontSize: "1.2rem", fontWeight: "bold" }}>{viewingSummary.series}</div>
-                  </div>
-                </div>
-                {(viewingSummary.details || viewingSummary.exercises) && (viewingSummary.details || viewingSummary.exercises).map((ex, i) => (
-                  <div key={i} style={{ backgroundColor: "#222", padding: "15px", borderRadius: "10px" }}>
-                    <div style={{ fontWeight: "bold", marginBottom: "8px" }}>{ex.name}</div>
-                    <div style={{ fontSize: "0.85rem", color: "#ccc" }}>
-                      {ex.series && Array.isArray(ex.series) 
-                        ? ex.series.map((s, si) => `${s.weight}kg x ${s.reps}`).join(" • ") 
-                        : `${ex.reps || 0} reps x ${ex.series || 0} series`}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Confirm Delete Modal */}

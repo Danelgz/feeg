@@ -13,9 +13,10 @@ export default function RoutineDetail() {
   const mintSoft = "rgba(46, 230, 197, 0.12)";
   const surface = isDark ? "#141414" : "#fff";
   const surface2 = isDark ? "#0f0f0f" : "#f9f9f9";
-  const { id, editWorkoutId } = router.query;
+  const { id, editWorkoutId, viewWorkoutId } = router.query;
   const [routine, setRoutine] = useState(null);
   const [isEditingOldWorkout, setIsEditingOldWorkout] = useState(false);
+  const [isReadOnly, setIsReadOnly] = useState(false);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [workoutState, setWorkoutState] = useState("preview"); // preview, ongoing, completed
   const [seriesCompleted, setSeriesCompleted] = useState({});
@@ -105,7 +106,7 @@ export default function RoutineDetail() {
 
   // Save workout state periodically and on unmount
   useEffect(() => {
-    if (!isTimerLoaded || !id || workoutState === "preview") return;
+    if (!isTimerLoaded || !id || workoutState === "preview" || isReadOnly) return;
 
     const saveWorkoutState = () => {
       const state = {
@@ -270,18 +271,21 @@ export default function RoutineDetail() {
 
   useEffect(() => {
     if (isTimerLoaded && id !== undefined && allRoutines && workoutState === "preview") {
-      // Si estamos editando un entrenamiento existente
-      if (editWorkoutId && completedWorkouts) {
-        const oldWorkout = completedWorkouts.find(w => w.id.toString() === editWorkoutId.toString());
+      // Si estamos editando o viendo un entrenamiento existente
+      const targetId = editWorkoutId || viewWorkoutId;
+      if (targetId && completedWorkouts) {
+        const oldWorkout = completedWorkouts.find(w => w.id.toString() === targetId.toString());
         if (oldWorkout) {
-          const exercises = oldWorkout.details || oldWorkout.exerciseDetails || [];
+          const rawExercises = oldWorkout.details || oldWorkout.exerciseDetails || oldWorkout.exercises || [];
+          const exercises = Array.isArray(rawExercises) ? rawExercises : [];
+          
           setRoutine({
             id: oldWorkout.routineId || id,
             name: oldWorkout.name,
             exercises: exercises.map(ex => ({
               ...ex,
               group: ex.group || ex.muscleGroup || "Otros",
-              series: ex.series || []
+              series: Array.isArray(ex.series) ? ex.series : []
             }))
           });
           
@@ -307,8 +311,14 @@ export default function RoutineDetail() {
           setCurrentReps(repsTracker);
           setCurrentWeight(weightTracker);
           setElapsedTime(oldWorkout.elapsedTime || (oldWorkout.totalTime * 60) || 0);
-          setWorkoutState("ongoing");
-          setIsEditingOldWorkout(true);
+          
+          if (viewWorkoutId) {
+            setIsReadOnly(true);
+            setWorkoutState("ongoing");
+          } else {
+            setIsEditingOldWorkout(true);
+            setWorkoutState("ongoing");
+          }
           return;
         }
       }
@@ -354,10 +364,10 @@ export default function RoutineDetail() {
 
   // Ensure timer is always active when workout is ongoing
   useEffect(() => {
-    if (workoutState === "ongoing" && !backgroundTimerActive) {
+    if (workoutState === "ongoing" && !backgroundTimerActive && !isReadOnly) {
       setBackgroundTimerActive(true);
     }
-  }, [workoutState, backgroundTimerActive]);
+  }, [workoutState, backgroundTimerActive, isReadOnly]);
 
   // Auto-start timer and workout when routine is activated
   useEffect(() => {
@@ -1100,17 +1110,17 @@ export default function RoutineDetail() {
             zIndex: 1002
           }}>
             <div 
-              onClick={() => setShowDiscardConfirm(true)}
+              onClick={() => isReadOnly ? router.push('/profile') : setShowDiscardConfirm(true)}
               style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
             >
-              <span style={{ fontSize: "1.2rem", color: "#fff" }}>∨</span>
+              <span style={{ fontSize: "1.2rem", color: "#fff" }}>{isReadOnly ? "←" : "∨"}</span>
               <span style={{ fontSize: "1.1rem", fontWeight: "500", color: "#fff" }}>
-                {isEditingOldWorkout ? "Editando Entreno" : "Entreno"}
+                {isReadOnly ? "Resumen" : isEditingOldWorkout ? "Editando Entreno" : "Entreno"}
               </span>
             </div>
             
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              {isEditingOldWorkout && (
+              {!isReadOnly && isEditingOldWorkout && (
                 <button
                   onClick={() => setShowDiscardConfirm(true)}
                   style={{
@@ -1128,7 +1138,7 @@ export default function RoutineDetail() {
                 </button>
               )}
               <button
-                onClick={handleCompleteWorkout}
+                onClick={() => isReadOnly ? router.push('/profile') : handleCompleteWorkout()}
                 style={{
                   backgroundColor: mint,
                   color: "#000",
@@ -1140,7 +1150,7 @@ export default function RoutineDetail() {
                   cursor: "pointer"
                 }}
               >
-                {isEditingOldWorkout ? "Guardar" : "Terminar"}
+                {isReadOnly ? "Cerrar" : isEditingOldWorkout ? "Guardar" : "Terminar"}
               </button>
             </div>
           </div>
@@ -1246,69 +1256,71 @@ export default function RoutineDetail() {
                       {t(exercise.name)}
                     </h2>
                   </div>
-                  <div style={{ position: "relative" }}>
-                    <button 
-                      onClick={() => setActiveExerciseMenu(activeExerciseMenu === exIdx ? null : exIdx)}
-                      style={{ background: "none", border: "none", color: "#fff", fontSize: "1.5rem", cursor: "pointer" }}
-                    >
-                      ⋮
-                    </button>
-                    
-                    {activeExerciseMenu === exIdx && (
-                      <div style={{
-                        position: "absolute",
-                        top: "30px",
-                        right: 0,
-                        backgroundColor: "#1a1a1a",
-                        border: "1px solid #333",
-                        borderRadius: "8px",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
-                        zIndex: 100,
-                        width: "160px",
-                        overflow: "hidden"
-                      }}>
-                        <button
-                          onClick={() => {
-                            setSubstitutingExerciseIdx(exIdx);
-                            setExercisesData(exercisesList);
-                            setShowAddExerciseModal(true);
-                            setActiveExerciseMenu(null);
-                          }}
-                          style={{
-                            width: "100%",
-                            padding: "12px",
-                            background: "none",
-                            border: "none",
-                            color: "#fff",
-                            textAlign: "left",
-                            cursor: "pointer",
-                            fontSize: "0.9rem",
-                            borderBottom: "1px solid #333"
-                          }}
-                        >
-                          Sustituir ejercicio
-                        </button>
-                        <button
-                          onClick={() => {
-                            setShowDeleteExerciseConfirm(exIdx);
-                            setActiveExerciseMenu(null);
-                          }}
-                          style={{
-                            width: "100%",
-                            padding: "12px",
-                            background: "none",
-                            border: "none",
-                            color: "#ff4d4d",
-                            textAlign: "left",
-                            cursor: "pointer",
-                            fontSize: "0.9rem"
-                          }}
-                        >
-                          Eliminar ejercicio
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  {!isReadOnly && (
+                    <div style={{ position: "relative" }}>
+                      <button 
+                        onClick={() => setActiveExerciseMenu(activeExerciseMenu === exIdx ? null : exIdx)}
+                        style={{ background: "none", border: "none", color: "#fff", fontSize: "1.5rem", cursor: "pointer" }}
+                      >
+                        ⋮
+                      </button>
+                      
+                      {activeExerciseMenu === exIdx && (
+                        <div style={{
+                          position: "absolute",
+                          top: "30px",
+                          right: 0,
+                          backgroundColor: "#1a1a1a",
+                          border: "1px solid #333",
+                          borderRadius: "8px",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+                          zIndex: 100,
+                          width: "160px",
+                          overflow: "hidden"
+                        }}>
+                          <button
+                            onClick={() => {
+                              setSubstitutingExerciseIdx(exIdx);
+                              setExercisesData(exercisesList);
+                              setShowAddExerciseModal(true);
+                              setActiveExerciseMenu(null);
+                            }}
+                            style={{
+                              width: "100%",
+                              padding: "12px",
+                              background: "none",
+                              border: "none",
+                              color: "#fff",
+                              textAlign: "left",
+                              cursor: "pointer",
+                              fontSize: "0.9rem",
+                              borderBottom: "1px solid #333"
+                            }}
+                          >
+                            Sustituir ejercicio
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowDeleteExerciseConfirm(exIdx);
+                              setActiveExerciseMenu(null);
+                            }}
+                            style={{
+                              width: "100%",
+                              padding: "12px",
+                              background: "none",
+                              border: "none",
+                              color: "#ff4d4d",
+                              textAlign: "left",
+                              cursor: "pointer",
+                              fontSize: "0.9rem"
+                            }}
+                          >
+                            Eliminar ejercicio
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Confirmación de eliminación de ejercicio */}
@@ -1374,7 +1386,8 @@ export default function RoutineDetail() {
                 <div style={{ marginBottom: "15px" }}>
                   <input 
                     type="text" 
-                    placeholder="Agregar notas aquí..." 
+                    placeholder={isReadOnly ? "" : "Agregar notas aquí..."} 
+                    readOnly={isReadOnly}
                     style={{ 
                       width: "100%", 
                       background: "none", 
@@ -1397,11 +1410,12 @@ export default function RoutineDetail() {
                 }}>
                   <span 
                     onClick={() => {
+                      if (isReadOnly) return;
                       setOpenTimePickerId(openTimePickerId === exIdx ? null : exIdx);
                       // Pre-fill tempRestTime with current value
                       setTempRestTime(exercise.rest.toString());
                     }}
-                    style={{ cursor: "pointer", fontWeight: "500" }}
+                    style={{ cursor: isReadOnly ? "default" : "pointer", fontWeight: "500" }}
                   >
                     Descanso: {exercise.rest < 60 ? `${exercise.rest}s` : `${Math.floor(exercise.rest/60)}min ${exercise.rest%60}s`}
                   </span>
@@ -1527,12 +1541,15 @@ export default function RoutineDetail() {
                         }}
                       >
                         <div 
-                          onClick={() => setShowTypeSelector({ exIdx, serieIdx })}
+                          onClick={() => {
+                            if (isReadOnly) return;
+                            setShowTypeSelector({ exIdx, serieIdx });
+                          }}
                           style={{ 
                             color: type === "N" ? "#fff" : mint, 
                             fontWeight: "bold",
                             fontSize: "1rem",
-                            cursor: "pointer",
+                            cursor: isReadOnly ? "default" : "pointer",
                             backgroundColor: "#1a1a1a",
                             borderRadius: "4px",
                             textAlign: "center",
@@ -1550,7 +1567,8 @@ export default function RoutineDetail() {
                           <input
                             type="number"
                             value={currentWeight[key] || ""}
-                            onChange={(e) => handleUpdateWeight(exIdx, serieIdx, e.target.value)}
+                            onChange={(e) => !isReadOnly && handleUpdateWeight(exIdx, serieIdx, e.target.value)}
+                            readOnly={isReadOnly}
                             style={{
                               width: "100%",
                               background: isCompleted ? "rgba(46, 230, 197, 0.1)" : "#1a1a1a",
@@ -1568,7 +1586,8 @@ export default function RoutineDetail() {
                           <input
                             type="number"
                             value={currentReps[key] || ""}
-                            onChange={(e) => handleUpdateReps(exIdx, serieIdx, e.target.value)}
+                            onChange={(e) => !isReadOnly && handleUpdateReps(exIdx, serieIdx, e.target.value)}
+                            readOnly={isReadOnly}
                             style={{
                               width: "100%",
                               background: isCompleted ? "rgba(46, 230, 197, 0.1)" : "#1a1a1a",
@@ -1585,6 +1604,7 @@ export default function RoutineDetail() {
                         <div style={{ textAlign: "right" }}>
                           <button
                             onClick={() => {
+                              if (isReadOnly) return;
                               const newSeriesCompleted = { ...seriesCompleted };
                               const isNowCompleted = !newSeriesCompleted[key];
                               newSeriesCompleted[key] = isNowCompleted;
@@ -1599,7 +1619,7 @@ export default function RoutineDetail() {
                               backgroundColor: isCompleted ? mint : "#333",
                               color: isCompleted ? "#000" : "#666",
                               border: "none",
-                              cursor: "pointer",
+                              cursor: isReadOnly ? "default" : "pointer",
                               display: "flex",
                               justifyContent: "center",
                               alignItems: "center",
@@ -1615,26 +1635,28 @@ export default function RoutineDetail() {
                 </div>
 
                 {/* Botón Agregar Serie */}
-                <button
-                  onClick={() => handleAddSeries(exIdx)}
-                  style={{
-                    width: "100%",
-                    padding: "10px",
-                    backgroundColor: "#1a1a1a",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "8px",
-                    fontSize: "1rem",
-                    fontWeight: "500",
-                    cursor: "pointer",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: "8px"
-                  }}
-                >
-                  <span style={{ fontSize: "1.2rem" }}>+</span> Agregar Serie
-                </button>
+                {!isReadOnly && (
+                  <button
+                    onClick={() => handleAddSeries(exIdx)}
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      backgroundColor: "#1a1a1a",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "8px",
+                      fontSize: "1rem",
+                      fontWeight: "500",
+                      cursor: "pointer",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      gap: "8px"
+                    }}
+                  >
+                    <span style={{ fontSize: "1.2rem" }}>+</span> Agregar Serie
+                  </button>
+                )}
               </div>
             ))}
 
@@ -1729,23 +1751,25 @@ export default function RoutineDetail() {
             )}
 
 
-            <button
-              onClick={handleAddExercise}
-              style={{
-                width: "100%",
-                padding: "15px",
-                backgroundColor: "#1a1a1a",
-                color: mint,
-                border: `1px dashed ${mint}`,
-                borderRadius: "10px",
-                fontSize: "1rem",
-                fontWeight: "600",
-                cursor: "pointer",
-                marginBottom: "20px"
-              }}
-            >
-              + Agregar Ejercicio
-            </button>
+            {!isReadOnly && (
+              <button
+                onClick={handleAddExercise}
+                style={{
+                  width: "100%",
+                  padding: "15px",
+                  backgroundColor: "#1a1a1a",
+                  color: mint,
+                  border: `1px dashed ${mint}`,
+                  borderRadius: "10px",
+                  fontSize: "1rem",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  marginBottom: "20px"
+                }}
+              >
+                + Agregar Ejercicio
+              </button>
+            )}
           </div>
 
           {/* Rest Timer Floating (Solo si está activo y no es el de arriba) */}

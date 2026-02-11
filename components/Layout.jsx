@@ -10,8 +10,10 @@ export default function Layout({ children }) {
   const isDark = theme === 'dark';
   const [isMounted, setIsMounted] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
+  const [isIntroExiting, setIsIntroExiting] = useState(false);
   const router = useRouter();
 
+  // Usar useEffect para evitar problemas de SSR con sessionStorage
   useEffect(() => {
     setIsMounted(true);
     const introPlayed = sessionStorage.getItem("introPlayed");
@@ -58,15 +60,23 @@ export default function Layout({ children }) {
 
   useEffect(() => {
     if (showIntro) {
+      // Iniciar salida un poco antes del final del timer total
+      const exitTimer = setTimeout(() => {
+        setIsIntroExiting(true);
+      }, 2000);
+
       const timer = setTimeout(() => {
         setShowIntro(false);
+        setIsIntroExiting(false);
         sessionStorage.setItem("introPlayed", "true");
-        // Asegurar que después de la intro estemos en el Feed (/) si es la primera vez
         if (router.pathname !== "/") {
           router.push("/");
         }
       }, 2500); 
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(exitTimer);
+      };
     }
   }, [showIntro, router]);
 
@@ -132,28 +142,36 @@ export default function Layout({ children }) {
               alignItems: "center",
               overflow: "hidden",
               touchAction: "none",
-              pointerEvents: "all"
+              pointerEvents: "all",
+              transition: "opacity 0.5s ease-in-out",
+              opacity: isIntroExiting ? 0 : 1
             }}>
               <img
                 src={isDark ? "/logo.png" : "/logo2.png"}
                 alt="FEEG Logo"
                 style={{
-                  width: "150px",
+                  width: "180px",
                   height: "auto",
-                  animation: "pulseLogo 2s ease-in-out infinite"
+                  animation: "logoPop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), pulseLogo 2s ease-in-out infinite 0.8s",
+                  transition: "transform 0.5s ease-in-out",
+                  transform: isIntroExiting ? "scale(1.2)" : "scale(1)"
                 }}
               />
               <style>{`
+                @keyframes logoPop {
+                  0% { transform: scale(0.5); opacity: 0; }
+                  100% { transform: scale(1); opacity: 1; }
+                }
                 @keyframes pulseLogo {
-                  0% { transform: scale(0.95); opacity: 0.8; }
-                  50% { transform: scale(1.05); opacity: 1; }
-                  100% { transform: scale(0.95); opacity: 0.8; }
+                  0% { transform: scale(1); }
+                  50% { transform: scale(1.05); }
+                  100% { transform: scale(1); }
                 }
               `}</style>
             </div>
           )}
 
-          {!showIntro && (
+          {(!showIntro || isIntroExiting) && (
             <>
               <Sidebar />
               

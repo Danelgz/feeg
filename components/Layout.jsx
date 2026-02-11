@@ -201,7 +201,7 @@ export default function Layout({ children }) {
                 className="page-transition"
                 style={{ 
                   flex: 1, 
-                  padding: currentIsMobile ? "15px" : "20px", 
+                  padding: currentIsMobile ? "0" : "20px", 
                   paddingBottom: currentIsMobile ? "80px" : "20px",
                   backgroundColor: isDark ? "#0f0f0f" : "#f0f2f5", 
                   color: isDark ? "#fff" : "#333",

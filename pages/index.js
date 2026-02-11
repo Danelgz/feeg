@@ -5,7 +5,7 @@ import { getWorkoutsFeed, searchUsers, likeWorkout, addWorkoutComment } from "..
 import { useRouter } from "next/router";
 
 export default function Home() {
-  const { user, authUser, isLoaded, following, handleFollow, handleUnfollow } = useUser();
+  const { user, authUser, isLoaded, following, handleFollow, handleUnfollow, isMobile } = useUser();
   const [feedWorkouts, setFeedWorkouts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -26,16 +26,6 @@ export default function Home() {
   }, [authUser, following]);
 
   useEffect(() => {
-    const loadInitialUsers = async () => {
-      if (isLoaded && !searchTerm.trim()) {
-        const results = await searchUsers("");
-        setSearchResults(results);
-      }
-    };
-    loadInitialUsers();
-  }, [isLoaded]);
-
-  useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       handleSearch();
     }, 300);
@@ -44,6 +34,10 @@ export default function Home() {
   }, [searchTerm]);
 
   const handleSearch = async () => {
+    if (!searchTerm.trim()) {
+      setSearchResults([]);
+      return;
+    }
     const results = await searchUsers(searchTerm);
     setSearchResults(results);
   };
@@ -79,10 +73,19 @@ export default function Home() {
 
   return (
     <Layout>
-      <div style={{ backgroundColor: "#000", color: "#fff", minHeight: "100vh", padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
+      <div style={{ 
+        backgroundColor: "#000", 
+        color: "#fff", 
+        minHeight: "100vh", 
+        padding: isMobile ? "0" : "20px", 
+        maxWidth: isMobile ? "100%" : "600px", 
+        margin: "0 auto",
+        width: "100%",
+        boxSizing: "border-box"
+      }}>
         
         {/* Buscador de usuarios interactivo */}
-        <div style={{ marginBottom: "30px", position: "relative" }}>
+        <div style={{ marginBottom: "30px", position: "relative", padding: isMobile ? "0 10px" : "0" }}>
           <div style={{ display: "flex", gap: "10px" }}>
             <div style={{ position: "relative", flex: 1 }}>
               <span style={{ position: "absolute", left: "15px", top: "50%", transform: "translateY(-50%)", color: "#666" }}>
@@ -117,22 +120,55 @@ export default function Home() {
             </div>
           </div>
 
-          {searchResults.length > 0 && (searchTerm || searchResults.length > 0) && (
+          {/* Enlace a Gente recomendada si no se está buscando */}
+          {!searchTerm && (
+            <div 
+              onClick={() => router.push("/recommended")}
+              style={{ 
+                marginTop: "10px", 
+                backgroundColor: "#1a1a1a", 
+                borderRadius: isMobile ? "0" : "12px", 
+                border: isMobile ? "none" : "1px solid #333",
+                borderTop: "1px solid #333",
+                borderBottom: "1px solid #333",
+                padding: "12px 20px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                cursor: "pointer",
+                transition: "background 0.2s"
+              }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#222"}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#1a1a1a"}
+            >
+              <div style={{ color: "#1dd1a1", fontWeight: "bold", fontSize: "0.9rem" }}>
+                Gente que podrías seguir (click aquí)
+              </div>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1dd1a1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </div>
+          )}
+
+          {/* Resultados de búsqueda */}
+          {searchTerm && searchResults.length > 0 && (
             <div style={{ 
               marginTop: "10px", 
               backgroundColor: "#1a1a1a", 
-              borderRadius: "15px", 
-              border: "1px solid #333",
+              borderRadius: isMobile ? "0" : "15px", 
+              border: isMobile ? "none" : "1px solid #333",
+              borderTop: "1px solid #333",
+              borderBottom: "1px solid #333",
               maxHeight: "300px", 
               overflowY: "auto",
               boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
               zIndex: 100,
-              position: searchTerm ? "absolute" : "relative",
+              position: "absolute",
               left: 0,
               right: 0
             }}>
               <div style={{ padding: "10px 15px", fontSize: "0.8rem", color: "#1dd1a1", borderBottom: "1px solid #333", fontWeight: "bold" }}>
-                {searchTerm ? "Resultados de búsqueda" : "Gente que podrías seguir"}
+                Resultados de búsqueda
               </div>
               {searchResults.map(u => (
                 <div 
@@ -185,7 +221,7 @@ export default function Home() {
           )}
         </div>
 
-        <h1 style={{ fontSize: "1.8rem", fontWeight: "bold", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
+        <h1 style={{ fontSize: "1.8rem", fontWeight: "bold", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px", padding: isMobile ? "0 15px" : "0" }}>
           <span style={{ width: "4px", height: "24px", backgroundColor: "#1dd1a1", borderRadius: "2px" }}></span>
           Actividad
         </h1>
@@ -196,7 +232,7 @@ export default function Home() {
             <div style={{ color: "#444", textAlign: "center", marginTop: "40px" }}>No hay entrenamientos para mostrar. ¡Sigue a alguien para ver su actividad!</div>
           ) : (
             feedWorkouts.map(workout => (
-              <div key={workout.id} style={{ backgroundColor: "#1a1a1a", padding: "15px", borderRadius: "12px" }}>
+              <div key={workout.id} style={{ backgroundColor: "#1a1a1a", padding: "15px", borderRadius: isMobile ? "0" : "12px", borderBottom: isMobile ? "1px solid #333" : "none" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
                   <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "#333", overflow: "hidden" }}>
                     {workout.userPhoto && <img src={workout.userPhoto} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}

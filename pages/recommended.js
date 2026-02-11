@@ -5,7 +5,7 @@ import { searchUsers } from "../lib/firebase";
 import { useRouter } from "next/router";
 
 export default function Recommended() {
-  const { authUser, isLoaded, following, handleFollow, handleUnfollow } = useUser();
+  const { authUser, isLoaded, following, handleFollow, handleUnfollow, isMobile } = useUser();
   const [users, setUsers] = useState([]);
   const router = useRouter();
 
@@ -24,8 +24,17 @@ export default function Recommended() {
 
   return (
     <Layout>
-      <div style={{ backgroundColor: "#000", color: "#fff", minHeight: "100vh", padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "30px" }}>
+      <div style={{ 
+        backgroundColor: "#000", 
+        color: "#fff", 
+        minHeight: "100vh", 
+        padding: isMobile ? "0" : "20px", 
+        maxWidth: isMobile ? "100%" : "600px", 
+        margin: "0 auto",
+        width: "100%",
+        boxSizing: "border-box"
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "30px", padding: isMobile ? "15px 15px 0 15px" : "0" }}>
           <button 
             onClick={() => router.back()}
             style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", padding: "5px", display: "flex", alignItems: "center" }}
@@ -35,7 +44,7 @@ export default function Recommended() {
           <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", margin: 0 }}>Gente recomendada</h1>
         </div>
 
-        <div style={{ backgroundColor: "#1a1a1a", borderRadius: "15px", border: "1px solid #333", overflow: "hidden" }}>
+        <div style={{ backgroundColor: "#1a1a1a", borderRadius: isMobile ? "0" : "15px", border: isMobile ? "none" : "1px solid #333", borderTop: isMobile ? "1px solid #333" : "1px solid #333", borderBottom: isMobile ? "1px solid #333" : "1px solid #333", overflow: "hidden" }}>
           {users.length === 0 ? (
             <div style={{ padding: "20px", textAlign: "center", color: "#888" }}>No hay recomendaciones en este momento.</div>
           ) : (

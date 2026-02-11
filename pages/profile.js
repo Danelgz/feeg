@@ -296,7 +296,8 @@ export default function Profile() {
   };
 
   return (
-    <Layout>
+    <>
+      <Layout>
       <div style={{
         backgroundColor: "#000",
         color: "#fff",
@@ -524,6 +525,8 @@ export default function Profile() {
         </div>
       </div>
 
+      </Layout>
+
       {/* Confirm Delete Modal */}
       {confirmDelete && (
         <div style={{
@@ -690,6 +693,6 @@ export default function Profile() {
           </div>
         </div>
       )}
-    </Layout>
+    </>
   );
 }

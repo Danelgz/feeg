@@ -176,7 +176,8 @@ export default function Measures() {
   const latest = measures[0] || {};
 
   return (
-    <Layout>
+    <>
+      <Layout>
       <div style={{
         backgroundColor: "#000",
         color: "#fff",
@@ -509,5 +510,6 @@ export default function Measures() {
         )}
       </div>
     </Layout>
+    </>
   );
 }

@@ -25,6 +25,7 @@ export function UserProvider({ children }) {
   const [activeRoutine, setActiveRoutine] = useState(null);
   const [completedWorkouts, setCompletedWorkouts] = useState([]);
   const [routines, setRoutines] = useState([]);
+  const [measures, setMeasures] = useState([]);
   const [following, setFollowing] = useState([]);
   const [followers, setFollowers] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
@@ -52,6 +53,7 @@ export function UserProvider({ children }) {
     const savedActiveRoutine = localStorage.getItem('activeRoutine');
     const savedWorkouts = localStorage.getItem('completedWorkouts');
     const savedRoutines = localStorage.getItem('routines');
+    const savedMeasures = localStorage.getItem('measures');
     
     if (savedUser) try { setUser(JSON.parse(savedUser)); } catch (e) {}
     if (savedTheme) setTheme(savedTheme);
@@ -59,6 +61,7 @@ export function UserProvider({ children }) {
     if (savedActiveRoutine) try { setActiveRoutine(JSON.parse(savedActiveRoutine)); } catch (e) {}
     if (savedWorkouts) try { setCompletedWorkouts(JSON.parse(savedWorkouts)); } catch (e) {}
     if (savedRoutines) try { setRoutines(JSON.parse(savedRoutines)); } catch (e) {}
+    if (savedMeasures) try { setMeasures(JSON.parse(savedMeasures)); } catch (e) {}
 
     // Suscribirse a cambios de autenticación de Firebase
     const unsub = onAuthChange(async (fbUser) => {
@@ -89,6 +92,10 @@ export function UserProvider({ children }) {
             if (cloudData.routines) {
               setRoutines(cloudData.routines);
               localStorage.setItem('routines', JSON.stringify(cloudData.routines));
+            }
+            if (cloudData.measures) {
+              setMeasures(cloudData.measures);
+              localStorage.setItem('measures', JSON.stringify(cloudData.measures));
             }
             if (cloudData.activeRoutine) {
               setActiveRoutine(cloudData.activeRoutine);
@@ -126,7 +133,8 @@ export function UserProvider({ children }) {
               await saveToCloud(`users/${fbUser.uid}`, { 
                 profile: localProfile,
                 completedWorkouts: JSON.parse(localStorage.getItem('completedWorkouts') || '[]'),
-                routines: JSON.parse(localStorage.getItem('routines') || '[]')
+                routines: JSON.parse(localStorage.getItem('routines') || '[]'),
+                measures: JSON.parse(localStorage.getItem('measures') || '[]')
               });
             }
           }
@@ -170,9 +178,11 @@ export function UserProvider({ children }) {
     localStorage.removeItem('userProfile');
     localStorage.removeItem('completedWorkouts');
     localStorage.removeItem('routines');
+    localStorage.removeItem('measures');
     localStorage.removeItem('activeRoutine');
     setCompletedWorkouts([]);
     setRoutines([]);
+    setMeasures([]);
     setActiveRoutine(null);
     setFollowing([]);
     setFollowers([]);
@@ -278,6 +288,14 @@ export function UserProvider({ children }) {
       await saveToCloud(`users/${authUser.uid}`, { routines: newList });
     }
   };
+  
+  const saveMeasures = async (newMeasures) => {
+    setMeasures(newMeasures);
+    localStorage.setItem('measures', JSON.stringify(newMeasures));
+    if (authUser) {
+      await saveToCloud(`users/${authUser.uid}`, { measures: newMeasures });
+    }
+  };
 
   const startRoutine = async (routineData) => {
     setActiveRoutine(routineData);
@@ -333,6 +351,8 @@ export function UserProvider({ children }) {
       saveRoutine,
       updateRoutine,
       deleteRoutine,
+      measures,
+      saveMeasures,
       following,
       followers,
       isMobile,

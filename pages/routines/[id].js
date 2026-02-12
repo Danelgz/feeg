@@ -753,6 +753,7 @@ export default function RoutineDetail() {
               if (activeRoutine && activeRoutine.id?.toString() !== id?.toString()) {
                 setShowRoutineActiveAlert(true);
               } else {
+                clearPersistentTimer();
                 setWorkoutState("ongoing");
                 startRoutine({ id: id?.toString?.() || id, name: routine.name, path: `/routines/${id}` });
               }

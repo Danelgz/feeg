@@ -6,7 +6,7 @@ import { useUser } from "../../context/UserContext";
 
 export default function Routines() {
   const router = useRouter();
-  const { routines, completedWorkouts, deleteRoutine, deleteCompletedWorkout, theme, t } = useUser();
+  const { routines, completedWorkouts, deleteRoutine, deleteCompletedWorkout, endRoutine, theme, t } = useUser();
   const [activeTab, setActiveTab] = useState("active"); // active, completed
   const [isMobile, setIsMobile] = useState(false);
   const isDark = theme === 'dark';
@@ -94,37 +94,39 @@ export default function Routines() {
         {activeTab === "active" ? (
           <>
             <div style={{ marginBottom: "25px" }}>
-              <Link href="/routines/empty" style={{ textDecoration: "none" }}>
-                <button
-                  style={{
-                    width: "100%",
-                    padding: "15px",
-                    backgroundColor: "#1dd1a1",
-                    color: "#000",
-                    border: "none",
-                    borderRadius: "10px",
-                    fontSize: "1.1rem",
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "10px",
-                    transition: "all 0.3s ease",
-                    boxShadow: isDark ? "0 4px 10px rgba(0,0,0,0.3)" : "0 4px 10px rgba(0,0,0,0.1)"
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = "#16a853";
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = "#1dd1a1";
-                    e.currentTarget.style.transform = "translateY(0)";
-                  }}
-                >
-                  {t("start_empty_workout")}
-                </button>
-              </Link>
+              <button
+                onClick={() => {
+                  endRoutine();
+                  router.push("/routines/empty");
+                }}
+                style={{
+                  width: "100%",
+                  padding: "15px",
+                  backgroundColor: "#1dd1a1",
+                  color: "#000",
+                  border: "none",
+                  borderRadius: "10px",
+                  fontSize: "1.1rem",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "10px",
+                  transition: "all 0.3s ease",
+                  boxShadow: isDark ? "0 4px 10px rgba(0,0,0,0.3)" : "0 4px 10px rgba(0,0,0,0.1)"
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = "#16a853";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = "#1dd1a1";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                {t("start_empty_workout")}
+              </button>
             </div>
 
             <p style={{ color: isDark ? "#aaa" : "#666", marginBottom: "20px" }}>
@@ -178,31 +180,33 @@ export default function Routines() {
                       {routine.exercises.length} {t("exercises").toLowerCase()} · {routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0)} {t("series").toLowerCase()}
                     </p>
                     <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                      <Link href={`/routines/${routine.id}`}>
-                        <button
-                          style={{
-                            padding: "8px 16px",
-                            backgroundColor: "#1dd1a1",
-                            color: "#000",
-                            border: "none",
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                            fontSize: "0.95rem",
-                            fontWeight: "600",
-                            transition: "all 0.3s ease"
-                          }}
-                          onMouseOver={(e) => {
-                            e.target.style.backgroundColor = "#16a853";
-                            e.target.style.boxShadow = "0 4px 8px rgba(29, 209, 161, 0.3)";
-                          }}
-                          onMouseOut={(e) => {
-                            e.target.style.backgroundColor = "#1dd1a1";
-                            e.target.style.boxShadow = "none";
-                          }}
-                        >
-                          {t("start_routine")}
-                        </button>
-                      </Link>
+                      <button
+                        onClick={() => {
+                          endRoutine();
+                          router.push(`/routines/${routine.id}`);
+                        }}
+                        style={{
+                          padding: "8px 16px",
+                          backgroundColor: "#1dd1a1",
+                          color: "#000",
+                          border: "none",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          fontSize: "0.95rem",
+                          fontWeight: "600",
+                          transition: "all 0.3s ease"
+                        }}
+                        onMouseOver={(e) => {
+                          e.target.style.backgroundColor = "#16a853";
+                          e.target.style.boxShadow = "0 4px 8px rgba(29, 209, 161, 0.3)";
+                        }}
+                        onMouseOut={(e) => {
+                          e.target.style.backgroundColor = "#1dd1a1";
+                          e.target.style.boxShadow = "none";
+                        }}
+                      >
+                        {t("start_routine")}
+                      </button>
                       <Link href={`/routines/create?id=${routine.id}`}>
                         <button
                           style={{

@@ -236,9 +236,15 @@ export default function EmptyRoutine() {
 
   const handleCompleteWorkout = () => setShowFinishConfirmation(true);
 
-  const handleDiscardWorkout = () => {
+  const clearPersistentTimer = () => {
     localStorage.removeItem('workoutTimerState');
     localStorage.removeItem('workoutTimerLastSave');
+    setElapsedTime(0);
+    setBackgroundTimerActive(false);
+  };
+
+  const handleDiscardWorkout = () => {
+    clearPersistentTimer();
     endRoutine();
     router.push('/routines');
   };
@@ -253,8 +259,7 @@ export default function EmptyRoutine() {
   };
 
   const handleSaveFinishedRoutine = () => {
-    localStorage.removeItem('workoutTimerState');
-    localStorage.removeItem('workoutTimerLastSave');
+    clearPersistentTimer();
     
     const totalSeries = routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0);
     const totalVolume = Object.keys(seriesCompleted).reduce((sum, key) => {
@@ -297,6 +302,7 @@ export default function EmptyRoutine() {
               if (activeRoutine && activeRoutine.id !== "empty") {
                 setShowRoutineActiveAlert(true);
               } else {
+                clearPersistentTimer();
                 setWorkoutState("ongoing");
                 setBackgroundTimerActive(true);
                 startRoutine({ id: "empty", name: "Entrenamiento Vacío", path: "/routines/empty" });

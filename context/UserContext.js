@@ -308,9 +308,16 @@ export function UserProvider({ children }) {
   const endRoutine = async () => {
     setActiveRoutine(null);
     localStorage.removeItem('activeRoutine');
+    localStorage.removeItem('workoutTimerState');
+    localStorage.removeItem('workoutTimerLastSave');
     if (authUser) {
       await saveToCloud(`users/${authUser.uid}`, { activeRoutine: null });
     }
+  };
+
+  const clearWorkoutState = () => {
+    localStorage.removeItem('workoutTimerState');
+    localStorage.removeItem('workoutTimerLastSave');
   };
 
   const handleFollow = async (targetId) => {
@@ -343,6 +350,7 @@ export function UserProvider({ children }) {
       activeRoutine,
       startRoutine,
       endRoutine,
+      clearWorkoutState,
       completedWorkouts,
       saveCompletedWorkout,
       deleteCompletedWorkout,

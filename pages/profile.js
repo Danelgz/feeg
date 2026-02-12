@@ -180,25 +180,30 @@ export default function Profile() {
   };
 
   const handleEditSave = async () => {
+    if (saving) return;
     setSaving(true);
     
-    // Timeout de seguridad: si en 20s no termina, lanzamos error para desbloquear la UI
+    // Timeout de seguridad: si en 25s no termina, lanzamos error
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("La operación tardó demasiado. Los cambios se guardarán en segundo plano.")), 20000)
+      setTimeout(() => reject(new Error("La operación tardó demasiado. Los cambios se guardarán en segundo plano.")), 25000)
     );
 
     try {
       let finalPhotoURL = editData.photoURL;
       
       const saveAction = async () => {
-        // 1. Subir foto si es una nueva imagen (base64)
-        if (finalPhotoURL && typeof finalPhotoURL === 'string' && finalPhotoURL.startsWith('data:') && authUser?.uid) {
+        // 1. Subir foto SOLO si es una nueva imagen (base64)
+        const isNewPhoto = finalPhotoURL && typeof finalPhotoURL === 'string' && finalPhotoURL.startsWith('data:');
+        
+        if (isNewPhoto && authUser?.uid) {
           try {
+            console.log("[Profile] Nueva foto detectada, subiendo...");
             const uploaded = await uploadProfilePhoto(authUser.uid, finalPhotoURL);
             if (uploaded) {
               finalPhotoURL = uploaded;
             } else {
-              // Si la subida falla, mantenemos la foto anterior para no romper el perfil con base64 gigantes
+              // Si la subida falla (CORS/Timeout), usamos la anterior para no perder el perfil
+              console.warn("[Profile] Falló la subida, usando foto anterior");
               finalPhotoURL = user?.photoURL || authUser?.photoURL || "";
             }
           } catch (uploadErr) {
@@ -222,14 +227,14 @@ export default function Profile() {
 
       // Ejecutar la acción con un timeout
       await Promise.race([saveAction(), timeoutPromise]);
-      setIsEditing(false); // Éxito: cerramos modal
+      setIsEditing(false);
     } catch (e) {
       console.error("Error en handleEditSave:", e);
-      alert(e.message || "Hubo un problema al guardar. Inténtalo de nuevo.");
-      // Incluso si hay timeout, intentamos cerrar el modal para no bloquear al usuario
-      if (e.message?.includes("La operación tardó demasiado")) {
-        setIsEditing(false);
+      // Solo alertar si no es el timeout (que ya manejamos cerrando el modal)
+      if (!e.message?.includes("tardó demasiado")) {
+        alert(e.message || "Hubo un problema al guardar.");
       }
+      setIsEditing(false);
     } finally {
       setSaving(false);
     }
@@ -377,42 +382,43 @@ export default function Profile() {
         backgroundColor: "#000",
         color: "#fff",
         minHeight: "100vh",
-        padding: "20px"
+        padding: isMobile ? "10px" : "20px"
       }}>
-        {/* Header - Name and Symbols above photo */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", margin: 0 }}>{user?.username || "Nombre_usuario"}</h1>
-          <div style={{ display: "flex", gap: "15px" }}>
-            <button onClick={() => setIsEditing(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "#fff" }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+        {/* Header - Username and Icons */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "5px" }}>
+          <h1 style={{ fontSize: "1.6rem", fontWeight: "800", margin: 0, letterSpacing: "-0.5px" }}>{user?.username || "Usuario"}</h1>
+          <div style={{ display: "flex", gap: "18px" }}>
+            <button onClick={() => setIsEditing(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "#fff", padding: "5px" }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
             </button>
-            <button style={{ background: "none", border: "none", cursor: "pointer", color: "#fff" }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
-            </button>
-            <button onClick={() => router.push("/settings")} style={{ background: "none", border: "none", cursor: "pointer", color: "#fff" }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <button onClick={() => router.push("/settings")} style={{ background: "none", border: "none", cursor: "pointer", color: "#fff", padding: "5px" }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0 1.51-1V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
             </button>
           </div>
         </div>
 
-        {/* Profile Info */}
-        <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "20px" }}>
+        {/* Real Name */}
+        <div style={{ fontSize: "1rem", color: "#1dd1a1", fontWeight: "600", marginBottom: "20px" }}>
+          {user?.firstName || "Sin nombre"}
+        </div>
+
+        {/* Photo and Stats Row */}
+        <div style={{ display: "flex", gap: "25px", alignItems: "center", marginBottom: "25px" }}>
           <div 
             onClick={() => setIsPhotoFullScreen(true)}
             style={{
               width: "100px",
               height: "100px",
               borderRadius: "50%",
-              backgroundColor: "#fff",
-              color: "#000",
+              backgroundColor: "#1a1a1a",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "1.2rem",
-              fontWeight: "bold",
               overflow: "hidden",
               cursor: "pointer",
-              border: "2px solid #1dd1a1"
+              border: "3px solid #1dd1a1",
+              boxShadow: "0 8px 24px rgba(29, 209, 161, 0.2)",
+              flexShrink: 0
             }}
           >
             {user?.photoURL ? (
@@ -426,35 +432,37 @@ export default function Profile() {
                   transform: `scale(${user.photoScale || 1})`
                 }} 
               />
-            ) : "Perfil"}
+            ) : <span style={{ fontSize: "2rem" }}>👤</span>}
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: "bold", fontSize: "1.1rem" }}>{user?.firstName || "Nombre"}</div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "10px", textAlign: "center" }}>
-              <div style={{ cursor: "pointer" }}>
-                <div style={{ color: "#aaa", fontSize: "0.8rem" }}>Entrenos</div>
-                <div style={{ fontSize: "1.1rem", fontWeight: "bold" }}>{completedWorkouts?.length || 0}</div>
-              </div>
-              <div onClick={handleOpenFollowers} style={{ cursor: "pointer" }}>
-                <div style={{ color: "#aaa", fontSize: "0.8rem" }}>Seguidores</div>
-                <div style={{ fontSize: "1.1rem", fontWeight: "bold" }}>{followers?.length || 0}</div>
-              </div>
-              <div onClick={handleOpenFollowing} style={{ cursor: "pointer" }}>
-                <div style={{ color: "#aaa", fontSize: "0.8rem" }}>Siguiendo</div>
-                <div style={{ fontSize: "1.1rem", fontWeight: "bold" }}>{following?.length || 0}</div>
-              </div>
+          
+          <div style={{ flex: 1, display: "flex", justifyContent: "space-between", textAlign: "center" }}>
+            <div style={{ cursor: "pointer" }}>
+              <div style={{ fontSize: "1.2rem", fontWeight: "800" }}>{completedWorkouts?.length || 0}</div>
+              <div style={{ color: "#888", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px" }}>Entrenos</div>
+            </div>
+            <div onClick={handleOpenFollowers} style={{ cursor: "pointer" }}>
+              <div style={{ fontSize: "1.2rem", fontWeight: "800" }}>{followers?.length || 0}</div>
+              <div style={{ color: "#888", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px" }}>Seguidores</div>
+            </div>
+            <div onClick={handleOpenFollowing} style={{ cursor: "pointer" }}>
+              <div style={{ fontSize: "1.2rem", fontWeight: "800" }}>{following?.length || 0}</div>
+              <div style={{ color: "#888", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px" }}>Siguiendo</div>
             </div>
           </div>
         </div>
 
         {/* Description */}
-        <div style={{ marginBottom: "20px", fontSize: "0.95rem", color: "#eee", lineHeight: "1.4" }}>
+        <div style={{ 
+          marginBottom: "30px", 
+          fontSize: "0.95rem", 
+          color: "#ccc", 
+          lineHeight: "1.5", 
+          backgroundColor: "#111", 
+          padding: "12px 15px", 
+          borderRadius: "12px",
+          borderLeft: "3px solid #1dd1a1"
+        }}>
           {user?.description || "Sin descripción"}
-        </div>
-
-        {/* Description */}
-        <div style={{ marginBottom: "30px", fontSize: "0.95rem" }}>
-          {user?.description || "DESCRIPCIÓN DEL USUARIO"}
         </div>
 
         {/* Graph Section */}
@@ -639,57 +647,42 @@ export default function Profile() {
       {isEditing && (
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center",
+          backgroundColor: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center",
           justifyContent: "center", zIndex: 2000, padding: "20px",
-          backdropFilter: "blur(15px)"
+          backdropFilter: "blur(20px)"
         }}>
           <div style={{ 
-            backgroundColor: "rgba(30, 30, 30, 0.8)", 
+            backgroundColor: "#111", 
             padding: "30px", 
-            borderRadius: "30px", 
+            borderRadius: "24px", 
             width: "100%", 
-            maxWidth: "420px",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
+            maxWidth: "400px",
+            border: "1px solid #333",
             boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-            position: 'relative',
-            overflow: 'hidden'
+            position: 'relative'
           }}>
-            {/* Decoración glassmorphism */}
-            <div style={{
-              position: 'absolute',
-              top: '-50px',
-              right: '-50px',
-              width: '150px',
-              height: '150px',
-              backgroundColor: '#1dd1a1',
-              filter: 'blur(80px)',
-              opacity: 0.15,
-              pointerEvents: 'none'
-            }} />
-
             <h2 style={{ 
               color: "#fff", 
-              marginBottom: "30px", 
+              marginBottom: "25px", 
               textAlign: "center", 
-              fontSize: "1.5rem",
-              fontWeight: "800",
-              letterSpacing: "-0.5px"
+              fontSize: "1.4rem",
+              fontWeight: "800"
             }}>Editar Perfil</h2>
             
-            <div style={{ display: "flex", flexDirection: "column", gap: "25px" }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              {/* Foto de perfil con ajuste */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
                 <div style={{ position: 'relative' }}>
                   <div style={{ 
-                    width: '110px', 
-                    height: '110px', 
+                    width: '100px', 
+                    height: '100px', 
                     borderRadius: '50%', 
                     backgroundColor: '#000', 
                     overflow: 'hidden', 
                     border: '3px solid #1dd1a1',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 0 20px rgba(29, 209, 161, 0.2)'
+                    justifyContent: 'center'
                   }}>
                     {editData.photoURL ? (
                       <img 
@@ -702,28 +695,24 @@ export default function Profile() {
                           transform: `scale(${editData.photoScale || 1})`
                         }} 
                       />
-                    ) : (
-                      <span style={{ color: '#444', fontSize: '2.5rem' }}>👤</span>
-                    )}
+                    ) : <span style={{ fontSize: '2rem' }}>👤</span>}
                   </div>
                   <label style={{ 
                     position: 'absolute',
-                    bottom: '5px',
-                    right: '5px',
+                    bottom: '0',
+                    right: '0',
                     backgroundColor: '#1dd1a1', 
                     color: '#000', 
-                    width: '34px',
-                    height: '34px',
+                    width: '32px',
+                    height: '32px',
                     borderRadius: '50%', 
                     cursor: 'pointer', 
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    border: '3px solid #1a1a1a',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                    transition: 'transform 0.2s ease'
-                  }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.1)'} onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                    border: '2px solid #111'
+                  }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
                     <input 
                       type="file" 
                       accept="image/*" 
@@ -746,110 +735,57 @@ export default function Profile() {
                   </label>
                 </div>
                 
-                {isProcessingImage ? (
-                  <span style={{ fontSize: '0.8rem', color: '#1dd1a1', fontWeight: 'bold' }}>Procesando...</span>
-                ) : editData.photoURL && (
-                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '150px', color: '#888', fontSize: '0.75rem' }}>
+                {editData.photoURL && (
+                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '120px', color: '#888', fontSize: '0.7rem' }}>
                       <span>Zoom</span>
                       <span>{(editData.photoScale || 1).toFixed(1)}x</span>
                     </div>
                     <input 
-                      type="range"
-                      min="1"
-                      max="3"
-                      step="0.05"
+                      type="range" min="1" max="2.5" step="0.01"
                       value={editData.photoScale || 1}
                       onChange={(e) => setEditData({ ...editData, photoScale: parseFloat(e.target.value) })}
-                      style={{ 
-                        width: '150px', 
-                        accentColor: '#1dd1a1',
-                        cursor: 'pointer'
-                      }}
+                      style={{ width: '120px', accentColor: '#1dd1a1', cursor: 'pointer' }}
                     />
                   </div>
                 )}
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ color: "#888", fontSize: "0.85rem", fontWeight: "600", marginLeft: "4px" }}>Usuario</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                <label style={{ color: "#888", fontSize: "0.8rem", fontWeight: "600" }}>Usuario</label>
                 <input 
                   value={editData.username} 
                   onChange={e => setEditData({...editData, username: e.target.value})}
-                  placeholder="Ej: feeg_pro"
-                  style={{ 
-                    width: "100%", 
-                    padding: "14px 18px", 
-                    borderRadius: "16px", 
-                    border: "1px solid rgba(255, 255, 255, 0.1)", 
-                    backgroundColor: "rgba(255, 255, 255, 0.05)", 
-                    color: "#fff",
-                    fontSize: "1rem",
-                    outline: "none",
-                    transition: "border-color 0.2s ease"
-                  }}
-                  onFocus={e => e.currentTarget.style.borderColor = "#1dd1a1"}
-                  onBlur={e => e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.1)"}
+                  placeholder="Usuario"
+                  style={{ width: "100%", padding: "12px 15px", borderRadius: "12px", border: "1px solid #333", backgroundColor: "#000", color: "#fff", outline: "none" }}
                 />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ color: "#888", fontSize: "0.85rem", fontWeight: "600", marginLeft: "4px" }}>Nombre</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                <label style={{ color: "#888", fontSize: "0.8rem", fontWeight: "600" }}>Nombre</label>
                 <input 
                   value={editData.firstName} 
                   onChange={e => setEditData({...editData, firstName: e.target.value})}
-                  placeholder="Tu nombre completo"
-                  style={{ 
-                    width: "100%", 
-                    padding: "14px 18px", 
-                    borderRadius: "16px", 
-                    border: "1px solid rgba(255, 255, 255, 0.1)", 
-                    backgroundColor: "rgba(255, 255, 255, 0.05)", 
-                    color: "#fff",
-                    fontSize: "1rem",
-                    outline: "none"
-                  }}
+                  placeholder="Nombre"
+                  style={{ width: "100%", padding: "12px 15px", borderRadius: "12px", border: "1px solid #333", backgroundColor: "#000", color: "#fff", outline: "none" }}
                 />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ color: "#888", fontSize: "0.85rem", fontWeight: "600", marginLeft: "4px" }}>Descripción</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                <label style={{ color: "#888", fontSize: "0.8rem", fontWeight: "600" }}>Descripción</label>
                 <textarea 
                   value={editData.description} 
                   onChange={e => setEditData({...editData, description: e.target.value})}
-                  placeholder="¿Cuál es tu objetivo?"
-                  style={{ 
-                    width: "100%", 
-                    padding: "14px 18px", 
-                    borderRadius: "16px", 
-                    border: "1px solid rgba(255, 255, 255, 0.1)", 
-                    backgroundColor: "rgba(255, 255, 255, 0.05)", 
-                    color: "#fff", 
-                    minHeight: "110px",
-                    fontSize: "1rem",
-                    resize: "none",
-                    outline: "none"
-                  }}
+                  placeholder="Descripción"
+                  style={{ width: "100%", padding: "12px 15px", borderRadius: "12px", border: "1px solid #333", backgroundColor: "#000", color: "#fff", minHeight: "80px", resize: "none", outline: "none" }}
                 />
               </div>
               
-              <div style={{ display: "flex", gap: "15px", marginTop: "15px" }}>
+              <div style={{ display: "flex", gap: "12px", marginTop: "10px" }}>
                 <button 
                   onClick={() => setIsEditing(false)} 
                   disabled={saving}
-                  style={{ 
-                    flex: 1, 
-                    padding: "16px", 
-                    borderRadius: "16px", 
-                    border: "1px solid rgba(255, 255, 255, 0.1)", 
-                    backgroundColor: "rgba(255, 255, 255, 0.05)", 
-                    color: "#fff",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                    transition: "all 0.2s ease"
-                  }}
-                  onMouseOver={e => e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)"}
-                  onMouseOut={e => e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.05)"}
+                  style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "1px solid #333", backgroundColor: "transparent", color: "#fff", fontWeight: "600", cursor: "pointer" }}
                 >
                   Cancelar
                 </button>
@@ -857,49 +793,21 @@ export default function Profile() {
                   onClick={handleEditSave} 
                   disabled={saving}
                   style={{ 
-                    flex: 1.5, 
-                    padding: "16px", 
-                    borderRadius: "16px", 
+                    flex: 2, 
+                    padding: "14px", 
+                    borderRadius: "12px", 
                     border: "none", 
                     backgroundColor: "#1dd1a1", 
                     color: "#000", 
                     fontWeight: "800",
-                    fontSize: "1rem",
                     cursor: saving ? "default" : "pointer",
-                    opacity: saving ? 0.7 : 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 8px 20px rgba(29, 209, 161, 0.3)',
-                    transition: "all 0.2s ease"
+                    opacity: saving ? 0.7 : 1
                   }}
-                  onMouseOver={e => !saving && (e.currentTarget.style.transform = 'translateY(-2px)')}
-                  onMouseOut={e => !saving && (e.currentTarget.style.transform = 'translateY(0)')}
                 >
-                  {saving ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div className="spinner" />
-                      <span>Guardando...</span>
-                    </div>
-                  ) : "Guardar"}
+                  {saving ? "Guardando..." : "Guardar"}
                 </button>
               </div>
             </div>
-            
-            <style>{`
-              .spinner {
-                width: 18px;
-                height: 18px;
-                border: 3px solid rgba(0,0,0,0.1);
-                border-top: 3px solid #000;
-                border-radius: 50%;
-                animation: spin 1s linear infinite;
-              }
-              @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-              }
-            `}</style>
           </div>
         </div>
       )}

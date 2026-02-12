@@ -42,6 +42,10 @@ export default function Profile() {
     return new Promise((resolve) => {
       const img = new Image();
       img.src = dataUrl;
+      img.onerror = () => {
+        console.error("Error cargando imagen para compresión");
+        resolve(dataUrl); // Devolver original si falla
+      };
       img.onload = () => {
         const canvas = document.createElement('canvas');
         let width = img.width;
@@ -178,38 +182,54 @@ export default function Profile() {
   const handleEditSave = async () => {
     setSaving(true);
     
-    // Timeout para evitar que se quede "cargando" infinitamente si falla la red
+    // Timeout de seguridad: si en 20s no termina, lanzamos error para desbloquear la UI
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("Timeout: La operación tardó demasiado")), 30000)
+      setTimeout(() => reject(new Error("La operación tardó demasiado. Los cambios se guardarán en segundo plano.")), 20000)
     );
 
     try {
-      let nextPhotoURL = editData.photoURL;
+      let finalPhotoURL = editData.photoURL;
       
       const saveAction = async () => {
-        if (nextPhotoURL && typeof nextPhotoURL === 'string' && nextPhotoURL.startsWith('data:') && authUser?.uid) {
-          const uploaded = await uploadProfilePhoto(authUser.uid, nextPhotoURL);
-          if (uploaded) {
-            nextPhotoURL = uploaded;
+        // 1. Subir foto si es una nueva imagen (base64)
+        if (finalPhotoURL && typeof finalPhotoURL === 'string' && finalPhotoURL.startsWith('data:') && authUser?.uid) {
+          try {
+            const uploaded = await uploadProfilePhoto(authUser.uid, finalPhotoURL);
+            if (uploaded) {
+              finalPhotoURL = uploaded;
+            } else {
+              // Si la subida falla, mantenemos la foto anterior para no romper el perfil con base64 gigantes
+              finalPhotoURL = user?.photoURL || authUser?.photoURL || "";
+            }
+          } catch (uploadErr) {
+            console.error("Error subiendo foto:", uploadErr);
+            finalPhotoURL = user?.photoURL || authUser?.photoURL || "";
           }
         }
         
+        // 2. Construir objeto de usuario y guardar
         const updatedUser = {
           ...user,
           username: editData.username,
           firstName: editData.firstName,
           description: editData.description,
-          photoURL: nextPhotoURL,
+          photoURL: finalPhotoURL,
           photoScale: editData.photoScale
         };
+        
         await saveUser(updatedUser);
       };
 
+      // Ejecutar la acción con un timeout
       await Promise.race([saveAction(), timeoutPromise]);
-      setIsEditing(false);
+      setIsEditing(false); // Éxito: cerramos modal
     } catch (e) {
-      console.error("Error saving profile:", e);
-      alert(e.message || "Error al guardar el perfil. Revisa tu conexión.");
+      console.error("Error en handleEditSave:", e);
+      alert(e.message || "Hubo un problema al guardar. Inténtalo de nuevo.");
+      // Incluso si hay timeout, intentamos cerrar el modal para no bloquear al usuario
+      if (e.message?.includes("La operación tardó demasiado")) {
+        setIsEditing(false);
+      }
     } finally {
       setSaving(false);
     }

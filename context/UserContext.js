@@ -155,25 +155,34 @@ export function UserProvider({ children }) {
   }, []);
 
   const saveUser = async (userData) => {
+    // 1. Actualizar estado local inmediatamente para rapidez de UI
     setUser(userData);
     localStorage.setItem('userProfile', JSON.stringify(userData));
+    
     if (authUser) {
       if (userData?.photoURL) {
         setAuthUser((prev) => (prev ? { ...prev, photoURL: userData.photoURL } : prev));
       }
-      // Guardar datos privados
-      await saveToCloud(`users/${authUser.uid}`, { profile: userData });
-      // Guardar datos públicos con usernameLowercase para búsqueda eficiente
-      await saveToCloud(`usersPublic/${authUser.uid}`, {
-        username: userData.username,
-        usernameLowercase: userData.username.toLowerCase(),
-        firstName: userData.firstName,
-        photoURL: userData.photoURL || authUser.photoURL,
-        photoScale: userData.photoScale || 1,
-        description: userData.description || "",
-        uid: authUser.uid,
-        following: following
-      });
+
+      // 2. Ejecutar guardados en la nube en paralelo
+      try {
+        const privateSave = saveToCloud(`users/${authUser.uid}`, { profile: userData });
+        const publicSave = saveToCloud(`usersPublic/${authUser.uid}`, {
+          username: userData.username,
+          usernameLowercase: userData.username.toLowerCase(),
+          firstName: userData.firstName,
+          photoURL: userData.photoURL || authUser.photoURL,
+          photoScale: userData.photoScale || 1,
+          description: userData.description || "",
+          uid: authUser.uid,
+          following: following
+        });
+
+        await Promise.all([privateSave, publicSave]);
+      } catch (e) {
+        console.error("Error persistiendo datos en la nube:", e);
+        throw e; // Re-lanzar para que el modal maneje el error
+      }
     }
   };
 

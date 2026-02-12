@@ -147,7 +147,7 @@ export default function Calendar() {
         color: "#fff",
         minHeight: "100vh",
         padding: isMobile ? "20px 15px 100px 15px" : "30px",
-        fontFamily: "Arial, sans-serif"
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
       }}>
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>

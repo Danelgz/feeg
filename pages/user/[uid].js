@@ -125,7 +125,7 @@ export default function UserProfile() {
         color: "#fff",
         minHeight: "100vh",
         padding: "20px",
-        fontFamily: "Arial, sans-serif",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         maxWidth: "600px",
         margin: "0 auto"
       }}>
@@ -196,7 +196,7 @@ export default function UserProfile() {
 
                 {workout.comments && (
                   <div style={{ fontSize: "0.9rem", color: "#888", fontStyle: "italic", borderLeft: "2px solid #1dd1a1", paddingLeft: "10px", margin: "10px 0" }}>
-                    "{workout.comments}"
+                    &quot;{workout.comments}&quot;
                   </div>
                 )}
 

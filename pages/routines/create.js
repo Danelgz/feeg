@@ -182,7 +182,7 @@ export default function CreateRoutine() {
               border: `2px solid ${isDark ? "#333" : "#ddd"}`,
               width: "100%",
               fontSize: "1rem",
-              fontFamily: "Arial, sans-serif",
+              fontFamily: "inherit",
               transition: "all 0.3s ease",
               boxSizing: "border-box",
               outline: "none",
@@ -443,7 +443,7 @@ export default function CreateRoutine() {
                                 border: `1px solid ${isDark ? "#444" : "#ddd"}`,
                                 fontSize: "1rem",
                                 width: "100%",
-                                fontFamily: "Arial, sans-serif",
+                                fontFamily: "inherit",
                                 backgroundColor: isDark ? "#2a2a2a" : "#fff",
                                 color: isDark ? "#fff" : "#333"
                               }}
@@ -462,7 +462,7 @@ export default function CreateRoutine() {
                                 border: `1px solid ${isDark ? "#444" : "#ddd"}`,
                                 fontSize: "1rem",
                                 width: "100%",
-                                fontFamily: "Arial, sans-serif",
+                                fontFamily: "inherit",
                                 backgroundColor: isDark ? "#2a2a2a" : "#fff",
                                 color: isDark ? "#fff" : "#333"
                               }}

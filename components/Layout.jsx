@@ -85,7 +85,7 @@ export default function Layout({ children }) {
       display: "flex", 
       flexDirection: currentIsMobile ? "column" : "row",
       minHeight: "100vh", 
-      fontFamily: "Arial, sans-serif", 
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'", 
       backgroundColor: isDark ? "#0f0f0f" : "#f0f2f5",
       color: isDark ? "#fff" : "#333",
       transition: "background-color 0.3s ease",

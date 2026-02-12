@@ -167,16 +167,21 @@ export function UserProvider({ children }) {
       // 2. Ejecutar guardados en la nube en paralelo
       try {
         const privateSave = saveToCloud(`users/${authUser.uid}`, { profile: userData });
-        const publicSave = saveToCloud(`usersPublic/${authUser.uid}`, {
-          username: userData.username,
-          usernameLowercase: userData.username.toLowerCase(),
-          firstName: userData.firstName,
-          photoURL: userData.photoURL || authUser.photoURL,
-          photoScale: userData.photoScale || 1,
-          description: userData.description || "",
-          uid: authUser.uid,
-          following: following
-        });
+        
+        // Solo guardar en public si tenemos username
+        let publicSave = Promise.resolve();
+        if (userData.username) {
+          publicSave = saveToCloud(`usersPublic/${authUser.uid}`, {
+            username: userData.username,
+            usernameLowercase: userData.username.toLowerCase(),
+            firstName: userData.firstName || "",
+            photoURL: userData.photoURL || authUser.photoURL,
+            photoScale: userData.photoScale || 1,
+            description: userData.description || "",
+            uid: authUser.uid,
+            following: following
+          });
+        }
 
         await Promise.all([privateSave, publicSave]);
       } catch (e) {

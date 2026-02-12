@@ -639,34 +639,57 @@ export default function Profile() {
       {isEditing && (
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center",
+          backgroundColor: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center",
           justifyContent: "center", zIndex: 2000, padding: "20px",
-          backdropFilter: "blur(5px)"
+          backdropFilter: "blur(15px)"
         }}>
           <div style={{ 
-            backgroundColor: "#111", 
+            backgroundColor: "rgba(30, 30, 30, 0.8)", 
             padding: "30px", 
-            borderRadius: "24px", 
+            borderRadius: "30px", 
             width: "100%", 
-            maxWidth: "400px",
-            border: "1px solid #222",
-            boxShadow: "0 20px 40px rgba(0,0,0,0.4)"
+            maxWidth: "420px",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+            position: 'relative',
+            overflow: 'hidden'
           }}>
-            <h2 style={{ color: "#fff", marginBottom: "25px", textAlign: "center", fontSize: "1.4rem" }}>Editar Perfil</h2>
+            {/* Decoración glassmorphism */}
+            <div style={{
+              position: 'absolute',
+              top: '-50px',
+              right: '-50px',
+              width: '150px',
+              height: '150px',
+              backgroundColor: '#1dd1a1',
+              filter: 'blur(80px)',
+              opacity: 0.15,
+              pointerEvents: 'none'
+            }} />
+
+            <h2 style={{ 
+              color: "#fff", 
+              marginBottom: "30px", 
+              textAlign: "center", 
+              fontSize: "1.5rem",
+              fontWeight: "800",
+              letterSpacing: "-0.5px"
+            }}>Editar Perfil</h2>
             
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginBottom: '5px' }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "25px" }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
                 <div style={{ position: 'relative' }}>
                   <div style={{ 
-                    width: '90px', 
-                    height: '90px', 
+                    width: '110px', 
+                    height: '110px', 
                     borderRadius: '50%', 
-                    backgroundColor: '#1a1a1a', 
+                    backgroundColor: '#000', 
                     overflow: 'hidden', 
                     border: '3px solid #1dd1a1',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    boxShadow: '0 0 20px rgba(29, 209, 161, 0.2)'
                   }}>
                     {editData.photoURL ? (
                       <img 
@@ -680,26 +703,27 @@ export default function Profile() {
                         }} 
                       />
                     ) : (
-                      <span style={{ color: '#444', fontSize: '2rem' }}>👤</span>
+                      <span style={{ color: '#444', fontSize: '2.5rem' }}>👤</span>
                     )}
                   </div>
                   <label style={{ 
                     position: 'absolute',
-                    bottom: '0',
-                    right: '0',
+                    bottom: '5px',
+                    right: '5px',
                     backgroundColor: '#1dd1a1', 
                     color: '#000', 
-                    width: '30px',
-                    height: '30px',
+                    width: '34px',
+                    height: '34px',
                     borderRadius: '50%', 
                     cursor: 'pointer', 
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    border: '3px solid #111',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
-                  }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                    border: '3px solid #1a1a1a',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                    transition: 'transform 0.2s ease'
+                  }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.1)'} onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
                     <input 
                       type="file" 
                       accept="image/*" 
@@ -721,94 +745,111 @@ export default function Profile() {
                     />
                   </label>
                 </div>
-                {isProcessingImage && <span style={{ fontSize: '0.75rem', color: '#1dd1a1' }}>Procesando imagen...</span>}
-                {editData.photoURL && !isProcessingImage && (
-                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-                    <label style={{ color: '#888', fontSize: '0.75rem' }}>Ajustar zoom: {(editData.photoScale || 1).toFixed(1)}x</label>
+                
+                {isProcessingImage ? (
+                  <span style={{ fontSize: '0.8rem', color: '#1dd1a1', fontWeight: 'bold' }}>Procesando...</span>
+                ) : editData.photoURL && (
+                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '150px', color: '#888', fontSize: '0.75rem' }}>
+                      <span>Zoom</span>
+                      <span>{(editData.photoScale || 1).toFixed(1)}x</span>
+                    </div>
                     <input 
                       type="range"
                       min="1"
                       max="3"
-                      step="0.1"
+                      step="0.05"
                       value={editData.photoScale || 1}
                       onChange={(e) => setEditData({ ...editData, photoScale: parseFloat(e.target.value) })}
-                      style={{ width: '120px', accentColor: '#1dd1a1' }}
+                      style={{ 
+                        width: '150px', 
+                        accentColor: '#1dd1a1',
+                        cursor: 'pointer'
+                      }}
                     />
                   </div>
                 )}
-                <span style={{ fontSize: '0.8rem', color: '#666' }}>Toca el icono para cambiar foto</span>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                <label style={{ color: "#888", fontSize: "0.8rem", marginLeft: "5px" }}>Usuario</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ color: "#888", fontSize: "0.85rem", fontWeight: "600", marginLeft: "4px" }}>Usuario</label>
                 <input 
                   value={editData.username} 
                   onChange={e => setEditData({...editData, username: e.target.value})}
-                  placeholder="Nombre de usuario"
+                  placeholder="Ej: feeg_pro"
                   style={{ 
                     width: "100%", 
-                    padding: "12px 15px", 
-                    borderRadius: "12px", 
-                    border: "1px solid #222", 
-                    backgroundColor: "#000", 
+                    padding: "14px 18px", 
+                    borderRadius: "16px", 
+                    border: "1px solid rgba(255, 255, 255, 0.1)", 
+                    backgroundColor: "rgba(255, 255, 255, 0.05)", 
                     color: "#fff",
-                    fontSize: "0.95rem"
+                    fontSize: "1rem",
+                    outline: "none",
+                    transition: "border-color 0.2s ease"
                   }}
+                  onFocus={e => e.currentTarget.style.borderColor = "#1dd1a1"}
+                  onBlur={e => e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.1)"}
                 />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                <label style={{ color: "#888", fontSize: "0.8rem", marginLeft: "5px" }}>Nombre</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ color: "#888", fontSize: "0.85rem", fontWeight: "600", marginLeft: "4px" }}>Nombre</label>
                 <input 
                   value={editData.firstName} 
                   onChange={e => setEditData({...editData, firstName: e.target.value})}
-                  placeholder="Tu nombre"
+                  placeholder="Tu nombre completo"
                   style={{ 
                     width: "100%", 
-                    padding: "12px 15px", 
-                    borderRadius: "12px", 
-                    border: "1px solid #222", 
-                    backgroundColor: "#000", 
+                    padding: "14px 18px", 
+                    borderRadius: "16px", 
+                    border: "1px solid rgba(255, 255, 255, 0.1)", 
+                    backgroundColor: "rgba(255, 255, 255, 0.05)", 
                     color: "#fff",
-                    fontSize: "0.95rem"
+                    fontSize: "1rem",
+                    outline: "none"
                   }}
                 />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                <label style={{ color: "#888", fontSize: "0.8rem", marginLeft: "5px" }}>Descripción</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ color: "#888", fontSize: "0.85rem", fontWeight: "600", marginLeft: "4px" }}>Descripción</label>
                 <textarea 
                   value={editData.description} 
                   onChange={e => setEditData({...editData, description: e.target.value})}
-                  placeholder="Escribe algo sobre ti..."
+                  placeholder="¿Cuál es tu objetivo?"
                   style={{ 
                     width: "100%", 
-                    padding: "12px 15px", 
-                    borderRadius: "12px", 
-                    border: "1px solid #222", 
-                    backgroundColor: "#000", 
+                    padding: "14px 18px", 
+                    borderRadius: "16px", 
+                    border: "1px solid rgba(255, 255, 255, 0.1)", 
+                    backgroundColor: "rgba(255, 255, 255, 0.05)", 
                     color: "#fff", 
-                    minHeight: "100px",
-                    fontSize: "0.95rem",
-                    resize: "none"
+                    minHeight: "110px",
+                    fontSize: "1rem",
+                    resize: "none",
+                    outline: "none"
                   }}
                 />
               </div>
               
-              <div style={{ display: "flex", gap: "12px", marginTop: "10px" }}>
+              <div style={{ display: "flex", gap: "15px", marginTop: "15px" }}>
                 <button 
                   onClick={() => setIsEditing(false)} 
                   disabled={saving}
                   style={{ 
                     flex: 1, 
-                    padding: "14px", 
-                    borderRadius: "12px", 
-                    border: "1px solid #222", 
-                    backgroundColor: "transparent", 
+                    padding: "16px", 
+                    borderRadius: "16px", 
+                    border: "1px solid rgba(255, 255, 255, 0.1)", 
+                    backgroundColor: "rgba(255, 255, 255, 0.05)", 
                     color: "#fff",
                     fontWeight: "600",
-                    cursor: "pointer"
+                    cursor: "pointer",
+                    transition: "all 0.2s ease"
                   }}
+                  onMouseOver={e => e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)"}
+                  onMouseOut={e => e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.05)"}
                 >
                   Cancelar
                 </button>
@@ -816,24 +857,49 @@ export default function Profile() {
                   onClick={handleEditSave} 
                   disabled={saving}
                   style={{ 
-                    flex: 1, 
-                    padding: "14px", 
-                    borderRadius: "12px", 
+                    flex: 1.5, 
+                    padding: "16px", 
+                    borderRadius: "16px", 
                     border: "none", 
                     backgroundColor: "#1dd1a1", 
                     color: "#000", 
-                    fontWeight: "bold",
+                    fontWeight: "800",
+                    fontSize: "1rem",
                     cursor: saving ? "default" : "pointer",
                     opacity: saving ? 0.7 : 1,
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    boxShadow: '0 8px 20px rgba(29, 209, 161, 0.3)',
+                    transition: "all 0.2s ease"
                   }}
+                  onMouseOver={e => !saving && (e.currentTarget.style.transform = 'translateY(-2px)')}
+                  onMouseOut={e => !saving && (e.currentTarget.style.transform = 'translateY(0)')}
                 >
-                  {saving ? "Guardando..." : "Guardar"}
+                  {saving ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div className="spinner" />
+                      <span>Guardando...</span>
+                    </div>
+                  ) : "Guardar"}
                 </button>
               </div>
             </div>
+            
+            <style>{`
+              .spinner {
+                width: 18px;
+                height: 18px;
+                border: 3px solid rgba(0,0,0,0.1);
+                border-top: 3px solid #000;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+              }
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            `}</style>
           </div>
         </div>
       )}

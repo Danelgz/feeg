@@ -169,6 +169,7 @@ export function UserProvider({ children }) {
         usernameLowercase: userData.username.toLowerCase(),
         firstName: userData.firstName,
         photoURL: userData.photoURL || authUser.photoURL,
+        photoScale: userData.photoScale || 1,
         description: userData.description || "",
         uid: authUser.uid,
         following: following

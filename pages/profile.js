@@ -53,7 +53,8 @@ export default function Profile() {
     username: "",
     firstName: "",
     description: "",
-    photoURL: ""
+    photoURL: "",
+    photoScale: 1
   });
 
   useEffect(() => {
@@ -62,7 +63,8 @@ export default function Profile() {
         username: user.username || "",
         firstName: user.firstName || "",
         description: user.description || "Sin descripción",
-        photoURL: user.photoURL || authUser?.photoURL || ""
+        photoURL: user.photoURL || authUser?.photoURL || "",
+        photoScale: user.photoScale || 1
       });
     }
   }, [user, authUser]);
@@ -151,28 +153,39 @@ export default function Profile() {
 
   const handleEditSave = async () => {
     setSaving(true);
+    
+    // Timeout para evitar que se quede "cargando" infinitamente si falla la red
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Timeout: La operación tardó demasiado")), 15000)
+    );
+
     try {
       let nextPhotoURL = editData.photoURL;
-      if (nextPhotoURL && typeof nextPhotoURL === 'string' && nextPhotoURL.startsWith('data:') && authUser?.uid) {
-        const uploaded = await uploadProfilePhoto(authUser.uid, nextPhotoURL);
-        if (uploaded) {
-          nextPhotoURL = uploaded;
-        } else {
-          nextPhotoURL = user?.photoURL || authUser?.photoURL || "";
+      
+      const saveAction = async () => {
+        if (nextPhotoURL && typeof nextPhotoURL === 'string' && nextPhotoURL.startsWith('data:') && authUser?.uid) {
+          const uploaded = await uploadProfilePhoto(authUser.uid, nextPhotoURL);
+          if (uploaded) {
+            nextPhotoURL = uploaded;
+          }
         }
-      }
-      const updatedUser = {
-        ...user,
-        username: editData.username,
-        firstName: editData.firstName,
-        description: editData.description,
-        photoURL: nextPhotoURL
+        
+        const updatedUser = {
+          ...user,
+          username: editData.username,
+          firstName: editData.firstName,
+          description: editData.description,
+          photoURL: nextPhotoURL,
+          photoScale: editData.photoScale
+        };
+        await saveUser(updatedUser);
       };
-      await saveUser(updatedUser);
+
+      await Promise.race([saveAction(), timeoutPromise]);
       setIsEditing(false);
     } catch (e) {
       console.error("Error saving profile:", e);
-      alert("Error al guardar el perfil");
+      alert(e.message || "Error al guardar el perfil. Revisa tu conexión.");
     } finally {
       setSaving(false);
     }
@@ -320,8 +333,7 @@ export default function Profile() {
         backgroundColor: "#000",
         color: "#fff",
         minHeight: "100vh",
-        padding: "20px",
-        fontFamily: "Arial, sans-serif"
+        padding: "20px"
       }}>
         {/* Header - Name and Symbols above photo */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
@@ -359,7 +371,18 @@ export default function Profile() {
               border: "2px solid #1dd1a1"
             }}
           >
-            {user?.photoURL ? <img src={user.photoURL} alt="Perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : "Perfil"}
+            {user?.photoURL ? (
+              <img 
+                src={user.photoURL} 
+                alt="Perfil" 
+                style={{ 
+                  width: "100%", 
+                  height: "100%", 
+                  objectFit: "cover",
+                  transform: `scale(${user.photoScale || 1})`
+                }} 
+              />
+            ) : "Perfil"}
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: "bold", fontSize: "1.1rem" }}>{user?.firstName || "Nombre"}</div>
@@ -602,7 +625,16 @@ export default function Profile() {
                     justifyContent: 'center'
                   }}>
                     {editData.photoURL ? (
-                      <img src={editData.photoURL} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img 
+                        src={editData.photoURL} 
+                        alt="Preview" 
+                        style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          objectFit: 'cover',
+                          transform: `scale(${editData.photoScale || 1})`
+                        }} 
+                      />
                     ) : (
                       <span style={{ color: '#444', fontSize: '2rem' }}>👤</span>
                     )}
@@ -633,7 +665,7 @@ export default function Profile() {
                         if (file) {
                           const reader = new FileReader();
                           reader.onloadend = () => {
-                            setEditData({ ...editData, photoURL: reader.result });
+                            setEditData({ ...editData, photoURL: reader.result, photoScale: 1 });
                           };
                           reader.readAsDataURL(file);
                         }
@@ -641,6 +673,20 @@ export default function Profile() {
                     />
                   </label>
                 </div>
+                {editData.photoURL && (
+                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                    <label style={{ color: '#888', fontSize: '0.75rem' }}>Ajustar zoom: {(editData.photoScale || 1).toFixed(1)}x</label>
+                    <input 
+                      type="range"
+                      min="1"
+                      max="3"
+                      step="0.1"
+                      value={editData.photoScale || 1}
+                      onChange={(e) => setEditData({ ...editData, photoScale: parseFloat(e.target.value) })}
+                      style={{ width: '120px', accentColor: '#1dd1a1' }}
+                    />
+                  </div>
+                )}
                 <span style={{ fontSize: '0.8rem', color: '#666' }}>Toca el icono para cambiar foto</span>
               </div>
 

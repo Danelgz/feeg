@@ -1031,8 +1031,7 @@ export default function RoutineDetail() {
           margin: "0 auto", 
           backgroundColor: "#000", 
           minHeight: "100vh",
-          color: "#fff",
-          fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+          color: "#fff"
         }}>
           {/* Header Superior Estilo Captura */}
           <div style={{

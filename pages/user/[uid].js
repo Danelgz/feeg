@@ -125,7 +125,6 @@ export default function UserProfile() {
         color: "#fff",
         minHeight: "100vh",
         padding: "20px",
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         maxWidth: "600px",
         margin: "0 auto"
       }}>

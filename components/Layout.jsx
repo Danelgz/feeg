@@ -104,6 +104,10 @@ export default function Layout({ children }) {
             transition: background-color 0.3s ease;
             height: 100%;
             width: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+          }
+          * {
+            font-family: inherit;
           }
           #__next {
             min-height: 100%;

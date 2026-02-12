@@ -182,8 +182,7 @@ export default function Measures() {
         backgroundColor: "#000",
         color: "#fff",
         minHeight: "100vh",
-        padding: isMobile ? "20px 15px 100px 15px" : "30px",
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        padding: isMobile ? "20px 15px 100px 15px" : "30px"
       }}>
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>

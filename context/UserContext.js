@@ -177,6 +177,8 @@ export function UserProvider({ children }) {
             firstName: userData.firstName || "",
             photoURL: userData.photoURL || authUser.photoURL,
             photoScale: userData.photoScale || 1,
+            photoPosX: userData.photoPosX || 0,
+            photoPosY: userData.photoPosY || 0,
             description: userData.description || "",
             uid: authUser.uid,
             following: following

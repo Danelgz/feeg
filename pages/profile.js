@@ -37,6 +37,34 @@ export default function Profile() {
   const [isPhotoFullScreen, setIsPhotoFullScreen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  
+  const handleDragStart = (e) => {
+    if (!editData.photoURL) return;
+    setIsDragging(true);
+    const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+    setDragStart({ 
+      x: clientX - (editData.photoPosX || 0), 
+      y: clientY - (editData.photoPosY || 0) 
+    });
+  };
+
+  const handleDragMove = (e) => {
+    if (!isDragging) return;
+    const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+    setEditData({
+      ...editData,
+      photoPosX: clientX - dragStart.x,
+      photoPosY: clientY - dragStart.y
+    });
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
 
   const compressImage = (dataUrl, maxWidth = 500, quality = 0.7) => {
     return new Promise((resolve) => {
@@ -82,7 +110,9 @@ export default function Profile() {
     firstName: "",
     description: "",
     photoURL: "",
-    photoScale: 1
+    photoScale: 1,
+    photoPosX: 0,
+    photoPosY: 0
   });
 
   useEffect(() => {
@@ -92,7 +122,9 @@ export default function Profile() {
         firstName: user.firstName || "",
         description: user.description || "Sin descripción",
         photoURL: user.photoURL || authUser?.photoURL || "",
-        photoScale: user.photoScale || 1
+        photoScale: user.photoScale || 1,
+        photoPosX: user.photoPosX || 0,
+        photoPosY: user.photoPosY || 0
       });
     }
   }, [user, authUser]);
@@ -219,7 +251,9 @@ export default function Profile() {
           firstName: editData.firstName,
           description: editData.description,
           photoURL: finalPhotoURL,
-          photoScale: editData.photoScale
+          photoScale: editData.photoScale,
+          photoPosX: editData.photoPosX,
+          photoPosY: editData.photoPosY
         };
         
         await saveUser(updatedUser);
@@ -429,7 +463,7 @@ export default function Profile() {
                   width: "100%", 
                   height: "100%", 
                   objectFit: "cover",
-                  transform: `scale(${user.photoScale || 1})`
+                  transform: `scale(${user.photoScale || 1}) translate(${user.photoPosX || 0}px, ${user.photoPosY || 0}px)`
                 }} 
               />
             ) : <span style={{ fontSize: "2rem" }}>👤</span>}
@@ -688,11 +722,21 @@ export default function Profile() {
                       <img 
                         src={editData.photoURL} 
                         alt="Preview" 
+                        onMouseDown={handleDragStart}
+                        onMouseMove={handleDragMove}
+                        onMouseUp={handleDragEnd}
+                        onMouseLeave={handleDragEnd}
+                        onTouchStart={handleDragStart}
+                        onTouchMove={handleDragMove}
+                        onTouchEnd={handleDragEnd}
                         style={{ 
                           width: '100%', 
                           height: '100%', 
                           objectFit: 'cover',
-                          transform: `scale(${editData.photoScale || 1})`
+                          transform: `scale(${editData.photoScale || 1}) translate(${editData.photoPosX || 0}px, ${editData.photoPosY || 0}px)`,
+                          cursor: isDragging ? 'grabbing' : 'grab',
+                          userSelect: 'none',
+                          touchAction: 'none'
                         }} 
                       />
                     ) : <span style={{ fontSize: '2rem' }}>👤</span>}
@@ -725,7 +769,7 @@ export default function Profile() {
                           const reader = new FileReader();
                           reader.onloadend = async () => {
                             const compressed = await compressImage(reader.result);
-                            setEditData({ ...editData, photoURL: compressed, photoScale: 1 });
+                            setEditData({ ...editData, photoURL: compressed, photoScale: 1, photoPosX: 0, photoPosY: 0 });
                             setIsProcessingImage(false);
                           };
                           reader.readAsDataURL(file);

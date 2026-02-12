@@ -36,6 +36,30 @@ export default function Profile() {
   const [followingList, setFollowingList] = useState([]);
   const [isPhotoFullScreen, setIsPhotoFullScreen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+
+  const compressImage = (dataUrl, maxWidth = 500, quality = 0.7) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = dataUrl;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = (maxWidth / width) * height;
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+    });
+  };
 
   const handleOpenFollowers = async () => {
     setShowFollowers(true);
@@ -156,7 +180,7 @@ export default function Profile() {
     
     // Timeout para evitar que se quede "cargando" infinitamente si falla la red
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("Timeout: La operación tardó demasiado")), 15000)
+      setTimeout(() => reject(new Error("Timeout: La operación tardó demasiado")), 30000)
     );
 
     try {
@@ -660,12 +684,16 @@ export default function Profile() {
                       type="file" 
                       accept="image/*" 
                       style={{ display: 'none' }} 
-                      onChange={(e) => {
+                      disabled={isProcessingImage}
+                      onChange={async (e) => {
                         const file = e.target.files[0];
                         if (file) {
+                          setIsProcessingImage(true);
                           const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setEditData({ ...editData, photoURL: reader.result, photoScale: 1 });
+                          reader.onloadend = async () => {
+                            const compressed = await compressImage(reader.result);
+                            setEditData({ ...editData, photoURL: compressed, photoScale: 1 });
+                            setIsProcessingImage(false);
                           };
                           reader.readAsDataURL(file);
                         }
@@ -673,7 +701,8 @@ export default function Profile() {
                     />
                   </label>
                 </div>
-                {editData.photoURL && (
+                {isProcessingImage && <span style={{ fontSize: '0.75rem', color: '#1dd1a1' }}>Procesando imagen...</span>}
+                {editData.photoURL && !isProcessingImage && (
                   <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
                     <label style={{ color: '#888', fontSize: '0.75rem' }}>Ajustar zoom: {(editData.photoScale || 1).toFixed(1)}x</label>
                     <input 

@@ -35,6 +35,7 @@ export default function Profile() {
   const [followersList, setFollowersList] = useState([]);
   const [followingList, setFollowingList] = useState([]);
   const [isPhotoFullScreen, setIsPhotoFullScreen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const handleOpenFollowers = async () => {
     setShowFollowers(true);
@@ -149,24 +150,32 @@ export default function Profile() {
   };
 
   const handleEditSave = async () => {
-    let nextPhotoURL = editData.photoURL;
-    if (nextPhotoURL && typeof nextPhotoURL === 'string' && nextPhotoURL.startsWith('data:') && authUser?.uid) {
-      const uploaded = await uploadProfilePhoto(authUser.uid, nextPhotoURL);
-      if (uploaded) {
-        nextPhotoURL = uploaded;
-      } else {
-        nextPhotoURL = user?.photoURL || authUser?.photoURL || "";
+    setSaving(true);
+    try {
+      let nextPhotoURL = editData.photoURL;
+      if (nextPhotoURL && typeof nextPhotoURL === 'string' && nextPhotoURL.startsWith('data:') && authUser?.uid) {
+        const uploaded = await uploadProfilePhoto(authUser.uid, nextPhotoURL);
+        if (uploaded) {
+          nextPhotoURL = uploaded;
+        } else {
+          nextPhotoURL = user?.photoURL || authUser?.photoURL || "";
+        }
       }
+      const updatedUser = {
+        ...user,
+        username: editData.username,
+        firstName: editData.firstName,
+        description: editData.description,
+        photoURL: nextPhotoURL
+      };
+      await saveUser(updatedUser);
+      setIsEditing(false);
+    } catch (e) {
+      console.error("Error saving profile:", e);
+      alert("Error al guardar el perfil");
+    } finally {
+      setSaving(false);
     }
-    const updatedUser = {
-      ...user,
-      username: editData.username,
-      firstName: editData.firstName,
-      description: editData.description,
-      photoURL: nextPhotoURL
-    };
-    await saveUser(updatedUser);
-    setIsEditing(false);
   };
 
   const [viewingSummary, setViewingSummary] = useState(null);
@@ -314,6 +323,22 @@ export default function Profile() {
         padding: "20px",
         fontFamily: "Arial, sans-serif"
       }}>
+        {/* Header - Name and Symbols above photo */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+          <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", margin: 0 }}>{user?.username || "Nombre_usuario"}</h1>
+          <div style={{ display: "flex", gap: "15px" }}>
+            <button onClick={() => setIsEditing(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "#fff" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+            </button>
+            <button style={{ background: "none", border: "none", cursor: "pointer", color: "#fff" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+            </button>
+            <button onClick={() => router.push("/settings")} style={{ background: "none", border: "none", cursor: "pointer", color: "#fff" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </button>
+          </div>
+        </div>
+
         {/* Profile Info */}
         <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "20px" }}>
           <div 
@@ -355,20 +380,9 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", margin: 0 }}>{user?.username || "Nombre_usuario"}</h1>
-          <div style={{ display: "flex", gap: "15px" }}>
-            <button onClick={() => setIsEditing(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "#fff" }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-            </button>
-            <button style={{ background: "none", border: "none", cursor: "pointer", color: "#fff" }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
-            </button>
-            <button onClick={() => router.push("/settings")} style={{ background: "none", border: "none", cursor: "pointer", color: "#fff" }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            </button>
-          </div>
+        {/* Description */}
+        <div style={{ marginBottom: "20px", fontSize: "0.95rem", color: "#eee", lineHeight: "1.4" }}>
+          {user?.description || "Sin descripción"}
         </div>
 
         {/* Description */}
@@ -558,72 +572,171 @@ export default function Profile() {
       {isEditing && (
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center",
-          justifyContent: "center", zIndex: 2000, padding: "20px"
+          backgroundColor: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center",
+          justifyContent: "center", zIndex: 2000, padding: "20px",
+          backdropFilter: "blur(5px)"
         }}>
-          <div style={{ backgroundColor: "#1a1a1a", padding: "25px", borderRadius: "15px", width: "100%", maxWidth: "400px" }}>
-            <h2 style={{ color: "#fff", marginBottom: "20px" }}>Editar Perfil</h2>
+          <div style={{ 
+            backgroundColor: "#111", 
+            padding: "30px", 
+            borderRadius: "24px", 
+            width: "100%", 
+            maxWidth: "400px",
+            border: "1px solid #222",
+            boxShadow: "0 20px 40px rgba(0,0,0,0.4)"
+          }}>
+            <h2 style={{ color: "#fff", marginBottom: "25px", textAlign: "center", fontSize: "1.4rem" }}>Editar Perfil</h2>
             
-            <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#333', overflow: 'hidden', border: '2px solid #1dd1a1' }}>
-                  {editData.photoURL ? <img src={editData.photoURL} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginBottom: '5px' }}>
+                <div style={{ position: 'relative' }}>
+                  <div style={{ 
+                    width: '90px', 
+                    height: '90px', 
+                    borderRadius: '50%', 
+                    backgroundColor: '#1a1a1a', 
+                    overflow: 'hidden', 
+                    border: '3px solid #1dd1a1',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    {editData.photoURL ? (
+                      <img src={editData.photoURL} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ color: '#444', fontSize: '2rem' }}>👤</span>
+                    )}
+                  </div>
+                  <label style={{ 
+                    position: 'absolute',
+                    bottom: '0',
+                    right: '0',
+                    backgroundColor: '#1dd1a1', 
+                    color: '#000', 
+                    width: '30px',
+                    height: '30px',
+                    borderRadius: '50%', 
+                    cursor: 'pointer', 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '3px solid #111',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                  }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      style={{ display: 'none' }} 
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setEditData({ ...editData, photoURL: reader.result });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
                 </div>
-                <label style={{ 
-                  backgroundColor: '#222', 
-                  color: '#1dd1a1', 
-                  padding: '8px 15px', 
-                  borderRadius: '8px', 
-                  cursor: 'pointer', 
-                  fontSize: '0.85rem',
-                  border: '1px solid #333'
-                }}>
-                  Cambiar foto
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    style={{ display: 'none' }} 
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          setEditData({ ...editData, photoURL: reader.result });
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                  />
-                </label>
+                <span style={{ fontSize: '0.8rem', color: '#666' }}>Toca el icono para cambiar foto</span>
               </div>
-              <div>
-                <label style={{ color: "#888", fontSize: "0.8rem" }}>Usuario</label>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                <label style={{ color: "#888", fontSize: "0.8rem", marginLeft: "5px" }}>Usuario</label>
                 <input 
                   value={editData.username} 
                   onChange={e => setEditData({...editData, username: e.target.value})}
-                  style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #333", backgroundColor: "#000", color: "#fff" }}
+                  placeholder="Nombre de usuario"
+                  style={{ 
+                    width: "100%", 
+                    padding: "12px 15px", 
+                    borderRadius: "12px", 
+                    border: "1px solid #222", 
+                    backgroundColor: "#000", 
+                    color: "#fff",
+                    fontSize: "0.95rem"
+                  }}
                 />
               </div>
-              <div>
-                <label style={{ color: "#888", fontSize: "0.8rem" }}>Nombre</label>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                <label style={{ color: "#888", fontSize: "0.8rem", marginLeft: "5px" }}>Nombre</label>
                 <input 
                   value={editData.firstName} 
                   onChange={e => setEditData({...editData, firstName: e.target.value})}
-                  style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #333", backgroundColor: "#000", color: "#fff" }}
+                  placeholder="Tu nombre"
+                  style={{ 
+                    width: "100%", 
+                    padding: "12px 15px", 
+                    borderRadius: "12px", 
+                    border: "1px solid #222", 
+                    backgroundColor: "#000", 
+                    color: "#fff",
+                    fontSize: "0.95rem"
+                  }}
                 />
               </div>
-              <div>
-                <label style={{ color: "#888", fontSize: "0.8rem" }}>Descripción</label>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                <label style={{ color: "#888", fontSize: "0.8rem", marginLeft: "5px" }}>Descripción</label>
                 <textarea 
                   value={editData.description} 
                   onChange={e => setEditData({...editData, description: e.target.value})}
-                  style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #333", backgroundColor: "#000", color: "#fff", minHeight: "80px" }}
+                  placeholder="Escribe algo sobre ti..."
+                  style={{ 
+                    width: "100%", 
+                    padding: "12px 15px", 
+                    borderRadius: "12px", 
+                    border: "1px solid #222", 
+                    backgroundColor: "#000", 
+                    color: "#fff", 
+                    minHeight: "100px",
+                    fontSize: "0.95rem",
+                    resize: "none"
+                  }}
                 />
               </div>
               
-              <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-                <button onClick={() => setIsEditing(false)} style={{ flex: 1, padding: "12px", borderRadius: "8px", border: "1px solid #333", backgroundColor: "transparent", color: "#fff" }}>Cancelar</button>
-                <button onClick={handleEditSave} style={{ flex: 1, padding: "12px", borderRadius: "8px", border: "none", backgroundColor: "#1dd1a1", color: "#000", fontWeight: "bold" }}>Guardar</button>
+              <div style={{ display: "flex", gap: "12px", marginTop: "10px" }}>
+                <button 
+                  onClick={() => setIsEditing(false)} 
+                  disabled={saving}
+                  style={{ 
+                    flex: 1, 
+                    padding: "14px", 
+                    borderRadius: "12px", 
+                    border: "1px solid #222", 
+                    backgroundColor: "transparent", 
+                    color: "#fff",
+                    fontWeight: "600",
+                    cursor: "pointer"
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={handleEditSave} 
+                  disabled={saving}
+                  style={{ 
+                    flex: 1, 
+                    padding: "14px", 
+                    borderRadius: "12px", 
+                    border: "none", 
+                    backgroundColor: "#1dd1a1", 
+                    color: "#000", 
+                    fontWeight: "bold",
+                    cursor: saving ? "default" : "pointer",
+                    opacity: saving ? 0.7 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  {saving ? "Guardando..." : "Guardar"}
+                </button>
               </div>
             </div>
           </div>

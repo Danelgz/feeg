@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import Layout from "../components/Layout";
 import RegisterForm from "../components/RegisterForm";
 import { useUser } from "../context/UserContext";
-import { getFollowersList, getFollowingList } from "../lib/firebase";
+import { getFollowersList, getFollowingList, uploadProfilePhoto } from "../lib/firebase";
 
 export default function Profile() {
   const router = useRouter();
@@ -149,12 +149,21 @@ export default function Profile() {
   };
 
   const handleEditSave = async () => {
+    let nextPhotoURL = editData.photoURL;
+    if (nextPhotoURL && typeof nextPhotoURL === 'string' && nextPhotoURL.startsWith('data:') && authUser?.uid) {
+      const uploaded = await uploadProfilePhoto(authUser.uid, nextPhotoURL);
+      if (uploaded) {
+        nextPhotoURL = uploaded;
+      } else {
+        nextPhotoURL = user?.photoURL || authUser?.photoURL || "";
+      }
+    }
     const updatedUser = {
       ...user,
       username: editData.username,
       firstName: editData.firstName,
       description: editData.description,
-      photoURL: editData.photoURL
+      photoURL: nextPhotoURL
     };
     await saveUser(updatedUser);
     setIsEditing(false);

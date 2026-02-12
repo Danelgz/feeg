@@ -158,6 +158,9 @@ export function UserProvider({ children }) {
     setUser(userData);
     localStorage.setItem('userProfile', JSON.stringify(userData));
     if (authUser) {
+      if (userData?.photoURL) {
+        setAuthUser((prev) => (prev ? { ...prev, photoURL: userData.photoURL } : prev));
+      }
       // Guardar datos privados
       await saveToCloud(`users/${authUser.uid}`, { profile: userData });
       // Guardar datos públicos con usernameLowercase para búsqueda eficiente

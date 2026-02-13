@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { saveToCloud, getFromCloud } from "../lib/firebase";
+import { foodList } from "../data/foodList";
 
 export default function Food() {
   const { theme, isMobile, authUser } = useUser();
@@ -21,6 +22,8 @@ export default function Food() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
+  const [selectedFood, setSelectedFood] = useState(null);
+  const [foodGrams, setFoodGrams] = useState(100);
 
   const accentColor = "#1dd1a1";
 
@@ -99,30 +102,43 @@ export default function Food() {
   };
 
   const handleManualAdd = () => {
-    if (!manualInput.trim()) return;
+    if (!selectedFood) return;
     setIsAnalyzing(true);
-    setAnalysisResult(null);
     
     setTimeout(() => {
-      // Improved mock analysis of text
-      const input = manualInput.toLowerCase();
-      let items = [];
-      let feedback = "Análisis completado a partir de tu descripción.";
+      // Logic to calculate macros based on food type and weight
+      const food = selectedFood.toLowerCase();
+      const grams = foodGrams;
+      const ratio = grams / 100;
 
-      if (input.includes("pollo")) items.push({ name: "Pechuga de Pollo", quantity: "150g", calories: 250, protein: 45, carbs: 0, fats: 5 });
-      if (input.includes("arroz")) items.push({ name: "Arroz integral", quantity: "100g", calories: 110, protein: 3, carbs: 23, fats: 1 });
-      if (input.includes("huevo")) items.push({ name: "Huevo cocido", quantity: "2 unidades", calories: 140, protein: 12, carbs: 1, fats: 10 });
-      if (input.includes("ensalada")) items.push({ name: "Ensalada verde", quantity: "1 bol", calories: 45, protein: 2, carbs: 8, fats: 0.5 });
+      // Mock database of calories per 100g
+      let baseMacros = { cals: 150, p: 10, c: 20, f: 5 }; // default
+
+      if (food.includes("pollo")) baseMacros = { cals: 165, p: 31, c: 0, f: 3.6 };
+      else if (food.includes("arroz") || food.includes("pasta") || food.includes("avena")) baseMacros = { cals: 350, p: 7, c: 70, f: 2 };
+      else if (food.includes("ternera") || food.includes("cerdo")) baseMacros = { cals: 250, p: 26, c: 0, f: 15 };
+      else if (food.includes("manzana") || food.includes("pera") || food.includes("naranja")) baseMacros = { cals: 52, p: 0.3, c: 14, f: 0.2 };
+      else if (food.includes("nuez") || food.includes("almendra")) baseMacros = { cals: 600, p: 20, c: 10, f: 50 };
+      else if (food.includes("aceite")) baseMacros = { cals: 884, p: 0, c: 0, f: 100 };
+      else if (food.includes("huevo")) baseMacros = { cals: 155, p: 13, c: 1.1, f: 11 };
+      else if (food.includes("pan")) baseMacros = { cals: 265, p: 9, c: 49, f: 3.2 };
+
+      const detected = {
+        name: `${selectedFood} (${grams}g)`,
+        calories: Math.round(baseMacros.cals * ratio),
+        protein: Math.round(baseMacros.p * ratio),
+        carbs: Math.round(baseMacros.c * ratio),
+        fats: Math.round(baseMacros.f * ratio),
+        id: Date.now()
+      };
       
-      if (items.length === 0) {
-        items.push({ name: manualInput, quantity: "1 ración", calories: 200, protein: 10, carbs: 20, fats: 5 });
-        feedback = "He estimado los valores para esta comida. Intenta ser más específico para mayor precisión.";
-      }
-
-      setAnalysisResult({ items, feedback });
+      setDailyFoods([...dailyFoods, detected]);
+      setManualInput("");
+      setSelectedFood(null);
+      setFoodGrams(100);
       setIsAnalyzing(false);
-      setActiveTab("photo"); // Redirect to the analysis view
-    }, 1500);
+      setActiveTab("daily");
+    }, 800);
   };
 
   const handlePhotoUpload = (e) => {
@@ -384,17 +400,113 @@ export default function Food() {
 
         {activeTab === "manual" && (
           <div style={cardStyle}>
-            <h3>Registro Manual</h3>
-            <p style={{ fontSize: "0.9rem", color: "#888", marginBottom: "20px" }}>Escribe lo que has comido. La IA reconocerá los alimentos.</p>
-            <input 
-              placeholder="Ej: 150g de pechuga de pollo y 200g de arroz" 
-              style={inputStyle} 
-              value={manualInput}
-              onChange={e => setManualInput(e.target.value)}
-              onKeyPress={e => e.key === "Enter" && handleManualAdd()}
-            />
-            <button onClick={handleManualAdd} disabled={isAnalyzing} style={{ ...buttonStyle, opacity: isAnalyzing ? 0.7 : 1 }}>
-              {isAnalyzing ? "Identificando alimentos..." : "Añadir al registro"}
+            <h3>Añadir Alimento</h3>
+            <p style={{ fontSize: "0.9rem", color: "#888", marginBottom: "20px" }}>Selecciona un alimento de la lista y su peso en gramos.</p>
+            
+            <div style={{ position: "relative", marginBottom: "15px" }}>
+              <input 
+                placeholder="Buscar alimento... (ej: Pollo, Arroz)" 
+                style={inputStyle} 
+                value={manualInput}
+                onChange={e => {
+                  setManualInput(e.target.value);
+                  if (selectedFood) setSelectedFood(null);
+                }}
+              />
+              {manualInput && !selectedFood && (
+                <div style={{
+                  position: "absolute",
+                  top: "100%",
+                  left: 0,
+                  right: 0,
+                  backgroundColor: isDark ? "#222" : "#fff",
+                  border: `1px solid ${isDark ? "#444" : "#ccc"}`,
+                  borderRadius: "8px",
+                  zIndex: 10,
+                  maxHeight: "200px",
+                  overflowY: "auto",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.2)"
+                }}>
+                  {foodList
+                    .filter(f => f.toLowerCase().includes(manualInput.toLowerCase()))
+                    .map((food, idx) => (
+                      <div 
+                        key={idx} 
+                        onClick={() => {
+                          setSelectedFood(food);
+                          setManualInput(food);
+                        }}
+                        style={{
+                          padding: "12px",
+                          cursor: "pointer",
+                          borderBottom: idx === foodList.length - 1 ? "none" : `1px solid ${isDark ? "#333" : "#eee"}`,
+                          color: isDark ? "#fff" : "#333",
+                          backgroundColor: "transparent"
+                        }}
+                        onMouseOver={e => e.currentTarget.style.backgroundColor = isDark ? "#333" : "#f5f5f5"}
+                        onMouseOut={e => e.currentTarget.style.backgroundColor = "transparent"}
+                      >
+                        {food}
+                      </div>
+                    ))
+                  }
+                  {foodList.filter(f => f.toLowerCase().includes(manualInput.toLowerCase())).length === 0 && (
+                    <div style={{ padding: "12px", color: "#888", textAlign: "center" }}>No se encontraron resultados</div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {selectedFood && (
+              <div style={{ 
+                backgroundColor: isDark ? "#000" : "#f9f9f9", 
+                padding: "15px", 
+                borderRadius: "10px", 
+                marginBottom: "15px",
+                border: `1px solid ${accentColor}44`
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                  <span style={{ fontWeight: "bold" }}>Cantidad (gramos)</span>
+                  <span style={{ color: accentColor, fontWeight: "bold" }}>{foodGrams}g</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="1" 
+                  max="1000" 
+                  step="5"
+                  value={foodGrams}
+                  onChange={e => setFoodGrams(parseInt(e.target.value))}
+                  style={{ width: "100%", accentColor: accentColor, cursor: "pointer" }}
+                />
+                <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+                  {[50, 100, 150, 200, 250].map(val => (
+                    <button 
+                      key={val}
+                      onClick={() => setFoodGrams(val)}
+                      style={{
+                        flex: 1,
+                        padding: "5px",
+                        borderRadius: "5px",
+                        border: `1px solid ${foodGrams === val ? accentColor : (isDark ? "#444" : "#ccc")}`,
+                        backgroundColor: foodGrams === val ? `${accentColor}22` : "transparent",
+                        color: foodGrams === val ? accentColor : (isDark ? "#fff" : "#333"),
+                        fontSize: "0.8rem",
+                        cursor: "pointer"
+                      }}
+                    >
+                      {val}g
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <button 
+              onClick={handleManualAdd} 
+              disabled={!selectedFood || isAnalyzing} 
+              style={{ ...buttonStyle, opacity: (!selectedFood || isAnalyzing) ? 0.5 : 1 }}
+            >
+              {isAnalyzing ? "Analizando..." : "Añadir a mi registro"}
             </button>
           </div>
         )}

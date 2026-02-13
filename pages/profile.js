@@ -689,137 +689,119 @@ export default function Profile() {
             }}>Editar Perfil</h2>
             
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', width: '100%' }}>
-                  <div style={{ position: 'relative', cursor: 'move' }}>
-                    <div style={{ 
-                      width: '150px', 
-                      height: '150px', 
-                      borderRadius: '50%', 
-                      backgroundColor: '#000', 
-                      overflow: 'hidden', 
-                      border: '3px solid #1dd1a1',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      position: 'relative',
-                      boxShadow: '0 0 20px rgba(29, 209, 161, 0.3)'
-                    }}>
-                      {editData.photoURL ? (
-                        <img 
-                          src={editData.photoURL} 
-                          alt="Preview" 
-                          onMouseDown={handleDragStart}
-                          onMouseMove={handleDragMove}
-                          onMouseUp={handleDragEnd}
-                          onMouseLeave={handleDragEnd}
-                          onTouchStart={handleDragStart}
-                          onTouchMove={handleDragMove}
-                          onTouchEnd={handleDragEnd}
-                          style={{ 
-                            width: '100%', 
-                            height: '100%', 
-                            objectFit: 'cover',
-                            transform: `scale(${editData.photoScale || 1}) translate(${editData.photoPosX || 0}px, ${editData.photoPosY || 0}px)`,
-                            cursor: isDragging ? 'grabbing' : 'grab',
-                            userSelect: 'none',
-                            touchAction: 'none',
-                            transition: isDragging ? 'none' : 'transform 0.1s ease-out'
-                          }} 
-                        />
-                      ) : <span style={{ fontSize: '3rem' }}>👤</span>}
-                      
-                      {/* Overlay instruction */}
-                      <div style={{
-                        position: 'absolute',
-                        bottom: '10px',
-                        left: '0',
-                        right: '0',
-                        textAlign: 'center',
-                        fontSize: '0.65rem',
-                        color: '#fff',
-                        textShadow: '0 1px 3px rgba(0,0,0,0.8)',
-                        pointerEvents: 'none',
-                        opacity: 0.8
-                      }}>
-                        Arrastra para ajustar
-                      </div>
-                    </div>
-                    
-                    <label style={{ 
-                      position: 'absolute',
-                      bottom: '5px',
-                      right: '5px',
-                      backgroundColor: '#1dd1a1', 
-                      color: '#000', 
-                      width: '36px',
-                      height: '36px',
-                      borderRadius: '50%', 
-                      cursor: 'pointer', 
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: '3px solid #111',
-                      zIndex: 10
-                    }}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        style={{ display: 'none' }} 
-                        disabled={isProcessingImage}
-                        onChange={async (e) => {
-                          const file = e.target.files[0];
-                          if (file) {
-                            setIsProcessingImage(true);
-                            const reader = new FileReader();
-                            reader.onloadend = async () => {
-                              const compressed = await compressImage(reader.result);
-                              setEditData({ ...editData, photoURL: compressed, photoScale: 1, photoPosX: 0, photoPosY: 0 });
-                              setIsProcessingImage(false);
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', width: '100%' }}>
+                <div style={{ position: 'relative', cursor: 'move' }}>
+                  <div style={{ 
+                    width: '150px', 
+                    height: '150px', 
+                    borderRadius: '50%', 
+                    backgroundColor: '#000', 
+                    overflow: 'hidden', 
+                    border: '3px solid #1dd1a1',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative',
+                    boxShadow: '0 0 20px rgba(29, 209, 161, 0.3)'
+                  }}>
+                    {editData.photoURL ? (
+                      <img 
+                        src={editData.photoURL} 
+                        alt="Preview" 
+                        onMouseDown={handleDragStart}
+                        onMouseMove={handleDragMove}
+                        onMouseUp={handleDragEnd}
+                        onMouseLeave={handleDragEnd}
+                        onTouchStart={handleDragStart}
+                        onTouchMove={handleDragMove}
+                        onTouchEnd={handleDragEnd}
+                        style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          objectFit: 'cover',
+                          transform: `scale(${editData.photoScale || 1}) translate(${editData.photoPosX || 0}px, ${editData.photoPosY || 0}px)`,
+                          cursor: isDragging ? 'grabbing' : 'grab',
+                          userSelect: 'none',
+                          touchAction: 'none',
+                          transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+                        }} 
                       />
-                    </label>
-                  </div>
-
-                  {/* Zoom Control */}
-                  <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                      <span>ZOOM</span>
-                      <span>{(editData.photoScale || 1).toFixed(1)}x</span>
+                    ) : <span style={{ fontSize: '3rem' }}>👤</span>}
+                    
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '10px',
+                      left: '0',
+                      right: '0',
+                      textAlign: 'center',
+                      fontSize: '0.65rem',
+                      color: '#fff',
+                      textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+                      pointerEvents: 'none',
+                      opacity: 0.8
+                    }}>
+                      Arrastra para ajustar
                     </div>
+                  </div>
+                  
+                  <label style={{ 
+                    position: 'absolute',
+                    bottom: '5px',
+                    right: '5px',
+                    backgroundColor: '#1dd1a1', 
+                    color: '#000', 
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%', 
+                    cursor: 'pointer', 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '3px solid #111',
+                    zIndex: 10
+                  }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
                     <input 
-                      type="range"
-                      min="1"
-                      max="3"
-                      step="0.1"
-                      value={editData.photoScale || 1}
-                      onChange={(e) => setEditData({...editData, photoScale: parseFloat(e.target.value)})}
-                      style={{
-                        width: '100%',
-                        accentColor: '#1dd1a1',
-                        cursor: 'pointer'
+                      type="file" 
+                      accept="image/*" 
+                      style={{ display: 'none' }} 
+                      disabled={isProcessingImage}
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setIsProcessingImage(true);
+                          const reader = new FileReader();
+                          reader.onloadend = async () => {
+                            const compressed = await compressImage(reader.result);
+                            setEditData({ ...editData, photoURL: compressed, photoScale: 1, photoPosX: 0, photoPosY: 0 });
+                            setIsProcessingImage(false);
+                          };
+                          reader.readAsDataURL(file);
+                        }
                       }}
                     />
-                  </div>
+                  </label>
                 </div>
-                
-                {editData.photoURL && (
-                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '120px', color: '#888', fontSize: '0.7rem' }}>
-                      <span>Zoom</span>
-                      <span>{(editData.photoScale || 1).toFixed(1)}x</span>
-                    </div>
-                    <input 
-                      type="range" min="1" max="2.5" step="0.01"
-                      value={editData.photoScale || 1}
-                      onChange={(e) => setEditData({ ...editData, photoScale: parseFloat(e.target.value) })}
-                      style={{ width: '120px', accentColor: '#1dd1a1', cursor: 'pointer' }}
-                    />
+
+                <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                    <span>ZOOM</span>
+                    <span>{(editData.photoScale || 1).toFixed(1)}x</span>
                   </div>
-                )}
+                  <input 
+                    type="range"
+                    min="1"
+                    max="3"
+                    step="0.1"
+                    value={editData.photoScale || 1}
+                    onChange={(e) => setEditData({...editData, photoScale: parseFloat(e.target.value)})}
+                    style={{
+                      width: '100%',
+                      accentColor: '#1dd1a1',
+                      cursor: 'pointer'
+                    }}
+                  />
+                </div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>

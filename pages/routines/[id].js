@@ -1678,38 +1678,6 @@ export default function RoutineDetail() {
             </button>
           </div>
 
-          {/* Rest Timer Floating (Solo si está activo y no es el de arriba) */}
-          {restTimerActive && (
-            <div style={{
-              position: "fixed",
-              bottom: isMobile ? "90px" : "30px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              backgroundColor: mint,
-              color: "#000",
-              padding: "12px 24px",
-              borderRadius: "30px",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
-              display: "flex",
-              alignItems: "center",
-              gap: "15px",
-              zIndex: 2000
-            }}>
-              <button 
-                onClick={subtractRestTime}
-                style={{ background: "rgba(0,0,0,0.1)", border: "none", borderRadius: "50%", width: "30px", height: "30px", cursor: "pointer", fontWeight: "bold", fontSize: "1.2rem", display: "flex", alignItems: "center", justifyContent: "center" }}
-              >-</button>
-              <span style={{ fontWeight: "bold", minWidth: "80px", textAlign: "center" }}>Descanso: {formatRestTime(restCountdown)}</span>
-              <button 
-                onClick={addRestTime}
-                style={{ background: "rgba(0,0,0,0.1)", border: "none", borderRadius: "50%", width: "30px", height: "30px", cursor: "pointer", fontWeight: "bold", fontSize: "1.2rem", display: "flex", alignItems: "center", justifyContent: "center" }}
-              >+</button>
-              <button 
-                onClick={stopRestTimer}
-                style={{ background: "#000", color: "#fff", border: "none", borderRadius: "50%", width: "24px", height: "24px", cursor: "pointer", marginLeft: "5px" }}
-              >×</button>
-            </div>
-          )}
 
           {/* Modal para agregar ejercicio (Mantenemos la lógica existente) */}
           {showAddExerciseModal && exercisesData && (
@@ -2228,6 +2196,39 @@ export default function RoutineDetail() {
             </>
           )}
         </div>
+
+        {/* Floating Rest Timer - Always on top and fixed */}
+        {restTimerActive && (
+          <div style={{ 
+            position: "fixed", 
+            bottom: isMobile ? "90px" : "30px", 
+            left: "50%", 
+            transform: "translateX(-50%)", 
+            backgroundColor: mint, 
+            color: "#000", 
+            padding: "12px 24px", 
+            borderRadius: "30px", 
+            boxShadow: "0 4px 20px rgba(0,0,0,0.3)", 
+            display: "flex",
+            alignItems: "center",
+            gap: "15px",
+            zIndex: 9999 
+          }}>
+            <button 
+              onClick={subtractRestTime}
+              style={{ background: "rgba(0,0,0,0.1)", border: "none", borderRadius: "50%", width: "30px", height: "30px", cursor: "pointer", fontWeight: "bold", fontSize: "1.2rem", display: "flex", alignItems: "center", justifyContent: "center" }}
+            >-</button>
+            <span style={{ fontWeight: "bold", minWidth: "80px", textAlign: "center" }}>Descanso: {formatRestTime(restCountdown)}</span>
+            <button 
+              onClick={addRestTime}
+              style={{ background: "rgba(0,0,0,0.1)", border: "none", borderRadius: "50%", width: "30px", height: "30px", cursor: "pointer", fontWeight: "bold", fontSize: "1.2rem", display: "flex", alignItems: "center", justifyContent: "center" }}
+            >+</button>
+            <button 
+              onClick={stopRestTimer}
+              style={{ background: "#000", color: "#fff", border: "none", borderRadius: "50%", width: "24px", height: "24px", cursor: "pointer", marginLeft: "5px" }}
+            >×</button>
+          </div>
+        )}
       </Layout>
     );
   }

@@ -556,7 +556,7 @@ export default function EmptyRoutine() {
         {restTimerActive && (
           <div style={{ 
             position: "fixed", 
-            bottom: "20px", 
+            bottom: isMobile ? "90px" : "30px", 
             left: "50%", 
             transform: "translateX(-50%)", 
             backgroundColor: mint, 

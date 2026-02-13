@@ -20,6 +20,7 @@ export default function Food() {
   const [manualInput, setManualInput] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [analysisResult, setAnalysisResult] = useState(null);
 
   const accentColor = "#1dd1a1";
 
@@ -100,23 +101,28 @@ export default function Food() {
   const handleManualAdd = () => {
     if (!manualInput.trim()) return;
     setIsAnalyzing(true);
+    setAnalysisResult(null);
     
     setTimeout(() => {
-      // Improved mock analysis
+      // Improved mock analysis of text
       const input = manualInput.toLowerCase();
-      let detected = { name: manualInput, calories: 200, protein: 10, carbs: 20, fats: 5 };
+      let items = [];
+      let feedback = "Análisis completado a partir de tu descripción.";
+
+      if (input.includes("pollo")) items.push({ name: "Pechuga de Pollo", quantity: "150g", calories: 250, protein: 45, carbs: 0, fats: 5 });
+      if (input.includes("arroz")) items.push({ name: "Arroz integral", quantity: "100g", calories: 110, protein: 3, carbs: 23, fats: 1 });
+      if (input.includes("huevo")) items.push({ name: "Huevo cocido", quantity: "2 unidades", calories: 140, protein: 12, carbs: 1, fats: 10 });
+      if (input.includes("ensalada")) items.push({ name: "Ensalada verde", quantity: "1 bol", calories: 45, protein: 2, carbs: 8, fats: 0.5 });
       
-      if (input.includes("pollo")) detected = { ...detected, protein: 31, calories: 165, carbs: 0, fats: 3.6 };
-      if (input.includes("arroz")) detected = { ...detected, protein: 3, calories: 130, carbs: 28, fats: 0.3 };
-      if (input.includes("huevo")) detected = { ...detected, protein: 6, calories: 70, carbs: 0, fats: 5 };
-      if (input.includes("avena")) detected = { ...detected, protein: 5, calories: 150, carbs: 27, fats: 3 };
-      
-      const newFood = { ...detected, id: Date.now() };
-      setDailyFoods([...dailyFoods, newFood]);
-      setManualInput("");
+      if (items.length === 0) {
+        items.push({ name: manualInput, quantity: "1 ración", calories: 200, protein: 10, carbs: 20, fats: 5 });
+        feedback = "He estimado los valores para esta comida. Intenta ser más específico para mayor precisión.";
+      }
+
+      setAnalysisResult({ items, feedback });
       setIsAnalyzing(false);
-      setActiveTab("daily");
-    }, 1000);
+      setActiveTab("photo"); // Redirect to the analysis view
+    }, 1500);
   };
 
   const handlePhotoUpload = (e) => {
@@ -125,49 +131,57 @@ export default function Food() {
 
     setPhotoPreview(URL.createObjectURL(file));
     setIsAnalyzing(true);
+    setAnalysisResult(null);
 
     setTimeout(() => {
       // Simulation: recognizing multiple items in a photo
       const scenarios = [
         {
           items: [
-            { name: "Pechuga de Pollo (200g)", calories: 330, protein: 62, carbs: 0, fats: 7 },
-            { name: "Arroz Blanco (150g)", calories: 195, protein: 4, carbs: 42, fats: 0.5 },
-            { name: "Brócoli (100g)", calories: 34, protein: 3, carbs: 7, fats: 0.4 }
+            { name: "Pechuga de Pollo", quantity: "200g", calories: 330, protein: 62, carbs: 0, fats: 7 },
+            { name: "Arroz Blanco", quantity: "150g", calories: 195, protein: 4, carbs: 42, fats: 0.5 },
+            { name: "Brócoli", quantity: "100g", calories: 34, protein: 3, carbs: 7, fats: 0.4 }
           ],
           feedback: "Plato equilibrado. Buena cantidad de proteína y carbohidratos complejos."
         },
         {
           items: [
-            { name: "Salmón a la plancha (180g)", calories: 370, protein: 36, carbs: 0, fats: 24 },
-            { name: "Patata cocida (200g)", calories: 170, protein: 4, carbs: 38, fats: 0.2 },
-            { name: "Ensalada mixta", calories: 50, protein: 2, carbs: 8, fats: 1 }
+            { name: "Salmón a la plancha", quantity: "180g", calories: 370, protein: 36, carbs: 0, fats: 24 },
+            { name: "Patata cocida", quantity: "200g", calories: 170, protein: 4, carbs: 38, fats: 0.2 },
+            { name: "Ensalada mixta", quantity: "1 ración", calories: 50, protein: 2, carbs: 8, fats: 1 }
           ],
           feedback: "Excelente aporte de grasas saludables (Omega-3)."
         },
         {
           items: [
-            { name: "Pasta Boloñesa (300g)", calories: 550, protein: 25, carbs: 75, fats: 18 },
-            { name: "Queso Parmesano (20g)", calories: 80, protein: 7, carbs: 0, fats: 6 }
+            { name: "Pasta Boloñesa", quantity: "300g", calories: 550, protein: 25, carbs: 75, fats: 18 },
+            { name: "Queso Parmesano", quantity: "20g", calories: 80, protein: 7, carbs: 0, fats: 6 }
           ],
           feedback: "Comida densa en energía. Ideal si tienes un entrenamiento intenso hoy."
         }
       ];
       
       const scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
-      
-      const combinedFood = scenario.items.reduce((acc, item) => ({
-        calories: acc.calories + item.calories,
-        protein: acc.protein + item.protein,
-        carbs: acc.carbs + item.carbs,
-        fats: acc.fats + item.fats,
-        name: acc.name ? acc.name + " + " + item.name : item.name
-      }), { calories: 0, protein: 0, carbs: 0, fats: 0, name: "" });
-
-      setDailyFoods([...dailyFoods, { ...combinedFood, feedback: scenario.feedback, id: Date.now() }]);
+      setAnalysisResult(scenario);
       setIsAnalyzing(false);
-      setActiveTab("daily");
     }, 2500);
+  };
+
+  const confirmAnalysis = () => {
+    if (!analysisResult) return;
+    
+    const combinedFood = analysisResult.items.reduce((acc, item) => ({
+      calories: acc.calories + item.calories,
+      protein: acc.protein + item.protein,
+      carbs: acc.carbs + item.carbs,
+      fats: acc.fats + item.fats,
+      name: acc.name ? acc.name + " + " + item.name : item.name
+    }), { calories: 0, protein: 0, carbs: 0, fats: 0, name: "" });
+
+    setDailyFoods([...dailyFoods, { ...combinedFood, feedback: analysisResult.feedback, id: Date.now() }]);
+    setAnalysisResult(null);
+    setPhotoPreview(null);
+    setActiveTab("daily");
   };
 
   const totals = dailyFoods.reduce((acc, food) => ({
@@ -387,22 +401,64 @@ export default function Food() {
 
         {activeTab === "photo" && (
           <div style={{ ...cardStyle, textAlign: "center" }}>
-            <h3>Escáner de Comida</h3>
-            <p style={{ fontSize: "0.9rem", color: "#888", marginBottom: "20px" }}>Nuestra IA analizará los ingredientes de tu plato.</p>
-            
-            <div style={{ marginBottom: "20px" }}>
-              <label style={{ ...buttonStyle, display: "inline-block", cursor: "pointer", width: "auto" }}>
-                📸 Seleccionar Foto
-                <input type="file" accept="image/*" style={{ display: "none" }} onChange={handlePhotoUpload} />
-              </label>
-            </div>
+            {!analysisResult && !isAnalyzing ? (
+              <>
+                <h3>Escáner de Comida</h3>
+                <p style={{ fontSize: "0.9rem", color: "#888", marginBottom: "20px" }}>Nuestra IA analizará los ingredientes de tu plato.</p>
+                
+                <div style={{ display: "flex", flexDirection: "column", gap: "15px", alignItems: "center" }}>
+                  <label style={{ ...buttonStyle, display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", cursor: "pointer", width: "100%", padding: "15px" }}>
+                    <span style={{ fontSize: "1.2rem" }}>📸</span> 
+                    {isMobile ? "Hacer Foto al Plato" : "Subir Foto del Plato"}
+                    <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handlePhotoUpload} />
+                  </label>
+                  
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%" }}>
+                    <div style={{ flex: 1, height: "1px", backgroundColor: isDark ? "#333" : "#eee" }} />
+                    <span style={{ fontSize: "0.8rem", color: "#888" }}>o selecciona de la galería</span>
+                    <div style={{ flex: 1, height: "1px", backgroundColor: isDark ? "#333" : "#eee" }} />
+                  </div>
 
-            {isAnalyzing && (
-              <div style={{ marginTop: "20px" }}>
+                  <label style={{ ...buttonStyle, backgroundColor: "transparent", border: `2px solid ${accentColor}`, color: accentColor, display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", cursor: "pointer", width: "100%", padding: "12px" }}>
+                    <span style={{ fontSize: "1.2rem" }}>🖼️</span> 
+                    Abrir Galería
+                    <input type="file" accept="image/*" style={{ display: "none" }} onChange={handlePhotoUpload} />
+                  </label>
+                </div>
+              </>
+            ) : isAnalyzing ? (
+              <div style={{ marginTop: "10px" }}>
                 {photoPreview && <img src={photoPreview} alt="Preview" style={{ maxWidth: "100%", borderRadius: "10px", marginBottom: "15px", maxHeight: "300px", objectFit: "cover" }} />}
-                <div style={{ color: accentColor, fontWeight: "bold", fontSize: "1.1rem" }} className="loading-dots">
+                <div style={{ color: accentColor, fontWeight: "bold", fontSize: "1.1rem" }}>
                   La IA está analizando tu plato...
                 </div>
+              </div>
+            ) : (
+              <div style={{ textAlign: "left" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+                  <h3 style={{ margin: 0 }}>Análisis de la IA</h3>
+                  <button onClick={() => {setAnalysisResult(null); setPhotoPreview(null);}} style={{ background: "none", border: "none", color: "#ff4d4d", cursor: "pointer", fontWeight: "bold" }}>Cancelar</button>
+                </div>
+
+                {photoPreview && <img src={photoPreview} alt="Preview" style={{ width: "100%", borderRadius: "10px", marginBottom: "20px", maxHeight: "200px", objectFit: "cover" }} />}
+
+                <div style={{ backgroundColor: isDark ? "#000" : "#f9f9f9", padding: "15px", borderRadius: "10px", marginBottom: "20px" }}>
+                  <h4 style={{ margin: "0 0 10px 0", color: accentColor }}>Alimentos Detectados:</h4>
+                  {analysisResult.items.map((item, idx) => (
+                    <div key={idx} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: idx === analysisResult.items.length - 1 ? "none" : `1px solid ${isDark ? "#222" : "#eee"}` }}>
+                      <span>{item.name} <span style={{ color: "#888", fontSize: "0.85rem" }}>({item.quantity})</span></span>
+                      <span style={{ fontWeight: "bold" }}>{item.calories} kcal</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ backgroundColor: `${accentColor}11`, padding: "15px", borderRadius: "10px", borderLeft: `4px solid ${accentColor}`, marginBottom: "20px" }}>
+                  <strong>Consejo Nutricional:</strong> {analysisResult.feedback}
+                </div>
+
+                <button onClick={confirmAnalysis} style={buttonStyle}>
+                  Confirmar y Añadir a Mi Día
+                </button>
               </div>
             )}
           </div>

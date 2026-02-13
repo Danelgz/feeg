@@ -215,60 +215,45 @@ export default function Profile() {
     if (saving) return;
     setSaving(true);
     
-    // Timeout de seguridad: si en 25s no termina, lanzamos error
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("La operación tardó demasiado. Los cambios se guardarán en segundo plano.")), 25000)
-    );
-
     try {
       let finalPhotoURL = editData.photoURL;
+      const isNewPhoto = finalPhotoURL && typeof finalPhotoURL === 'string' && finalPhotoURL.startsWith('data:');
       
-      const saveAction = async () => {
-        // 1. Subir foto SOLO si es una nueva imagen (base64)
-        const isNewPhoto = finalPhotoURL && typeof finalPhotoURL === 'string' && finalPhotoURL.startsWith('data:');
-        
-        if (isNewPhoto && authUser?.uid) {
-          try {
-            console.log("[Profile] Nueva foto detectada, subiendo...");
-            const uploaded = await uploadProfilePhoto(authUser.uid, finalPhotoURL);
-            if (uploaded) {
-              finalPhotoURL = uploaded;
-            } else {
-              // Si la subida falla (CORS/Timeout), usamos la anterior para no perder el perfil
-              console.warn("[Profile] Falló la subida, usando foto anterior");
-              finalPhotoURL = user?.photoURL || authUser?.photoURL || "";
-            }
-          } catch (uploadErr) {
-            console.error("Error subiendo foto:", uploadErr);
-            finalPhotoURL = user?.photoURL || authUser?.photoURL || "";
-          }
-        }
-        
-        // 2. Construir objeto de usuario y guardar
-        const updatedUser = {
-          ...user,
-          username: editData.username,
-          firstName: editData.firstName,
-          description: editData.description,
-          photoURL: finalPhotoURL,
-          photoScale: editData.photoScale,
-          photoPosX: editData.photoPosX,
-          photoPosY: editData.photoPosY
-        };
-        
-        await saveUser(updatedUser);
+      // 1. Crear el objeto actualizado
+      const updatedUser = {
+        ...user,
+        username: editData.username,
+        firstName: editData.firstName,
+        description: editData.description,
+        photoURL: finalPhotoURL,
+        photoScale: editData.photoScale,
+        photoPosX: editData.photoPosX,
+        photoPosY: editData.photoPosY
       };
-
-      // Ejecutar la acción con un timeout
-      await Promise.race([saveAction(), timeoutPromise]);
+      
+      // 2. Guardar optimísticamente (actualiza UI y localStorage)
+      // Nota: saveUser en context/UserContext.js ya actualiza el estado inmediatamente
+      await saveUser(updatedUser);
+      
+      // 3. Si hay nueva foto, subirla en segundo plano
+      if (isNewPhoto && authUser?.uid) {
+        // No esperamos a la subida para cerrar el modal
+        console.log("[Profile] Iniciando subida de foto en segundo plano...");
+        uploadProfilePhoto(authUser.uid, finalPhotoURL).then(async (uploadedURL) => {
+          if (uploadedURL) {
+            console.log("[Profile] Foto subida con éxito, actualizando URL permanente...");
+            const finalUser = { ...updatedUser, photoURL: uploadedURL };
+            await saveUser(finalUser);
+          }
+        }).catch(err => {
+          console.error("[Profile] Error en subida de segundo plano:", err);
+        });
+      }
+      
       setIsEditing(false);
     } catch (e) {
       console.error("Error en handleEditSave:", e);
-      // Solo alertar si no es el timeout (que ya manejamos cerrando el modal)
-      if (!e.message?.includes("tardó demasiado")) {
-        alert(e.message || "Hubo un problema al guardar.");
-      }
-      setIsEditing(false);
+      alert(e.message || "Hubo un problema al guardar.");
     } finally {
       setSaving(false);
     }
@@ -704,79 +689,121 @@ export default function Profile() {
             }}>Editar Perfil</h2>
             
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-              {/* Foto de perfil con ajuste */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                <div style={{ position: 'relative' }}>
-                  <div style={{ 
-                    width: '100px', 
-                    height: '100px', 
-                    borderRadius: '50%', 
-                    backgroundColor: '#000', 
-                    overflow: 'hidden', 
-                    border: '3px solid #1dd1a1',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    {editData.photoURL ? (
-                      <img 
-                        src={editData.photoURL} 
-                        alt="Preview" 
-                        onMouseDown={handleDragStart}
-                        onMouseMove={handleDragMove}
-                        onMouseUp={handleDragEnd}
-                        onMouseLeave={handleDragEnd}
-                        onTouchStart={handleDragStart}
-                        onTouchMove={handleDragMove}
-                        onTouchEnd={handleDragEnd}
-                        style={{ 
-                          width: '100%', 
-                          height: '100%', 
-                          objectFit: 'cover',
-                          transform: `scale(${editData.photoScale || 1}) translate(${editData.photoPosX || 0}px, ${editData.photoPosY || 0}px)`,
-                          cursor: isDragging ? 'grabbing' : 'grab',
-                          userSelect: 'none',
-                          touchAction: 'none'
-                        }} 
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', width: '100%' }}>
+                  <div style={{ position: 'relative', cursor: 'move' }}>
+                    <div style={{ 
+                      width: '150px', 
+                      height: '150px', 
+                      borderRadius: '50%', 
+                      backgroundColor: '#000', 
+                      overflow: 'hidden', 
+                      border: '3px solid #1dd1a1',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      position: 'relative',
+                      boxShadow: '0 0 20px rgba(29, 209, 161, 0.3)'
+                    }}>
+                      {editData.photoURL ? (
+                        <img 
+                          src={editData.photoURL} 
+                          alt="Preview" 
+                          onMouseDown={handleDragStart}
+                          onMouseMove={handleDragMove}
+                          onMouseUp={handleDragEnd}
+                          onMouseLeave={handleDragEnd}
+                          onTouchStart={handleDragStart}
+                          onTouchMove={handleDragMove}
+                          onTouchEnd={handleDragEnd}
+                          style={{ 
+                            width: '100%', 
+                            height: '100%', 
+                            objectFit: 'cover',
+                            transform: `scale(${editData.photoScale || 1}) translate(${editData.photoPosX || 0}px, ${editData.photoPosY || 0}px)`,
+                            cursor: isDragging ? 'grabbing' : 'grab',
+                            userSelect: 'none',
+                            touchAction: 'none',
+                            transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+                          }} 
+                        />
+                      ) : <span style={{ fontSize: '3rem' }}>👤</span>}
+                      
+                      {/* Overlay instruction */}
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '10px',
+                        left: '0',
+                        right: '0',
+                        textAlign: 'center',
+                        fontSize: '0.65rem',
+                        color: '#fff',
+                        textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+                        pointerEvents: 'none',
+                        opacity: 0.8
+                      }}>
+                        Arrastra para ajustar
+                      </div>
+                    </div>
+                    
+                    <label style={{ 
+                      position: 'absolute',
+                      bottom: '5px',
+                      right: '5px',
+                      backgroundColor: '#1dd1a1', 
+                      color: '#000', 
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%', 
+                      cursor: 'pointer', 
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '3px solid #111',
+                      zIndex: 10
+                    }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        style={{ display: 'none' }} 
+                        disabled={isProcessingImage}
+                        onChange={async (e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            setIsProcessingImage(true);
+                            const reader = new FileReader();
+                            reader.onloadend = async () => {
+                              const compressed = await compressImage(reader.result);
+                              setEditData({ ...editData, photoURL: compressed, photoScale: 1, photoPosX: 0, photoPosY: 0 });
+                              setIsProcessingImage(false);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
                       />
-                    ) : <span style={{ fontSize: '2rem' }}>👤</span>}
+                    </label>
                   </div>
-                  <label style={{ 
-                    position: 'absolute',
-                    bottom: '0',
-                    right: '0',
-                    backgroundColor: '#1dd1a1', 
-                    color: '#000', 
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '50%', 
-                    cursor: 'pointer', 
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '2px solid #111'
-                  }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+
+                  {/* Zoom Control */}
+                  <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                      <span>ZOOM</span>
+                      <span>{(editData.photoScale || 1).toFixed(1)}x</span>
+                    </div>
                     <input 
-                      type="file" 
-                      accept="image/*" 
-                      style={{ display: 'none' }} 
-                      disabled={isProcessingImage}
-                      onChange={async (e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          setIsProcessingImage(true);
-                          const reader = new FileReader();
-                          reader.onloadend = async () => {
-                            const compressed = await compressImage(reader.result);
-                            setEditData({ ...editData, photoURL: compressed, photoScale: 1, photoPosX: 0, photoPosY: 0 });
-                            setIsProcessingImage(false);
-                          };
-                          reader.readAsDataURL(file);
-                        }
+                      type="range"
+                      min="1"
+                      max="3"
+                      step="0.1"
+                      value={editData.photoScale || 1}
+                      onChange={(e) => setEditData({...editData, photoScale: parseFloat(e.target.value)})}
+                      style={{
+                        width: '100%',
+                        accentColor: '#1dd1a1',
+                        cursor: 'pointer'
                       }}
                     />
-                  </label>
+                  </div>
                 </div>
                 
                 {editData.photoURL && (

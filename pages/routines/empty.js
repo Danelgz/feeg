@@ -156,6 +156,30 @@ export default function EmptyRoutine() {
     return () => clearInterval(interval);
   }, [restTimerActive, restCountdown]);
 
+  const formatRestTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return m > 0 ? `${m}:${s.toString().padStart(2, '0')}` : `${s}s`;
+  };
+
+  const stopRestTimer = () => {
+    setRestTimerActive(false);
+    setRestCountdown(0);
+  };
+
+  const addRestTime = () => {
+    setRestCountdown((prev) => prev + 10);
+  };
+
+  const subtractRestTime = () => {
+    setRestCountdown((prev) => Math.max(0, prev - 10));
+  };
+
+  const startRestTimer = (seconds) => {
+    setRestCountdown(seconds);
+    setRestTimerActive(true);
+  };
+
   const formatElapsedTime = (seconds) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -480,7 +504,14 @@ export default function EmptyRoutine() {
                     <div style={{ color: "#666", fontSize: "0.9rem" }}>—</div>
                     <input type="number" value={currentWeight[key] || ""} onChange={(e) => handleUpdateWeight(exIdx, sIdx, e.target.value)} style={{ width: "100%", background: isCompleted ? "rgba(46, 230, 197, 0.1)" : "#1a1a1a", border: "none", borderRadius: "4px", color: "#fff", textAlign: "center", padding: "6px 0" }} />
                     <input type="number" value={currentReps[key] || ""} onChange={(e) => handleUpdateReps(exIdx, sIdx, e.target.value)} style={{ width: "100%", background: isCompleted ? "rgba(46, 230, 197, 0.1)" : "#1a1a1a", border: "none", borderRadius: "4px", color: "#fff", textAlign: "center", padding: "6px 0" }} />
-                    <button onClick={() => setSeriesCompleted({...seriesCompleted, [key]: !isCompleted})} style={{ width: "100%", height: "32px", borderRadius: "6px", backgroundColor: isCompleted ? mint : "#333", color: isCompleted ? "#000" : "#666", border: "none" }}>✓</button>
+                    <button 
+                      onClick={() => {
+                        const isNowCompleted = !isCompleted;
+                        setSeriesCompleted({...seriesCompleted, [key]: isNowCompleted});
+                        if (isNowCompleted && exercise.rest) startRestTimer(exercise.rest);
+                      }} 
+                      style={{ width: "100%", height: "32px", borderRadius: "6px", backgroundColor: isCompleted ? mint : "#333", color: isCompleted ? "#000" : "#666", border: "none" }}
+                    >✓</button>
                   </div>
                 );
               })}
@@ -523,8 +554,34 @@ export default function EmptyRoutine() {
 
         {/* Floating Rest Timer */}
         {restTimerActive && (
-          <div style={{ position: "fixed", bottom: "20px", left: "50%", transform: "translateX(-50%)", backgroundColor: mint, color: "#000", padding: "12px 24px", borderRadius: "30px", boxShadow: "0 4px 20px rgba(0,0,0,0.3)", zIndex: 2000 }}>
-            <strong>Descanso: {restCountdown}s</strong>
+          <div style={{ 
+            position: "fixed", 
+            bottom: "20px", 
+            left: "50%", 
+            transform: "translateX(-50%)", 
+            backgroundColor: mint, 
+            color: "#000", 
+            padding: "12px 24px", 
+            borderRadius: "30px", 
+            boxShadow: "0 4px 20px rgba(0,0,0,0.3)", 
+            display: "flex",
+            alignItems: "center",
+            gap: "15px",
+            zIndex: 2000 
+          }}>
+            <button 
+              onClick={subtractRestTime}
+              style={{ background: "rgba(0,0,0,0.1)", border: "none", borderRadius: "50%", width: "30px", height: "30px", cursor: "pointer", fontWeight: "bold", fontSize: "1.2rem", display: "flex", alignItems: "center", justifyContent: "center" }}
+            >-</button>
+            <span style={{ fontWeight: "bold", minWidth: "80px", textAlign: "center" }}>Descanso: {formatRestTime(restCountdown)}</span>
+            <button 
+              onClick={addRestTime}
+              style={{ background: "rgba(0,0,0,0.1)", border: "none", borderRadius: "50%", width: "30px", height: "30px", cursor: "pointer", fontWeight: "bold", fontSize: "1.2rem", display: "flex", alignItems: "center", justifyContent: "center" }}
+            >+</button>
+            <button 
+              onClick={stopRestTimer}
+              style={{ background: "#000", color: "#fff", border: "none", borderRadius: "50%", width: "24px", height: "24px", cursor: "pointer", marginLeft: "5px" }}
+            >×</button>
           </div>
         )}
       </div>

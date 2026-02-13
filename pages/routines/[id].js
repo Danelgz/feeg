@@ -457,6 +457,14 @@ export default function RoutineDetail() {
     return m > 0 ? `${m}:${s.toString().padStart(2, '0')}` : `${s}s`;
   };
 
+  const addRestTime = () => {
+    setRestCountdown((prev) => prev + 10);
+  };
+
+  const subtractRestTime = () => {
+    setRestCountdown((prev) => Math.max(0, prev - 10));
+  };
+
   const handleStartCountdown = (seconds) => {
     setCountdown(seconds);
     setCountdownActive(true);
@@ -1687,10 +1695,18 @@ export default function RoutineDetail() {
               gap: "15px",
               zIndex: 2000
             }}>
-              <span style={{ fontWeight: "bold" }}>Descanso: {formatRestTime(restCountdown)}</span>
+              <button 
+                onClick={subtractRestTime}
+                style={{ background: "rgba(0,0,0,0.1)", border: "none", borderRadius: "50%", width: "30px", height: "30px", cursor: "pointer", fontWeight: "bold", fontSize: "1.2rem", display: "flex", alignItems: "center", justifyContent: "center" }}
+              >-</button>
+              <span style={{ fontWeight: "bold", minWidth: "80px", textAlign: "center" }}>Descanso: {formatRestTime(restCountdown)}</span>
+              <button 
+                onClick={addRestTime}
+                style={{ background: "rgba(0,0,0,0.1)", border: "none", borderRadius: "50%", width: "30px", height: "30px", cursor: "pointer", fontWeight: "bold", fontSize: "1.2rem", display: "flex", alignItems: "center", justifyContent: "center" }}
+              >+</button>
               <button 
                 onClick={stopRestTimer}
-                style={{ background: "#000", color: "#fff", border: "none", borderRadius: "50%", width: "24px", height: "24px", cursor: "pointer" }}
+                style={{ background: "#000", color: "#fff", border: "none", borderRadius: "50%", width: "24px", height: "24px", cursor: "pointer", marginLeft: "5px" }}
               >×</button>
             </div>
           )}

@@ -128,6 +128,33 @@ export default function StatisticsView() {
         {t('statistics')} <span style={{ color: isDark ? "#aaa" : "#777", fontSize: isNarrow ? "0.7rem" : "0.8rem" }}>{t('stats_in_development')}</span>
       </h1>
 
+      {/* Botones de navegación de estadísticas */}
+      <div style={{
+        display: 'flex',
+        gap: '10px',
+        marginBottom: '20px',
+        overflowX: 'auto',
+        paddingBottom: '5px',
+        WebkitOverflowScrolling: 'touch'
+      }}>
+        {nav.map(item => (
+          <Link key={item.key} href={item.href} style={{ textDecoration: 'none', flexShrink: 0 }}>
+            <div style={{
+              padding: '8px 16px',
+              backgroundColor: view === item.key ? '#1dd1a1' : (isDark ? '#1a1a1a' : '#fff'),
+              border: `1px solid ${view === item.key ? '#1dd1a1' : (isDark ? '#333' : '#ddd')}`,
+              borderRadius: '20px',
+              color: view === item.key ? '#000' : (isDark ? '#fff' : '#333'),
+              fontWeight: '600',
+              fontSize: '0.85rem',
+              whiteSpace: 'nowrap'
+            }}>
+              {item.label}
+            </div>
+          </Link>
+        ))}
+      </div>
+
 
       {view === 'series' && (
         <Section title="Series por grupo muscular" isDark={isDark}>

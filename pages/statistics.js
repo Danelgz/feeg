@@ -164,6 +164,36 @@ export default function Statistics() {
         <BodyHeatmap muscleStats={muscleStats} t={t} isDark={isDark} isMobile={isNarrow} />
       </section>
 
+      {/* Botones de navegación de estadísticas */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isNarrow ? '1fr' : 'repeat(auto-fill, minmax(200px, 1fr))',
+        gap: '10px',
+        marginBottom: '20px'
+      }}>
+        {navButtons.map(btn => (
+          <Link key={btn.key} href={btn.href} style={{ textDecoration: 'none' }}>
+            <div style={{
+              padding: '12px',
+              backgroundColor: isDark ? '#1a1a1a' : '#fff',
+              border: `1px solid ${isDark ? '#333' : '#ddd'}`,
+              borderRadius: '10px',
+              color: isDark ? '#fff' : '#333',
+              textAlign: 'center',
+              fontWeight: '600',
+              fontSize: '0.9rem',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.borderColor = '#1dd1a1'}
+            onMouseOut={(e) => e.currentTarget.style.borderColor = isDark ? '#333' : '#ddd'}
+            >
+              {btn.label}
+            </div>
+          </Link>
+        ))}
+      </div>
+
       {/* KPIs */}
       <div style={{
         display: 'grid',

@@ -236,8 +236,8 @@ function Section({ title, isDark, children }) {
 function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
   const { counts, getColor, getIntensity } = muscleStats;
 
-  const silhouetteColor = isDark ? "#222" : "#e0e0e0";
-  const bodyBaseColor = isDark ? "#121212" : "#f5f5f5";
+  const silhouetteColor = "#555";
+  const bodyBaseColor = "#1a1a1a";
 
   const renderMuscle = (muscle) => {
     const intensity = muscle.decorative ? 0 : getIntensity(counts[muscle.id] || 0);
@@ -247,8 +247,8 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
         key={`${muscle.id}-${i}`} 
         d={p} 
         fill={color} 
-        stroke={isDark ? "#000" : "#fff"} 
-        strokeWidth="0.2"
+        stroke="#000" 
+        strokeWidth="2"
         style={{ transition: 'fill 0.4s ease' }} 
       />
     ));
@@ -258,27 +258,27 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
     <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '24px', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ 
         display: 'flex', 
-        gap: '20px', 
-        backgroundColor: isDark ? '#000' : '#fff', 
-        padding: '30px', 
-        borderRadius: '32px', 
+        gap: isMobile ? '40px' : '60px', 
+        backgroundColor: '#000', 
+        padding: isMobile ? '40px 20px' : '60px 40px', 
+        borderRadius: '0', 
         flexShrink: 0,
-        boxShadow: isDark ? '0 10px 30px rgba(0,0,0,0.5)' : '0 10px 30px rgba(0,0,0,0.05)',
-        border: `1px solid ${isDark ? '#111' : '#eee'}`,
+        boxShadow: 'none',
+        border: 'none',
         margin: isMobile ? '0 auto' : '0'
       }}>
         {/* VISTA FRONTAL */}
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.75rem', color: isDark ? '#777' : '#aaa', marginBottom: '20px', fontWeight: '900', letterSpacing: '3px' }}>FRONTAL</div>
-          <svg width={isMobile ? "150" : "200"} height={isMobile ? "300" : "400"} viewBox="0 0 200 400">
+          <div style={{ fontSize: isMobile ? '0.9rem' : '1.1rem', color: '#555', marginBottom: '30px', fontWeight: '900', letterSpacing: '4px' }}>FRONTAL</div>
+          <svg width={isMobile ? "180" : "240"} height={isMobile ? "360" : "480"} viewBox="0 0 200 400">
             {FRONT_DATA.map(renderMuscle)}
           </svg>
         </div>
 
         {/* VISTA POSTERIOR */}
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.75rem', color: isDark ? '#777' : '#aaa', marginBottom: '20px', fontWeight: '900', letterSpacing: '3px' }}>POSTERIOR</div>
-          <svg width={isMobile ? "150" : "200"} height={isMobile ? "300" : "400"} viewBox="0 0 200 400">
+          <div style={{ fontSize: isMobile ? '0.9rem' : '1.1rem', color: '#555', marginBottom: '30px', fontWeight: '900', letterSpacing: '4px' }}>POSTERIOR</div>
+          <svg width={isMobile ? "180" : "240"} height={isMobile ? "360" : "480"} viewBox="0 0 200 400">
             {BACK_DATA.map(renderMuscle)}
           </svg>
         </div>

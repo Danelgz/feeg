@@ -66,33 +66,6 @@ export default function Profile() {
     setIsDragging(false);
   };
 
-  const compressImage = (dataUrl, maxWidth = 500, quality = 0.7) => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = dataUrl;
-      img.onerror = () => {
-        console.error("Error cargando imagen para compresión");
-        resolve(dataUrl); // Devolver original si falla
-      };
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-
-        if (width > maxWidth) {
-          height = (maxWidth / width) * height;
-          width = maxWidth;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-    });
-  };
-
   const handleOpenFollowers = async () => {
     setShowFollowers(true);
     const list = await getFollowersList(authUser.uid);
@@ -687,7 +660,9 @@ export default function Profile() {
                     position: 'relative',
                     boxShadow: '0 0 20px rgba(29, 209, 161, 0.3)'
                   }}>
-                    {editData.photoURL ? (
+                    {isProcessingImage ? (
+                      <div style={{ color: '#1dd1a1', fontSize: '0.8rem', fontWeight: 'bold' }}>Subiendo...</div>
+                    ) : editData.photoURL ? (
                       <img 
                         src={editData.photoURL} 
                         alt="Preview" 
@@ -753,13 +728,33 @@ export default function Profile() {
                         const file = e.target.files[0];
                         if (file) {
                           setIsProcessingImage(true);
-                          const reader = new FileReader();
-                          reader.onloadend = async () => {
-                            const compressed = await compressImage(reader.result);
-                            setEditData({ ...editData, photoURL: compressed, photoScale: 1, photoPosX: 0, photoPosY: 0 });
+                          
+                          const formData = new FormData();
+                          formData.append("file", file);
+                          formData.append("upload_preset", "feeg_profile");
+
+                          try {
+                            const response = await fetch("https://api.cloudinary.com/v1_1/dfs9hazxo/image/upload", {
+                              method: "POST",
+                              body: formData,
+                            });
+                            const data = await response.json();
+                            
+                            if (data.secure_url) {
+                              setEditData({ 
+                                ...editData, 
+                                photoURL: data.secure_url, 
+                                photoScale: 1, 
+                                photoPosX: 0, 
+                                photoPosY: 0 
+                              });
+                            }
+                          } catch (error) {
+                            console.error("Error uploading to Cloudinary:", error);
+                            alert("Error al subir la imagen a Cloudinary");
+                          } finally {
                             setIsProcessingImage(false);
-                          };
-                          reader.readAsDataURL(file);
+                          }
                         }
                       }}
                     />

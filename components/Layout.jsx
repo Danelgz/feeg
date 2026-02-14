@@ -236,7 +236,7 @@ export default function Layout({ children }) {
               </main>
 
               {/* Navegación Inferior para Móvil */}
-              {currentIsMobile && <BottomNavigation />}
+              {currentIsMobile && !router.pathname.startsWith('/statistics') && <BottomNavigation />}
 
               {/* Pestaña de Rutina Activa */}
               {activeRoutine && router.asPath !== (activeRoutine?.id ? `/routines/${activeRoutine.id}` : activeRoutine.path) && (

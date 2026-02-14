@@ -149,43 +149,6 @@ export default function Statistics() {
         {t("statistics")} <span style={{ color: isDark ? "#aaa" : "#777", fontSize: isNarrow ? "0.8rem" : "0.9rem" }}>{t("stats_in_development")}</span>
       </h1>
 
-      {/* Botonera de navegación global */}
-      <div style={{
-        backgroundColor: isDark ? '#0f0f0f' : '#f6fefb',
-        border: `1px solid ${isDark ? '#2a2a2a' : '#d9f7ef'}`,
-        borderRadius: 12,
-        padding: isNarrow ? '8px' : '10px',
-        marginBottom: isNarrow ? '12px' : '16px'
-      }}>
-        {navButtons.map((btn) => (
-          <Link
-            key={btn.key}
-            href={btn.href}
-            role="button"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: isNarrow ? '10px' : '12px',
-              margin: '6px 0',
-              backgroundColor: isDark ? '#1a1a1a' : '#ffffff',
-              border: `1px solid ${isDark ? '#2a2a2a' : '#e4f7f0'}`,
-              borderRadius: 10,
-              boxShadow: isDark ? 'none' : '0 1px 2px rgba(0,0,0,0.06)',
-              color: isDark ? '#eafff8' : '#0a3d31',
-              textDecoration: 'none',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'transform 0.1s ease, box-shadow 0.2s ease, background-color 0.2s ease'
-            }}
-            onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = isDark ? '0 0 0 rgba(0,0,0,0)' : '0 3px 8px rgba(0,0,0,0.10)'; e.currentTarget.style.backgroundColor = isDark ? '#161616' : '#fafffd'; }}
-            onMouseOut={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = isDark ? 'none' : '0 1px 2px rgba(0,0,0,0.06)'; e.currentTarget.style.backgroundColor = isDark ? '#1a1a1a' : '#ffffff'; }}
-          >
-            <span aria-hidden="true" style={{ color: '#1dd1a1', opacity: 0.95, fontWeight: 800 }}>›</span>
-            <span style={{ flex: 1 }}>{btn.label}</span>
-          </Link>
-        ))}
-      </div>
 
       {/* Visualización de cuerpo con intensidad menta */}
       <section style={{
@@ -479,8 +442,8 @@ function ExerciseStatsSection({ isDark, workouts, t }) {
 function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
   const { counts, getColor, getIntensity } = muscleStats;
 
-  const MuscleGroup = ({ id, paths, muscle }) => {
-    const intensity = getIntensity(muscle || id);
+  const MuscleGroup = ({ id, paths }) => {
+    const intensity = getIntensity(counts[id] || 0);
     const color = getColor(intensity);
     return (
       <g id={id} style={{ transition: 'all 0.4s ease' }}>
@@ -490,7 +453,7 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
             d={p} 
             fill={color} 
             stroke={isDark ? "#000" : "#fff"} 
-            strokeWidth="0.3" 
+            strokeWidth="0.2" 
             style={{ transition: 'fill 0.4s ease' }} 
           />
         ))}
@@ -501,134 +464,124 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
   const silhouetteColor = isDark ? "#1a1a1a" : "#e0e0e0";
 
   return (
-    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '24px', alignItems: 'flex-start' }}>
+    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '24px', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ 
         display: 'flex', 
-        gap: '12px', 
+        gap: '20px', 
         backgroundColor: isDark ? '#080808' : '#f9f9f9', 
-        padding: '20px', 
-        borderRadius: '24px', 
+        padding: '25px', 
+        borderRadius: '30px', 
         flexShrink: 0,
         border: `1px solid ${isDark ? '#222' : '#eee'}`,
-        margin: isMobile ? '0 auto' : '0'
+        boxShadow: isDark ? '0 10px 30px rgba(0,0,0,0.5)' : 'none'
       }}>
         {/* FRONTAL VIEW */}
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.65rem', color: '#666', marginBottom: '8px', fontWeight: '800', letterSpacing: '1px' }}>FRONTAL</div>
-          <svg width={isMobile ? "140" : "170"} height={isMobile ? "280" : "340"} viewBox="0 0 200 400">
-            {/* Realistic Silhouette Base */}
-            <path d="M100,15 Q115,15 115,35 L115,55 Q135,65 145,85 L155,140 Q160,165 150,170 L142,165 L138,230 L148,365 L128,380 L115,255 L100,255 L85,255 L72,380 L52,365 L62,230 L58,165 L50,170 Q40,165 45,140 L55,85 Q65,65 85,55 L85,35 Q85,15 100,15" fill={silhouetteColor} />
+          <div style={{ fontSize: '0.6rem', color: '#666', marginBottom: '10px', fontWeight: '900', letterSpacing: '2px' }}>FRONTAL</div>
+          <svg width={isMobile ? "140" : "180"} height={isMobile ? "280" : "360"} viewBox="0 0 200 400">
+            {/* Realistic Silhouette Base Front */}
+            <path d="M100,15 Q112,15 112,32 L112,50 Q130,58 142,75 L152,130 Q158,160 148,165 L140,160 L136,220 L146,360 Q146,375 125,375 L115,250 L100,250 L85,250 L75,375 Q54,375 54,360 L64,220 L60,160 L52,165 Q42,160 48,130 L58,75 Q70,58 88,50 L88,32 Q88,15 100,15" fill={silhouetteColor} />
             
-            {/* Pecho (Pectorals) */}
+            {/* Pectorals */}
             <MuscleGroup id="Pecho" paths={[
-              "M102,80 Q125,75 142,95 L140,130 Q120,145 102,135 Z", // Right
-              "M98,80 Q75,75 58,95 L60,130 Q80,145 98,135 Z"    // Left
+              "M102,75 Q122,70 140,85 L138,125 Q118,138 102,128 Z",
+              "M98,75 Q78,70 60,85 L62,125 Q82,138 98,128 Z"
             ]} />
             
-            {/* Abdomen (Abs) */}
+            {/* Abs & Obliques */}
             <MuscleGroup id="Abdomen" paths={[
-              "M85,145 L115,145 L112,165 L88,165 Z", // Upper 1
-              "M88,170 L112,170 L110,190 L90,190 Z", // Middle 2
-              "M90,195 L110,195 L108,220 L92,220 Z", // Lower 3
-              "M115,145 L125,145 L130,220 L120,225 L112,220 Z", // Right Oblique
-              "M85,145 L75,145 L70,220 L80,225 L88,220 Z"  // Left Oblique
+              "M88,135 L112,135 L110,152 L90,152 Z", // Block 1
+              "M90,155 L110,155 L108,172 L92,172 Z", // Block 2
+              "M92,175 L108,175 L106,195 L94,195 Z", // Block 3
+              "M94,198 L106,198 L104,220 L96,220 Z", // Lower
+              "M115,135 L125,135 L128,210 Q115,220 110,210 Z", // Oblique R
+              "M85,135 L75,135 L72,210 Q85,220 90,210 Z"    // Oblique L
             ]} />
             
-            {/* Hombros (Deltoids Front) */}
+            {/* Shoulders Front */}
             <MuscleGroup id="Hombros" paths={[
-              "M144,82 Q158,82 162,110 L146,125 Z", // Right
-              "M56,82 Q42,82 38,110 L54,125 Z"     // Left
+              "M142,76 Q155,76 160,105 L144,115 Z",
+              "M58,76 Q45,76 40,105 L56,115 Z"
             ]} />
             
-            {/* Bíceps */}
+            {/* Biceps */}
             <MuscleGroup id="Bíceps" paths={[
-              "M150,128 Q162,135 158,165 L145,165 L145,135 Z", // Right
-              "M50,128 Q38,135 42,165 L55,165 L55,135 Z"    // Left
+              "M148,120 Q160,125 156,160 L144,160 Z",
+              "M52,120 Q40,125 44,160 L56,160 Z"
             ]} />
             
-            {/* Cuádriceps (Quads) */}
+            {/* Quads */}
             <MuscleGroup id="Cuádriceps" paths={[
-              "M105,245 L138,245 L145,320 L115,320 Q105,280 105,245 Z", // Right
-              "M95,245 L62,245 L55,320 L85,320 Q95,280 95,245 Z"     // Left
+              "M105,235 L135,235 L142,310 L115,310 Q105,270 105,235 Z",
+              "M95,235 L65,235 L58,310 L85,310 Q95,270 95,235 Z"
             ]} />
           </svg>
         </div>
 
         {/* POSTERIOR VIEW */}
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.65rem', color: '#666', marginBottom: '8px', fontWeight: '800', letterSpacing: '1px' }}>POSTERIOR</div>
-          <svg width={isMobile ? "140" : "170"} height={isMobile ? "280" : "340"} viewBox="0 0 200 400">
-            <path d="M100,15 Q115,15 115,35 L115,55 Q135,65 145,85 L155,140 Q160,165 150,170 L142,165 L138,230 L148,365 L128,380 L115,255 L100,255 L85,255 L72,380 L52,365 L62,230 L58,165 L50,170 Q40,165 45,140 L55,85 Q65,65 85,55 L85,35 Q85,15 100,15" fill={silhouetteColor} />
+          <div style={{ fontSize: '0.6rem', color: '#666', marginBottom: '10px', fontWeight: '900', letterSpacing: '2px' }}>POSTERIOR</div>
+          <svg width={isMobile ? "140" : "180"} height={isMobile ? "280" : "340"} viewBox="0 0 200 400">
+            {/* Realistic Silhouette Base Back */}
+            <path d="M100,15 Q112,15 112,32 L112,50 Q130,58 142,75 L152,130 Q158,160 148,165 L140,160 L136,220 L146,360 Q146,375 125,375 L115,250 L100,250 L85,250 L75,375 Q54,375 54,360 L64,220 L60,160 L52,165 Q42,160 48,130 L58,75 Q70,58 88,50 L88,32 Q88,15 100,15" fill={silhouetteColor} />
             
-            {/* Espalda (Back - Traps & Lats) */}
+            {/* Back (Traps & Lats) */}
             <MuscleGroup id="Espalda" paths={[
-              "M100,60 L142,85 L138,150 Q100,175 62,150 L58,85 Z", // Back structure
-              "M85,55 Q100,45 115,55 L100,100 Z" // Upper traps
+              "M100,55 L138,80 L134,145 Q100,165 66,145 L62,80 Z", // Lats
+              "M88,50 Q100,40 112,50 L100,90 Z" // Traps
             ]} />
             
-            {/* Tríceps */}
+            {/* Triceps */}
             <MuscleGroup id="Tríceps" paths={[
-              "M146,125 L158,125 Q168,150 160,170 L146,170 Z", // Right
-              "M54,125 L42,125 Q32,150 40,170 L54,170 Z"    // Left
+              "M144,115 L155,115 Q165,145 158,165 L144,165 Z",
+              "M56,115 L45,115 Q35,145 42,165 L56,165 Z"
             ]} />
             
-            {/* Glúteos */}
+            {/* Glutes */}
             <MuscleGroup id="Glúteos" paths={[
-              "M100,225 Q140,225 145,265 L100,275 Z", // Right
-              "M100,225 Q60,225 55,265 L100,275 Z"    // Left
+              "M100,215 Q135,215 140,260 L100,270 Z",
+              "M100,215 Q65,215 60,260 L100,270 Z"
             ]} />
             
-            {/* Femoral (Hamstrings) */}
+            {/* Hamstrings */}
             <MuscleGroup id="Femoral" paths={[
-              "M105,280 L142,280 L138,340 L110,340 Z", // Right
-              "M95,280 L58,280 L62,340 L90,340 Z"    // Left
+              "M105,275 L140,275 L135,335 L110,335 Z",
+              "M95,275 L60,275 L65,335 L90,335 Z"
             ]} />
             
-            {/* Gemelos (Calves) */}
+            {/* Calves */}
             <MuscleGroup id="Gemelos" paths={[
-              "M115,345 L145,345 L140,385 L120,385 Z", // Right
-              "M85,345 L55,345 L60,385 L80,385 Z"    // Left
+              "M112,345 L142,345 L138,380 L118,380 Z",
+              "M88,345 L58,345 L62,380 L82,380 Z"
             ]} />
           </svg>
         </div>
       </div>
 
-      <div style={{ flex: 1, width: '100%' }}>
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ fontSize: '0.8rem', color: isDark ? '#666' : '#999', marginBottom: '12px', fontWeight: '800', letterSpacing: '0.5px' }}>INTENSIDAD (ÚLTIMOS 30 DÍAS)</div>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+      <div style={{ flex: 1, width: '100%', maxWidth: '400px' }}>
+        <div style={{ marginBottom: '25px' }}>
+          <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '12px', fontWeight: '900' }}>INTENSIDAD (ÚLTIMOS 30 DÍAS)</div>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {[0, 1, 2, 3, 4].map(lvl => (
-              <div key={lvl} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: isDark ? '#111' : '#f5f5f5', padding: '4px 10px', borderRadius: '8px', border: `1px solid ${isDark ? '#222' : '#eee'}` }}>
+              <div key={lvl} style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: isDark ? '#111' : '#f0f0f0', padding: '6px 12px', borderRadius: '10px' }}>
                 <div style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: getColor(lvl) }} />
-                <span style={{ fontSize: '0.75rem', color: isDark ? '#999' : '#666', fontWeight: 600 }}>L{lvl}</span>
+                <span style={{ fontSize: '0.75rem', color: isDark ? '#999' : '#666', fontWeight: 'bold' }}>L{lvl}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
-          {Object.entries(counts).sort((a,b) => b[1] - a[1]).map(([m, val]) => {
-            const intensity = getIntensity(val);
-            return (
-              <div key={m} style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center', 
-                padding: '12px 16px', 
-                backgroundColor: isDark ? '#161616' : '#fff', 
-                borderRadius: '12px',
-                border: `1px solid ${isDark ? '#222' : '#eee'}`,
-                borderLeft: `5px solid ${getColor(intensity)}`,
-                transition: 'transform 0.2s ease'
-              }}>
-                <span style={{ fontWeight: 700, color: isDark ? '#eee' : '#333', fontSize: '0.95rem' }}>{t(m) || m}</span>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ color: '#1dd1a1', fontWeight: '900', fontSize: '1.1rem' }}>{val}</div>
-                  <div style={{ fontSize: '0.65rem', color: '#666', textTransform: 'uppercase' }}>Series</div>
-                </div>
-              </div>
-            );
-          })}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          {Object.entries(counts).sort((a,b) => b[1] - a[1]).map(([m, val]) => (
+            <div key={m} style={{ 
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', 
+              backgroundColor: isDark ? '#161616' : '#fff', borderRadius: '12px', border: `1px solid ${isDark ? '#222' : '#eee'}`,
+              borderLeft: `4px solid ${getColor(getIntensity(val))}`
+            }}>
+              <span style={{ fontWeight: 700, fontSize: '0.85rem', color: isDark ? '#ddd' : '#333' }}>{t(m) || m}</span>
+              <span style={{ color: '#1dd1a1', fontWeight: '900' }}>{val}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

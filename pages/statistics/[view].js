@@ -128,27 +128,6 @@ export default function StatisticsView() {
         {t('statistics')} <span style={{ color: isDark ? "#aaa" : "#777", fontSize: isNarrow ? "0.7rem" : "0.8rem" }}>{t('stats_in_development')}</span>
       </h1>
 
-      {/* Botonera de navegación global */}
-      <div style={{
-        marginBottom: isNarrow ? '12px' : '16px'
-      }}>
-        {nav.map(btn => (
-          <p key={btn.key} style={{
-            margin: '0 0 8px 0',
-            lineHeight: 1.5,
-            color: isDark ? '#fff' : '#333',
-            fontSize: isNarrow ? '0.8rem' : '0.95rem'
-          }}>
-            <Link
-              href={btn.href}
-              style={{
-                color: isDark ? '#9ee9d5' : '#0a6b55',
-                textDecoration: 'underline'
-              }}
-            >{btn.label}</Link>
-          </p>
-        ))}
-      </div>
 
       {view === 'series' && (
         <Section title="Series por grupo muscular" isDark={isDark}>
@@ -204,11 +183,6 @@ export default function StatisticsView() {
         <p style={{ color: isDark ? '#aaa' : '#666' }}>{t('stats_no_data')}</p>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: '30px', padding: '15px 0', borderTop: isDark ? '1px solid #333' : '1px solid #eee' }}>
-        <Link href="/" style={{ color: isDark ? '#fff' : '#333', textDecoration: 'none', fontSize: isNarrow ? '0.9rem' : '1rem' }}>{t('feed')}</Link>
-        <Link href="/routines" style={{ color: isDark ? '#fff' : '#333', textDecoration: 'none', fontSize: isNarrow ? '0.9rem' : '1rem' }}>{t('routines')}</Link>
-        <Link href="/profile" style={{ color: isDark ? '#fff' : '#333', textDecoration: 'none', fontSize: isNarrow ? '0.9rem' : '1rem' }}>{t('profile')}</Link>
-      </div>
     </Layout>
   );
 }

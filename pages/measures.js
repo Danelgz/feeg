@@ -118,8 +118,52 @@ export default function Measures() {
   if (!isLoaded) return <Layout><div style={{ padding: "20px", color: "#fff" }}>Cargando...</div></Layout>;
 
   const updateUnits = async (type, val) => {
+    if (units[type] === val) return;
+
+    const oldVal = units[type];
+    const newVal = val;
     const newUnits = { ...units, [type]: val };
+    
+    // Función de conversión interna
+    const convertValue = (value, unitType, toUnit) => {
+      if (!value || isNaN(parseFloat(value))) return value;
+      const num = parseFloat(value);
+      if (unitType === 'weight') {
+        return toUnit === 'lb' ? (num * 2.20462).toFixed(1) : (num / 2.20462).toFixed(1);
+      } else {
+        return toUnit === 'in' ? (num / 2.54).toFixed(1) : (num * 2.54).toFixed(1);
+      }
+    };
+
+    // 1. Convertir el formulario actual (newEntry)
+    const updatedNewEntry = { ...newEntry };
+    if (type === 'weight') {
+      updatedNewEntry.weight = convertValue(newEntry.weight, 'weight', newVal);
+    } else {
+      const lengthFields = ['height', 'neck', 'shoulders', 'chest', 'waist', 'hips', 'bicepsL', 'bicepsR', 'forearmL', 'forearmR', 'thighL', 'thighR', 'calfL', 'calfR'];
+      lengthFields.forEach(field => {
+        updatedNewEntry[field] = convertValue(newEntry[field], 'length', newVal);
+      });
+    }
+    setNewEntry(updatedNewEntry);
+
+    // 2. Convertir todos los registros históricos
+    const updatedMeasures = measures.map(m => {
+      const updatedM = { ...m };
+      if (type === 'weight') {
+        updatedM.weight = convertValue(m.weight, 'weight', newVal);
+      } else {
+        const lengthFields = ['height', 'neck', 'shoulders', 'chest', 'waist', 'hips', 'bicepsL', 'bicepsR', 'forearmL', 'forearmR', 'thighL', 'thighR', 'calfL', 'calfR'];
+        lengthFields.forEach(field => {
+          updatedM[field] = convertValue(m[field], 'length', newVal);
+        });
+      }
+      return updatedM;
+    });
+
     setUnits(newUnits);
+    await saveMeasures(updatedMeasures);
+
     if (user) {
       await saveUser({
         ...user,

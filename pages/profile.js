@@ -41,15 +41,24 @@ export default function Profile() {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   
   const [selectedFile, setSelectedFile] = useState(null);
+  const [isCropping, setIsCropping] = useState(false);
+  const [cropData, setCropData] = useState({
+    photoURL: "",
+    photoScale: 1,
+    photoPosX: 0,
+    photoPosY: 0
+  });
   
   const handleDragStart = (e) => {
-    if (!selectedFile) return; // Solo permitir ajustar si es una foto nueva
+    if (!isCropping && !selectedFile) return;
     setIsDragging(true);
     const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
     const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
+    const currentPosX = isCropping ? cropData.photoPosX : (editData.photoPosX || 0);
+    const currentPosY = isCropping ? cropData.photoPosY : (editData.photoPosY || 0);
     setDragStart({ 
-      x: clientX - (editData.photoPosX || 0), 
-      y: clientY - (editData.photoPosY || 0) 
+      x: clientX - currentPosX, 
+      y: clientY - currentPosY 
     });
   };
 
@@ -57,36 +66,45 @@ export default function Profile() {
     if (!isDragging) return;
     const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
     const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
-    setEditData({
-      ...editData,
-      photoPosX: clientX - dragStart.x,
-      photoPosY: clientY - dragStart.y
-    });
+    
+    if (isCropping) {
+      setCropData({
+        ...cropData,
+        photoPosX: clientX - dragStart.x,
+        photoPosY: clientY - dragStart.y
+      });
+    } else {
+      setEditData({
+        ...editData,
+        photoPosX: clientX - dragStart.x,
+        photoPosY: clientY - dragStart.y
+      });
+    }
   };
 
   const handleDragEnd = () => {
     setIsDragging(false);
   };
 
-  const createCroppedImage = (imageSrc, scale, posX, posY) => {
+  const createCroppedImage = (imageSrc, scale, posX, posY, visualSize = 150) => {
     return new Promise((resolve) => {
       const img = new Image();
       img.src = imageSrc;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const size = 400; // Tamaño final de la foto de perfil
+        const size = 600; // Tamaño final de alta calidad
         canvas.width = size;
         canvas.height = size;
         const ctx = canvas.getContext('2d');
 
-        // Fondo blanco o transparente
+        // Fondo transparente o blanco
         ctx.fillStyle = "#fff";
         ctx.fillRect(0, 0, size, size);
 
-        // Calcular dimensiones para el dibujo
         const imgRatio = img.width / img.height;
         let drawW, drawH;
         
+        // Ajustar imagen para cubrir el cuadrado
         if (imgRatio > 1) {
           drawH = size * scale;
           drawW = drawH * imgRatio;
@@ -95,10 +113,7 @@ export default function Profile() {
           drawH = drawW / imgRatio;
         }
 
-        // El centro del canvas es (size/2, size/2)
-        // posX y posY son relativos a la visualización inicial de 150px
-        // Escalamos esos valores al tamaño del canvas (400px)
-        const factor = size / 150;
+        const factor = size / visualSize;
         const x = (size / 2) - (drawW / 2) + (posX * factor);
         const y = (size / 2) - (drawH / 2) + (posY * factor);
 
@@ -236,13 +251,15 @@ export default function Profile() {
     try {
       let finalPhotoURL = editData.photoURL;
 
-      // Si hay un archivo seleccionado, primero lo recortamos y subimos
-      if (selectedFile) {
+      // Si el photoURL es un blob URL, significa que es una foto nueva recortada localmente
+      if (editData.photoURL && editData.photoURL.startsWith('blob:')) {
         setIsProcessingImage(true);
-        const croppedBlob = await createCroppedImage(editData.photoURL, editData.photoScale, editData.photoPosX, editData.photoPosY);
+        
+        // Convertir el blob URL a Blob real para subirlo
+        const blob = await fetch(editData.photoURL).then(r => r.blob());
         
         const formData = new FormData();
-        formData.append("file", croppedBlob);
+        formData.append("file", blob);
         formData.append("upload_preset", "feeg_profile");
 
         const response = await fetch("https://api.cloudinary.com/v1_1/dfs9hazxo/image/upload", {
@@ -264,7 +281,7 @@ export default function Profile() {
         firstName: editData.firstName,
         description: editData.description,
         photoURL: finalPhotoURL,
-        photoScale: 1, // Reset porque ya está recortada
+        photoScale: 1,
         photoPosX: 0,
         photoPosY: 0
       };
@@ -795,13 +812,13 @@ export default function Profile() {
                         const file = e.target.files[0];
                         if (file) {
                           const previewURL = URL.createObjectURL(file);
-                          setEditData({ 
-                            ...editData, 
-                            photoURL: previewURL, 
-                            photoScale: 1, 
-                            photoPosX: 0, 
-                            photoPosY: 0 
+                          setCropData({
+                            photoURL: previewURL,
+                            photoScale: 1,
+                            photoPosX: 0,
+                            photoPosY: 0
                           });
+                          setIsCropping(true);
                           setSelectedFile(file);
                         }
                       }}
@@ -982,6 +999,112 @@ export default function Profile() {
               style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "10px" }}
             />
           </div>
+        </div>
+      )}
+      {/* Full Screen Cropper Overlay */}
+      {isCropping && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: "#111", zIndex: 6000, display: "flex", flexDirection: "column"
+        }}>
+          {/* Top Bar */}
+          <div style={{ padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <button 
+              onClick={() => setIsCropping(false)}
+              style={{ background: "none", border: "none", color: "#fff", cursor: "pointer" }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <div style={{ color: "#fff", fontWeight: "600" }}>Ajustar imagen</div>
+            <button 
+              onClick={async () => {
+                setIsProcessingImage(true);
+                const visualSize = Math.min(window.innerWidth - 40, 400);
+                const croppedBlob = await createCroppedImage(cropData.photoURL, cropData.photoScale, cropData.photoPosX, cropData.photoPosY, visualSize);
+                const croppedURL = URL.createObjectURL(croppedBlob);
+                setEditData({ ...editData, photoURL: croppedURL });
+                setIsCropping(false);
+                setIsProcessingImage(false);
+              }}
+              style={{ background: "none", border: "none", color: "#1dd1a1", cursor: "pointer" }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </button>
+          </div>
+
+          {/* Cropper Area */}
+          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden", backgroundColor: "#000" }}>
+            <div style={{
+              width: "min(calc(100vw - 40px), 400px)",
+              height: "min(calc(100vw - 40px), 400px)",
+              border: "2px solid #fff",
+              position: "relative",
+              overflow: "hidden",
+              zIndex: 10,
+              boxShadow: "0 0 0 1000px rgba(0,0,0,0.7)"
+            }}>
+              {cropData.photoURL && (
+                <img 
+                  src={cropData.photoURL}
+                  onMouseDown={handleDragStart}
+                  onMouseMove={handleDragMove}
+                  onMouseUp={handleDragEnd}
+                  onMouseLeave={handleDragEnd}
+                  onTouchStart={handleDragStart}
+                  onTouchMove={handleDragMove}
+                  onTouchEnd={handleDragEnd}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    transform: `scale(${cropData.photoScale}) translate(${cropData.photoPosX}px, ${cropData.photoPosY}px)`,
+                    cursor: isDragging ? "grabbing" : "grab",
+                    userSelect: "none",
+                    touchAction: "none"
+                  }}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Bottom Controls */}
+          <div style={{ padding: "40px 20px", backgroundColor: "#111" }}>
+            <div style={{ maxWidth: "400px", margin: "0 auto" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "15px", color: "#888", fontSize: "0.8rem", fontWeight: "bold" }}>
+                <span>ZOOM</span>
+                <span>{cropData.photoScale.toFixed(1)}x</span>
+              </div>
+              <input 
+                type="range"
+                min="1"
+                max="4"
+                step="0.01"
+                value={cropData.photoScale}
+                onChange={(e) => setCropData({...cropData, photoScale: parseFloat(e.target.value)})}
+                style={{ width: "100%", accentColor: "#1dd1a1", cursor: "pointer", height: "4px", backgroundColor: "#333", borderRadius: "2px", appearance: "none" }}
+              />
+              
+              <div style={{ marginTop: "40px", display: "flex", justifyContent: "center", gap: "40px" }}>
+                <button 
+                  onClick={() => setCropData({...cropData, photoScale: 1, photoPosX: 0, photoPosY: 0})}
+                  style={{ background: "none", border: "none", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", cursor: "pointer" }}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                  <span style={{ fontSize: "0.7rem", color: "#888" }}>RESET</span>
+                </button>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+                  <div style={{ width: "24px", height: "24px", border: "2px solid #1dd1a1", borderRadius: "2px" }}></div>
+                  <span style={{ fontSize: "0.7rem", color: "#1dd1a1" }}>1:1</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {isProcessingImage && (
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 7000 }}>
+              <div style={{ color: "#1dd1a1", fontWeight: "bold" }}>Procesando...</div>
+            </div>
+          )}
         </div>
       )}
     </>

@@ -216,10 +216,9 @@ export default function Profile() {
     setSaving(true);
     
     try {
-      let finalPhotoURL = editData.photoURL;
-      const isNewPhoto = finalPhotoURL && typeof finalPhotoURL === 'string' && finalPhotoURL.startsWith('data:');
+      // Usamos directamente la foto que está en el estado (puede ser base64 o una URL pegada)
+      const finalPhotoURL = editData.photoURL;
       
-      // 1. Crear el objeto actualizado
       const updatedUser = {
         ...user,
         username: editData.username,
@@ -231,31 +230,9 @@ export default function Profile() {
         photoPosY: editData.photoPosY
       };
       
-      // 2. Guardar optimísticamente (actualiza UI y localStorage)
-      // Nota: saveUser en context/UserContext.js ya actualiza el estado inmediatamente
+      // Guardamos directamente en Firestore
+      // Esto funciona porque saveUser en UserContext ya llama a Firestore
       await saveUser(updatedUser);
-      
-      // 3. Si hay nueva foto, subirla en segundo plano
-      if (isNewPhoto && authUser?.uid) {
-        console.log("[Profile] Iniciando subida de foto en segundo plano...");
-        uploadProfilePhoto(authUser.uid, finalPhotoURL)
-          .then(async (uploadedURL) => {
-            if (uploadedURL) {
-              console.log("[Profile] Foto subida con éxito, actualizando URL permanente...");
-              // Actualizamos el objeto con la URL real de Firebase
-              const finalUser = { ...updatedUser, photoURL: uploadedURL };
-              await saveUser(finalUser);
-            } else {
-              throw new Error("No se recibió URL de descarga");
-            }
-          })
-          .catch(err => {
-            console.error("[Profile] Error en subida (CORS o Red):", err);
-            // IMPORTANTE: No revertimos la foto local (base64) para que el usuario 
-            // siga viéndola en esta sesión, pero avisamos por consola.
-            // Los cambios de texto (nombre/usuario) YA están guardados en Firestore.
-          });
-      }
       
       setIsEditing(false);
     } catch (e) {
@@ -809,6 +786,17 @@ export default function Profile() {
                     }}
                   />
                 </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                <label style={{ color: "#888", fontSize: "0.8rem", fontWeight: "600" }}>URL de la foto (opcional)</label>
+                <input 
+                  value={editData.photoURL?.startsWith('data:') ? '' : editData.photoURL} 
+                  onChange={e => setEditData({...editData, photoURL: e.target.value, photoScale: 1, photoPosX: 0, photoPosY: 0})}
+                  placeholder="https://ejemplo.com/mi-foto.png"
+                  style={{ width: "100%", padding: "12px 15px", borderRadius: "12px", border: "1px solid #333", backgroundColor: "#000", color: "#fff", outline: "none", fontSize: "0.85rem" }}
+                />
+                <span style={{ fontSize: "0.7rem", color: "#666" }}>O selecciona una foto arriba para subirla automáticamente</span>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>

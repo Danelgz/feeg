@@ -134,7 +134,7 @@ export default function UserProfile() {
             width: "80px",
             height: "80px",
             borderRadius: "50%",
-            backgroundColor: "#fff",
+            backgroundColor: "transparent",
             overflow: "hidden"
           }}>
             {profile?.photoURL ? <img src={profile.photoURL} alt="Perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : null}
@@ -308,7 +308,7 @@ export default function UserProfile() {
                     onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#2a2a2a"}
                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                   >
-                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "#333", overflow: "hidden" }}>
+                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "transparent", overflow: "hidden" }}>
                       {u.photoURL && <img src={u.photoURL} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
                     </div>
                     <div>

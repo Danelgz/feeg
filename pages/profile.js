@@ -466,7 +466,7 @@ export default function Profile() {
               width: "100px",
               height: "100px",
               borderRadius: "50%",
-              backgroundColor: "#1a1a1a",
+              backgroundColor: "transparent",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -729,7 +729,7 @@ export default function Profile() {
                     width: '150px', 
                     height: '150px', 
                     borderRadius: '50%', 
-                    backgroundColor: '#000', 
+                    backgroundColor: 'transparent', 
                     overflow: 'hidden', 
                     display: 'flex',
                     alignItems: 'center',
@@ -900,7 +900,7 @@ export default function Profile() {
                     onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#2a2a2a"}
                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                   >
-                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "#333", overflow: "hidden" }}>
+                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "transparent", overflow: "hidden" }}>
                       {u.photoURL && <img src={u.photoURL} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
                     </div>
                     <div>

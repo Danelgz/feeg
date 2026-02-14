@@ -472,8 +472,6 @@ export default function Profile() {
               justifyContent: "center",
               overflow: "hidden",
               cursor: "pointer",
-              border: "3px solid #1dd1a1",
-              boxShadow: "0 8px 24px rgba(29, 209, 161, 0.2)",
               flexShrink: 0
             }}
           >
@@ -733,12 +731,10 @@ export default function Profile() {
                     borderRadius: '50%', 
                     backgroundColor: '#000', 
                     overflow: 'hidden', 
-                    border: '3px solid #1dd1a1',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    position: 'relative',
-                    boxShadow: '0 0 20px rgba(29, 209, 161, 0.3)'
+                    position: 'relative'
                   }}>
                     {isProcessingImage ? (
                       <div style={{ color: '#1dd1a1', fontSize: '0.8rem', fontWeight: 'bold' }}>Subiendo...</div>

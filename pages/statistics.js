@@ -63,7 +63,57 @@ export default function Statistics() {
     };
   }, [workouts]);
 
-  // Series por grupo muscular y vista
+  // Series por grupo muscular (últimos 30 días para el mapa corporal)
+  const muscleStats = useMemo(() => {
+    const counts = {};
+    Object.keys(groupMap).forEach(g => counts[g] = 0);
+    
+    const now = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(now.getDate() - 30);
+
+    workouts.forEach(w => {
+      if (!w.completedAt) return;
+      const workoutDate = new Date(w.completedAt);
+      if (workoutDate < thirtyDaysAgo) return;
+
+      if (Array.isArray(w.details)) {
+        w.details.forEach(d => {
+          const grp = d.muscleGroup || d.group || d.category;
+          const found = Object.keys(groupMap).find(key => groupMap[key].includes(grp));
+          if (found) counts[found] += Number(d.series || 0);
+        });
+      }
+      if (!Array.isArray(w.details) && w.seriesByGroup) {
+        Object.entries(w.seriesByGroup).forEach(([k,v]) => {
+          const found = Object.keys(groupMap).find(key => groupMap[key].includes(k) || key === k);
+          if (found) counts[found] += Number(v||0);
+        });
+      }
+    });
+
+    const max = Math.max(1, ...Object.values(counts));
+    
+    const getIntensity = (val) => {
+      if (val === 0) return 0;
+      const ratio = val / max;
+      if (ratio <= 0.25) return 1;
+      if (ratio <= 0.50) return 2;
+      if (ratio <= 0.75) return 3;
+      return 4;
+    };
+
+    const getColor = (intensity) => {
+      if (intensity === 0) return isDark ? '#2a2a2a' : '#eeeeee';
+      if (intensity === 1) return 'rgba(29, 209, 161, 0.3)';
+      if (intensity === 2) return 'rgba(29, 209, 161, 0.55)';
+      if (intensity === 3) return 'rgba(29, 209, 161, 0.8)';
+      return '#1dd1a1'; // Nivel 4: Menta fuerte
+    };
+
+    return { counts, max, getIntensity, getColor };
+  }, [workouts, isDark]);
+
   const seriesByGroup = useMemo(() => {
     const counts = {};
     Object.keys(groupMap).forEach(g => counts[g] = 0);
@@ -84,15 +134,6 @@ export default function Statistics() {
     });
     return counts;
   }, [workouts]);
-
-  const maxSeries = Math.max(1, ...Object.values(seriesByGroup));
-  const mintFor = (val) => {
-    const intensity = Math.round((val / maxSeries) * 100);
-    const base = 20;
-    const pct = Math.min(100, base + intensity);
-    const alpha = Math.max(0.12, pct/120);
-    return `rgba(29,209,161,${alpha.toFixed(2)})`;
-  };
 
   const navButtons = [
     { key: 'seriesByGroup', label: 'Series por grupo muscular', href: '/statistics/series' },
@@ -154,10 +195,10 @@ export default function Statistics() {
         padding: '16px',
         marginBottom: '16px'
       }}>
-        <h2 style={{ margin: 0, marginBottom: '12px', color: isDark ? '#fff' : '#333', fontSize: isNarrow ? '1rem' : '1.05rem' }}>
-          Distribución de músculos (cuerpo) {workouts.length === 0 && <span style={{ color: isDark ? '#aaa' : '#777' }}>· {t('stats_no_data')}</span>}
+        <h2 style={{ margin: 0, marginBottom: '16px', color: isDark ? '#fff' : '#333', fontSize: isNarrow ? '1rem' : '1.05rem' }}>
+          Distribución de músculos (últimos 30 días) {workouts.length === 0 && <span style={{ color: isDark ? '#aaa' : '#777' }}>· {t('stats_no_data')}</span>}
         </h2>
-        <BodyHeatmap seriesByGroup={seriesByGroup} mintFor={mintFor} isDark={isDark} isMobile={isNarrow} />
+        <BodyHeatmap muscleStats={muscleStats} t={t} isDark={isDark} isMobile={isNarrow} />
       </section>
 
       {/* KPIs */}
@@ -435,29 +476,128 @@ function ExerciseStatsSection({ isDark, workouts, t }) {
   );
 }
 
-function BodyHeatmap({ seriesByGroup, mintFor, isDark, isMobile }) {
+function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
+  const { counts, getColor, getIntensity } = muscleStats;
+
+  const MuscleGroup = ({ id, paths, muscle }) => {
+    const intensity = getIntensity(muscle || id);
+    const color = getColor(intensity);
+    return (
+      <g id={id}>
+        {paths.map((p, i) => (
+          <path key={i} d={p} fill={color} stroke={isDark ? "#111" : "#fff"} strokeWidth="0.5" style={{ transition: 'fill 0.4s ease' }} />
+        ))}
+      </g>
+    );
+  };
+
+  const silhouetteColor = isDark ? "#1a1a1a" : "#e0e0e0";
+
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
-      gap: isMobile ? '6px' : '8px'
-    }}>
-      {Object.entries(seriesByGroup).map(([g, n]) => (
-        <div key={g} style={{
-          background: mintFor(n),
-          border: isDark ? '1px solid #2a2a2a' : '1px solid #d9f7ef',
-          borderRadius: '10px',
-          minHeight: isMobile ? 60 : 70,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: isMobile ? '8px' : '10px',
-          boxShadow: isDark ? 'none' : '0 1px 3px rgba(29,209,161,0.25)'
-        }}>
-          <span style={{ color: isDark ? '#eafff8' : '#044a39', fontWeight: 600, fontSize: isMobile ? '0.95rem' : '1rem' }}>{g}</span>
-          <span style={{ color: isDark ? '#c1ffee' : '#06624a', fontSize: isMobile ? '0.95rem' : '1rem' }}>{n}</span>
+    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '24px', alignItems: 'flex-start' }}>
+      <div style={{ 
+        display: 'flex', 
+        gap: '12px', 
+        backgroundColor: isDark ? '#000' : '#f5f5f5', 
+        padding: '20px', 
+        borderRadius: '20px', 
+        flexShrink: 0,
+        boxShadow: isDark ? 'inset 0 0 10px rgba(0,0,0,0.5)' : 'none',
+        margin: isMobile ? '0 auto' : '0'
+      }}>
+        {/* FRONT VIEW */}
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '0.6rem', color: '#888', marginBottom: '5px', fontWeight: 'bold' }}>FRONTAL</div>
+          <svg width={isMobile ? "130" : "150"} height={isMobile ? "260" : "300"} viewBox="0 0 200 400">
+            {/* Silhouette Base */}
+            <path d="M100,20 Q120,20 120,40 L120,60 Q140,70 150,90 L160,150 Q165,170 155,175 L145,170 L140,240 L150,370 L130,380 L120,260 L100,260 L80,260 L70,380 L50,370 L60,240 L55,170 L45,175 Q35,170 40,150 L50,90 Q60,70 80,60 L80,40 Q80,20 100,20" fill={silhouetteColor} />
+            
+            {/* Muscle Groups Front */}
+            <MuscleGroup id="Pecho" paths={[
+              "M102,85 Q125,80 140,95 L140,125 Q120,135 102,130 Z", // Right
+              "M98,85 Q75,80 60,95 L60,125 Q80,135 98,130 Z"    // Left
+            ]} />
+            <MuscleGroup id="Abdomen" paths={[
+              "M75,140 L125,140 L120,220 L80,220 Z",
+              "M85,145 L115,145 L112,170 L88,170 Z",
+              "M88,175 L112,175 L110,200 L90,200 Z"
+            ]} />
+            <MuscleGroup id="Hombros" paths={[
+              "M142,85 Q155,85 160,110 L145,120 Z", // Right
+              "M58,85 Q45,85 40,110 L55,120 Z"     // Left
+            ]} />
+            <MuscleGroup id="Bíceps" paths={[
+              "M148,125 Q160,130 158,160 L145,160 Z", // Right
+              "M52,125 Q40,130 42,160 L55,160 Z"    // Left
+            ]} />
+            <MuscleGroup id="Cuádriceps" paths={[
+              "M105,245 L138,245 L145,310 L115,310 Z", // Right
+              "M95,245 L62,245 L55,310 L85,310 Z"     // Left
+            ]} />
+          </svg>
         </div>
-      ))}
+
+        {/* BACK VIEW */}
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '0.6rem', color: '#888', marginBottom: '5px', fontWeight: 'bold' }}>POSTERIOR</div>
+          <svg width={isMobile ? "130" : "150"} height={isMobile ? "260" : "300"} viewBox="0 0 200 400">
+            <path d="M100,20 Q120,20 120,40 L120,60 Q140,70 150,90 L160,150 Q165,170 155,175 L145,170 L140,240 L150,370 L130,380 L120,260 L100,260 L80,260 L70,380 L50,370 L60,240 L55,170 L45,175 Q35,170 40,150 L50,90 Q60,70 80,60 L80,40 Q80,20 100,20" fill={silhouetteColor} />
+            
+            <MuscleGroup id="Espalda" paths={[
+              "M100,65 L140,85 L135,140 Q100,160 65,140 L60,85 Z", // Upper & Lats
+              "M80,65 L100,120 L120,65 Z" // Traps
+            ]} />
+            <MuscleGroup id="Tríceps" paths={[
+              "M145,120 L155,120 Q165,145 158,165 L145,165 Z", // Right
+              "M55,120 L45,120 Q35,145 42,165 L55,165 Z"    // Left
+            ]} />
+            <MuscleGroup id="Glúteos" paths={[
+              "M100,225 Q135,225 140,260 L100,270 Z", // Right
+              "M100,225 Q65,225 60,260 L100,270 Z"    // Left
+            ]} />
+            <MuscleGroup id="Femoral" paths={[
+              "M105,275 L140,275 L135,330 L110,330 Z", // Right
+              "M95,275 L60,275 L65,330 L90,330 Z"    // Left
+            ]} />
+            <MuscleGroup id="Gemelos" paths={[
+              "M115,340 L145,340 L140,385 L120,385 Z", // Right
+              "M85,340 L55,340 L60,385 L80,385 Z"    // Left
+            ]} />
+          </svg>
+        </div>
+      </div>
+
+      <div style={{ flex: 1, width: '100%' }}>
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ fontSize: '0.85rem', color: '#888', marginBottom: '10px', fontWeight: 'bold' }}>NIVELES DE INTENSIDAD</div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {[0, 1, 2, 3, 4].map(lvl => (
+              <div key={lvl} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ width: '16px', height: '16px', borderRadius: '4px', backgroundColor: getColor(lvl), border: isDark ? '1px solid #333' : '1px solid #ddd' }} />
+                <span style={{ fontSize: '0.7rem', color: isDark ? '#666' : '#999' }}>L{lvl}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
+          {Object.entries(counts).sort((a,b) => b[1] - a[1]).map(([m, val]) => (
+            <div key={m} style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              padding: '10px 14px', 
+              backgroundColor: isDark ? '#1a1a1a' : '#fff', 
+              borderRadius: '10px',
+              border: `1px solid ${isDark ? '#222' : '#eee'}`,
+              borderLeft: `4px solid ${getColor(getIntensity(val))}`
+            }}>
+              <span style={{ fontWeight: 600, color: isDark ? '#ddd' : '#333' }}>{t(m) || m}</span>
+              <span style={{ color: '#1dd1a1', fontWeight: 'bold' }}>{val} <span style={{ fontSize: '0.75rem', fontWeight: 'normal', color: '#666' }}>series</span></span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

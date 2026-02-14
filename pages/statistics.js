@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import Link from "next/link";
+import { FRONT_DATA, BACK_DATA } from "../data/bodyPaths";
 
 export default function Statistics() {
   const { t, theme, isMobile, completedWorkouts: workouts } = useUser();
@@ -472,118 +473,49 @@ function ExerciseStatsSection({ isDark, workouts, t }) {
 function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
   const { counts, getColor, getIntensity } = muscleStats;
 
-  const MuscleGroup = ({ id, paths }) => {
-    const intensity = getIntensity(counts[id] || 0);
-    const color = getColor(intensity);
-    return (
-      <g id={id} style={{ transition: 'all 0.4s ease' }}>
-        {paths.map((p, i) => (
-          <path 
-            key={i} 
-            d={p} 
-            fill={color} 
-            stroke={isDark ? "#000" : "#fff"} 
-            strokeWidth="0.2" 
-            style={{ transition: 'fill 0.4s ease' }} 
-          />
-        ))}
-      </g>
-    );
-  };
+  const silhouetteColor = isDark ? "#222" : "#e0e0e0";
+  const bodyBaseColor = isDark ? "#121212" : "#f5f5f5";
 
-  const silhouetteColor = isDark ? "#1a1a1a" : "#e0e0e0";
+  const renderMuscle = (muscle) => {
+    const intensity = muscle.decorative ? 0 : getIntensity(counts[muscle.id] || 0);
+    const color = muscle.decorative ? silhouetteColor : (intensity === 0 ? bodyBaseColor : getColor(intensity));
+    return muscle.paths.map((p, i) => (
+      <path 
+        key={`${muscle.id}-${i}`} 
+        d={p} 
+        fill={color} 
+        stroke={isDark ? "#000" : "#fff"} 
+        strokeWidth="0.2"
+        style={{ transition: 'fill 0.4s ease' }} 
+      />
+    ));
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '24px', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ 
         display: 'flex', 
         gap: '20px', 
-        backgroundColor: isDark ? '#080808' : '#f9f9f9', 
+        backgroundColor: isDark ? '#000' : '#fff', 
         padding: '25px', 
         borderRadius: '30px', 
         flexShrink: 0,
-        border: `1px solid ${isDark ? '#222' : '#eee'}`,
+        border: `1px solid ${isDark ? '#111' : '#eee'}`,
         boxShadow: isDark ? '0 10px 30px rgba(0,0,0,0.5)' : 'none'
       }}>
         {/* FRONTAL VIEW */}
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.6rem', color: '#666', marginBottom: '10px', fontWeight: '900', letterSpacing: '2px' }}>FRONTAL</div>
+          <div style={{ fontSize: '0.65rem', color: isDark ? '#777' : '#999', marginBottom: '15px', fontWeight: '900', letterSpacing: '3px' }}>FRONTAL</div>
           <svg width={isMobile ? "140" : "180"} height={isMobile ? "280" : "360"} viewBox="0 0 200 400">
-            {/* Realistic Silhouette Base Front */}
-            <path d="M100,15 Q112,15 112,32 L112,50 Q130,58 142,75 L152,130 Q158,160 148,165 L140,160 L136,220 L146,360 Q146,375 125,375 L115,250 L100,250 L85,250 L75,375 Q54,375 54,360 L64,220 L60,160 L52,165 Q42,160 48,130 L58,75 Q70,58 88,50 L88,32 Q88,15 100,15" fill={silhouetteColor} />
-            
-            {/* Pectorals */}
-            <MuscleGroup id="Pecho" paths={[
-              "M102,75 Q122,70 140,85 L138,125 Q118,138 102,128 Z",
-              "M98,75 Q78,70 60,85 L62,125 Q82,138 98,128 Z"
-            ]} />
-            
-            {/* Abs & Obliques */}
-            <MuscleGroup id="Abdomen" paths={[
-              "M88,135 L112,135 L110,152 L90,152 Z", // Block 1
-              "M90,155 L110,155 L108,172 L92,172 Z", // Block 2
-              "M92,175 L108,175 L106,195 L94,195 Z", // Block 3
-              "M94,198 L106,198 L104,220 L96,220 Z", // Lower
-              "M115,135 L125,135 L128,210 Q115,220 110,210 Z", // Oblique R
-              "M85,135 L75,135 L72,210 Q85,220 90,210 Z"    // Oblique L
-            ]} />
-            
-            {/* Shoulders Front */}
-            <MuscleGroup id="Hombros" paths={[
-              "M142,76 Q155,76 160,105 L144,115 Z",
-              "M58,76 Q45,76 40,105 L56,115 Z"
-            ]} />
-            
-            {/* Biceps */}
-            <MuscleGroup id="Bíceps" paths={[
-              "M148,120 Q160,125 156,160 L144,160 Z",
-              "M52,120 Q40,125 44,160 L56,160 Z"
-            ]} />
-            
-            {/* Quads */}
-            <MuscleGroup id="Cuádriceps" paths={[
-              "M105,235 L135,235 L142,310 L115,310 Q105,270 105,235 Z",
-              "M95,235 L65,235 L58,310 L85,310 Q95,270 95,235 Z"
-            ]} />
+            {FRONT_DATA.map(renderMuscle)}
           </svg>
         </div>
 
         {/* POSTERIOR VIEW */}
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.6rem', color: '#666', marginBottom: '10px', fontWeight: '900', letterSpacing: '2px' }}>POSTERIOR</div>
-          <svg width={isMobile ? "140" : "180"} height={isMobile ? "280" : "340"} viewBox="0 0 200 400">
-            {/* Realistic Silhouette Base Back */}
-            <path d="M100,15 Q112,15 112,32 L112,50 Q130,58 142,75 L152,130 Q158,160 148,165 L140,160 L136,220 L146,360 Q146,375 125,375 L115,250 L100,250 L85,250 L75,375 Q54,375 54,360 L64,220 L60,160 L52,165 Q42,160 48,130 L58,75 Q70,58 88,50 L88,32 Q88,15 100,15" fill={silhouetteColor} />
-            
-            {/* Back (Traps & Lats) */}
-            <MuscleGroup id="Espalda" paths={[
-              "M100,55 L138,80 L134,145 Q100,165 66,145 L62,80 Z", // Lats
-              "M88,50 Q100,40 112,50 L100,90 Z" // Traps
-            ]} />
-            
-            {/* Triceps */}
-            <MuscleGroup id="Tríceps" paths={[
-              "M144,115 L155,115 Q165,145 158,165 L144,165 Z",
-              "M56,115 L45,115 Q35,145 42,165 L56,165 Z"
-            ]} />
-            
-            {/* Glutes */}
-            <MuscleGroup id="Glúteos" paths={[
-              "M100,215 Q135,215 140,260 L100,270 Z",
-              "M100,215 Q65,215 60,260 L100,270 Z"
-            ]} />
-            
-            {/* Hamstrings */}
-            <MuscleGroup id="Femoral" paths={[
-              "M105,275 L140,275 L135,335 L110,335 Z",
-              "M95,275 L60,275 L65,335 L90,335 Z"
-            ]} />
-            
-            {/* Calves */}
-            <MuscleGroup id="Gemelos" paths={[
-              "M112,345 L142,345 L138,380 L118,380 Z",
-              "M88,345 L58,345 L62,380 L82,380 Z"
-            ]} />
+          <div style={{ fontSize: '0.65rem', color: isDark ? '#777' : '#999', marginBottom: '15px', fontWeight: '900', letterSpacing: '3px' }}>POSTERIOR</div>
+          <svg width={isMobile ? "140" : "180"} height={isMobile ? "280" : "360"} viewBox="0 0 200 400">
+            {BACK_DATA.map(renderMuscle)}
           </svg>
         </div>
       </div>

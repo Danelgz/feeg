@@ -1,8 +1,17 @@
+import { useEffect } from "react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 
 export default function Settings() {
-  const { theme, toggleTheme, isMobile, language, updateLanguage, t, authUser, loginWithGoogle, logout } = useUser();
+  const { theme, toggleTheme, isMobile, language, updateLanguage, t, authUser, loginWithGoogle, logout, refreshData } = useUser();
+
+  // Forzar refresco de datos al entrar a ajustes
+  useEffect(() => {
+    if (authUser) {
+      refreshData();
+    }
+  }, [authUser]);
+
   const isDark = theme === 'dark';
 
   const languages = [

@@ -13,6 +13,7 @@ export default function Profile() {
     saveUser, 
     isLoaded, 
     isSyncing, 
+    refreshData,
     theme, 
     isMobile, 
     t, 
@@ -36,6 +37,14 @@ export default function Profile() {
   const [followingList, setFollowingList] = useState([]);
   const [isPhotoFullScreen, setIsPhotoFullScreen] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Forzar refresco de datos al entrar al perfil
+  useEffect(() => {
+    if (authUser) {
+      refreshData();
+    }
+  }, [authUser]);
+
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });

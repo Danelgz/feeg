@@ -63,8 +63,17 @@ export default function Measures() {
     measures, 
     saveMeasures, 
     isLoaded, 
-    isMobile
+    isMobile,
+    authUser,
+    refreshData
   } = useUser();
+
+  // Forzar refresco de datos al entrar a medidas
+  useEffect(() => {
+    if (authUser) {
+      refreshData();
+    }
+  }, [authUser]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [viewingMeasure, setViewingMeasure] = useState(null);

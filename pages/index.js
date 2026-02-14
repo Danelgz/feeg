@@ -5,13 +5,20 @@ import { getWorkoutsFeed, searchUsers, likeWorkout, addWorkoutComment } from "..
 import { useRouter } from "next/router";
 
 export default function Home() {
-  const { user, authUser, isLoaded, following, handleFollow, handleUnfollow, isMobile } = useUser();
+  const { user, authUser, isLoaded, following, handleFollow, handleUnfollow, isMobile, refreshData } = useUser();
   const [feedWorkouts, setFeedWorkouts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [commentingOn, setCommentingOn] = useState(null);
   const [newComment, setNewComment] = useState("");
   const router = useRouter();
+
+  // Forzar refresco de datos al entrar al feed
+  useEffect(() => {
+    if (authUser) {
+      refreshData();
+    }
+  }, [authUser]);
 
   useEffect(() => {
     const fetchFeed = async () => {

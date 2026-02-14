@@ -63,8 +63,83 @@ export function UserProvider({ children }) {
     if (savedWorkouts) try { setCompletedWorkouts(JSON.parse(savedWorkouts)); } catch (e) {}
     if (savedRoutines) try { setRoutines(JSON.parse(savedRoutines)); } catch (e) {}
     if (savedMeasures) try { setMeasures(JSON.parse(savedMeasures)); } catch (e) {}
+  }, []);
 
-    // Suscribirse a cambios de autenticación de Firebase
+  // Función para sincronizar datos desde la nube
+  const refreshData = async (force = false) => {
+    if (!authUser || isSyncing) return;
+    
+    // EVITAR REVERTIR SI ACABAMOS DE ACTUALIZAR LOCALMENTE
+    // Si hubo una actualización local hace menos de 5 segundos, 
+    // ignoramos la carga automática de la nube (a menos que sea forzada)
+    const now = Date.now();
+    if (!force && (now - lastLocalUpdate.current < 5000)) {
+      console.log("[UserContext] Ignorando sincronización automática para proteger cambios locales recientes");
+      return;
+    }
+
+    setIsSyncing(true);
+    try {
+      console.log(`[UserContext] Sincronizando datos desde la nube (force: ${force})...`);
+      const cloudData = await getFromCloud(`users/${authUser.uid}`);
+      const publicData = await getFromCloud(`usersPublic/${authUser.uid}`);
+
+      if (cloudData) {
+        if (cloudData.profile) {
+          setUser(cloudData.profile);
+          localStorage.setItem('userProfile', JSON.stringify(cloudData.profile));
+          
+          // Asegurar que authUser también tenga la foto actualizada
+          if (cloudData.profile.photoURL) {
+            setAuthUser(prev => prev ? { ...prev, photoURL: cloudData.profile.photoURL } : prev);
+          }
+        }
+        if (cloudData.completedWorkouts) {
+          setCompletedWorkouts(cloudData.completedWorkouts);
+          localStorage.setItem('completedWorkouts', JSON.stringify(cloudData.completedWorkouts));
+        }
+        if (cloudData.routines) {
+          setRoutines(cloudData.routines);
+          localStorage.setItem('routines', JSON.stringify(cloudData.routines));
+        }
+        if (cloudData.measures) {
+          setMeasures(cloudData.measures);
+          localStorage.setItem('measures', JSON.stringify(cloudData.measures));
+        }
+        if (cloudData.activeRoutine) {
+          setActiveRoutine(cloudData.activeRoutine);
+          localStorage.setItem('activeRoutine', JSON.stringify(cloudData.activeRoutine));
+        }
+        
+        if (publicData && publicData.following) {
+          setFollowing(publicData.following);
+        } else if (cloudData.following) {
+          setFollowing(cloudData.following);
+        }
+
+        const fList = await getFollowersList(authUser.uid);
+        setFollowers(fList.map(u => u.id));
+
+        if (cloudData.settings) {
+          if (cloudData.settings.theme) {
+            setTheme(cloudData.settings.theme);
+            localStorage.setItem('theme', cloudData.settings.theme);
+          }
+          if (cloudData.settings.language) {
+            setLanguage(cloudData.settings.language);
+            localStorage.setItem('language', cloudData.settings.language);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("[UserContext] Error al sincronizar con la nube:", error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Suscribirse a cambios de autenticación de Firebase
+  useEffect(() => {
     const unsub = onAuthChange(async (fbUser) => {
       if (fbUser) {
         setAuthUser({
@@ -73,97 +148,24 @@ export function UserProvider({ children }) {
           displayName: fbUser.displayName || null,
           photoURL: fbUser.photoURL || null,
         });
-
-        setIsSyncing(true);
-        // Intentar sincronizar datos desde la nube
-        try {
-          const cloudData = await getFromCloud(`users/${fbUser.uid}`);
-          const publicData = await getFromCloud(`usersPublic/${fbUser.uid}`);
-          
-          // EVITAR REVERTIR SI ACABAMOS DE ACTUALIZAR LOCALMENTE
-          // Si hubo una actualización local hace menos de 15 segundos, 
-          // ignoramos la carga de la nube por ahora para evitar el "revert"
-          const now = Date.now();
-          if (now - lastLocalUpdate.current < 15000) {
-            console.log("[UserContext] Ignorando sincronización de nube para evitar sobreescribir cambios locales recientes");
-            setIsSyncing(false);
-            return;
-          }
-
-          if (cloudData) {
-            // Si hay datos en la nube, mandan sobre los locales
-            if (cloudData.profile) {
-              setUser(cloudData.profile);
-              localStorage.setItem('userProfile', JSON.stringify(cloudData.profile));
-            }
-            if (cloudData.completedWorkouts) {
-              setCompletedWorkouts(cloudData.completedWorkouts);
-              localStorage.setItem('completedWorkouts', JSON.stringify(cloudData.completedWorkouts));
-            }
-            if (cloudData.routines) {
-              setRoutines(cloudData.routines);
-              localStorage.setItem('routines', JSON.stringify(cloudData.routines));
-            }
-            if (cloudData.measures) {
-              setMeasures(cloudData.measures);
-              localStorage.setItem('measures', JSON.stringify(cloudData.measures));
-            }
-            if (cloudData.activeRoutine) {
-              setActiveRoutine(cloudData.activeRoutine);
-              localStorage.setItem('activeRoutine', JSON.stringify(cloudData.activeRoutine));
-            }
-            
-            // Following viene de usersPublic para ser consultable
-            if (publicData && publicData.following) {
-              setFollowing(publicData.following);
-            } else if (cloudData.following) {
-              setFollowing(cloudData.following); // Fallback migración
-            }
-
-            // Followers se calcula siempre
-            const fCount = await getFollowersCount(fbUser.uid);
-            // Si queremos la lista:
-            const fList = await getFollowersList(fbUser.uid);
-            setFollowers(fList.map(u => u.id));
-
-            if (cloudData.settings) {
-              if (cloudData.settings.theme) {
-                setTheme(cloudData.settings.theme);
-                localStorage.setItem('theme', cloudData.settings.theme);
-              }
-              if (cloudData.settings.language) {
-                setLanguage(cloudData.settings.language);
-                localStorage.setItem('language', cloudData.settings.language);
-              }
-            }
-          } else {
-            // Si NO hay datos en la nube pero sí locales, los subimos (migración)
-            const savedUserLoc = localStorage.getItem('userProfile');
-            if (savedUserLoc) {
-              const localProfile = JSON.parse(savedUserLoc);
-              await saveToCloud(`users/${fbUser.uid}`, { 
-                profile: localProfile,
-                completedWorkouts: JSON.parse(localStorage.getItem('completedWorkouts') || '[]'),
-                routines: JSON.parse(localStorage.getItem('routines') || '[]'),
-                measures: JSON.parse(localStorage.getItem('measures') || '[]')
-              });
-            }
-          }
-        } catch (error) {
-          console.error("Error synchronizing cloud data:", error);
-        } finally {
-          setIsSyncing(false);
-        }
+        // La sincronización inicial se disparará cuando authUser cambie (ver useEffect abajo)
       } else {
         setAuthUser(null);
+        setIsLoaded(true);
       }
-      setIsLoaded(true);
     });
 
     return () => {
       if (typeof unsub === 'function') unsub();
     };
   }, []);
+
+  // Sincronización automática cuando el usuario se detecta por primera vez
+  useEffect(() => {
+    if (authUser && !isLoaded) {
+      refreshData(true).then(() => setIsLoaded(true));
+    }
+  }, [authUser]);
 
   const saveUser = async (userData) => {
     // 1. Actualizar estado local inmediatamente para rapidez de UI
@@ -264,6 +266,7 @@ export function UserProvider({ children }) {
   };
 
   const saveCompletedWorkout = async (workout) => {
+    lastLocalUpdate.current = Date.now();
     const newList = [workout, ...completedWorkouts];
     setCompletedWorkouts(newList);
     localStorage.setItem('completedWorkouts', JSON.stringify(newList));
@@ -282,6 +285,7 @@ export function UserProvider({ children }) {
   };
 
   const deleteCompletedWorkout = async (id) => {
+    lastLocalUpdate.current = Date.now();
     const newList = completedWorkouts.filter(w => w.id !== id);
     setCompletedWorkouts(newList);
     localStorage.setItem('completedWorkouts', JSON.stringify(newList));
@@ -291,6 +295,7 @@ export function UserProvider({ children }) {
   };
 
   const updateCompletedWorkout = async (updatedWorkout) => {
+    lastLocalUpdate.current = Date.now();
     const newList = completedWorkouts.map(w => w.id === updatedWorkout.id ? updatedWorkout : w);
     setCompletedWorkouts(newList);
     localStorage.setItem('completedWorkouts', JSON.stringify(newList));
@@ -301,6 +306,7 @@ export function UserProvider({ children }) {
   };
 
   const saveRoutine = async (newRoutine) => {
+    lastLocalUpdate.current = Date.now();
     const newList = [newRoutine, ...routines];
     setRoutines(newList);
     localStorage.setItem('routines', JSON.stringify(newList));
@@ -310,6 +316,7 @@ export function UserProvider({ children }) {
   };
 
   const updateRoutine = async (updatedRoutine) => {
+    lastLocalUpdate.current = Date.now();
     const newList = routines.map(r => r.id === updatedRoutine.id ? updatedRoutine : r);
     setRoutines(newList);
     localStorage.setItem('routines', JSON.stringify(newList));
@@ -319,6 +326,7 @@ export function UserProvider({ children }) {
   };
 
   const deleteRoutine = async (id) => {
+    lastLocalUpdate.current = Date.now();
     const newList = routines.filter(r => r.id !== id);
     setRoutines(newList);
     localStorage.setItem('routines', JSON.stringify(newList));
@@ -328,6 +336,7 @@ export function UserProvider({ children }) {
   };
   
   const saveMeasures = async (newMeasures) => {
+    lastLocalUpdate.current = Date.now();
     setMeasures(newMeasures);
     localStorage.setItem('measures', JSON.stringify(newMeasures));
     if (authUser) {
@@ -336,6 +345,7 @@ export function UserProvider({ children }) {
   };
 
   const startRoutine = async (routineData) => {
+    lastLocalUpdate.current = Date.now();
     setActiveRoutine(routineData);
     localStorage.setItem('activeRoutine', JSON.stringify(routineData));
     if (authUser) {
@@ -344,6 +354,7 @@ export function UserProvider({ children }) {
   };
 
   const endRoutine = async () => {
+    lastLocalUpdate.current = Date.now();
     setActiveRoutine(null);
     localStorage.removeItem('activeRoutine');
     localStorage.removeItem('workoutTimerState');
@@ -381,6 +392,7 @@ export function UserProvider({ children }) {
       logout,
       isLoaded, 
       isSyncing,
+      refreshData,
       theme, 
       toggleTheme, 
       language, 

@@ -6,7 +6,15 @@ import { useUser } from "../../context/UserContext";
 
 export default function Routines() {
   const router = useRouter();
-  const { routines, completedWorkouts, deleteRoutine, deleteCompletedWorkout, endRoutine, theme, t } = useUser();
+  const { routines, completedWorkouts, deleteRoutine, deleteCompletedWorkout, endRoutine, theme, t, authUser, refreshData } = useUser();
+
+  // Forzar refresco de datos al entrar a rutinas
+  useEffect(() => {
+    if (authUser) {
+      refreshData();
+    }
+  }, [authUser]);
+
   const [activeTab, setActiveTab] = useState("active"); // active, completed
   const [isMobile, setIsMobile] = useState(false);
   const isDark = theme === 'dark';

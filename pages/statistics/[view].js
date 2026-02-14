@@ -46,13 +46,13 @@ export default function StatisticsView() {
     Object.keys(groupMap).forEach(g => counts[g] = 0);
     
     const now = new Date();
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(now.getDate() - 30);
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(now.getDate() - 7);
 
     workouts.forEach(w => {
       if (!w.completedAt) return;
       const workoutDate = new Date(w.completedAt);
-      if (workoutDate < thirtyDaysAgo) return;
+      if (workoutDate < sevenDaysAgo) return;
 
       if (Array.isArray(w.details)) {
         w.details.forEach(d => {
@@ -417,7 +417,7 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
 
       <div style={{ flex: 1, width: '100%', maxWidth: '500px' }}>
         <div style={{ marginBottom: '25px', textAlign: isMobile ? 'center' : 'left' }}>
-          <div style={{ fontSize: '0.75rem', color: isDark ? '#555' : '#999', marginBottom: '12px', fontWeight: '900', letterSpacing: '1px' }}>INTENSIDAD DE ENTRENAMIENTO (30 DÍAS)</div>
+          <div style={{ fontSize: '0.75rem', color: isDark ? '#555' : '#999', marginBottom: '12px', fontWeight: '900', letterSpacing: '1px' }}>INTENSIDAD DE ENTRENAMIENTO (7 DÍAS)</div>
           <div style={{ display: 'flex', gap: '10px', justifyContent: isMobile ? 'center' : 'flex-start', flexWrap: 'wrap' }}>
             {[0, 1, 2, 3, 4].map(lvl => (
               <div key={lvl} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: isDark ? '#111' : '#f8f8f8', padding: '6px 12px', borderRadius: '10px', border: `1px solid ${isDark ? '#222' : '#eee'}` }}>
@@ -429,7 +429,7 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          {Object.entries(counts).sort((a,b) => b[1] - a[1]).map(([m, val]) => (
+          {Object.entries(counts).sort((a,b) => (t(a[0]) || a[0]).localeCompare(t(b[0]) || b[0])).map(([m, val]) => (
             <div key={m} style={{ 
               display: 'flex', flexDirection: 'column', padding: '15px', 
               backgroundColor: isDark ? '#111' : '#fff', borderRadius: '16px', 

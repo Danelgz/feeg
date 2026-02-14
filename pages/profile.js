@@ -40,8 +40,10 @@ export default function Profile() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   
+  const [selectedFile, setSelectedFile] = useState(null);
+  
   const handleDragStart = (e) => {
-    if (!editData.photoURL) return;
+    if (!selectedFile) return; // Solo permitir ajustar si es una foto nueva
     setIsDragging(true);
     const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
     const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
@@ -64,6 +66,49 @@ export default function Profile() {
 
   const handleDragEnd = () => {
     setIsDragging(false);
+  };
+
+  const createCroppedImage = (imageSrc, scale, posX, posY) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = imageSrc;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const size = 400; // Tamaño final de la foto de perfil
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+
+        // Fondo blanco o transparente
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, size, size);
+
+        // Calcular dimensiones para el dibujo
+        const imgRatio = img.width / img.height;
+        let drawW, drawH;
+        
+        if (imgRatio > 1) {
+          drawH = size * scale;
+          drawW = drawH * imgRatio;
+        } else {
+          drawW = size * scale;
+          drawH = drawW / imgRatio;
+        }
+
+        // El centro del canvas es (size/2, size/2)
+        // posX y posY son relativos a la visualización inicial de 150px
+        // Escalamos esos valores al tamaño del canvas (400px)
+        const factor = size / 150;
+        const x = (size / 2) - (drawW / 2) + (posX * factor);
+        const y = (size / 2) - (drawH / 2) + (posY * factor);
+
+        ctx.drawImage(img, x, y, drawW, drawH);
+        
+        canvas.toBlob((blob) => {
+          resolve(blob);
+        }, 'image/jpeg', 0.9);
+      };
+    });
   };
 
   const handleOpenFollowers = async () => {
@@ -189,8 +234,29 @@ export default function Profile() {
     setSaving(true);
     
     try {
-      // Usamos directamente la foto que está en el estado (puede ser base64 o una URL pegada)
-      const finalPhotoURL = editData.photoURL;
+      let finalPhotoURL = editData.photoURL;
+
+      // Si hay un archivo seleccionado, primero lo recortamos y subimos
+      if (selectedFile) {
+        setIsProcessingImage(true);
+        const croppedBlob = await createCroppedImage(editData.photoURL, editData.photoScale, editData.photoPosX, editData.photoPosY);
+        
+        const formData = new FormData();
+        formData.append("file", croppedBlob);
+        formData.append("upload_preset", "feeg_profile");
+
+        const response = await fetch("https://api.cloudinary.com/v1_1/dfs9hazxo/image/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await response.json();
+        
+        if (data.secure_url) {
+          finalPhotoURL = data.secure_url;
+        } else {
+          throw new Error("Error al subir la imagen a Cloudinary");
+        }
+      }
       
       const updatedUser = {
         ...user,
@@ -198,20 +264,20 @@ export default function Profile() {
         firstName: editData.firstName,
         description: editData.description,
         photoURL: finalPhotoURL,
-        photoScale: editData.photoScale,
-        photoPosX: editData.photoPosX,
-        photoPosY: editData.photoPosY
+        photoScale: 1, // Reset porque ya está recortada
+        photoPosX: 0,
+        photoPosY: 0
       };
       
-      // Guardamos directamente en Firestore
-      // Optamos por no esperar a la sincronización completa de la nube para una UI instantánea
-      saveUser(updatedUser);
+      await saveUser(updatedUser);
       setIsEditing(false);
+      setSelectedFile(null);
     } catch (e) {
       console.error("Error en handleEditSave:", e);
       alert(e.message || "Hubo un problema al guardar.");
     } finally {
       setSaving(false);
+      setIsProcessingImage(false);
     }
   };
 
@@ -403,8 +469,7 @@ export default function Profile() {
                 style={{ 
                   width: "100%", 
                   height: "100%", 
-                  objectFit: "cover",
-                  transform: `scale(${user.photoScale || 1}) translate(${user.photoPosX || 0}px, ${user.photoPosY || 0}px)`
+                  objectFit: "cover"
                 }} 
               />
             ) : <span style={{ fontSize: "2rem" }}>👤</span>}
@@ -677,8 +742,8 @@ export default function Profile() {
                           width: '100%', 
                           height: '100%', 
                           objectFit: 'cover',
-                          transform: `scale(${editData.photoScale || 1}) translate(${editData.photoPosX || 0}px, ${editData.photoPosY || 0}px)`,
-                          cursor: isDragging ? 'grabbing' : 'grab',
+                          transform: selectedFile ? `scale(${editData.photoScale || 1}) translate(${editData.photoPosX || 0}px, ${editData.photoPosY || 0}px)` : 'none',
+                          cursor: (isDragging && selectedFile) ? 'grabbing' : (selectedFile ? 'grab' : 'default'),
                           userSelect: 'none',
                           touchAction: 'none',
                           transition: isDragging ? 'none' : 'transform 0.1s ease-out'
@@ -686,20 +751,22 @@ export default function Profile() {
                       />
                     ) : <span style={{ fontSize: '3rem' }}>👤</span>}
                     
-                    <div style={{
-                      position: 'absolute',
-                      bottom: '10px',
-                      left: '0',
-                      right: '0',
-                      textAlign: 'center',
-                      fontSize: '0.65rem',
-                      color: '#fff',
-                      textShadow: '0 1px 3px rgba(0,0,0,0.8)',
-                      pointerEvents: 'none',
-                      opacity: 0.8
-                    }}>
-                      Arrastra para ajustar
-                    </div>
+                    {selectedFile && (
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '10px',
+                        left: '0',
+                        right: '0',
+                        textAlign: 'center',
+                        fontSize: '0.65rem',
+                        color: '#fff',
+                        textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+                        pointerEvents: 'none',
+                        opacity: 0.8
+                      }}>
+                        Arrastra para ajustar
+                      </div>
+                    )}
                   </div>
                   
                   <label style={{ 
@@ -727,70 +794,58 @@ export default function Profile() {
                       onChange={async (e) => {
                         const file = e.target.files[0];
                         if (file) {
-                          setIsProcessingImage(true);
-                          
-                          const formData = new FormData();
-                          formData.append("file", file);
-                          formData.append("upload_preset", "feeg_profile");
-
-                          try {
-                            const response = await fetch("https://api.cloudinary.com/v1_1/dfs9hazxo/image/upload", {
-                              method: "POST",
-                              body: formData,
-                            });
-                            const data = await response.json();
-                            
-                            if (data.secure_url) {
-                              setEditData({ 
-                                ...editData, 
-                                photoURL: data.secure_url, 
-                                photoScale: 1, 
-                                photoPosX: 0, 
-                                photoPosY: 0 
-                              });
-                            }
-                          } catch (error) {
-                            console.error("Error uploading to Cloudinary:", error);
-                            alert("Error al subir la imagen a Cloudinary");
-                          } finally {
-                            setIsProcessingImage(false);
-                          }
+                          const previewURL = URL.createObjectURL(file);
+                          setEditData({ 
+                            ...editData, 
+                            photoURL: previewURL, 
+                            photoScale: 1, 
+                            photoPosX: 0, 
+                            photoPosY: 0 
+                          });
+                          setSelectedFile(file);
                         }
                       }}
                     />
                   </label>
                 </div>
 
-                <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                    <span>ZOOM</span>
-                    <span>{(editData.photoScale || 1).toFixed(1)}x</span>
+                {selectedFile && (
+                  <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                      <span>ZOOM</span>
+                      <span>{(editData.photoScale || 1).toFixed(1)}x</span>
+                    </div>
+                    <input 
+                      type="range"
+                      min="1"
+                      max="3"
+                      step="0.1"
+                      value={editData.photoScale || 1}
+                      onChange={(e) => setEditData({...editData, photoScale: parseFloat(e.target.value)})}
+                      style={{
+                        width: '100%',
+                        accentColor: '#1dd1a1',
+                        cursor: 'pointer'
+                      }}
+                    />
                   </div>
-                  <input 
-                    type="range"
-                    min="1"
-                    max="3"
-                    step="0.1"
-                    value={editData.photoScale || 1}
-                    onChange={(e) => setEditData({...editData, photoScale: parseFloat(e.target.value)})}
-                    style={{
-                      width: '100%',
-                      accentColor: '#1dd1a1',
-                      cursor: 'pointer'
-                    }}
-                  />
-                </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                 <label style={{ color: "#888", fontSize: "0.8rem", fontWeight: "600" }}>URL de la foto (opcional)</label>
                 <input 
-                  value={editData.photoURL?.startsWith('data:') ? '' : editData.photoURL} 
-                  onChange={e => setEditData({...editData, photoURL: e.target.value, photoScale: 1, photoPosX: 0, photoPosY: 0})}
+                  value={editData.photoURL?.startsWith('blob:') ? '' : editData.photoURL} 
+                  onChange={e => {
+                    setEditData({...editData, photoURL: e.target.value, photoScale: 1, photoPosX: 0, photoPosY: 0});
+                    setSelectedFile(null);
+                  }}
                   placeholder="https://ejemplo.com/mi-foto.png"
                   style={{ width: "100%", padding: "12px 15px", borderRadius: "12px", border: "1px solid #333", backgroundColor: "#000", color: "#fff", outline: "none", fontSize: "0.85rem" }}
                 />
-                <span style={{ fontSize: "0.7rem", color: "#666" }}>O selecciona una foto arriba para subirla automáticamente</span>
+                <span style={{ fontSize: "0.7rem", color: "#666" }}>
+                  {selectedFile ? "Nueva imagen seleccionada para recortar" : "O selecciona una foto arriba para ajustarla"}
+                </span>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
@@ -825,7 +880,10 @@ export default function Profile() {
               
               <div style={{ display: "flex", gap: "12px", marginTop: "10px" }}>
                 <button 
-                  onClick={() => setIsEditing(false)} 
+                  onClick={() => {
+                    setIsEditing(false);
+                    setSelectedFile(null);
+                  }} 
                   disabled={saving}
                   style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "1px solid #333", backgroundColor: "transparent", color: "#fff", fontWeight: "600", cursor: "pointer" }}
                 >

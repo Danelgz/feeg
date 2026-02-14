@@ -237,17 +237,24 @@ export default function Profile() {
       
       // 3. Si hay nueva foto, subirla en segundo plano
       if (isNewPhoto && authUser?.uid) {
-        // No esperamos a la subida para cerrar el modal
         console.log("[Profile] Iniciando subida de foto en segundo plano...");
-        uploadProfilePhoto(authUser.uid, finalPhotoURL).then(async (uploadedURL) => {
-          if (uploadedURL) {
-            console.log("[Profile] Foto subida con éxito, actualizando URL permanente...");
-            const finalUser = { ...updatedUser, photoURL: uploadedURL };
-            await saveUser(finalUser);
-          }
-        }).catch(err => {
-          console.error("[Profile] Error en subida de segundo plano:", err);
-        });
+        uploadProfilePhoto(authUser.uid, finalPhotoURL)
+          .then(async (uploadedURL) => {
+            if (uploadedURL) {
+              console.log("[Profile] Foto subida con éxito, actualizando URL permanente...");
+              // Actualizamos el objeto con la URL real de Firebase
+              const finalUser = { ...updatedUser, photoURL: uploadedURL };
+              await saveUser(finalUser);
+            } else {
+              throw new Error("No se recibió URL de descarga");
+            }
+          })
+          .catch(err => {
+            console.error("[Profile] Error en subida (CORS o Red):", err);
+            // IMPORTANTE: No revertimos la foto local (base64) para que el usuario 
+            // siga viéndola en esta sesión, pero avisamos por consola.
+            // Los cambios de texto (nombre/usuario) YA están guardados en Firestore.
+          });
       }
       
       setIsEditing(false);

@@ -1,0 +1,34 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Datos privados del usuario
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Datos públicos (Perfil, Seguidores)
+    match /usersPublic/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Entrenamientos (Feed Social)
+    match /workouts/{workoutId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && (resource == null || resource.data.userId == request.auth.uid);
+    }
+    
+    // Rutinas
+    match /routines/{routineId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && (resource == null || resource.data.creatorUid == request.auth.uid);
+    }
+    
+    // Imágenes (solo lectura)
+    match /images/{imageId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}

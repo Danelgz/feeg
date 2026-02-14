@@ -483,9 +483,16 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
     const intensity = getIntensity(muscle || id);
     const color = getColor(intensity);
     return (
-      <g id={id}>
+      <g id={id} style={{ transition: 'all 0.4s ease' }}>
         {paths.map((p, i) => (
-          <path key={i} d={p} fill={color} stroke={isDark ? "#111" : "#fff"} strokeWidth="0.5" style={{ transition: 'fill 0.4s ease' }} />
+          <path 
+            key={i} 
+            d={p} 
+            fill={color} 
+            stroke={isDark ? "#000" : "#fff"} 
+            strokeWidth="0.3" 
+            style={{ transition: 'fill 0.4s ease' }} 
+          />
         ))}
       </g>
     );
@@ -498,104 +505,130 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
       <div style={{ 
         display: 'flex', 
         gap: '12px', 
-        backgroundColor: isDark ? '#000' : '#f5f5f5', 
+        backgroundColor: isDark ? '#080808' : '#f9f9f9', 
         padding: '20px', 
-        borderRadius: '20px', 
+        borderRadius: '24px', 
         flexShrink: 0,
-        boxShadow: isDark ? 'inset 0 0 10px rgba(0,0,0,0.5)' : 'none',
+        border: `1px solid ${isDark ? '#222' : '#eee'}`,
         margin: isMobile ? '0 auto' : '0'
       }}>
-        {/* FRONT VIEW */}
+        {/* FRONTAL VIEW */}
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.6rem', color: '#888', marginBottom: '5px', fontWeight: 'bold' }}>FRONTAL</div>
-          <svg width={isMobile ? "130" : "150"} height={isMobile ? "260" : "300"} viewBox="0 0 200 400">
-            {/* Silhouette Base */}
-            <path d="M100,20 Q120,20 120,40 L120,60 Q140,70 150,90 L160,150 Q165,170 155,175 L145,170 L140,240 L150,370 L130,380 L120,260 L100,260 L80,260 L70,380 L50,370 L60,240 L55,170 L45,175 Q35,170 40,150 L50,90 Q60,70 80,60 L80,40 Q80,20 100,20" fill={silhouetteColor} />
+          <div style={{ fontSize: '0.65rem', color: '#666', marginBottom: '8px', fontWeight: '800', letterSpacing: '1px' }}>FRONTAL</div>
+          <svg width={isMobile ? "140" : "170"} height={isMobile ? "280" : "340"} viewBox="0 0 200 400">
+            {/* Realistic Silhouette Base */}
+            <path d="M100,15 Q115,15 115,35 L115,55 Q135,65 145,85 L155,140 Q160,165 150,170 L142,165 L138,230 L148,365 L128,380 L115,255 L100,255 L85,255 L72,380 L52,365 L62,230 L58,165 L50,170 Q40,165 45,140 L55,85 Q65,65 85,55 L85,35 Q85,15 100,15" fill={silhouetteColor} />
             
-            {/* Muscle Groups Front */}
+            {/* Pecho (Pectorals) */}
             <MuscleGroup id="Pecho" paths={[
-              "M102,85 Q125,80 140,95 L140,125 Q120,135 102,130 Z", // Right
-              "M98,85 Q75,80 60,95 L60,125 Q80,135 98,130 Z"    // Left
+              "M102,80 Q125,75 142,95 L140,130 Q120,145 102,135 Z", // Right
+              "M98,80 Q75,75 58,95 L60,130 Q80,145 98,135 Z"    // Left
             ]} />
+            
+            {/* Abdomen (Abs) */}
             <MuscleGroup id="Abdomen" paths={[
-              "M75,140 L125,140 L120,220 L80,220 Z",
-              "M85,145 L115,145 L112,170 L88,170 Z",
-              "M88,175 L112,175 L110,200 L90,200 Z"
+              "M85,145 L115,145 L112,165 L88,165 Z", // Upper 1
+              "M88,170 L112,170 L110,190 L90,190 Z", // Middle 2
+              "M90,195 L110,195 L108,220 L92,220 Z", // Lower 3
+              "M115,145 L125,145 L130,220 L120,225 L112,220 Z", // Right Oblique
+              "M85,145 L75,145 L70,220 L80,225 L88,220 Z"  // Left Oblique
             ]} />
+            
+            {/* Hombros (Deltoids Front) */}
             <MuscleGroup id="Hombros" paths={[
-              "M142,85 Q155,85 160,110 L145,120 Z", // Right
-              "M58,85 Q45,85 40,110 L55,120 Z"     // Left
+              "M144,82 Q158,82 162,110 L146,125 Z", // Right
+              "M56,82 Q42,82 38,110 L54,125 Z"     // Left
             ]} />
+            
+            {/* Bíceps */}
             <MuscleGroup id="Bíceps" paths={[
-              "M148,125 Q160,130 158,160 L145,160 Z", // Right
-              "M52,125 Q40,130 42,160 L55,160 Z"    // Left
+              "M150,128 Q162,135 158,165 L145,165 L145,135 Z", // Right
+              "M50,128 Q38,135 42,165 L55,165 L55,135 Z"    // Left
             ]} />
+            
+            {/* Cuádriceps (Quads) */}
             <MuscleGroup id="Cuádriceps" paths={[
-              "M105,245 L138,245 L145,310 L115,310 Z", // Right
-              "M95,245 L62,245 L55,310 L85,310 Z"     // Left
+              "M105,245 L138,245 L145,320 L115,320 Q105,280 105,245 Z", // Right
+              "M95,245 L62,245 L55,320 L85,320 Q95,280 95,245 Z"     // Left
             ]} />
           </svg>
         </div>
 
-        {/* BACK VIEW */}
+        {/* POSTERIOR VIEW */}
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.6rem', color: '#888', marginBottom: '5px', fontWeight: 'bold' }}>POSTERIOR</div>
-          <svg width={isMobile ? "130" : "150"} height={isMobile ? "260" : "300"} viewBox="0 0 200 400">
-            <path d="M100,20 Q120,20 120,40 L120,60 Q140,70 150,90 L160,150 Q165,170 155,175 L145,170 L140,240 L150,370 L130,380 L120,260 L100,260 L80,260 L70,380 L50,370 L60,240 L55,170 L45,175 Q35,170 40,150 L50,90 Q60,70 80,60 L80,40 Q80,20 100,20" fill={silhouetteColor} />
+          <div style={{ fontSize: '0.65rem', color: '#666', marginBottom: '8px', fontWeight: '800', letterSpacing: '1px' }}>POSTERIOR</div>
+          <svg width={isMobile ? "140" : "170"} height={isMobile ? "280" : "340"} viewBox="0 0 200 400">
+            <path d="M100,15 Q115,15 115,35 L115,55 Q135,65 145,85 L155,140 Q160,165 150,170 L142,165 L138,230 L148,365 L128,380 L115,255 L100,255 L85,255 L72,380 L52,365 L62,230 L58,165 L50,170 Q40,165 45,140 L55,85 Q65,65 85,55 L85,35 Q85,15 100,15" fill={silhouetteColor} />
             
+            {/* Espalda (Back - Traps & Lats) */}
             <MuscleGroup id="Espalda" paths={[
-              "M100,65 L140,85 L135,140 Q100,160 65,140 L60,85 Z", // Upper & Lats
-              "M80,65 L100,120 L120,65 Z" // Traps
+              "M100,60 L142,85 L138,150 Q100,175 62,150 L58,85 Z", // Back structure
+              "M85,55 Q100,45 115,55 L100,100 Z" // Upper traps
             ]} />
+            
+            {/* Tríceps */}
             <MuscleGroup id="Tríceps" paths={[
-              "M145,120 L155,120 Q165,145 158,165 L145,165 Z", // Right
-              "M55,120 L45,120 Q35,145 42,165 L55,165 Z"    // Left
+              "M146,125 L158,125 Q168,150 160,170 L146,170 Z", // Right
+              "M54,125 L42,125 Q32,150 40,170 L54,170 Z"    // Left
             ]} />
+            
+            {/* Glúteos */}
             <MuscleGroup id="Glúteos" paths={[
-              "M100,225 Q135,225 140,260 L100,270 Z", // Right
-              "M100,225 Q65,225 60,260 L100,270 Z"    // Left
+              "M100,225 Q140,225 145,265 L100,275 Z", // Right
+              "M100,225 Q60,225 55,265 L100,275 Z"    // Left
             ]} />
+            
+            {/* Femoral (Hamstrings) */}
             <MuscleGroup id="Femoral" paths={[
-              "M105,275 L140,275 L135,330 L110,330 Z", // Right
-              "M95,275 L60,275 L65,330 L90,330 Z"    // Left
+              "M105,280 L142,280 L138,340 L110,340 Z", // Right
+              "M95,280 L58,280 L62,340 L90,340 Z"    // Left
             ]} />
+            
+            {/* Gemelos (Calves) */}
             <MuscleGroup id="Gemelos" paths={[
-              "M115,340 L145,340 L140,385 L120,385 Z", // Right
-              "M85,340 L55,340 L60,385 L80,385 Z"    // Left
+              "M115,345 L145,345 L140,385 L120,385 Z", // Right
+              "M85,345 L55,345 L60,385 L80,385 Z"    // Left
             ]} />
           </svg>
         </div>
       </div>
 
       <div style={{ flex: 1, width: '100%' }}>
-        <div style={{ marginBottom: '20px' }}>
-          <div style={{ fontSize: '0.85rem', color: '#888', marginBottom: '10px', fontWeight: 'bold' }}>NIVELES DE INTENSIDAD</div>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ fontSize: '0.8rem', color: isDark ? '#666' : '#999', marginBottom: '12px', fontWeight: '800', letterSpacing: '0.5px' }}>INTENSIDAD (ÚLTIMOS 30 DÍAS)</div>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
             {[0, 1, 2, 3, 4].map(lvl => (
-              <div key={lvl} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <div style={{ width: '16px', height: '16px', borderRadius: '4px', backgroundColor: getColor(lvl), border: isDark ? '1px solid #333' : '1px solid #ddd' }} />
-                <span style={{ fontSize: '0.7rem', color: isDark ? '#666' : '#999' }}>L{lvl}</span>
+              <div key={lvl} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: isDark ? '#111' : '#f5f5f5', padding: '4px 10px', borderRadius: '8px', border: `1px solid ${isDark ? '#222' : '#eee'}` }}>
+                <div style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: getColor(lvl) }} />
+                <span style={{ fontSize: '0.75rem', color: isDark ? '#999' : '#666', fontWeight: 600 }}>L{lvl}</span>
               </div>
             ))}
           </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
-          {Object.entries(counts).sort((a,b) => b[1] - a[1]).map(([m, val]) => (
-            <div key={m} style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center', 
-              padding: '10px 14px', 
-              backgroundColor: isDark ? '#1a1a1a' : '#fff', 
-              borderRadius: '10px',
-              border: `1px solid ${isDark ? '#222' : '#eee'}`,
-              borderLeft: `4px solid ${getColor(getIntensity(val))}`
-            }}>
-              <span style={{ fontWeight: 600, color: isDark ? '#ddd' : '#333' }}>{t(m) || m}</span>
-              <span style={{ color: '#1dd1a1', fontWeight: 'bold' }}>{val} <span style={{ fontSize: '0.75rem', fontWeight: 'normal', color: '#666' }}>series</span></span>
-            </div>
-          ))}
+          {Object.entries(counts).sort((a,b) => b[1] - a[1]).map(([m, val]) => {
+            const intensity = getIntensity(val);
+            return (
+              <div key={m} style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                padding: '12px 16px', 
+                backgroundColor: isDark ? '#161616' : '#fff', 
+                borderRadius: '12px',
+                border: `1px solid ${isDark ? '#222' : '#eee'}`,
+                borderLeft: `5px solid ${getColor(intensity)}`,
+                transition: 'transform 0.2s ease'
+              }}>
+                <span style={{ fontWeight: 700, color: isDark ? '#eee' : '#333', fontSize: '0.95rem' }}>{t(m) || m}</span>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ color: '#1dd1a1', fontWeight: '900', fontSize: '1.1rem' }}>{val}</div>
+                  <div style={{ fontSize: '0.65rem', color: '#666', textTransform: 'uppercase' }}>Series</div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

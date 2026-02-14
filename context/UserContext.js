@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { translations } from '../data/translations';
 import { 
   onAuthChange, 
@@ -20,6 +20,7 @@ export function UserProvider({ children }) {
   const [authUser, setAuthUser] = useState(null); // Usuario autenticado (Firebase)
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const lastLocalUpdate = useRef(0);
   const [theme, setTheme] = useState('dark');
   const [language, setLanguage] = useState('es');
   const [activeRoutine, setActiveRoutine] = useState(null);
@@ -79,6 +80,16 @@ export function UserProvider({ children }) {
           const cloudData = await getFromCloud(`users/${fbUser.uid}`);
           const publicData = await getFromCloud(`usersPublic/${fbUser.uid}`);
           
+          // EVITAR REVERTIR SI ACABAMOS DE ACTUALIZAR LOCALMENTE
+          // Si hubo una actualización local hace menos de 15 segundos, 
+          // ignoramos la carga de la nube por ahora para evitar el "revert"
+          const now = Date.now();
+          if (now - lastLocalUpdate.current < 15000) {
+            console.log("[UserContext] Ignorando sincronización de nube para evitar sobreescribir cambios locales recientes");
+            setIsSyncing(false);
+            return;
+          }
+
           if (cloudData) {
             // Si hay datos en la nube, mandan sobre los locales
             if (cloudData.profile) {
@@ -158,38 +169,45 @@ export function UserProvider({ children }) {
     // 1. Actualizar estado local inmediatamente para rapidez de UI
     setUser(userData);
     localStorage.setItem('userProfile', JSON.stringify(userData));
+    lastLocalUpdate.current = Date.now();
     
     if (authUser) {
       if (userData?.photoURL) {
         setAuthUser((prev) => (prev ? { ...prev, photoURL: userData.photoURL } : prev));
       }
 
-      // 2. Ejecutar guardados en la nube en paralelo
-      try {
-        const privateSave = saveToCloud(`users/${authUser.uid}`, { profile: userData });
-        
-        // Solo guardar en public si tenemos username
-        let publicSave = Promise.resolve();
-        if (userData.username) {
-          publicSave = saveToCloud(`usersPublic/${authUser.uid}`, {
-            username: userData.username,
-            usernameLowercase: userData.username.toLowerCase(),
-            firstName: userData.firstName || "",
-            photoURL: userData.photoURL || authUser.photoURL,
-            photoScale: userData.photoScale || 1,
-            photoPosX: userData.photoPosX || 0,
-            photoPosY: userData.photoPosY || 0,
-            description: userData.description || "",
-            uid: authUser.uid,
-            following: following
-          });
-        }
+      // 2. Ejecutar guardados en la nube en paralelo (sin bloquear si no es necesario)
+      // Pero devolvemos la promesa para que el llamador decida si esperar
+      const savePromise = (async () => {
+        try {
+          const privateSave = saveToCloud(`users/${authUser.uid}`, { profile: userData });
+          
+          let publicSave = Promise.resolve();
+          if (userData.username) {
+            publicSave = saveToCloud(`usersPublic/${authUser.uid}`, {
+              username: userData.username,
+              usernameLowercase: userData.username.toLowerCase(),
+              firstName: userData.firstName || "",
+              photoURL: userData.photoURL || authUser.photoURL,
+              photoScale: userData.photoScale || 1,
+              photoPosX: userData.photoPosX || 0,
+              photoPosY: userData.photoPosY || 0,
+              description: userData.description || "",
+              uid: authUser.uid,
+              following: following
+            });
+          }
 
-        await Promise.all([privateSave, publicSave]);
-      } catch (e) {
-        console.error("Error persistiendo datos en la nube:", e);
-        throw e; // Re-lanzar para que el modal maneje el error
-      }
+          await Promise.all([privateSave, publicSave]);
+          console.log("[UserContext] Datos sincronizados con la nube correctamente");
+        } catch (e) {
+          console.error("Error persistiendo datos en la nube:", e);
+          // No lanzamos error aquí para no romper la experiencia local,
+          // pero podrías mostrar una notificación de "Error al sincronizar"
+        }
+      })();
+      
+      return savePromise;
     }
   };
 

@@ -231,9 +231,8 @@ export default function Profile() {
       };
       
       // Guardamos directamente en Firestore
-      // Esto funciona porque saveUser en UserContext ya llama a Firestore
-      await saveUser(updatedUser);
-      
+      // Optamos por no esperar a la sincronización completa de la nube para una UI instantánea
+      saveUser(updatedUser);
       setIsEditing(false);
     } catch (e) {
       console.error("Error en handleEditSave:", e);

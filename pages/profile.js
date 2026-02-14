@@ -50,15 +50,13 @@ export default function Profile() {
   });
   
   const handleDragStart = (e) => {
-    if (!isCropping && !selectedFile) return;
+    if (!isCropping) return; // Solo permitir arrastrar dentro del cropper
     setIsDragging(true);
     const clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
     const clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
-    const currentPosX = isCropping ? cropData.photoPosX : (editData.photoPosX || 0);
-    const currentPosY = isCropping ? cropData.photoPosY : (editData.photoPosY || 0);
     setDragStart({ 
-      x: clientX - currentPosX, 
-      y: clientY - currentPosY 
+      x: clientX - cropData.photoPosX, 
+      y: clientY - cropData.photoPosY 
     });
   };
 
@@ -728,7 +726,7 @@ export default function Profile() {
             
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', width: '100%' }}>
-                <div style={{ position: 'relative', cursor: 'move' }}>
+                <div style={{ position: 'relative' }}>
                   <div style={{ 
                     width: '150px', 
                     height: '150px', 
@@ -748,42 +746,13 @@ export default function Profile() {
                       <img 
                         src={editData.photoURL} 
                         alt="Preview" 
-                        onMouseDown={handleDragStart}
-                        onMouseMove={handleDragMove}
-                        onMouseUp={handleDragEnd}
-                        onMouseLeave={handleDragEnd}
-                        onTouchStart={handleDragStart}
-                        onTouchMove={handleDragMove}
-                        onTouchEnd={handleDragEnd}
                         style={{ 
                           width: '100%', 
                           height: '100%', 
-                          objectFit: 'cover',
-                          transform: selectedFile ? `scale(${editData.photoScale || 1}) translate(${editData.photoPosX || 0}px, ${editData.photoPosY || 0}px)` : 'none',
-                          cursor: (isDragging && selectedFile) ? 'grabbing' : (selectedFile ? 'grab' : 'default'),
-                          userSelect: 'none',
-                          touchAction: 'none',
-                          transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+                          objectFit: 'cover'
                         }} 
                       />
                     ) : <span style={{ fontSize: '3rem' }}>👤</span>}
-                    
-                    {selectedFile && (
-                      <div style={{
-                        position: 'absolute',
-                        bottom: '10px',
-                        left: '0',
-                        right: '0',
-                        textAlign: 'center',
-                        fontSize: '0.65rem',
-                        color: '#fff',
-                        textShadow: '0 1px 3px rgba(0,0,0,0.8)',
-                        pointerEvents: 'none',
-                        opacity: 0.8
-                      }}>
-                        Arrastra para ajustar
-                      </div>
-                    )}
                   </div>
                   
                   <label style={{ 
@@ -825,28 +794,6 @@ export default function Profile() {
                     />
                   </label>
                 </div>
-
-                {selectedFile && (
-                  <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                      <span>ZOOM</span>
-                      <span>{(editData.photoScale || 1).toFixed(1)}x</span>
-                    </div>
-                    <input 
-                      type="range"
-                      min="1"
-                      max="3"
-                      step="0.1"
-                      value={editData.photoScale || 1}
-                      onChange={(e) => setEditData({...editData, photoScale: parseFloat(e.target.value)})}
-                      style={{
-                        width: '100%',
-                        accentColor: '#1dd1a1',
-                        cursor: 'pointer'
-                      }}
-                    />
-                  </div>
-                )}
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
@@ -861,7 +808,7 @@ export default function Profile() {
                   style={{ width: "100%", padding: "12px 15px", borderRadius: "12px", border: "1px solid #333", backgroundColor: "#000", color: "#fff", outline: "none", fontSize: "0.85rem" }}
                 />
                 <span style={{ fontSize: "0.7rem", color: "#666" }}>
-                  {selectedFile ? "Nueva imagen seleccionada para recortar" : "O selecciona una foto arriba para ajustarla"}
+                  O selecciona una foto arriba para subirla automáticamente
                 </span>
               </div>
 

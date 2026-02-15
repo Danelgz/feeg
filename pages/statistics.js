@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import Link from "next/link";
-import { FRONT_DATA, BACK_DATA } from "../data/bodyPaths";
+import BodyHeatmap from "../components/BodyHeatmap";
 
 export default function Statistics() {
   const { t, theme, isMobile, completedWorkouts: workouts } = useUser();
@@ -164,7 +164,9 @@ export default function Statistics() {
         <h2 style={{ margin: 0, marginBottom: '16px', color: isDark ? '#fff' : '#333', fontSize: isNarrow ? '1rem' : '1.05rem' }}>
           Distribución de músculos (últimos 30 días) {workouts.length === 0 && <span style={{ color: isDark ? '#aaa' : '#777' }}>· {t('stats_no_data')}</span>}
         </h2>
-        <BodyHeatmap muscleStats={muscleStats} t={t} isDark={isDark} isMobile={isNarrow} />
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <BodyHeatmap counts={muscleStats.counts} isDark={isDark} />
+        </div>
       </section>
 
       {/* Botones de navegación de estadísticas */}
@@ -469,86 +471,6 @@ function ExerciseStatsSection({ isDark, workouts, t }) {
         </div>
       )}
     </section>
-  );
-}
-
-function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
-  const { counts, getColor, getIntensity } = muscleStats;
-
-  const silhouetteColor = isDark ? "#1a1a1a" : "#d0d0d0";
-  const bodyBaseColor = isDark ? "#222" : "#e0e0e0";
-
-  const renderMuscle = (muscle) => {
-    const intensity = muscle.decorative ? 0 : getIntensity(counts[muscle.id] || 0);
-    const color = muscle.decorative ? silhouetteColor : (intensity === 0 ? bodyBaseColor : getColor(intensity));
-    return muscle.paths.map((p, i) => (
-      <path 
-        key={`${muscle.id}-${i}`} 
-        d={p} 
-        fill={color} 
-        stroke={isDark ? "#111" : "#fff"} 
-        strokeWidth="0.4"
-        style={{ transition: 'fill 0.4s ease' }} 
-      />
-    ));
-  };
-
-  return (
-    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '24px', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ 
-        display: 'flex', 
-        gap: '20px', 
-        backgroundColor: isDark ? '#0a0a0a' : '#f0f0f0', 
-        padding: '30px', 
-        borderRadius: '20px', 
-        flexShrink: 0,
-        border: `1px solid ${isDark ? '#1a1a1a' : '#ddd'}`,
-        boxShadow: isDark ? '0 15px 35px rgba(0,0,0,0.7)' : '0 5px 15px rgba(0,0,0,0.05)'
-      }}>
-        {/* FRONTAL VIEW */}
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.7rem', color: isDark ? '#555' : '#888', marginBottom: '20px', fontWeight: '900', letterSpacing: '4px' }}>FRONTAL</div>
-          <svg width={isMobile ? "130" : "160"} height={isMobile ? "280" : "350"} viewBox="0 0 100 220">
-            {FRONT_DATA.map(renderMuscle)}
-          </svg>
-        </div>
-
-        {/* POSTERIOR VIEW */}
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.7rem', color: isDark ? '#555' : '#888', marginBottom: '20px', fontWeight: '900', letterSpacing: '4px' }}>POSTERIOR</div>
-          <svg width={isMobile ? "130" : "160"} height={isMobile ? "280" : "350"} viewBox="0 0 100 220">
-            {BACK_DATA.map(renderMuscle)}
-          </svg>
-        </div>
-      </div>
-
-      <div style={{ flex: 1, width: '100%', maxWidth: '400px' }}>
-        <div style={{ marginBottom: '25px' }}>
-          <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '12px', fontWeight: '900' }}>INTENSIDAD (ÚLTIMOS 30 DÍAS)</div>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {[0, 1, 2, 3, 4].map(lvl => (
-              <div key={lvl} style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: isDark ? '#111' : '#f0f0f0', padding: '6px 12px', borderRadius: '10px' }}>
-                <div style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: getColor(lvl) }} />
-                <span style={{ fontSize: '0.75rem', color: isDark ? '#999' : '#666', fontWeight: 'bold' }}>L{lvl}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-          {Object.entries(counts).sort((a,b) => b[1] - a[1]).map(([m, val]) => (
-            <div key={m} style={{ 
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', 
-              backgroundColor: isDark ? '#161616' : '#fff', borderRadius: '12px', border: `1px solid ${isDark ? '#222' : '#eee'}`,
-              borderLeft: `4px solid ${getColor(getIntensity(val))}`
-            }}>
-              <span style={{ fontWeight: 700, fontSize: '0.85rem', color: isDark ? '#ddd' : '#333' }}>{t(m) || m}</span>
-              <span style={{ color: '#1dd1a1', fontWeight: '900' }}>{val}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
   );
 }
 

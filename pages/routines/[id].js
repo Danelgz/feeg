@@ -1235,7 +1235,7 @@ export default function RoutineDetail() {
                       overflow: "hidden"
                     }}>
                       <img 
-                        src={`/exercises/${exercise.name.toLowerCase().replace(/ /g, "_")}.png`} 
+                        src={`/exercises/${(exercise?.name || "").toLowerCase().replace(/ /g, "_")}.png`} 
                         onError={(e) => { e.target.src = "/logo3.png"; }}
                         alt="" 
                         style={{ width: "80%", height: "auto" }} 
@@ -1829,7 +1829,7 @@ export default function RoutineDetail() {
                           overflow: "hidden"
                         }}>
                           <img 
-                            src={`/muscle_groups/${group.toLowerCase().replace(/ /g, "_")}.png`} 
+                            src={`/muscle_groups/${(group || "").toLowerCase().replace(/ /g, "_")}.png`} 
                             onError={(e) => { e.target.src = "/logo3.png"; }}
                             alt="" 
                             style={{ width: "80%", height: "auto" }} 

@@ -236,7 +236,7 @@ function Section({ title, isDark, children }) {
 function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
   const { counts, getColor, getIntensity } = muscleStats;
 
-  const silhouetteColor = "#4a5568";
+  const silhouetteColor = "#444444";
   const strokeColor = "#000";
 
   const renderMuscle = (muscle) => {
@@ -248,7 +248,7 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
         d={p} 
         fill={color} 
         stroke={strokeColor} 
-        strokeWidth="1.5"
+        strokeWidth="1"
         strokeLinejoin="round"
         style={{ transition: 'fill 0.4s ease' }} 
       />

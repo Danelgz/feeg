@@ -79,17 +79,15 @@ export default function StatisticsView() {
     const getIntensity = (val) => {
       if (val === 0) return 0;
       const ratio = val / max;
-      if (ratio <= 0.25) return 1;
-      if (ratio <= 0.50) return 2;
-      if (ratio <= 0.75) return 3;
-      return 4;
+      if (ratio <= 0.33) return 1;
+      if (ratio <= 0.66) return 2;
+      return 3;
     };
 
     const getColor = (intensity) => {
-      if (intensity === 0) return isDark ? '#2a2a2a' : '#eeeeee';
-      if (intensity === 1) return isDark ? '#1a4d3c' : '#d1f2e8'; // Verde muy sutil
-      if (intensity === 2) return isDark ? '#2a7d62' : '#a2e5d1'; 
-      if (intensity === 3) return isDark ? '#3ab08a' : '#73d8ba';
+      if (intensity === 0) return 'transparent'; // Para mostrar la foto
+      if (intensity === 1) return 'rgba(29, 209, 161, 0.3)'; 
+      if (intensity === 2) return 'rgba(29, 209, 161, 0.6)'; 
       return '#1dd1a1';
     };
 
@@ -235,21 +233,31 @@ function Section({ title, isDark, children }) {
 
 function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
   const { counts, getColor, getIntensity } = muscleStats;
+  const [manualLevels, setManualLevels] = useState({});
 
-  const silhouetteColor = isDark ? "#1a1a1a" : "#d0d0d0";
-  const bodyBaseColor = isDark ? "#222" : "#e0e0e0";
+  const handleMuscleClick = (id) => {
+    const currentLevel = manualLevels[id] !== undefined ? manualLevels[id] : getIntensity(counts[id] || 0);
+    const nextLevel = (currentLevel + 1) % 4;
+    setManualLevels(prev => ({ ...prev, [id]: nextLevel }));
+  };
 
-  const renderMuscle = (muscle) => {
-    const intensity = muscle.decorative ? 0 : getIntensity(counts[muscle.id] || 0);
-    const color = muscle.decorative ? silhouetteColor : (intensity === 0 ? bodyBaseColor : getColor(intensity));
+  const renderMuscle = (muscle, isBack = false) => {
+    const intensity = muscle.decorative ? 0 : (manualLevels[muscle.id] !== undefined ? manualLevels[muscle.id] : getIntensity(counts[muscle.id] || 0));
+    const color = muscle.decorative ? 'transparent' : getColor(intensity);
+    
     return muscle.paths.map((p, i) => (
       <path 
-        key={`${muscle.id}-${i}`} 
+        key={`${muscle.id}-${isBack ? 'back' : 'front'}-${i}`} 
         d={p} 
         fill={color} 
-        stroke={isDark ? "#111" : "#fff"} 
-        strokeWidth="0.4"
-        style={{ transition: 'fill 0.4s ease' }} 
+        stroke={muscle.decorative ? "transparent" : (isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)")}
+        strokeWidth="0.5"
+        onClick={() => !muscle.decorative && handleMuscleClick(muscle.id)}
+        style={{ 
+          transition: 'fill 0.3s ease', 
+          cursor: muscle.decorative ? 'default' : 'pointer',
+          pointerEvents: muscle.decorative ? 'none' : 'auto'
+        }} 
       />
     ));
   };
@@ -257,39 +265,65 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
   return (
     <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '24px', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ 
-        display: 'flex', 
-        gap: isMobile ? '30px' : '50px', 
+        position: 'relative',
+        width: isMobile ? "320px" : "600px",
+        height: isMobile ? "320px" : "600px",
+        backgroundImage: "url('/cuerpo.png')",
+        backgroundSize: 'contain',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
         backgroundColor: isDark ? '#0a0a0a' : '#f0f0f0', 
-        padding: isMobile ? '30px 20px' : '40px 30px', 
         borderRadius: '20px', 
         flexShrink: 0,
         border: `1px solid ${isDark ? '#1a1a1a' : '#ddd'}`,
-        boxShadow: isDark ? '0 15px 35px rgba(0,0,0,0.7)' : '0 5px 15px rgba(0,0,0,0.05)'
+        boxShadow: isDark ? '0 15px 35px rgba(0,0,0,0.7)' : '0 5px 15px rgba(0,0,0,0.05)',
+        overflow: 'hidden'
       }}>
-        {/* VISTA FRONTAL */}
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.7rem', color: isDark ? '#555' : '#888', marginBottom: '20px', fontWeight: '900', letterSpacing: '4px' }}>FRONTAL</div>
-          <svg width={isMobile ? "130" : "160"} height={isMobile ? "280" : "350"} viewBox="0 0 100 220">
-            {FRONT_DATA.map(renderMuscle)}
-          </svg>
-        </div>
+        {/* Overlay SVG for Frontal */}
+        <svg 
+          viewBox="0 0 100 220" 
+          style={{ 
+            position: 'absolute', 
+            left: '12%', 
+            top: '15%', 
+            width: '35%', 
+            height: '75%',
+            filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.5))'
+          }}
+        >
+          {FRONT_DATA.map(m => renderMuscle(m, false))}
+        </svg>
 
-        {/* VISTA POSTERIOR */}
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.7rem', color: isDark ? '#555' : '#888', marginBottom: '20px', fontWeight: '900', letterSpacing: '4px' }}>POSTERIOR</div>
-          <svg width={isMobile ? "130" : "160"} height={isMobile ? "280" : "350"} viewBox="0 0 100 220">
-            {BACK_DATA.map(renderMuscle)}
-          </svg>
-        </div>
+        {/* Overlay SVG for Posterior */}
+        <svg 
+          viewBox="0 0 100 220" 
+          style={{ 
+            position: 'absolute', 
+            right: '12%', 
+            top: '15%', 
+            width: '35%', 
+            height: '75%',
+            filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.5))'
+          }}
+        >
+          {BACK_DATA.map(m => renderMuscle(m, true))}
+        </svg>
       </div>
       
       <div style={{ flex: 1, width: '100%', maxWidth: '500px' }}>
         <div style={{ marginBottom: '25px', textAlign: isMobile ? 'center' : 'left' }}>
-          <div style={{ fontSize: '0.75rem', color: isDark ? '#555' : '#999', marginBottom: '12px', fontWeight: '900', letterSpacing: '1px' }}>INTENSIDAD DE ENTRENAMIENTO (7 DÍAS)</div>
+          <div style={{ fontSize: '0.75rem', color: isDark ? '#555' : '#999', marginBottom: '12px', fontWeight: '900', letterSpacing: '1px' }}>INTENSIDAD DE ENTRENAMIENTO (HAZ CLICK EN LOS MÚSCULOS)</div>
           <div style={{ display: 'flex', gap: '10px', justifyContent: isMobile ? 'center' : 'flex-start', flexWrap: 'wrap' }}>
-            {[0, 1, 2, 3, 4].map(lvl => (
+            {[0, 1, 2, 3].map(lvl => (
               <div key={lvl} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: isDark ? '#111' : '#f8f8f8', padding: '6px 12px', borderRadius: '10px', border: `1px solid ${isDark ? '#222' : '#eee'}` }}>
-                <div style={{ width: '14px', height: '14px', borderRadius: '4px', backgroundColor: getColor(lvl), boxShadow: lvl > 0 ? `0 0 10px ${getColor(lvl)}44` : 'none' }} />
+                <div style={{ 
+                  width: '14px', 
+                  height: '14px', 
+                  borderRadius: '4px', 
+                  backgroundColor: lvl === 0 ? (isDark ? '#333' : '#ddd') : getColor(lvl), 
+                  boxShadow: lvl > 0 ? `0 0 10px ${getColor(lvl)}` : 'none',
+                  border: lvl === 0 ? `1px solid ${isDark ? '#444' : '#ccc'}` : 'none'
+                }} />
                 <span style={{ fontSize: '0.75rem', fontWeight: '700', color: isDark ? '#999' : '#666' }}>Nivel {lvl}</span>
               </div>
             ))}
@@ -297,19 +331,26 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          {Object.entries(counts).sort((a,b) => (t(a[0]) || a[0]).localeCompare(t(b[0]) || b[0])).map(([m, val]) => (
-            <div key={m} style={{ 
-              display: 'flex', flexDirection: 'column', padding: '15px', 
-              backgroundColor: isDark ? '#111' : '#fff', borderRadius: '16px', 
-              border: `1px solid ${isDark ? '#222' : '#eee'}`,
-              borderBottom: `4px solid ${getColor(getIntensity(val))}`,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-              transition: 'transform 0.2s ease'
-            }}>
-              <span style={{ fontSize: '0.75rem', color: isDark ? '#666' : '#999', fontWeight: '800', textTransform: 'uppercase', marginBottom: '4px' }}>{t(m) || m}</span>
-              <span style={{ fontSize: '1.2rem', color: isDark ? '#fff' : '#000', fontWeight: '900' }}>{val} <span style={{ fontSize: '0.7rem', fontWeight: '600', color: '#1dd1a1' }}>SERIES</span></span>
-            </div>
-          ))}
+          {Object.entries(counts).sort((a,b) => (t(a[0]) || a[0]).localeCompare(t(b[0]) || b[0])).map(([m, val]) => {
+            const level = manualLevels[m] !== undefined ? manualLevels[m] : getIntensity(val);
+            return (
+              <div key={m} 
+                onClick={() => handleMuscleClick(m)}
+                style={{ 
+                  display: 'flex', flexDirection: 'column', padding: '15px', 
+                  backgroundColor: isDark ? '#111' : '#fff', borderRadius: '16px', 
+                  border: `1px solid ${isDark ? '#222' : '#eee'}`,
+                  borderBottom: `4px solid ${level === 0 ? 'transparent' : getColor(level)}`,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                  transition: 'transform 0.2s ease',
+                  cursor: 'pointer'
+                }}
+              >
+                <span style={{ fontSize: '0.75rem', color: isDark ? '#666' : '#999', fontWeight: '800', textTransform: 'uppercase', marginBottom: '4px' }}>{t(m) || m}</span>
+                <span style={{ fontSize: '1.2rem', color: isDark ? '#fff' : '#000', fontWeight: '900' }}>{val} <span style={{ fontSize: '0.7rem', fontWeight: '600', color: '#1dd1a1' }}>SERIES</span></span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

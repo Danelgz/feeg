@@ -27,7 +27,9 @@ export default function Statistics() {
     Femoral: ['Femoral', 'Hamstrings'],
     Glúteos: ['Glúteos', 'Glutes'],
     Gemelos: ['Gemelos', 'Calves'],
-    Abdomen: ['Abdomen', 'Abs', 'Core']
+    Abdomen: ['Abdomen', 'Abs', 'Core'],
+    Antebrazos: ['Antebrazos', 'Forearms'],
+    Oblicuos: ['Oblicuos', 'Obliques']
   };
 
   const stats = useMemo(() => {
@@ -106,10 +108,10 @@ export default function Statistics() {
 
     const getColor = (intensity) => {
       if (intensity === 0) return isDark ? '#2a2a2a' : '#eeeeee';
-      if (intensity === 1) return 'rgba(29, 209, 161, 0.3)';
-      if (intensity === 2) return 'rgba(29, 209, 161, 0.55)';
-      if (intensity === 3) return 'rgba(29, 209, 161, 0.8)';
-      return '#1dd1a1'; // Nivel 4: Menta fuerte
+      if (intensity === 1) return isDark ? '#1a4d3c' : '#d1f2e8'; // Verde muy sutil
+      if (intensity === 2) return isDark ? '#2a7d62' : '#a2e5d1'; 
+      if (intensity === 3) return isDark ? '#3ab08a' : '#73d8ba';
+      return '#1dd1a1'; // Nivel 4: Menta fuerte original
     };
 
     return { counts, max, getIntensity, getColor };
@@ -473,8 +475,8 @@ function ExerciseStatsSection({ isDark, workouts, t }) {
 function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
   const { counts, getColor, getIntensity } = muscleStats;
 
-  const silhouetteColor = isDark ? "#222" : "#e0e0e0";
-  const bodyBaseColor = isDark ? "#121212" : "#f5f5f5";
+  const silhouetteColor = isDark ? "#1a1a1a" : "#d0d0d0";
+  const bodyBaseColor = isDark ? "#222" : "#e0e0e0";
 
   const renderMuscle = (muscle) => {
     const intensity = muscle.decorative ? 0 : getIntensity(counts[muscle.id] || 0);
@@ -484,8 +486,8 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
         key={`${muscle.id}-${i}`} 
         d={p} 
         fill={color} 
-        stroke={isDark ? "#000" : "#fff"} 
-        strokeWidth="0.2"
+        stroke={isDark ? "#111" : "#fff"} 
+        strokeWidth="0.4"
         style={{ transition: 'fill 0.4s ease' }} 
       />
     ));
@@ -496,25 +498,25 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
       <div style={{ 
         display: 'flex', 
         gap: '20px', 
-        backgroundColor: isDark ? '#000' : '#fff', 
-        padding: '25px', 
-        borderRadius: '30px', 
+        backgroundColor: isDark ? '#0a0a0a' : '#f0f0f0', 
+        padding: '30px', 
+        borderRadius: '20px', 
         flexShrink: 0,
-        border: `1px solid ${isDark ? '#111' : '#eee'}`,
-        boxShadow: isDark ? '0 10px 30px rgba(0,0,0,0.5)' : 'none'
+        border: `1px solid ${isDark ? '#1a1a1a' : '#ddd'}`,
+        boxShadow: isDark ? '0 15px 35px rgba(0,0,0,0.7)' : '0 5px 15px rgba(0,0,0,0.05)'
       }}>
         {/* FRONTAL VIEW */}
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.65rem', color: isDark ? '#777' : '#999', marginBottom: '15px', fontWeight: '900', letterSpacing: '3px' }}>FRONTAL</div>
-          <svg width={isMobile ? "140" : "180"} height={isMobile ? "280" : "360"} viewBox="0 0 200 400">
+          <div style={{ fontSize: '0.7rem', color: isDark ? '#555' : '#888', marginBottom: '20px', fontWeight: '900', letterSpacing: '4px' }}>FRONTAL</div>
+          <svg width={isMobile ? "130" : "160"} height={isMobile ? "280" : "350"} viewBox="0 0 100 220">
             {FRONT_DATA.map(renderMuscle)}
           </svg>
         </div>
 
         {/* POSTERIOR VIEW */}
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.65rem', color: isDark ? '#777' : '#999', marginBottom: '15px', fontWeight: '900', letterSpacing: '3px' }}>POSTERIOR</div>
-          <svg width={isMobile ? "140" : "180"} height={isMobile ? "280" : "360"} viewBox="0 0 200 400">
+          <div style={{ fontSize: '0.7rem', color: isDark ? '#555' : '#888', marginBottom: '20px', fontWeight: '900', letterSpacing: '4px' }}>POSTERIOR</div>
+          <svg width={isMobile ? "130" : "160"} height={isMobile ? "280" : "350"} viewBox="0 0 100 220">
             {BACK_DATA.map(renderMuscle)}
           </svg>
         </div>

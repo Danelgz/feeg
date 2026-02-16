@@ -366,7 +366,7 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '0.8rem', color: isDark ? '#444' : '#aaa', marginBottom: '20px', fontWeight: '900', letterSpacing: '3px' }}>FRONTAL</div>
-          <svg width={isMobile ? "140" : "220"} height={isMobile ? "280" : "440"} viewBox="40 100 650 1250">
+          <svg width={isMobile ? "180" : "280"} height={isMobile ? "380" : "600"} viewBox="160 120 400 1150">
             {DECORATIVE_PATHS.map((p, i) => <path key={i} d={p} fill={silhouetteColor} />)}
             {Object.entries(FRONT_PATHS).map(([group, paths]) => {
               const intensity = manualLevels[group] !== undefined ? manualLevels[group] : getIntensity(counts[group] || 0);
@@ -388,7 +388,7 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
 
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '0.8rem', color: isDark ? '#444' : '#aaa', marginBottom: '20px', fontWeight: '900', letterSpacing: '3px' }}>POSTERIOR</div>
-          <svg width={isMobile ? "140" : "220"} height={isMobile ? "280" : "440"} viewBox="780 100 650 1250">
+          <svg width={isMobile ? "180" : "280"} height={isMobile ? "380" : "600"} viewBox="900 120 400 1150">
             {DECORATIVE_PATHS.map((p, i) => <path key={i} d={p} fill={silhouetteColor} />)}
             {Object.entries(BACK_PATHS).map(([group, paths]) => {
               const intensity = manualLevels[group] !== undefined ? manualLevels[group] : getIntensity(counts[group] || 0);

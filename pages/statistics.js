@@ -107,11 +107,11 @@ export default function Statistics() {
     };
 
     const getColor = (intensity) => {
-      if (intensity === 0) return isDark ? '#2a2a2a' : '#eeeeee';
-      if (intensity === 1) return isDark ? '#1a4d3c' : '#d1f2e8'; // Verde muy sutil
-      if (intensity === 2) return isDark ? '#2a7d62' : '#a2e5d1'; 
-      if (intensity === 3) return isDark ? '#3ab08a' : '#73d8ba';
-      return '#1dd1a1'; // Nivel 4: Menta fuerte original
+      if (intensity === 0) return isDark ? '#262626' : '#eeeeee';
+      if (intensity === 1) return '#0a4231';
+      if (intensity === 2) return '#147a5b';
+      if (intensity === 3) return '#2fd6a2';
+      return '#84fcdb';
     };
 
     return { counts, max, getIntensity, getColor };
@@ -164,9 +164,9 @@ export default function Statistics() {
         <h2 style={{ margin: 0, marginBottom: '16px', color: isDark ? '#fff' : '#333', fontSize: isNarrow ? '1rem' : '1.05rem' }}>
           Distribución de músculos (últimos 30 días) {workouts.length === 0 && <span style={{ color: isDark ? '#aaa' : '#777' }}>· {t('stats_no_data')}</span>}
         </h2>
-        {/* <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
           <BodyHeatmap counts={muscleStats.counts} isDark={isDark} />
-        </div> */}
+        </div>
       </section>
 
       {/* Botones de navegación de estadísticas */}

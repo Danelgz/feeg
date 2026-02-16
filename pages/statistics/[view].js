@@ -74,16 +74,18 @@ export default function StatisticsView() {
     const getIntensity = (val) => {
       if (val === 0) return 0;
       const ratio = val / max;
-      if (ratio <= 0.33) return 1;
-      if (ratio <= 0.66) return 2;
-      return 3;
+      if (ratio <= 0.25) return 1;
+      if (ratio <= 0.5) return 2;
+      if (ratio <= 0.75) return 3;
+      return 4;
     };
 
     const getColor = (intensity) => {
-      if (intensity === 0) return isDark ? '#2a2a2a' : '#eeeeee';
-      if (intensity === 1) return 'rgba(29, 209, 161, 0.4)';
-      if (intensity === 2) return 'rgba(29, 209, 161, 0.7)';
-      return '#1dd1a1';
+      if (intensity === 0) return isDark ? '#121212' : '#eeeeee';
+      if (intensity === 1) return 'rgba(47, 214, 162, 0.2)';
+      if (intensity === 2) return 'rgba(47, 214, 162, 0.45)';
+      if (intensity === 3) return 'rgba(47, 214, 162, 0.7)';
+      return '#2fd6a2';
     };
 
     return { counts, max, getIntensity, getColor };
@@ -229,7 +231,7 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
 
   const handleMuscleClick = (id) => {
     const currentLevel = manualLevels[id] !== undefined ? manualLevels[id] : getIntensity(counts[id] || 0);
-    const nextLevel = (currentLevel + 1) % 4;
+    const nextLevel = (currentLevel + 1) % 5;
     setManualLevels(prev => ({ ...prev, [id]: nextLevel }));
   };
 
@@ -347,25 +349,25 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
     "M1028.14 166.45c1.03 5.06 1.36 9.61 6.41 11.53 13.06 4.95 16.74 15.51 23.52 27.48 1.387 2.447 3.863 3.623 7.43 3.53a910.025 910.025 0 0136.94-.25c6.23.09 9.27-7.55 11.48-12.3 4.31-9.27 10.37-15.83 20.28-18.94.333-.1.603-.287.81-.56 1.92-2.58 3.043-5.43 3.37-8.55l2.31-1.51a.977.977 0 01.99-.08c11.92 5.42-3.35 35.31-8.21 42.45-.761 1.11-2.423 1.028-3.06-.15l-1.26-2.32c-.133-.253-.32-.297-.56-.13-.34.24-.48.61-.42 1.11.86 7.64.75 16.87-2.96 23.31-.173.3.839.041-3.7 4.71-3.34 3.436-74.18 3.78-75.48-1.38a1.465 1.465 0 00-.55-.82c-4.15-2.97-6.07-7.95-6.16-12.39-.03-1.68.18-14.28-.53-14.63-.207-.1-.33-.037-.37.19-.3 1.553-1.183 2.597-2.65 3.13a.951.951 0 01-1.07-.32c-7.29-9.56-12.32-22.18-12.97-33.54-.34-6.04 1.797-9.23 6.41-9.57z"
   ];
 
-  const silhouetteColor = isDark ? "#222" : "#e0e0e0";
+  const silhouetteColor = isDark ? "#121212" : "#e0e0e0";
 
   return (
     <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '24px', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ 
         display: 'flex', 
         gap: '20px', 
-        backgroundColor: isDark ? '#080808' : '#fff', 
+        backgroundColor: isDark ? '#000000' : '#fff', 
         padding: '30px', 
-        borderRadius: '32px', 
+        borderRadius: '24px', 
         flexShrink: 0,
-        boxShadow: isDark ? '0 10px 30px rgba(0,0,0,0.5)' : '0 10px 30px rgba(0,0,0,0.05)',
-        border: `1px solid ${isDark ? '#222' : '#eee'}`,
+        boxShadow: isDark ? '0 10px 40px rgba(0,0,0,0.8)' : '0 10px 30px rgba(0,0,0,0.05)',
+        border: `1px solid ${isDark ? '#111' : '#eee'}`,
         margin: isMobile ? '0 auto' : '0'
       }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.7rem', color: isDark ? '#555' : '#aaa', marginBottom: '15px', fontWeight: '900', letterSpacing: '2px' }}>FRONTAL</div>
-          <svg width={isMobile ? "150" : "200"} height={isMobile ? "300" : "400"} viewBox="40 100 650 1250">
-            {DECORATIVE_PATHS.map((p, i) => <path key={i} d={p} fill={silhouetteColor} opacity="0.5" />)}
+          <div style={{ fontSize: '0.8rem', color: isDark ? '#444' : '#aaa', marginBottom: '20px', fontWeight: '900', letterSpacing: '3px' }}>FRONTAL</div>
+          <svg width={isMobile ? "140" : "220"} height={isMobile ? "280" : "440"} viewBox="40 100 650 1250">
+            {DECORATIVE_PATHS.map((p, i) => <path key={i} d={p} fill={silhouetteColor} />)}
             {Object.entries(FRONT_PATHS).map(([group, paths]) => {
               const intensity = manualLevels[group] !== undefined ? manualLevels[group] : getIntensity(counts[group] || 0);
               const color = getColor(intensity);
@@ -375,7 +377,7 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
                   d={p} 
                   fill={color} 
                   stroke={isDark ? "#000" : "#fff"} 
-                  strokeWidth="0.5" 
+                  strokeWidth="0.8" 
                   onClick={() => handleMuscleClick(group)}
                   style={{ transition: 'fill 0.4s ease', cursor: 'pointer' }} 
                 />
@@ -385,9 +387,9 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
         </div>
 
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '0.7rem', color: isDark ? '#555' : '#aaa', marginBottom: '15px', fontWeight: '900', letterSpacing: '2px' }}>POSTERIOR</div>
-          <svg width={isMobile ? "150" : "200"} height={isMobile ? "300" : "400"} viewBox="780 100 650 1250">
-            {DECORATIVE_PATHS.map((p, i) => <path key={i} d={p} fill={silhouetteColor} opacity="0.5" />)}
+          <div style={{ fontSize: '0.8rem', color: isDark ? '#444' : '#aaa', marginBottom: '20px', fontWeight: '900', letterSpacing: '3px' }}>POSTERIOR</div>
+          <svg width={isMobile ? "140" : "220"} height={isMobile ? "280" : "440"} viewBox="780 100 650 1250">
+            {DECORATIVE_PATHS.map((p, i) => <path key={i} d={p} fill={silhouetteColor} />)}
             {Object.entries(BACK_PATHS).map(([group, paths]) => {
               const intensity = manualLevels[group] !== undefined ? manualLevels[group] : getIntensity(counts[group] || 0);
               const color = getColor(intensity);
@@ -397,7 +399,7 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
                   d={p} 
                   fill={color} 
                   stroke={isDark ? "#000" : "#fff"} 
-                  strokeWidth="0.5" 
+                  strokeWidth="0.8" 
                   onClick={() => handleMuscleClick(group)}
                   style={{ transition: 'fill 0.4s ease', cursor: 'pointer' }} 
                 />
@@ -410,18 +412,18 @@ function BodyHeatmap({ muscleStats, t, isDark, isMobile }) {
       <div style={{ flex: 1, width: '100%', maxWidth: '500px' }}>
         <div style={{ marginBottom: '25px', textAlign: isMobile ? 'center' : 'left' }}>
           <div style={{ fontSize: '0.75rem', color: isDark ? '#555' : '#999', marginBottom: '12px', fontWeight: '900', letterSpacing: '1px' }}>INTENSIDAD DE ENTRENAMIENTO (HAZ CLICK EN LOS MÚSCULOS)</div>
-          <div style={{ display: 'flex', gap: '10px', justifyContent: isMobile ? 'center' : 'flex-start', flexWrap: 'wrap' }}>
-            {[0, 1, 2, 3].map(lvl => (
-              <div key={lvl} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: isDark ? '#111' : '#f8f8f8', padding: '6px 12px', borderRadius: '10px', border: `1px solid ${isDark ? '#222' : '#eee'}` }}>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: isMobile ? 'center' : 'flex-start', flexWrap: 'wrap' }}>
+            {[0, 1, 2, 3, 4].map(lvl => (
+              <div key={lvl} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: isDark ? '#0a0a0a' : '#f8f8f8', padding: '6px 10px', borderRadius: '10px', border: `1px solid ${isDark ? '#1a1a1a' : '#eee'}` }}>
                 <div style={{ 
-                  width: '14px', 
-                  height: '14px', 
-                  borderRadius: '4px', 
+                  width: '12px', 
+                  height: '12px', 
+                  borderRadius: '3px', 
                   backgroundColor: getColor(lvl), 
-                  boxShadow: lvl > 0 ? `0 0 10px ${getColor(lvl)}` : 'none',
-                  border: lvl === 0 ? `1px solid ${isDark ? '#444' : '#ccc'}` : 'none'
+                  boxShadow: lvl > 0 ? `0 0 8px ${getColor(lvl)}` : 'none',
+                  border: lvl === 0 ? `1px solid ${isDark ? '#333' : '#ccc'}` : 'none'
                 }} />
-                <span style={{ fontSize: '0.75rem', fontWeight: '700', color: isDark ? '#999' : '#666' }}>Nivel {lvl}</span>
+                <span style={{ fontSize: '0.7rem', fontWeight: '700', color: isDark ? '#666' : '#666' }}>Nivel {lvl}</span>
               </div>
             ))}
           </div>

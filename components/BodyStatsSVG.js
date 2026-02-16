@@ -1,4 +1,5 @@
 import React from 'react';
+import { INTERACTIVE_FRONT_PATHS, INTERACTIVE_BACK_PATHS } from '../data/interactiveBodyPaths';
 
 export default function BodyStatsSVG({ 
   muscleStats = {}, 
@@ -8,58 +9,62 @@ export default function BodyStatsSVG({
 }) {
   const { counts = {}, getColor = () => {}, getIntensity = () => {} } = muscleStats;
 
-  const getMuscleStyle = (muscleId) => {
-    const intensity = manualLevels[muscleId] !== undefined 
-      ? manualLevels[muscleId] 
-      : getIntensity(counts[muscleId] || 0);
-    
-    return {
-      fill: getColor(intensity) || (intensity > 0 ? '#1dd1a1' : (isDark ? '#333' : '#eee')),
-      opacity: intensity > 0 ? 0.8 : 0.3,
-      cursor: 'pointer',
-      transition: 'all 0.3s ease',
-      display: 'inline'
-    };
+  const renderPaths = (pathMap) => {
+    return Object.entries(pathMap).map(([muscle, paths]) => {
+      const intensity = manualLevels[muscle] !== undefined 
+        ? manualLevels[muscle] 
+        : getIntensity(counts[muscle] || 0);
+      
+      const style = {
+        fill: getColor(intensity) || (intensity > 0 ? '#1dd1a1' : (isDark ? '#222' : '#eee')),
+        fillOpacity: intensity > 0 ? 0.8 : 0.2,
+        stroke: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+        strokeWidth: "0.5",
+        cursor: 'pointer',
+        transition: 'all 0.3s ease'
+      };
+
+      return paths.map((d, i) => (
+        <path
+          key={`${muscle}-${i}`}
+          d={d}
+          style={style}
+          onClick={() => onMuscleClick(muscle)}
+          title={muscle}
+        />
+      ));
+    });
   };
 
   return (
-    <svg
-      version="1.1"
-      id="svg1"
-      width="100%"
-      height="100%"
-      viewBox="0 0 1008 1056"
-      style={{ maxWidth: '500px', height: 'auto' }}
-      xmlns="http://www.w3.org/2000/svg"
-      xmlnsXlink="http://www.w3.org/1999/xlink"
-    >
-      <defs id="defs1" />
-      <g id="g1">
+    <div style={{ width: '100%', overflowX: 'auto', display: 'flex', justifyContent: 'center' }}>
+      <svg
+        version="1.1"
+        id="body-stats-svg"
+        width="100%"
+        height="100%"
+        viewBox="160 120 1140 1150"
+        style={{ maxWidth: '800px', height: 'auto', minWidth: '600px' }}
+        xmlns="http://www.w3.org/2000/svg"
+        xmlnsXlink="http://www.w3.org/1999/xlink"
+      >
         <image
-          width="1008"
-          height="1056"
-          preserveAspectRatio="none"
+          width="1500"
+          height="1300"
+          preserveAspectRatio="xMidYMid slice"
           xlinkHref="/Cuerpo.png"
-          id="image1"
-          x="4.940351"
-          y="-23.466667"
-          style={{ opacity: 0.9 }}
+          id="body-bg"
+          x="0"
+          y="0"
+          style={{ opacity: 0.8 }}
         />
-        {/* Abdomen / capaabs */}
-        <path
-          style={getMuscleStyle('Abdomen')}
-          d="m 251.03158,534.48421 1.54386,-85.52982 -32.42105,-2.77895 9.57193,61.75439 z"
-          id="path4"
-          onClick={() => onMuscleClick('Abdomen')}
-        />
-        {/* Other path from user SVG - mapping to a guess or keeping it as path5 */}
-        <path
-          style={getMuscleStyle('Pecho')}
-          d="m 269.5579,431.35439 9.26315,-8.64562 8.02807,7.10176 -5.24912,7.10175 -10.49825,-3.08772 z"
-          id="path5"
-          onClick={() => onMuscleClick('Pecho')}
-        />
-      </g>
-    </svg>
+        <g id="front-muscles">
+          {renderPaths(INTERACTIVE_FRONT_PATHS)}
+        </g>
+        <g id="back-muscles">
+          {renderPaths(INTERACTIVE_BACK_PATHS)}
+        </g>
+      </svg>
+    </div>
   );
 }

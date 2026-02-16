@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import Link from "next/link";
-import BodyHeatmap from "../components/BodyHeatmap";
+import BodyStatsSVG from "../components/BodyStatsSVG";
 
 export default function Statistics() {
   const { t, theme, isMobile, completedWorkouts: workouts } = useUser();
@@ -164,9 +164,12 @@ export default function Statistics() {
         <h2 style={{ margin: 0, marginBottom: '16px', color: isDark ? '#fff' : '#333', fontSize: isNarrow ? '1rem' : '1.05rem' }}>
           Distribución de músculos (últimos 30 días) {workouts.length === 0 && <span style={{ color: isDark ? '#aaa' : '#777' }}>· {t('stats_no_data')}</span>}
         </h2>
-        {/* <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <BodyHeatmap counts={muscleStats.counts} isDark={isDark} />
-        </div> */}
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <BodyStatsSVG 
+            muscleStats={muscleStats} 
+            isDark={isDark} 
+          />
+        </div>
       </section>
 
       {/* Botones de navegación de estadísticas */}

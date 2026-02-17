@@ -287,7 +287,7 @@ export function UserProvider({ children }) {
   const bulkSaveWorkouts = async (workouts) => {
     lastLocalUpdate.current = Date.now();
     const newList = [...workouts, ...completedWorkouts];
-    // Sort by date descending if they have completedAt
+    // Sort by date descending
     newList.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
     
     setCompletedWorkouts(newList);
@@ -295,8 +295,30 @@ export function UserProvider({ children }) {
     
     if (authUser) {
       await saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList });
-      // For bulk, we might skip saving all to the global feed to avoid hitting limits or spamming,
-      // but let's at least save them to the user's private collection.
+      
+      // Save only the most recent workouts to global feed to avoid spamming/limits
+      // Let's say last 10
+      const recentWorkouts = workouts.slice(0, 10);
+      const feedPromises = recentWorkouts.map(workout => 
+        saveToCloud(`workouts/${workout.id}`, { 
+          ...workout, 
+          userId: authUser.uid,
+          userName: user?.username || authUser.displayName,
+          userPhoto: user?.photoURL || authUser.photoURL,
+          likes: [],
+          commentsList: []
+        })
+      );
+      await Promise.all(feedPromises);
+    }
+  };
+
+  const bulkSaveMeasures = async (newMeasures) => {
+    lastLocalUpdate.current = Date.now();
+    setMeasures(newMeasures);
+    localStorage.setItem('measures', JSON.stringify(newMeasures));
+    if (authUser) {
+      await saveToCloud(`users/${authUser.uid}`, { measures: newMeasures });
     }
   };
 
@@ -420,6 +442,7 @@ export function UserProvider({ children }) {
       completedWorkouts,
       saveCompletedWorkout,
       bulkSaveWorkouts,
+      bulkSaveMeasures,
       deleteCompletedWorkout,
       updateCompletedWorkout,
       routines,

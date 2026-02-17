@@ -4,7 +4,7 @@ import { useUser } from "../context/UserContext";
 import { exercisesList } from "../data/exercises";
 
 export default function ExportData() {
-  const { theme, t, bulkSaveWorkouts, authUser } = useUser();
+  const { theme, t, bulkSaveWorkouts, bulkSaveMeasures, saveUser, user, authUser } = useUser();
   const isDark = theme === 'dark';
   const [isImporting, setIsImporting] = useState(false);
   const [importStatus, setImportStatus] = useState("");
@@ -30,19 +30,35 @@ export default function ExportData() {
     reader.onload = async (event) => {
       try {
         const text = event.target.result;
-        const workouts = parseHevyCSV(text);
+        const { workouts, latestWeight, weightMeasures } = parseHevyCSV(text);
         
-        if (workouts.length === 0) {
-          setImportStatus("No se encontraron entrenamientos válidos en el archivo.");
+        if (workouts.length === 0 && weightMeasures.length === 0) {
+          setImportStatus("No se encontraron datos válidos en el archivo.");
           setIsImporting(false);
           return;
         }
 
-        setImportStatus(`Importando ${workouts.length} entrenamientos...`);
-        await bulkSaveWorkouts(workouts);
+        let statusMsg = "";
+        if (workouts.length > 0) {
+          setImportStatus(`Importando ${workouts.length} entrenamientos...`);
+          await bulkSaveWorkouts(workouts);
+          statusMsg += `${workouts.length} entrenamientos `;
+        }
+
+        if (weightMeasures.length > 0) {
+          setImportStatus(prev => prev + " y medidas de peso...");
+          await bulkSaveMeasures(weightMeasures);
+          statusMsg += (statusMsg ? "y " : "") + `${weightMeasures.length} medidas de peso `;
+          
+          if (latestWeight) {
+            const updatedUser = { ...user, weight: latestWeight };
+            await saveUser(updatedUser);
+            statusMsg += "(perfil actualizado) ";
+          }
+        }
         
-        setImportedCount(workouts.length);
-        setImportStatus("¡Importación completada con éxito!");
+        setImportedCount(workouts.length || weightMeasures.length);
+        setImportStatus(`¡Importación completada! Se han importado ${statusMsg}.`);
       } catch (error) {
         console.error("Error importing CSV:", error);
         setImportStatus("Error al procesar el archivo CSV. Asegúrate de que sea un export de Hevy.");
@@ -55,7 +71,7 @@ export default function ExportData() {
 
   const parseHevyCSV = (text) => {
     const lines = text.split(/\r?\n/).filter(line => line.trim());
-    if (lines.length < 2) return [];
+    if (lines.length < 2) return { workouts: [], latestWeight: null, weightMeasures: [] };
 
     // Header parsing
     const headerLine = lines[0];
@@ -71,6 +87,25 @@ export default function ExportData() {
       return row;
     });
 
+    // Extract weights
+    const weightMap = {}; // date -> weight
+    rows.forEach(row => {
+      const weight = parseFloat(row["Body Weight"]);
+      if (weight > 0 && row.Date) {
+        const dateStr = row.Date.split(' ')[0]; // Use only the date part
+        weightMap[dateStr] = weight;
+      }
+    });
+
+    const weightMeasures = Object.entries(weightMap).map(([date, weight]) => ({
+      id: Date.parse(date),
+      date: date,
+      weight: weight,
+      type: "weight"
+    })).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    const latestWeight = weightMeasures.length > 0 ? weightMeasures[0].weight : null;
+
     // Group by Date and Workout Name
     const workoutGroups = {};
     rows.forEach(row => {
@@ -81,7 +116,7 @@ export default function ExportData() {
       workoutGroups[workoutKey].push(row);
     });
 
-    const completedWorkouts = Object.values(workoutGroups).map((groupRows, index) => {
+    const workouts = Object.values(workoutGroups).map((groupRows, index) => {
       const firstRow = groupRows[0];
       
       // Group exercises within the workout
@@ -141,7 +176,7 @@ export default function ExportData() {
       };
     });
 
-    return completedWorkouts;
+    return { workouts, latestWeight, weightMeasures };
   };
 
   if (!authUser) {

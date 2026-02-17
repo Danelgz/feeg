@@ -9,7 +9,14 @@ export default function CreateRoutine() {
   const { id, editWorkout } = router.query;
   const { theme, t, routines, completedWorkouts, saveRoutine: contextSaveRoutine, updateRoutine: contextUpdateRoutine, updateCompletedWorkout } = useUser();
   const [isMobile, setIsMobile] = useState(false);
-  const isDark = theme === 'dark';
+  const isDark = true; // Always dark like workout mode
+  const mint = "#2EE6C5";
+  const mintSoft = "rgba(46, 230, 197, 0.12)";
+
+  const [activeExerciseMenu, setActiveExerciseMenu] = useState(null); // exIdx
+  const [showDeleteExerciseConfirm, setShowDeleteExerciseConfirm] = useState(null); // exIdx
+  const [openTimePickerId, setOpenTimePickerId] = useState(null);
+  const [substitutingExerciseIdx, setSubstitutingExerciseIdx] = useState(null);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -51,8 +58,6 @@ export default function CreateRoutine() {
   const [showSelector, setShowSelector] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState("");
   const [selectedExercise, setSelectedExercise] = useState(null);
-
-  const restOptions = Array.from({ length: 120 }, (_, i) => (i + 1) * 5);
 
   const groups = Object.keys(exercisesList);
 
@@ -108,25 +113,6 @@ export default function CreateRoutine() {
     }
   };
 
-  const addExercise = (exercise) => {
-    setExercises([
-      ...exercises,
-      {
-        name: exercise.name,
-        group: selectedGroup,
-        type: exercise.type || "weight_reps",
-        rest: 60,
-        series: [
-          { reps: 10, weight: 0 }
-        ],
-      },
-    ]);
-
-    setSelectedGroup("");
-    setSelectedExercise(null);
-    setShowSelector(false);
-  };
-
   const handleSeriesChange = (exIdx, sIdx, field, value) => {
     const newExercises = [...exercises];
     const newExercise = { ...newExercises[exIdx] };
@@ -153,494 +139,582 @@ export default function CreateRoutine() {
     setExercises(newExercises);
   };
 
+  const addExercise = (exercise) => {
+    const newExercise = {
+      name: exercise.name,
+      group: selectedGroup,
+      type: exercise.type || "weight_reps",
+      rest: 60,
+      series: [
+        { reps: 10, weight: 0 }
+      ],
+    };
+
+    if (substitutingExerciseIdx !== null) {
+      const newExercises = [...exercises];
+      newExercises[substitutingExerciseIdx] = newExercise;
+      setExercises(newExercises);
+      setSubstitutingExerciseIdx(null);
+    } else {
+      setExercises([...exercises, newExercise]);
+    }
+
+    setSelectedGroup("");
+    setSelectedExercise(null);
+    setShowSelector(false);
+  };
+
+  // Calcular estadísticas en tiempo real
+  const totalSeriesCount = exercises.reduce((sum, ex) => sum + ex.series.length, 0);
+  const totalVolumeCount = exercises.reduce((sum, ex) => {
+    return sum + ex.series.reduce((sSum, s) => sSum + (Number(s.weight) || 0) * (Number(s.reps) || 0), 0);
+  }, 0);
+
+  const baseTimeOptions = Array.from({ length: 120 }, (_, i) => {
+    const iVal = (i + 1) * 5;
+    let label;
+    if (iVal < 60) {
+      label = `${iVal}s`;
+    } else {
+      const minutes = Math.floor(iVal / 60);
+      const seconds = iVal % 60;
+      label = seconds === 0 ? `${minutes}m` : `${minutes}m${seconds}s`;
+    }
+    return { value: iVal, label };
+  });
+
   return (
     <Layout>
-      <div style={{ maxWidth: isMobile ? "100%" : "1200px", margin: isMobile ? "0" : "0 auto", padding: isMobile ? "0" : "20px" }}>
-        <h1 style={{ fontSize: isMobile ? "1.8rem" : "2.5rem", fontWeight: "700", marginBottom: isMobile ? "1rem" : "2rem", color: isDark ? "#fff" : "#333" }}>
-          {isWorkoutEditMode ? "Editar entrenamiento" : (isEditMode ? t("edit_routine") : t("create_new_routine"))}
-        </h1>
-
+      <div style={{ 
+        padding: 0, 
+        maxWidth: "900px", 
+        margin: "0 auto", 
+        backgroundColor: "#000", 
+        minHeight: "100vh",
+        color: "#fff"
+      }}>
+        {/* Header Superior */}
         <div style={{
-          backgroundColor: isDark ? "#1a1a1a" : "#fff",
-          borderRadius: "12px",
-          padding: isMobile ? "1rem" : "2rem",
-          boxShadow: isDark ? "0 4px 12px rgba(0, 0, 0, 0.5)" : "0 4px 12px rgba(0, 0, 0, 0.05)",
-          marginBottom: isMobile ? "1rem" : "2rem",
-          border: `1px solid ${isDark ? "#333" : "#eee"}`
+          padding: "15px 20px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          backgroundColor: "#000",
+          position: "sticky",
+          top: 0,
+          zIndex: 1002
         }}>
-          <label style={{ display: "block", fontSize: "1rem", fontWeight: "600", marginBottom: "0.5rem", color: isDark ? "#fff" : "#333" }}>
-            {t("routine_name_label")}
-          </label>
-          <input
-            type="text"
-            value={routineName}
-            onChange={(e) => setRoutineName(e.target.value)}
-            placeholder={t("routine_name_placeholder")}
-            style={{
-              padding: "0.75rem 1rem",
-              borderRadius: "8px",
-              border: `2px solid ${isDark ? "#333" : "#ddd"}`,
-              width: "100%",
-              fontSize: "1rem",
-              fontFamily: "inherit",
-              transition: "all 0.3s ease",
-              boxSizing: "border-box",
-              outline: "none",
-              backgroundColor: isDark ? "#2a2a2a" : "#fff",
-              color: isDark ? "#fff" : "#333"
-            }}
-            onFocus={(e) => e.target.style.borderColor = "#1dd1a1"}
-            onBlur={(e) => e.target.style.borderColor = isDark ? "#333" : "#ddd"}
-          />
+          <div style={{ flex: 1 }}>
+            <input
+              type="text"
+              value={routineName}
+              onChange={(e) => setRoutineName(e.target.value)}
+              placeholder={t("routine_name_placeholder")}
+              style={{
+                background: "none",
+                border: "none",
+                color: mint,
+                fontSize: "1.2rem",
+                fontWeight: "600",
+                width: "100%",
+                outline: "none"
+              }}
+            />
+          </div>
+          
+          <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+            <button
+              onClick={saveRoutine}
+              style={{
+                backgroundColor: mint,
+                color: "#000",
+                border: "none",
+                borderRadius: "8px",
+                padding: "8px 20px",
+                fontSize: "1rem",
+                fontWeight: "600",
+                cursor: "pointer"
+              }}
+            >
+              {isEditMode ? t("save_routine_btn") : t("save_workout")}
+            </button>
+          </div>
         </div>
 
-      {routineName && (
-        <>
-          {showSelector && !selectedGroup && (
-            <div style={{
-              backgroundColor: isDark ? "#1a1a1a" : "#fff",
-              borderRadius: "12px",
-              padding: "2rem",
-              boxShadow: isDark ? "0 4px 12px rgba(0, 0, 0, 0.5)" : "0 4px 12px rgba(0, 0, 0, 0.05)",
-              marginBottom: "2rem",
-              border: `1px solid ${isDark ? "#333" : "#eee"}`
-            }}>
-              <h3 style={{ fontSize: "1.3rem", fontWeight: "600", marginBottom: "1.5rem", color: isDark ? "#fff" : "#333" }}>
-                {t("select_muscle_group")}
-              </h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "1rem" }}>
+        {/* Fila de Estadísticas */}
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          padding: "0 20px 20px 20px",
+          backgroundColor: "#000",
+          borderBottom: "1px solid #1a1a1a"
+        }}>
+          <div>
+            <div style={{ color: "#666", fontSize: "0.75rem", marginBottom: "4px" }}>Ejercicios</div>
+            <div style={{ color: mint, fontSize: "1.1rem", fontWeight: "500" }}>{exercises.length}</div>
+          </div>
+          <div>
+            <div style={{ color: "#666", fontSize: "0.75rem", marginBottom: "4px" }}>Volumen Est.</div>
+            <div style={{ color: "#fff", fontSize: "1.1rem", fontWeight: "500" }}>{totalVolumeCount.toLocaleString()} kg</div>
+          </div>
+          <div>
+            <div style={{ color: "#666", fontSize: "0.75rem", marginBottom: "4px" }}>Series</div>
+            <div style={{ color: "#fff", fontSize: "1.1rem", fontWeight: "500" }}>{totalSeriesCount}</div>
+          </div>
+        </div>
+
+        <div style={{ padding: "20px 15px" }}>
+          {exercises.map((exercise, exIdx) => (
+            <div
+              key={exIdx}
+              style={{
+                marginBottom: "40px",
+              }}
+            >
+              {/* Título del Ejercicio con Imagen */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+                  <div style={{
+                    width: "45px",
+                    height: "45px",
+                    borderRadius: "50%",
+                    backgroundColor: "#fff",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    overflow: "hidden"
+                  }}>
+                    <img 
+                      src={`/exercises/${(exercise?.name || "").toLowerCase().replace(/ /g, "_")}.png`} 
+                      onError={(e) => { e.target.src = "/logo3.png"; }}
+                      alt="" 
+                      style={{ width: "80%", height: "auto" }} 
+                    />
+                  </div>
+                  <div>
+                    <h2 style={{ margin: 0, color: mint, fontSize: "1.15rem", fontWeight: "500", lineHeight: "1.2" }}>
+                      {t(exercise.name)}
+                    </h2>
+                    <span style={{ fontSize: "0.75rem", color: "#666", textTransform: "uppercase" }}>{t(exercise.group)}</span>
+                  </div>
+                </div>
+                <div style={{ position: "relative" }}>
+                  <button 
+                    onClick={() => setActiveExerciseMenu(activeExerciseMenu === exIdx ? null : exIdx)}
+                    style={{ background: "none", border: "none", color: "#fff", fontSize: "1.5rem", cursor: "pointer" }}
+                  >
+                    ⋮
+                  </button>
+                  
+                  {activeExerciseMenu === exIdx && (
+                    <div style={{
+                      position: "absolute",
+                      top: "30px",
+                      right: 0,
+                      backgroundColor: "#1a1a1a",
+                      border: "1px solid #333",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+                      zIndex: 100,
+                      width: "160px",
+                      overflow: "hidden"
+                    }}>
+                      <button
+                        onClick={() => {
+                          setSubstitutingExerciseIdx(exIdx);
+                          setShowSelector(true);
+                          setActiveExerciseMenu(null);
+                        }}
+                        style={{
+                          width: "100%",
+                          padding: "12px",
+                          background: "none",
+                          border: "none",
+                          color: "#fff",
+                          textAlign: "left",
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                          borderBottom: "1px solid #333"
+                        }}
+                      >
+                        Sustituir ejercicio
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowDeleteExerciseConfirm(exIdx);
+                          setActiveExerciseMenu(null);
+                        }}
+                        style={{
+                          width: "100%",
+                          padding: "12px",
+                          background: "none",
+                          border: "none",
+                          color: "#ff4d4d",
+                          textAlign: "left",
+                          cursor: "pointer",
+                          fontSize: "0.9rem"
+                        }}
+                      >
+                        Eliminar ejercicio
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Confirmación de eliminación de ejercicio */}
+              {showDeleteExerciseConfirm === exIdx && (
+                <div style={{
+                  position: "fixed",
+                  top: 0, left: 0, right: 0, bottom: 0,
+                  backgroundColor: "rgba(0,0,0,0.8)",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  zIndex: 2100
+                }}>
+                  <div style={{
+                    backgroundColor: "#1a1a1a",
+                    borderRadius: "12px",
+                    padding: "25px",
+                    width: "300px",
+                    textAlign: "center",
+                    border: "1px solid #333"
+                  }}>
+                    <h3 style={{ color: "#fff", margin: "0 0 15px 0" }}>¿Eliminar ejercicio?</h3>
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      <button
+                        onClick={() => setShowDeleteExerciseConfirm(null)}
+                        style={{
+                          flex: 1,
+                          padding: "10px",
+                          backgroundColor: "#333",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: "8px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={() => {
+                          const newExercises = exercises.filter((_, i) => i !== exIdx);
+                          setExercises(newExercises);
+                          setShowDeleteExerciseConfirm(null);
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: "10px",
+                          backgroundColor: "#ff4d4d",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: "8px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Temporizador de Descanso */}
+              <div style={{ 
+                display: "flex", 
+                alignItems: "center", 
+                gap: "10px", 
+                color: mint, 
+                marginBottom: "20px",
+                fontSize: "0.95rem"
+              }}>
+                <span 
+                  onClick={() => setOpenTimePickerId(openTimePickerId === exIdx ? null : exIdx)}
+                  style={{ cursor: "pointer", fontWeight: "500" }}
+                >
+                  Descanso: {exercise.rest < 60 ? `${exercise.rest}s` : `${Math.floor(exercise.rest/60)}min ${exercise.rest%60}s`}
+                </span>
+                
+                {openTimePickerId === exIdx && (
+                  <div style={{ 
+                    position: "fixed",
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: "rgba(0,0,0,0.8)",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    zIndex: 2100
+                  }}>
+                    <div style={{
+                      backgroundColor: "#1a1a1a",
+                      borderRadius: "15px",
+                      width: "280px",
+                      padding: "20px",
+                      textAlign: "center"
+                    }}>
+                      <h3 style={{ color: "#fff", margin: "0 0 20px 0" }}>Editar Descanso</h3>
+                      
+                      <div style={{ 
+                        height: "250px", 
+                        overflowY: "scroll", 
+                        padding: "10px 0"
+                      }}>
+                        {baseTimeOptions.map((opt) => (
+                          <div 
+                            key={opt.value}
+                            onClick={() => {
+                              const newExercises = [...exercises];
+                              newExercises[exIdx].rest = opt.value;
+                              setExercises(newExercises);
+                              setOpenTimePickerId(null);
+                            }}
+                            style={{
+                              padding: "12px 0",
+                              color: exercise.rest === opt.value ? "#000" : "#fff",
+                              backgroundColor: exercise.rest === opt.value ? mint : "transparent",
+                              borderRadius: "8px",
+                              fontSize: "1.1rem",
+                              cursor: "pointer",
+                              margin: "2px 0"
+                            }}
+                          >
+                            {opt.label}
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <button 
+                        onClick={() => setOpenTimePickerId(null)}
+                        style={{
+                          width: "100%",
+                          marginTop: "20px",
+                          padding: "12px",
+                          backgroundColor: "#333",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: "10px",
+                          fontWeight: "bold",
+                          cursor: "pointer"
+                        }}
+                      >
+                        Cerrar
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Tabla de Series */}
+              <div style={{ marginBottom: "15px" }}>
+                <div style={{ 
+                  display: "grid", 
+                  gridTemplateColumns: "50px 1fr 70px 70px 45px", 
+                  gap: "10px", 
+                  marginBottom: "10px",
+                  color: "#666",
+                  fontSize: "0.75rem",
+                  fontWeight: "600",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px"
+                }}>
+                  <div>SERIE</div>
+                  <div>ANTERIOR</div>
+                  <div style={{ textAlign: "center" }}>KG</div>
+                  <div style={{ textAlign: "center" }}>REPS</div>
+                  <div style={{ textAlign: "right" }}></div>
+                </div>
+
+                {exercise.series.map((serie, serieIdx) => (
+                  <div
+                    key={serieIdx}
+                    style={{
+                      display: "grid", 
+                      gridTemplateColumns: "50px 1fr 70px 70px 45px", 
+                      gap: "10px",
+                      alignItems: "center",
+                      height: "45px",
+                      marginBottom: "5px"
+                    }}
+                  >
+                    <div style={{ 
+                      color: "#fff", 
+                      fontWeight: "bold",
+                      fontSize: "1rem",
+                      backgroundColor: "#1a1a1a",
+                      borderRadius: "4px",
+                      textAlign: "center",
+                      padding: "4px 0"
+                    }}>
+                      {serieIdx + 1}
+                    </div>
+                    
+                    <div style={{ color: "#666", fontSize: "0.9rem" }}>—</div>
+                    
+                    <div>
+                      <input
+                        type="number"
+                        value={serie.weight}
+                        onChange={(e) => handleSeriesChange(exIdx, serieIdx, "weight", Number(e.target.value))}
+                        style={{
+                          width: "100%",
+                          background: "#1a1a1a",
+                          border: "none",
+                          borderRadius: "4px",
+                          color: "#fff",
+                          padding: "6px 0",
+                          textAlign: "center",
+                          fontSize: "1rem"
+                        }}
+                      />
+                    </div>
+                    
+                    <div>
+                      <input
+                        type="number"
+                        value={serie.reps}
+                        onChange={(e) => handleSeriesChange(exIdx, serieIdx, "reps", Number(e.target.value))}
+                        style={{
+                          width: "100%",
+                          background: "#1a1a1a",
+                          border: "none",
+                          borderRadius: "4px",
+                          color: "#fff",
+                          padding: "6px 0",
+                          textAlign: "center",
+                          fontSize: "1rem"
+                        }}
+                      />
+                    </div>
+                    
+                    <div style={{ textAlign: "right" }}>
+                      <button 
+                        onClick={() => removeSeries(exIdx, serieIdx)}
+                        style={{ background: "none", border: "none", color: "#ff4d4d", cursor: "pointer", fontSize: "1.2rem" }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={() => addSeries(exIdx)}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  backgroundColor: "#1a1a1a",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "0.9rem",
+                  fontWeight: "500",
+                  cursor: "pointer",
+                  transition: "background 0.2s"
+                }}
+              >
+                + Agregar Serie
+              </button>
+            </div>
+          ))}
+
+          <button 
+            onClick={() => setShowSelector(true)}
+            style={{
+              width: "100%",
+              padding: "15px",
+              backgroundColor: mintSoft,
+              color: mint,
+              border: `1px dashed ${mint}`,
+              borderRadius: "10px",
+              fontSize: "1rem",
+              fontWeight: "600",
+              cursor: "pointer",
+              marginBottom: "40px"
+            }}
+          >
+            + AGREGAR EJERCICIO
+          </button>
+        </div>
+
+        {/* Modal de Selector de Ejercicios */}
+        {showSelector && (
+          <div style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: "#000", zIndex: 2000, overflowY: "auto",
+            padding: "20px"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <h2 style={{ margin: 0, color: "#fff" }}>{selectedGroup ? t(selectedGroup) : t("select_muscle_group")}</h2>
+              <button 
+                onClick={() => {
+                  if (selectedGroup) setSelectedGroup("");
+                  else {
+                    setShowSelector(false);
+                    setSubstitutingExerciseIdx(null);
+                  }
+                }}
+                style={{ background: "none", border: "none", color: mint, fontSize: "1.1rem", fontWeight: "bold", cursor: "pointer" }}
+              >
+                {t("back")}
+              </button>
+            </div>
+
+            {!selectedGroup ? (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "15px" }}>
                 {groups.map((g) => (
                   <button 
                     key={g} 
                     onClick={() => setSelectedGroup(g)}
                     style={{
-                      padding: "1rem",
-                      backgroundColor: isDark ? "#2a2a2a" : "#f9f9f9",
-                      border: `2px solid ${isDark ? "#444" : "#eee"}`,
-                      borderRadius: "10px",
-                      fontSize: "0.95rem",
+                      padding: "20px",
+                      backgroundColor: "#1a1a1a",
+                      border: "1px solid #333",
+                      borderRadius: "12px",
+                      color: "#fff",
+                      fontSize: "1rem",
                       fontWeight: "600",
-                      color: isDark ? "#fff" : "#333",
                       cursor: "pointer",
-                      transition: "all 0.3s ease"
-                    }}
-                    onMouseOver={(e) => {
-                      e.target.style.backgroundColor = "#1dd1a1";
-                      e.target.style.color = "#000";
-                      e.target.style.borderColor = "#1dd1a1";
-                      e.target.style.transform = "translateY(-2px)";
-                      e.target.style.boxShadow = "0 4px 8px rgba(29, 209, 161, 0.2)";
-                    }}
-                    onMouseOut={(e) => {
-                      e.target.style.backgroundColor = isDark ? "#2a2a2a" : "#f9f9f9";
-                      e.target.style.color = isDark ? "#fff" : "#333";
-                      e.target.style.borderColor = isDark ? "#444" : "#eee";
-                      e.target.style.transform = "translateY(0)";
-                      e.target.style.boxShadow = "none";
+                      textAlign: "center"
                     }}
                   >
                     {t(g)}
                   </button>
                 ))}
               </div>
-            </div>
-          )}
-
-          {selectedGroup && !selectedExercise && (
-            <div style={{
-              backgroundColor: isDark ? "#1a1a1a" : "#fff",
-              borderRadius: "12px",
-              padding: "2rem",
-              boxShadow: isDark ? "0 4px 12px rgba(0, 0, 0, 0.5)" : "0 4px 12px rgba(0, 0, 0, 0.05)",
-              marginBottom: "2rem",
-              border: `1px solid ${isDark ? "#333" : "#eee"}`
-            }}>
-              <h3 style={{ fontSize: "1.3rem", fontWeight: "600", marginBottom: "1.5rem", color: isDark ? "#fff" : "#333" }}>
-                {t("exercises_of")} {t(selectedGroup)}
-              </h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "10px" }}>
                 {exercisesList[selectedGroup].map((ex) => (
                   <button
                     key={ex.id}
                     onClick={() => addExercise(ex)}
                     style={{
-                      padding: "1rem",
-                      backgroundColor: isDark ? "#1a1a1a" : "#f0fdf4",
-                      border: `2px solid #1dd1a1`,
+                      padding: "15px",
+                      backgroundColor: "#1a1a1a",
+                      border: "1px solid #333",
                       borderRadius: "10px",
-                      fontSize: "0.95rem",
-                      fontWeight: "600",
-                      color: "#1dd1a1",
+                      color: "#fff",
+                      fontSize: "1rem",
+                      fontWeight: "500",
                       cursor: "pointer",
-                      transition: "all 0.3s ease"
-                    }}
-                    onMouseOver={(e) => {
-                      e.target.style.backgroundColor = isDark ? "#2a2a2a" : "#e6fffa";
-                      e.target.style.boxShadow = "0 4px 12px rgba(29, 209, 161, 0.3)";
-                      e.target.style.transform = "translateY(-2px)";
-                    }}
-                    onMouseOut={(e) => {
-                      e.target.style.backgroundColor = isDark ? "#1a1a1a" : "#f0fdf4";
-                      e.target.style.boxShadow = "none";
-                      e.target.style.transform = "translateY(0)";
+                      textAlign: "left",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "15px"
                     }}
                   >
+                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "#fff", display: "flex", justifyContent: "center", alignItems: "center", overflow: "hidden" }}>
+                      <img src={`/exercises/${ex.name.toLowerCase().replace(/ /g, "_")}.png`} onError={(e) => e.target.src = "/logo3.png"} style={{ width: "80%" }} />
+                    </div>
                     {t(ex.name)}
                   </button>
                 ))}
               </div>
-              <button 
-                onClick={() => setSelectedGroup("")}
-                style={{
-                  padding: "0.5rem 1rem",
-                  backgroundColor: "#7f1d1d",
-                  border: "2px solid #dc2626",
-                  borderRadius: "8px",
-                  fontSize: "0.9rem",
-                  fontWeight: "600",
-                  color: "#fff",
-                  cursor: "pointer",
-                  transition: "all 0.3s ease"
-                }}
-                onMouseOver={(e) => {
-                  e.target.style.backgroundColor = "#991b1b";
-                  e.target.style.borderColor = "#ef4444";
-                }}
-                onMouseOut={(e) => {
-                  e.target.style.backgroundColor = "#7f1d1d";
-                  e.target.style.borderColor = "#dc2626";
-                }}
-              >
-                {t("back")}
-              </button>
-            </div>
-          )}
-
-          {exercises.length > 0 && (
-            <div>
-              <h2 style={{ fontSize: "1.8rem", fontWeight: "700", marginBottom: "1.5rem", color: isDark ? "#fff" : "#333" }}>
-                {t("selected_exercises")}
-              </h2>
-
-              {exercises.map((ex, exIdx) => (
-                <div
-                  key={exIdx}
-                  style={{
-                    backgroundColor: isDark ? "#1a1a1a" : "#fff",
-                    borderRadius: "12px",
-                    padding: "1.5rem",
-                    marginBottom: "1.5rem",
-                    boxShadow: isDark ? "0 4px 12px rgba(0, 0, 0, 0.5)" : "0 4px 12px rgba(0,0,0,0.05)",
-                    border: `1px solid ${isDark ? "#333" : "#eee"}`
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-                    <h3 style={{ fontSize: "1.3rem", fontWeight: "600", color: "#1dd1a1", margin: "0" }}>
-                      {t(ex.name)}
-                    </h3>
-                    <span style={{ 
-                      backgroundColor: isDark ? "#1a1a1a" : "#f0fdf4", 
-                      padding: "0.25rem 0.75rem", 
-                      borderRadius: "20px", 
-                      fontSize: "0.85rem", 
-                      color: "#1dd1a1", 
-                      fontWeight: "600", 
-                      border: `1px solid #1dd1a1` 
-                    }}>
-                      {t(ex.group)}
-                    </span>
-                  </div>
-
-                  <div style={{
-                    backgroundColor: isDark ? "#2a2a2a" : "#f9f9f9",
-                    borderRadius: "8px",
-                    padding: "1rem",
-                    marginBottom: "1.5rem",
-                    border: `1px solid ${isDark ? "#333" : "#eee"}`
-                  }}>
-                    <label style={{ display: "block", fontSize: "0.95rem", fontWeight: "600", marginBottom: "0.5rem", color: isDark ? "#fff" : "#333" }}>
-                      {t("exercise_rest")}
-                    </label>
-                    <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-                      <select
-                        value={ex.rest}
-                        onChange={(e) => {
-                          const newExercises = [...exercises];
-                          newExercises[exIdx].rest = Number(e.target.value);
-                          setExercises(newExercises);
-                        }}
-                        style={{
-                          padding: "0.75rem 1rem",
-                          borderRadius: "8px",
-                          border: `2px solid ${isDark ? "#333" : "#ddd"}`,
-                          fontSize: "1rem",
-                          fontWeight: "600",
-                          cursor: "pointer",
-                          transition: "all 0.3s ease",
-                          flex: 1,
-                          backgroundColor: isDark ? "#1a1a1a" : "#fff",
-                          color: isDark ? "#fff" : "#333"
-                        }}
-                        onFocus={(e) => e.target.style.borderColor = "#1dd1a1"}
-                        onBlur={(e) => e.target.style.borderColor = isDark ? "#333" : "#ddd"}
-                      >
-                        {restOptions.map((r) => {
-                          const m = Math.floor(r / 60);
-                          const s = r % 60;
-                          return (
-                            <option key={r} value={r}>
-                              {m > 0 ? `${m}m ${s}s` : `${s}s`}
-                            </option>
-                          );
-                        })}
-                      </select>
-                      <div style={{
-                        backgroundColor: "#1dd1a1",
-                        color: "#000",
-                        padding: "0.75rem 1.5rem",
-                        borderRadius: "8px",
-                        fontSize: "1.1rem",
-                        fontWeight: "700",
-                        minWidth: "80px",
-                        textAlign: "center"
-                      }}>
-                        {(() => {
-                          const m = Math.floor(ex.rest / 60);
-                          const s = ex.rest % 60;
-                          return m > 0 ? `${m}m ${s}s` : `${s}s`;
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-
-                  <table style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    marginBottom: "1rem"
-                  }}>
-                    <thead>
-                      <tr style={{ backgroundColor: isDark ? "#2a2a2a" : "#f5f5f5", borderBottom: `2px solid ${isDark ? "#444" : "#ddd"}` }}>
-                        <th style={{ padding: "0.75rem", textAlign: "left", fontWeight: "600", color: isDark ? "#fff" : "#333", fontSize: "0.95rem" }}>{t("series_label")}</th>
-                        <th style={{ padding: "0.75rem", textAlign: "left", fontWeight: "600", color: isDark ? "#fff" : "#333", fontSize: "0.95rem" }}>{t("reps_label")}</th>
-                        <th style={{ padding: "0.75rem", textAlign: "left", fontWeight: "600", color: isDark ? "#fff" : "#333", fontSize: "0.95rem" }}>{t("weight_kg")}</th>
-                        <th style={{ padding: "0.75rem", textAlign: "center", fontWeight: "600", color: isDark ? "#fff" : "#333", fontSize: "0.95rem" }}>{t("action")}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {ex.series.map((s, sIdx) => (
-                        <tr key={sIdx} style={{ borderBottom: `1px solid ${isDark ? "#333" : "#eee"}` }}>
-                          <td style={{ padding: "0.75rem", fontWeight: "600", color: isDark ? "#fff" : "#333" }}>{sIdx + 1}</td>
-                          <td style={{ padding: "0.75rem" }}>
-                            <input
-                              type="number"
-                              value={s.reps}
-                              onChange={(e) =>
-                                handleSeriesChange(exIdx, sIdx, "reps", Number(e.target.value))
-                              }
-                              style={{
-                                padding: "0.5rem 0.75rem",
-                                borderRadius: "6px",
-                                border: `1px solid ${isDark ? "#444" : "#ddd"}`,
-                                fontSize: "1rem",
-                                width: "100%",
-                                fontFamily: "inherit",
-                                backgroundColor: isDark ? "#2a2a2a" : "#fff",
-                                color: isDark ? "#fff" : "#333"
-                              }}
-                            />
-                          </td>
-                          <td style={{ padding: "0.75rem" }}>
-                            <input
-                              type="number"
-                              value={s.weight}
-                              onChange={(e) =>
-                                handleSeriesChange(exIdx, sIdx, "weight", Number(e.target.value))
-                              }
-                              style={{
-                                padding: "0.5rem 0.75rem",
-                                borderRadius: "6px",
-                                border: `1px solid ${isDark ? "#444" : "#ddd"}`,
-                                fontSize: "1rem",
-                                width: "100%",
-                                fontFamily: "inherit",
-                                backgroundColor: isDark ? "#2a2a2a" : "#fff",
-                                color: isDark ? "#fff" : "#333"
-                              }}
-                            />
-                          </td>
-                          <td style={{ padding: "0.75rem", textAlign: "center" }}>
-                            <button
-                              onClick={() => removeSeries(exIdx, sIdx)}
-                              style={{
-                                backgroundColor: "#7f1d1d",
-                                color: "#fff",
-                                border: "none",
-                                borderRadius: "6px",
-                                padding: "0.4rem 0.8rem",
-                                fontWeight: "600",
-                                cursor: "pointer",
-                                transition: "all 0.3s ease",
-                                fontSize: "0.9rem"
-                              }}
-                              onMouseOver={(e) => {
-                                e.target.style.backgroundColor = "#dc2626";
-                              }}
-                              onMouseOut={(e) => {
-                                e.target.style.backgroundColor = "#7f1d1d";
-                              }}
-                            >
-                              {t("delete")}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  <div style={{ display: "flex", gap: "1rem" }}>
-                    <button
-                      onClick={() => addSeries(exIdx)}
-                      style={{
-                        padding: "0.75rem 1.5rem",
-                        backgroundColor: "#15803d",
-                        border: "2px solid #22c55e",
-                        borderRadius: "8px",
-                        fontSize: "0.95rem",
-                        fontWeight: "600",
-                        color: "#fff",
-                        cursor: "pointer",
-                        transition: "all 0.3s ease"
-                      }}
-                      onMouseOver={(e) => {
-                        e.target.style.backgroundColor = "#16a34a";
-                        e.target.style.borderColor = "#4ade80";
-                      }}
-                      onMouseOut={(e) => {
-                        e.target.style.backgroundColor = "#15803d";
-                        e.target.style.borderColor = "#22c55e";
-                      }}
-                    >
-                      {t("add_series")}
-                    </button>
-                    <button
-                      onClick={() => {
-                        const newExercises = exercises.filter((_, i) => i !== exIdx);
-                        setExercises(newExercises);
-                      }}
-                      style={{
-                        padding: "0.75rem 1.5rem",
-                        backgroundColor: "#7f1d1d",
-                        border: "2px solid #dc2626",
-                        borderRadius: "8px",
-                        fontSize: "0.95rem",
-                        fontWeight: "600",
-                        color: "#fff",
-                        cursor: "pointer",
-                        transition: "all 0.3s ease"
-                      }}
-                      onMouseOver={(e) => {
-                        e.target.style.backgroundColor = "#991b1b";
-                        e.target.style.borderColor = "#ef4444";
-                      }}
-                      onMouseOut={(e) => {
-                        e.target.style.backgroundColor = "#7f1d1d";
-                        e.target.style.borderColor = "#dc2626";
-                      }}
-                    >
-                      {t("delete_exercise")}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {exercises.length > 0 && !showSelector && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "2rem" }}>
-              <button 
-                onClick={() => setShowSelector(true)}
-                style={{
-                  padding: "1rem 2rem",
-                  backgroundColor: isDark ? "#333" : "#eee",
-                  color: isDark ? "#fff" : "#333",
-                  border: `1px solid ${isDark ? "#444" : "#ddd"}`,
-                  borderRadius: "8px",
-                  fontSize: "1.1rem",
-                  fontWeight: "700",
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                  width: "100%"
-                }}
-                onMouseOver={(e) => {
-                  e.target.style.backgroundColor = isDark ? "#444" : "#e0e0e0";
-                }}
-                onMouseOut={(e) => {
-                  e.target.style.backgroundColor = isDark ? "#333" : "#eee";
-                }}
-              >
-                {t("add_exercise")}
-              </button>
-
-              <button
-                onClick={saveRoutine}
-                style={{
-                  padding: "1rem 2rem",
-                  backgroundColor: "#1dd1a1",
-                  color: "#000",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontSize: "1.1rem",
-                  fontWeight: "700",
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                  boxShadow: "0 4px 12px rgba(29, 209, 161, 0.4)",
-                  width: "100%"
-                }}
-                onMouseOver={(e) => {
-                  e.target.style.backgroundColor = "#16a853";
-                  e.target.style.boxShadow = "0 6px 16px rgba(29, 209, 161, 0.5)";
-                }}
-                onMouseOut={(e) => {
-                  e.target.style.backgroundColor = "#1dd1a1";
-                  e.target.style.boxShadow = "0 4px 12px rgba(29, 209, 161, 0.4)";
-                }}
-              >
-                {isEditMode ? t("save_routine_btn") : t("save_workout")}
-              </button>
-            </div>
-          )}
-
-          {exercises.length === 0 && routineName && !showSelector && (
-            <button 
-              onClick={() => setShowSelector(true)}
-              style={{
-                padding: "1rem 2rem",
-                backgroundColor: "#1dd1a1",
-                color: "#000",
-                border: "none",
-                borderRadius: "8px",
-                fontSize: "1.1rem",
-                fontWeight: "700",
-                cursor: "pointer",
-                transition: "all 0.3s ease",
-                boxShadow: "0 4px 12px rgba(29, 209, 161, 0.4)",
-                width: "100%",
-                marginTop: "1rem"
-              }}
-              onMouseOver={(e) => {
-                e.target.style.backgroundColor = "#16a853";
-                e.target.style.boxShadow = "0 6px 16px rgba(29, 209, 161, 0.5)";
-              }}
-              onMouseOut={(e) => {
-                e.target.style.backgroundColor = "#1dd1a1";
-                e.target.style.boxShadow = "0 4px 12px rgba(29, 209, 161, 0.4)";
-              }}
-            >
-              {t("add_exercise")}
-            </button>
-          )}
-        </>
-      )}
+            )}
+          </div>
+        )}
       </div>
     </Layout>
   );

@@ -167,7 +167,7 @@ export default function StatisticsView() {
       </div>
 
       {view === 'series' && (
-        <Section title="Series por grupo muscular" isDark={isDark}>
+        <Section title="Series por grupo muscular" isDark={isDark} isNarrow={isNarrow}>
           {Object.entries(seriesByGroup).length === 0 ? (
             <p style={{ color: isDark ? '#aaa' : '#666' }}>{t('stats_no_data')}</p>
           ) : (
@@ -187,7 +187,7 @@ export default function StatisticsView() {
       )}
 
       {view === 'distribution' && (
-        <Section title="Distribución de músculos (gráfico)" isDark={isDark}>
+        <Section title="Distribución de músculos (gráfico)" isDark={isDark} isNarrow={isNarrow}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
             {Object.entries(seriesByGroup).map(([g,n]) => (
               <div key={g} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: isNarrow ? '0.8rem' : '1rem' }}>
@@ -203,7 +203,7 @@ export default function StatisticsView() {
       )}
 
       {view === 'body' && (
-        <Section title="Distribución de músculos (cuerpo)" isDark={isDark}>
+        <Section title="Distribución de músculos (cuerpo)" isDark={isDark} isNarrow={isNarrow}>
           <div style={{ display: 'flex', flexDirection: isNarrow ? 'column' : 'row', gap: '20px' }}>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <InteractiveBodyMap 
@@ -247,7 +247,11 @@ export default function StatisticsView() {
               <h3 style={{ fontSize: '0.9rem', marginBottom: '10px', color: isDark ? '#ddd' : '#555' }}>
                 Series completadas (Últimos 7 días)
               </h3>
-              <div style={{ display: 'grid', gap: '8px' }}>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: isNarrow ? '1fr 1fr' : '1fr',
+                gap: '8px' 
+              }}>
                 {Object.entries(muscleStats.counts)
                   .sort((a, b) => b[1] - a[1])
                   .map(([muscle, count]) => {
@@ -259,26 +263,33 @@ export default function StatisticsView() {
                           display: 'flex', 
                           justifyContent: 'space-between', 
                           alignItems: 'center',
-                          padding: '10px',
+                          padding: isNarrow ? '8px' : '10px',
                           backgroundColor: isDark ? '#222' : '#f8f9fa',
                           borderRadius: '8px',
-                          borderLeft: `4px solid ${muscleStats.getColor(intensity)}`
+                          borderLeft: `4px solid ${muscleStats.getColor(intensity)}`,
+                          fontSize: isNarrow ? '0.8rem' : '0.9rem'
                         }}
                       >
-                        <div>
-                          <div style={{ fontWeight: 'bold', fontSize: '0.9rem', color: isDark ? '#eee' : '#333' }}>
+                        <div style={{ overflow: 'hidden' }}>
+                          <div style={{ 
+                            fontWeight: 'bold', 
+                            color: isDark ? '#eee' : '#333',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
                             {t(muscle) || muscle}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: isDark ? '#aaa' : '#777' }}>
-                            {intensity === 0 ? 'Sin entrenar' : `Nivel ${intensity}`}
+                          <div style={{ fontSize: '0.7rem', color: isDark ? '#aaa' : '#777' }}>
+                            {intensity === 0 ? 'Sin entrenar' : `Lvl ${intensity}`}
                           </div>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#1dd1a1' }}>
+                        <div style={{ textAlign: 'right', minWidth: '35px' }}>
+                          <div style={{ fontWeight: 'bold', color: '#1dd1a1', fontSize: isNarrow ? '1rem' : '1.1rem' }}>
                             {count}
                           </div>
-                          <div style={{ fontSize: '0.7rem', color: isDark ? '#888' : '#999' }}>
-                            {t('total_series')}
+                          <div style={{ fontSize: '0.65rem', color: isDark ? '#888' : '#999' }}>
+                            {isNarrow ? 'Ser.' : t('total_series')}
                           </div>
                         </div>
                       </div>
@@ -305,15 +316,15 @@ export default function StatisticsView() {
   );
 }
 
-function Section({ title, isDark, children }) {
+function Section({ title, isDark, children, isNarrow }) {
   return (
     <section style={{
       backgroundColor: isDark ? '#1a1a1a' : '#fff',
       border: isDark ? '1px solid #333' : '1px solid #e0e0e0',
       borderRadius: '10px',
-      padding: '16px'
+      padding: isNarrow ? '12px' : '16px'
     }}>
-      <h2 style={{ margin: 0, marginBottom: '12px', color: isDark ? '#fff' : '#333', fontSize: '1rem' }}>{title}</h2>
+      <h2 style={{ margin: 0, marginBottom: '12px', color: isDark ? '#fff' : '#333', fontSize: isNarrow ? '0.9rem' : '1rem' }}>{title}</h2>
       {children}
     </section>
   );

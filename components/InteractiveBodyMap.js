@@ -14,10 +14,11 @@ const InteractiveBodyMap = ({ counts = {}, isDark = false }) => {
   };
 
   const getColor = (intensity) => {
-    if (intensity === 0) return isDark ? '#1a1a1a' : '#f0f0f0';
-    if (intensity === 1) return 'rgba(47, 214, 162, 0.25)';
-    if (intensity === 2) return 'rgba(47, 214, 162, 0.5)';
-    if (intensity === 3) return 'rgba(47, 214, 162, 0.75)';
+    // En modo oscuro, usamos un gris un poco más claro para que la silueta sea visible
+    if (intensity === 0) return isDark ? '#2a2a2a' : '#eeeeee';
+    if (intensity === 1) return 'rgba(47, 214, 162, 0.2)';
+    if (intensity === 2) return 'rgba(47, 214, 162, 0.45)';
+    if (intensity === 3) return 'rgba(47, 214, 162, 0.7)';
     return '#2fd6a2';
   };
 

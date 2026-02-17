@@ -37,6 +37,7 @@ export default function Profile() {
   const [followingList, setFollowingList] = useState([]);
   const [isPhotoFullScreen, setIsPhotoFullScreen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [expandedWorkout, setExpandedWorkout] = useState(null);
 
   // Forzar refresco de datos al entrar al perfil
   useEffect(() => {
@@ -315,14 +316,80 @@ export default function Profile() {
           <div style={{ fontSize: "0.8rem", color: "#888" }}>{new Date(workout.completedAt).toLocaleString()}</div>
         </div>
         <div style={{ display: "flex", gap: "10px" }}>
-          <button onClick={() => router.push(`/routines/${workout.routineId || 'view'}?viewWorkoutId=${workout.id}`)} style={{ background: "none", border: "none", cursor: "pointer", color: "#1dd1a1", fontSize: "0.85rem" }}>Resumen</button>
+          <button 
+            onClick={() => setExpandedWorkout(expandedWorkout === workout.id ? null : workout.id)} 
+            style={{ background: "none", border: "none", cursor: "pointer", color: "#1dd1a1", fontSize: "0.85rem", textDecoration: "underline" }}
+          >
+            {expandedWorkout === workout.id ? "Ocultar" : "Detalles"}
+          </button>
           <button onClick={() => router.push(`/routines/${workout.routineId || 'edit'}?editWorkoutId=${workout.id}`)} style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: "0.85rem" }}>Editar</button>
           <button onClick={() => setConfirmDelete(workout.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ff4757", fontSize: "0.85rem" }}>Borrar</button>
         </div>
       </div>
-      <div style={{ fontSize: "0.9rem", color: "#ccc" }}>
+      <div style={{ fontSize: "0.9rem", color: "#ccc", marginBottom: expandedWorkout === workout.id ? "15px" : "0" }}>
         {workout.series} series • {workout.totalVolume?.toLocaleString()} kg • {workout.totalReps} reps
       </div>
+
+      {expandedWorkout === workout.id && workout.exerciseDetails && (
+        <div style={{ 
+          backgroundColor: "#000", 
+          borderRadius: "12px", 
+          padding: "15px", 
+          display: "flex",
+          flexDirection: "column",
+          gap: "25px",
+          border: "1px solid #1a1a1a",
+          marginTop: "10px"
+        }}>
+          {workout.exerciseDetails.map((ex, idx) => (
+            <div key={idx}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+                <div style={{
+                  width: "35px",
+                  height: "35px",
+                  borderRadius: "50%",
+                  backgroundColor: "#fff",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  overflow: "hidden"
+                }}>
+                  <img 
+                    src={`/exercises/${(ex?.name || "").toLowerCase().replace(/ /g, "_")}.png`} 
+                    onError={(e) => { e.target.src = "/logo3.png"; }}
+                    alt="" 
+                    style={{ width: "80%", height: "auto" }} 
+                  />
+                </div>
+                <div style={{ fontWeight: "500", fontSize: "1rem", color: "#1dd1a1" }}>{t(ex.name)}</div>
+              </div>
+              
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr", padding: "5px 0", borderBottom: "1px solid #1a1a1a", color: "#666", fontSize: "0.75rem", fontWeight: "bold", textAlign: "center" }}>
+                  <div>SERIE</div>
+                  <div>PESO (KG)</div>
+                  <div>REPS</div>
+                </div>
+                {ex.series.map((s, sIdx) => (
+                  <div key={sIdx} style={{ 
+                    display: "grid", 
+                    gridTemplateColumns: "40px 1fr 1fr", 
+                    padding: "8px 0", 
+                    textAlign: "center",
+                    fontSize: "0.9rem",
+                    color: "#fff",
+                    backgroundColor: sIdx % 2 === 0 ? "transparent" : "#0a0a0a"
+                  }}>
+                    <div style={{ color: "#666", fontWeight: "bold" }}>{sIdx + 1}</div>
+                    <div>{s.weight || "-"}</div>
+                    <div>{s.reps || "-"}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 

@@ -26,6 +26,9 @@ export default function UserProfile() {
   const [followersList, setFollowersList] = useState([]);
   const [followingList, setFollowingList] = useState([]);
   const [newComment, setNewComment] = useState("");
+  const [expandedWorkout, setExpandedWorkout] = useState(null);
+
+  const { t } = useUser();
 
   const handleOpenFollowers = async () => {
     setShowFollowers(true);
@@ -182,16 +185,87 @@ export default function UserProfile() {
           ) : (
             workouts.map(workout => (
               <div key={workout.id} style={{ backgroundColor: "#1a1a1a", padding: "15px", borderRadius: "12px" }}>
-                <div style={{ marginBottom: "12px" }}>
-                  <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#1dd1a1" }}>{workout.name}</div>
-                  <div style={{ fontSize: "0.75rem", color: "#888" }}>{new Date(workout.completedAt).toLocaleString()}</div>
-                </div>
-
                 <div style={{ marginBottom: "10px" }}>
-                  <div style={{ fontSize: "0.9rem", color: "#ccc" }}>
-                    {workout.series} series • {workout.totalVolume?.toLocaleString()} kg • {workout.totalReps} reps
+                  <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#1dd1a1" }}>{workout.name}</div>
+                  <div style={{ fontSize: "0.9rem", color: "#ccc", marginTop: "5px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span>{workout.series} series • {workout.totalVolume?.toLocaleString()} kg • {workout.totalReps} reps</span>
+                    <button 
+                      onClick={() => setExpandedWorkout(expandedWorkout === workout.id ? null : workout.id)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#1dd1a1",
+                        fontSize: "0.8rem",
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                        padding: 0
+                      }}
+                    >
+                      {expandedWorkout === workout.id ? "Ocultar detalles" : "Ver detalles"}
+                    </button>
                   </div>
                 </div>
+
+                {expandedWorkout === workout.id && workout.exerciseDetails && (
+                  <div style={{ 
+                    backgroundColor: "#000", 
+                    borderRadius: "12px", 
+                    padding: "15px", 
+                    marginBottom: "15px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "25px",
+                    border: "1px solid #1a1a1a"
+                  }}>
+                    {workout.exerciseDetails.map((ex, idx) => (
+                      <div key={idx}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+                          <div style={{
+                            width: "35px",
+                            height: "35px",
+                            borderRadius: "50%",
+                            backgroundColor: "#fff",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            overflow: "hidden"
+                          }}>
+                            <img 
+                              src={`/exercises/${(ex?.name || "").toLowerCase().replace(/ /g, "_")}.png`} 
+                              onError={(e) => { e.target.src = "/logo3.png"; }}
+                              alt="" 
+                              style={{ width: "80%", height: "auto" }} 
+                            />
+                          </div>
+                          <div style={{ fontWeight: "500", fontSize: "1rem", color: "#1dd1a1" }}>{t(ex.name)}</div>
+                        </div>
+                        
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                          <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr", padding: "5px 0", borderBottom: "1px solid #1a1a1a", color: "#666", fontSize: "0.75rem", fontWeight: "bold", textAlign: "center" }}>
+                            <div>SERIE</div>
+                            <div>PESO (KG)</div>
+                            <div>REPS</div>
+                          </div>
+                          {ex.series.map((s, sIdx) => (
+                            <div key={sIdx} style={{ 
+                              display: "grid", 
+                              gridTemplateColumns: "40px 1fr 1fr", 
+                              padding: "8px 0", 
+                              textAlign: "center",
+                              fontSize: "0.9rem",
+                              color: "#fff",
+                              backgroundColor: sIdx % 2 === 0 ? "transparent" : "#0a0a0a"
+                            }}>
+                              <div style={{ color: "#666", fontWeight: "bold" }}>{sIdx + 1}</div>
+                              <div>{s.weight || "-"}</div>
+                              <div>{s.reps || "-"}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {workout.comments && (
                   <div style={{ fontSize: "0.9rem", color: "#888", fontStyle: "italic", borderLeft: "2px solid #1dd1a1", paddingLeft: "10px", margin: "10px 0" }}>

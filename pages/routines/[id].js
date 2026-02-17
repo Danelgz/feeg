@@ -660,14 +660,48 @@ export default function RoutineDetail() {
     // Clear persistent timer when workout is completed
     clearPersistentTimer();
     
-    // Calcular estadísticas
-    const totalSeries = routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0);
-    const totalReps = Object.values(currentReps).reduce((sum, val) => sum + (parseInt(val) || 0), 0);
-    const totalVolume = Object.keys(currentWeight).reduce((sum, key) => {
-      const weight = parseInt(currentWeight[key]) || 0;
-      const reps = parseInt(currentReps[key]) || 0;
-      return sum + (weight * reps);
-    }, 0);
+    // Filtrar detalles de ejercicios para guardar solo series completadas
+    const exerciseDetails = routine.exercises.map((ex, exIdx) => {
+      // Encontrar grupo muscular
+      let muscleGroup = "";
+      for (const [group, exercises] of Object.entries(exercisesList)) {
+        if (exercises.some(e => e.name === ex.name)) {
+          muscleGroup = group;
+          break;
+        }
+      }
+
+      const completedSeries = ex.series
+        .map((s, sIdx) => {
+          const key = `${exIdx}-${sIdx}`;
+          if (seriesCompleted[key]) {
+            return {
+              reps: currentReps[key] || s.reps,
+              weight: currentWeight[key] || s.weight,
+              type: seriesTypes[key] || "N"
+            };
+          }
+          return null;
+        })
+        .filter(s => s !== null);
+
+      if (completedSeries.length === 0) return null;
+
+      return {
+        name: ex.name,
+        muscleGroup: muscleGroup,
+        series: completedSeries
+      };
+    }).filter(ex => ex !== null);
+
+    // Calcular estadísticas basadas solo en series completadas
+    const totalReps = exerciseDetails.reduce((sum, ex) => 
+      sum + ex.series.reduce((sSum, s) => sSum + (parseInt(s.reps) || 0), 0)
+    , 0);
+    const totalVolume = exerciseDetails.reduce((sum, ex) => 
+      sum + ex.series.reduce((sSum, s) => sSum + ((parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0)), 0)
+    , 0);
+    const totalSeries = exerciseDetails.reduce((sum, ex) => sum + ex.series.length, 0);
 
     // Guardar rutina completada
     const completedRoutine = {
@@ -677,29 +711,11 @@ export default function RoutineDetail() {
       completedAt: new Date().toISOString(),
       totalTime: finishFormData.totalTime,
       elapsedTime: elapsedTime,
-      exercises: routine.exercises.length,
+      exercises: exerciseDetails.length,
       series: totalSeries,
       totalReps: totalReps,
       totalVolume: totalVolume,
-      exerciseDetails: routine.exercises.map((ex, exIdx) => {
-        // Find muscle group for this exercise
-        let muscleGroup = "";
-        for (const [group, exercises] of Object.entries(exercisesList)) {
-          if (exercises.some(e => e.name === ex.name)) {
-            muscleGroup = group;
-            break;
-          }
-        }
-
-        return {
-          name: ex.name,
-          muscleGroup: muscleGroup,
-          series: ex.series.map((s, sIdx) => ({
-            reps: currentReps[`${exIdx}-${sIdx}`] || s.reps,
-            weight: currentWeight[`${exIdx}-${sIdx}`] || s.weight
-          }))
-        };
-      })
+      exerciseDetails: exerciseDetails
     };
 
     // Guardar usando el contexto (esto también sincroniza con la nube)

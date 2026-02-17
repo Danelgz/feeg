@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import Link from "next/link";
-import BodyStatsSVG from "../components/BodyStatsSVG";
+import BodyHeatmap from "../components/BodyHeatmap";
+import InteractiveBodyMap from "../components/InteractiveBodyMap";
 
 export default function Statistics() {
   const { t, theme, isMobile, completedWorkouts: workouts } = useUser();
@@ -165,10 +166,7 @@ export default function Statistics() {
           Distribución de músculos (últimos 30 días) {workouts.length === 0 && <span style={{ color: isDark ? '#aaa' : '#777' }}>· {t('stats_no_data')}</span>}
         </h2>
         <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <BodyStatsSVG 
-            muscleStats={muscleStats} 
-            isDark={isDark} 
-          />
+          <InteractiveBodyMap counts={muscleStats.counts} isDark={isDark} onMuscleClick={(muscle) => console.log(muscle)} />
         </div>
       </section>
 

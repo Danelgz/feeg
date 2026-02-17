@@ -274,21 +274,57 @@ export default function Home() {
 
                 {expandedWorkout === workout.id && workout.exerciseDetails && (
                   <div style={{ 
-                    backgroundColor: "#222", 
-                    borderRadius: "8px", 
-                    padding: "12px", 
+                    backgroundColor: "#000", 
+                    borderRadius: "12px", 
+                    padding: "15px", 
                     marginBottom: "15px",
                     display: "flex",
                     flexDirection: "column",
-                    gap: "12px"
+                    gap: "25px",
+                    border: "1px solid #1a1a1a"
                   }}>
                     {workout.exerciseDetails.map((ex, idx) => (
-                      <div key={idx} style={{ borderBottom: idx === workout.exerciseDetails.length - 1 ? "none" : "1px solid #333", paddingBottom: "8px" }}>
-                        <div style={{ fontWeight: "bold", fontSize: "0.9rem", color: "#1dd1a1", marginBottom: "5px" }}>{ex.name}</div>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(70px, 1fr))", gap: "8px" }}>
+                      <div key={idx}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+                          <div style={{
+                            width: "35px",
+                            height: "35px",
+                            borderRadius: "50%",
+                            backgroundColor: "#fff",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            overflow: "hidden"
+                          }}>
+                            <img 
+                              src={`/exercises/${(ex?.name || "").toLowerCase().replace(/ /g, "_")}.png`} 
+                              onError={(e) => { e.target.src = "/logo3.png"; }}
+                              alt="" 
+                              style={{ width: "80%", height: "auto" }} 
+                            />
+                          </div>
+                          <div style={{ fontWeight: "500", fontSize: "1rem", color: "#1dd1a1" }}>{t(ex.name)}</div>
+                        </div>
+                        
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                          <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr", padding: "5px 0", borderBottom: "1px solid #1a1a1a", color: "#666", fontSize: "0.75rem", fontWeight: "bold", textAlign: "center" }}>
+                            <div>SERIE</div>
+                            <div>PESO (KG)</div>
+                            <div>REPS</div>
+                          </div>
                           {ex.series.map((s, sIdx) => (
-                            <div key={sIdx} style={{ fontSize: "0.8rem", color: "#aaa" }}>
-                              <span style={{ fontWeight: "bold", color: "#fff" }}>S{sIdx + 1}:</span> {s.weight}kg x {s.reps}
+                            <div key={sIdx} style={{ 
+                              display: "grid", 
+                              gridTemplateColumns: "40px 1fr 1fr", 
+                              padding: "8px 0", 
+                              textAlign: "center",
+                              fontSize: "0.9rem",
+                              color: "#fff",
+                              backgroundColor: sIdx % 2 === 0 ? "transparent" : "#0a0a0a"
+                            }}>
+                              <div style={{ color: "#666", fontWeight: "bold" }}>{sIdx + 1}</div>
+                              <div>{s.weight || "-"}</div>
+                              <div>{s.reps || "-"}</div>
                             </div>
                           ))}
                         </div>

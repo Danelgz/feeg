@@ -1,26 +1,25 @@
 import React from 'react';
 
-const InteractiveBodyMap = ({ counts = {}, isDark = false }) => {
-  const max = Math.max(1, ...Object.values(counts));
+const InteractiveBodyMap = ({ counts = {}, isDark = false, getIntensity, getColor }) => {
+  const localMax = Math.max(1, ...Object.values(counts));
   
-  const getIntensity = (muscle) => {
+  const effectiveGetIntensity = getIntensity || ((muscle) => {
     const val = counts[muscle] || 0;
     if (val === 0) return 0;
-    const ratio = val / max;
+    const ratio = val / localMax;
     if (ratio <= 0.25) return 1;
     if (ratio <= 0.5) return 2;
     if (ratio <= 0.75) return 3;
     return 4;
-  };
+  });
 
-  const getColor = (intensity) => {
-    // En modo oscuro, usamos un gris un poco más claro para que la silueta sea visible
+  const effectiveGetColor = getColor || ((intensity) => {
     if (intensity === 0) return isDark ? '#2a2a2a' : '#eeeeee';
     if (intensity === 1) return 'rgba(47, 214, 162, 0.2)';
     if (intensity === 2) return 'rgba(47, 214, 162, 0.45)';
     if (intensity === 3) return 'rgba(47, 214, 162, 0.7)';
     return '#2fd6a2';
-  };
+  });
 
   const muscleMapping = {
     'chest': 'Pecho',
@@ -44,7 +43,12 @@ const InteractiveBodyMap = ({ counts = {}, isDark = false }) => {
   const getMuscleColor = (id) => {
     const group = muscleMapping[id];
     if (!group) return isDark ? '#2a2a2a' : '#eeeeee';
-    return getColor(getIntensity(group));
+    
+    const intensity = typeof effectiveGetIntensity === 'function' && getIntensity 
+      ? effectiveGetIntensity(counts[group] || 0) 
+      : effectiveGetIntensity(group);
+
+    return effectiveGetColor(intensity);
   };
 
   const commonSvgProps = {

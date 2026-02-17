@@ -681,13 +681,25 @@ export default function RoutineDetail() {
       series: totalSeries,
       totalReps: totalReps,
       totalVolume: totalVolume,
-      exerciseDetails: routine.exercises.map((ex, exIdx) => ({
-        name: ex.name,
-        series: ex.series.map((s, sIdx) => ({
-          reps: currentReps[`${exIdx}-${sIdx}`] || s.reps,
-          weight: currentWeight[`${exIdx}-${sIdx}`] || s.weight
-        }))
-      }))
+      exerciseDetails: routine.exercises.map((ex, exIdx) => {
+        // Find muscle group for this exercise
+        let muscleGroup = "";
+        for (const [group, exercises] of Object.entries(exercisesList)) {
+          if (exercises.some(e => e.name === ex.name)) {
+            muscleGroup = group;
+            break;
+          }
+        }
+
+        return {
+          name: ex.name,
+          muscleGroup: muscleGroup,
+          series: ex.series.map((s, sIdx) => ({
+            reps: currentReps[`${exIdx}-${sIdx}`] || s.reps,
+            weight: currentWeight[`${exIdx}-${sIdx}`] || s.weight
+          }))
+        };
+      })
     };
 
     // Guardar usando el contexto (esto también sincroniza con la nube)

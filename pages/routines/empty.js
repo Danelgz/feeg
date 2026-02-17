@@ -373,13 +373,25 @@ export default function EmptyRoutine() {
       exercises: routine.exercises.length,
       series: totalSeries,
       totalVolume,
-      exerciseDetails: routine.exercises.map((ex, exIdx) => ({
-        name: ex.name,
-        series: ex.series.map((s, sIdx) => ({
-          reps: currentReps[`${exIdx}-${sIdx}`] || s.reps,
-          weight: currentWeight[`${exIdx}-${sIdx}`] || s.weight
-        }))
-      }))
+      exerciseDetails: routine.exercises.map((ex, exIdx) => {
+        // Find muscle group for this exercise
+        let muscleGroup = "";
+        for (const [group, exercises] of Object.entries(exercisesList)) {
+          if (exercises.some(e => e.name === ex.name)) {
+            muscleGroup = group;
+            break;
+          }
+        }
+
+        return {
+          name: ex.name,
+          muscleGroup: muscleGroup,
+          series: ex.series.map((s, sIdx) => ({
+            reps: currentReps[`${exIdx}-${sIdx}`] || s.reps,
+            weight: currentWeight[`${exIdx}-${sIdx}`] || s.weight
+          }))
+        };
+      })
     };
 
     saveCompletedWorkout(completedRoutine);

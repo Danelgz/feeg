@@ -4,6 +4,7 @@ import Link from "next/link";
 import Layout from "../../components/Layout";
 import { useUser } from "../../context/UserContext";
 import InteractiveBodyMap from "../../components/InteractiveBodyMap";
+import { exercisesList } from "../../data/exercises";
 
 export default function StatisticsView() {
   const router = useRouter();
@@ -47,14 +48,32 @@ export default function StatisticsView() {
       const workoutDate = new Date(w.completedAt);
       if (workoutDate < sevenDaysAgo) return;
 
-      if (Array.isArray(w.details)) {
-        w.details.forEach(d => {
+      const details = w.exerciseDetails || w.details;
+      if (Array.isArray(details)) {
+        details.forEach(d => {
           const grp = d.muscleGroup || d.group || d.category;
-          const found = Object.keys(groupMap).find(key => groupMap[key].includes(grp));
-          if (found) counts[found] += Number(d.series || 0);
+          let found = Object.keys(groupMap).find(key => 
+            key === grp || groupMap[key].includes(grp)
+          );
+          
+          // Fallback: search by exercise name in exercisesList if group is missing
+          if (!found && d.name) {
+            const exerciseName = d.name;
+            for (const [groupKey, exercises] of Object.entries(exercisesList || {})) {
+              if (exercises.some(ex => ex.name === exerciseName)) {
+                found = groupKey;
+                break;
+              }
+            }
+          }
+
+          if (found) {
+            const seriesCount = Array.isArray(d.series) ? d.series.length : Number(d.series || 0);
+            counts[found] += seriesCount;
+          }
         });
       }
-      if (!Array.isArray(w.details) && w.seriesByGroup) {
+      if (!Array.isArray(details) && w.seriesByGroup) {
         Object.entries(w.seriesByGroup).forEach(([k,v]) => {
           const found = Object.keys(groupMap).find(key => groupMap[key].includes(k) || key === k);
           if (found) counts[found] += Number(v||0);
@@ -190,6 +209,8 @@ export default function StatisticsView() {
               <InteractiveBodyMap 
                 counts={muscleStats.counts} 
                 isDark={isDark} 
+                getIntensity={muscleStats.getIntensity}
+                getColor={muscleStats.getColor}
               />
               
               {/* Legend */}

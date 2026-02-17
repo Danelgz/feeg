@@ -14,6 +14,26 @@ export default function Home() {
   const [newComment, setNewComment] = useState("");
   const router = useRouter();
 
+  const getTimeAgo = (timestamp) => {
+    if (!timestamp) return "";
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+    let interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + "a";
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + "mes";
+    interval = seconds / 604800;
+    if (interval > 1) return Math.floor(interval) + "sem.";
+    interval = seconds / 86400;
+    if (interval > 1) return Math.floor(interval) + "d";
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + "h";
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + "m";
+    return Math.floor(seconds) + "s";
+  };
+
+  const emojiList = ["💪", "🔥", "👏", "🏋️", "👊", "🤤", "🏆"];
+
   // Forzar refresco de datos al entrar al feed
   useEffect(() => {
     if (authUser) {
@@ -71,6 +91,7 @@ export default function Home() {
       text: newComment,
       authorId: authUser.uid,
       authorName: user?.username || authUser.displayName || "Usuario",
+      authorPhoto: user?.photoURL || authUser.photoURL || null,
       createdAt: Date.now()
     };
     try {
@@ -251,7 +272,10 @@ export default function Home() {
           ) : (
             feedWorkouts.map(workout => (
               <div key={workout.id} style={{ backgroundColor: "#1a1a1a", padding: "15px", borderRadius: isMobile ? "0" : "12px", borderBottom: isMobile ? "1px solid #333" : "none" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+                <div 
+                  onClick={() => workout.userId && router.push(`/user/${workout.userId}`)}
+                  style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px", cursor: "pointer" }}
+                >
                   <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "#333", overflow: "hidden" }}>
                     {workout.userPhoto && <img src={workout.userPhoto} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
                   </div>
@@ -385,36 +409,116 @@ export default function Home() {
                 </div>
 
                 {commentingOn === workout.id && (
-                  <div style={{ marginTop: "15px", paddingTop: "10px", borderTop: "1px solid #333" }}>
-                    <div style={{ display: "flex", gap: "10px", marginBottom: "15px" }}>
-                      <input
-                        placeholder="Escribe un comentario..."
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        style={{
-                          flex: 1,
-                          backgroundColor: "#000",
-                          border: "1px solid #333",
-                          borderRadius: "20px",
-                          padding: "8px 15px",
-                          color: "#fff",
-                          outline: "none"
-                        }}
-                      />
-                      <button
-                        onClick={() => handleAddComment(workout.id)}
-                        style={{ backgroundColor: "#1dd1a1", color: "#000", border: "none", padding: "8px 15px", borderRadius: "20px", cursor: "pointer", fontWeight: "bold" }}
-                      >
-                        Enviar
-                      </button>
+                  <div style={{ 
+                    marginTop: "15px", 
+                    paddingTop: "20px", 
+                    borderTop: "1px solid #222",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "20px"
+                  }}>
+                    {/* Header Comentarios (Estilo Instagram) */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "5px" }}>
+                      <span style={{ fontSize: "0.9rem", fontWeight: "bold", color: "#888" }}>Comentarios</span>
+                      <span style={{ fontSize: "0.8rem", color: "#1dd1a1", cursor: "pointer" }} onClick={() => setCommentingOn(null)}>Cerrar</span>
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                      {workout.commentsList?.map((c, i) => (
-                        <div key={i} style={{ fontSize: "0.9rem" }}>
-                          <span style={{ fontWeight: "bold", marginRight: "8px" }}>@{c.authorName}</span>
-                          <span style={{ color: "#ccc" }}>{c.text}</span>
-                        </div>
-                      ))}
+
+                    {/* Lista de Comentarios */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "25px" }}>
+                      {workout.commentsList?.length === 0 ? (
+                        <div style={{ fontSize: "0.9rem", color: "#555", textAlign: "center", padding: "10px" }}>No hay comentarios aún.</div>
+                      ) : (
+                        workout.commentsList?.map((c, i) => (
+                          <div key={i} style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                            {/* Avatar del que comenta */}
+                            <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: "#333", overflow: "hidden", flexShrink: 0 }}>
+                              {c.authorPhoto ? <img src={c.authorPhoto} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem", color: "#888" }}>?</div>}
+                            </div>
+                            
+                            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <span style={{ fontWeight: "bold", fontSize: "0.9rem" }}>{c.authorName}</span>
+                                <span style={{ color: "#888", fontSize: "0.75rem" }}>{getTimeAgo(c.createdAt)}</span>
+                              </div>
+                              <div style={{ fontSize: "0.95rem", color: "#fff", lineHeight: "1.4" }}>
+                                {c.text}
+                              </div>
+                              <div style={{ marginTop: "5px", fontSize: "0.8rem", color: "#888", fontWeight: "bold", cursor: "pointer" }}>
+                                Responder
+                              </div>
+                            </div>
+
+                            {/* Corazón / Likes en comentario (placeholder) */}
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", color: "#888", marginTop: "2px" }}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                              <span style={{ fontSize: "0.65rem" }}>0</span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Barra inferior fija de escritura */}
+                    <div style={{ marginTop: "10px" }}>
+                      {/* Emojis sugeridos */}
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "15px", padding: "0 10px" }}>
+                        {emojiList.map(emoji => (
+                          <span 
+                            key={emoji} 
+                            onClick={() => setNewComment(prev => prev + emoji)}
+                            style={{ fontSize: "1.5rem", cursor: "pointer" }}
+                          >
+                            {emoji}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Input de texto moderno */}
+                      <div style={{ 
+                        display: "flex", 
+                        alignItems: "center", 
+                        gap: "10px", 
+                        backgroundColor: "#1a1a1a", 
+                        borderRadius: "25px", 
+                        padding: "5px 5px 5px 15px",
+                        border: "1px solid #333"
+                      }}>
+                        <input
+                          placeholder="Agregar un comentario..."
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleAddComment(workout.id)}
+                          style={{
+                            flex: 1,
+                            backgroundColor: "transparent",
+                            border: "none",
+                            color: "#fff",
+                            outline: "none",
+                            fontSize: "0.95rem",
+                            padding: "8px 0"
+                          }}
+                        />
+                        <button
+                          onClick={() => handleAddComment(workout.id)}
+                          disabled={!newComment.trim()}
+                          style={{ 
+                            backgroundColor: "#1dd1a1", 
+                            color: "#000", 
+                            border: "none", 
+                            width: "32px", 
+                            height: "32px", 
+                            borderRadius: "50%", 
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            opacity: newComment.trim() ? 1 : 0.5,
+                            transition: "all 0.2s"
+                          }}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}

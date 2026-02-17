@@ -17,6 +17,8 @@ export default function CreateRoutine() {
   const [showDeleteExerciseConfirm, setShowDeleteExerciseConfirm] = useState(null); // exIdx
   const [openTimePickerId, setOpenTimePickerId] = useState(null);
   const [substitutingExerciseIdx, setSubstitutingExerciseIdx] = useState(null);
+  const [showTypeSelector, setShowTypeSelector] = useState(null); // { exIdx, serieIdx }
+  const [exerciseSearchQuery, setExerciseSearchQuery] = useState("");
 
   useEffect(() => {
     const checkMobile = () => {
@@ -126,7 +128,7 @@ export default function CreateRoutine() {
   const addSeries = (exIdx) => {
     const newExercises = [...exercises];
     const newExercise = { ...newExercises[exIdx] };
-    newExercise.series = [...newExercise.series, { reps: 10, weight: 0 }];
+    newExercise.series = [...newExercise.series, { reps: 10, weight: 0, type: "N" }];
     newExercises[exIdx] = newExercise;
     setExercises(newExercises);
   };
@@ -146,7 +148,7 @@ export default function CreateRoutine() {
       type: exercise.type || "weight_reps",
       rest: 60,
       series: [
-        { reps: 10, weight: 0 }
+        { reps: 10, weight: 0, type: "N" }
       ],
     };
 
@@ -526,78 +528,92 @@ export default function CreateRoutine() {
                   <div style={{ textAlign: "right" }}></div>
                 </div>
 
-                {exercise.series.map((serie, serieIdx) => (
-                  <div
-                    key={serieIdx}
-                    style={{
-                      display: "grid", 
-                      gridTemplateColumns: "50px 1fr 70px 70px 45px", 
-                      gap: "10px",
-                      alignItems: "center",
-                      height: "45px",
-                      marginBottom: "5px"
-                    }}
-                  >
-                    <div style={{ 
-                      color: "#fff", 
-                      fontWeight: "bold",
-                      fontSize: "1rem",
-                      backgroundColor: "#1a1a1a",
-                      borderRadius: "4px",
-                      textAlign: "center",
-                      padding: "4px 0"
-                    }}>
-                      {serieIdx + 1}
-                    </div>
-                    
-                    <div style={{ color: "#666", fontSize: "0.9rem" }}>—</div>
-                    
-                    <div>
-                      <input
-                        type="number"
-                        value={serie.weight}
-                        onChange={(e) => handleSeriesChange(exIdx, serieIdx, "weight", Number(e.target.value))}
-                        style={{
-                          width: "100%",
-                          background: "#1a1a1a",
-                          border: "none",
+                {exercise.series.map((serie, serieIdx) => {
+                  const type = serie.type || "N";
+                  
+                  // Calcular el número de serie efectiva (N)
+                  let effectiveIndex = 0;
+                  for (let i = 0; i < serieIdx; i++) {
+                    if (exercise.series[i].type === "N" || !exercise.series[i].type) effectiveIndex++;
+                  }
+
+                  return (
+                    <div
+                      key={serieIdx}
+                      style={{
+                        display: "grid", 
+                        gridTemplateColumns: "50px 1fr 70px 70px 45px", 
+                        gap: "10px",
+                        alignItems: "center",
+                        height: "45px",
+                        marginBottom: "5px"
+                      }}
+                    >
+                      <div 
+                        onClick={() => setShowTypeSelector({ exIdx, serieIdx })}
+                        style={{ 
+                          color: type === "N" ? "#fff" : mint, 
+                          fontWeight: "bold",
+                          fontSize: "1rem",
+                          backgroundColor: "#1a1a1a",
                           borderRadius: "4px",
-                          color: "#fff",
-                          padding: "6px 0",
                           textAlign: "center",
-                          fontSize: "1rem"
+                          padding: "4px 0",
+                          cursor: "pointer"
                         }}
-                      />
-                    </div>
-                    
-                    <div>
-                      <input
-                        type="number"
-                        value={serie.reps}
-                        onChange={(e) => handleSeriesChange(exIdx, serieIdx, "reps", Number(e.target.value))}
-                        style={{
-                          width: "100%",
-                          background: "#1a1a1a",
-                          border: "none",
-                          borderRadius: "4px",
-                          color: "#fff",
-                          padding: "6px 0",
-                          textAlign: "center",
-                          fontSize: "1rem"
-                        }}
-                      />
-                    </div>
-                    
-                    <div style={{ textAlign: "right" }}>
-                      <button 
-                        onClick={() => removeSeries(exIdx, serieIdx)}
-                        style={{ background: "none", border: "none", color: "#ff4d4d", cursor: "pointer", fontSize: "1.2rem" }}
                       >
-                        ×
-                      </button>
+                        {type === "W" ? "W" : type === "D" ? "D" : effectiveIndex + 1}
+                      </div>
+                      
+                      <div style={{ color: "#666", fontSize: "0.9rem" }}>—</div>
+                      
+                      <div>
+                        <input
+                          type="number"
+                          value={serie.weight}
+                          onChange={(e) => handleSeriesChange(exIdx, serieIdx, "weight", Number(e.target.value))}
+                          style={{
+                            width: "100%",
+                            background: "#1a1a1a",
+                            border: "none",
+                            borderRadius: "4px",
+                            color: "#fff",
+                            padding: "6px 0",
+                            textAlign: "center",
+                            fontSize: "1rem"
+                          }}
+                        />
+                      </div>
+                      
+                      <div>
+                        <input
+                          type="number"
+                          value={serie.reps}
+                          onChange={(e) => handleSeriesChange(exIdx, serieIdx, "reps", Number(e.target.value))}
+                          style={{
+                            width: "100%",
+                            background: "#1a1a1a",
+                            border: "none",
+                            borderRadius: "4px",
+                            color: "#fff",
+                            padding: "6px 0",
+                            textAlign: "center",
+                            fontSize: "1rem"
+                          }}
+                        />
+                      </div>
+                      
+                      <div style={{ textAlign: "right" }}>
+                        <button 
+                          onClick={() => removeSeries(exIdx, serieIdx)}
+                          style={{ background: "none", border: "none", color: "#ff4d4d", cursor: "pointer", fontSize: "1.2rem" }}
+                        >
+                          ×
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <button

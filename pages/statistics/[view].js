@@ -8,19 +8,11 @@ import InteractiveBodyMap from "../../components/InteractiveBodyMap";
 export default function StatisticsView() {
   const router = useRouter();
   const { view } = router.query;
-  const { t, theme, isMobile } = useUser();
+  const { t, theme, isMobile, completedWorkouts: contextWorkouts } = useUser();
   const isDark = theme === 'dark';
-  const [workouts, setWorkouts] = useState([]);
   const [isNarrow, setIsNarrow] = useState(false);
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('completedWorkouts');
-      if (saved) setWorkouts(JSON.parse(saved));
-    } catch (e) {
-      console.error('Error reading completedWorkouts', e);
-    }
-  }, []);
+  const workouts = contextWorkouts || [];
 
   useEffect(() => {
     const check = () => setIsNarrow(window.innerWidth <= 768);
@@ -31,15 +23,15 @@ export default function StatisticsView() {
 
   const groupMap = {
     Pecho: ['Pecho', 'Chest'],
-    Espalda: ['Espalda', 'Back'],
-    Hombros: ['Hombros', 'Shoulders'],
+    Espalda: ['Espalda', 'Back', 'Lats', 'Traps', 'Lower Back'],
+    Hombros: ['Hombros', 'Shoulders', 'Deltoids'],
     Bíceps: ['Bíceps', 'Biceps'],
     Tríceps: ['Tríceps', 'Triceps'],
-    Cuádriceps: ['Cuádriceps', 'Quads'],
+    Cuádriceps: ['Cuádriceps', 'Quads', 'Quadriceps'],
     Femoral: ['Femoral', 'Hamstrings'],
     Glúteos: ['Glúteos', 'Glutes'],
     Gemelos: ['Gemelos', 'Calves'],
-    Abdomen: ['Abdomen', 'Abs', 'Core']
+    Abdomen: ['Abdomen', 'Abs', 'Core', 'Obliques']
   };
 
   const muscleStats = useMemo(() => {
@@ -82,7 +74,7 @@ export default function StatisticsView() {
     };
 
     const getColor = (intensity) => {
-      if (intensity === 0) return isDark ? '#121212' : '#eeeeee';
+      if (intensity === 0) return isDark ? '#2a2a2a' : '#eeeeee';
       if (intensity === 1) return 'rgba(47, 214, 162, 0.2)';
       if (intensity === 2) return 'rgba(47, 214, 162, 0.45)';
       if (intensity === 3) return 'rgba(47, 214, 162, 0.7)';
@@ -193,10 +185,87 @@ export default function StatisticsView() {
 
       {view === 'body' && (
         <Section title="Distribución de músculos (cuerpo)" isDark={isDark}>
-          <InteractiveBodyMap 
-            counts={muscleStats.counts} 
-            isDark={isDark} 
-          />
+          <div style={{ display: 'flex', flexDirection: isNarrow ? 'column' : 'row', gap: '20px' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <InteractiveBodyMap 
+                counts={muscleStats.counts} 
+                isDark={isDark} 
+              />
+              
+              {/* Legend */}
+              <div style={{ 
+                marginTop: '20px', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '8px',
+                width: '100%',
+                maxWidth: '250px'
+              }}>
+                <div style={{ fontSize: '0.8rem', color: isDark ? '#aaa' : '#666', fontWeight: '600' }}>
+                  Niveles de intensidad (7 días):
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px' }}>
+                  {[0, 1, 2, 3, 4].map(lvl => (
+                    <div key={lvl} style={{ textAlign: 'center' }}>
+                      <div style={{ 
+                        height: '10px', 
+                        backgroundColor: muscleStats.getColor(lvl), 
+                        borderRadius: '2px',
+                        border: lvl === 0 && !isDark ? '1px solid #ddd' : 'none'
+                      }} />
+                      <div style={{ fontSize: '0.65rem', color: isDark ? '#888' : '#999', marginTop: '2px' }}>
+                        Lvl {lvl}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ flex: 1 }}>
+              <h3 style={{ fontSize: '0.9rem', marginBottom: '10px', color: isDark ? '#ddd' : '#555' }}>
+                Series completadas (Últimos 7 días)
+              </h3>
+              <div style={{ display: 'grid', gap: '8px' }}>
+                {Object.entries(muscleStats.counts)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([muscle, count]) => {
+                    const intensity = muscleStats.getIntensity(count);
+                    return (
+                      <div 
+                        key={muscle} 
+                        style={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center',
+                          padding: '10px',
+                          backgroundColor: isDark ? '#222' : '#f8f9fa',
+                          borderRadius: '8px',
+                          borderLeft: `4px solid ${muscleStats.getColor(intensity)}`
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontWeight: 'bold', fontSize: '0.9rem', color: isDark ? '#eee' : '#333' }}>
+                            {t(muscle) || muscle}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: isDark ? '#aaa' : '#777' }}>
+                            {intensity === 0 ? 'Sin entrenar' : `Nivel ${intensity}`}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#1dd1a1' }}>
+                            {count}
+                          </div>
+                          <div style={{ fontSize: '0.7rem', color: isDark ? '#888' : '#999' }}>
+                            {t('total_series')}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          </div>
         </Section>
       )}
 

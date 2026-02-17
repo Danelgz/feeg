@@ -6,7 +6,7 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 
 export default function Layout({ children }) {
-  const { theme, isMobile, activeRoutine, endRoutine } = useUser();
+  const { theme, isMobile, activeRoutine, endRoutine, t } = useUser();
   const isDark = theme === 'dark';
   const [isMounted, setIsMounted] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
@@ -271,7 +271,7 @@ export default function Layout({ children }) {
                         letterSpacing: "1px",
                         fontWeight: "bold"
                       }}>
-                        Rutina en curso
+                        {t("active_routine_in_progress")}
                       </span>
                       <span style={{ 
                         fontWeight: "bold", 
@@ -283,8 +283,8 @@ export default function Layout({ children }) {
                       </span>
                     </div>
                     <button 
-                      onClick={(e) => { e.stopPropagation(); endRoutine(); }}
-                      title="Borrar rutina"
+                      onClick={(e) => { e.stopPropagation(); if(confirm(t("delete_routine_confirmation"))) endRoutine(); }}
+                      title={t("delete_routine_short")}
                       style={{
                         background: isDark ? "#333" : "#eee",
                         border: "none",
@@ -328,7 +328,7 @@ export default function Layout({ children }) {
                       e.currentTarget.style.transform = "translateY(0)";
                     }}
                   >
-                    Continuar Rutina
+                    {t("continue_routine")}
                   </button>
                 </div>
               )}

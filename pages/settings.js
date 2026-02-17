@@ -16,7 +16,7 @@ export default function Settings() {
 
   const languages = [
     { code: 'es', name: 'Español' },
-    { code: 'eu', name: 'Euskera (en desarrollo)' }
+    { code: 'eu', name: 'Euskera' }
   ];
 
   const handleSwitchAccount = async () => {
@@ -47,17 +47,27 @@ export default function Settings() {
           gap: "15px"
         }}>
           <span style={{ color: "#1dd1a1", fontSize: "1.1rem", fontWeight: "bold" }}>
-            Cuenta de Google
+            {t("google_account")}
           </span>
           
           {authUser ? (
-            <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: "15px", backgroundColor: "#222", padding: "15px", borderRadius: "12px" }}>
+            <div style={{ 
+              display: "flex", 
+              flexDirection: isMobile ? "column" : "row", 
+              justifyContent: "space-between", 
+              alignItems: isMobile ? "flex-start" : "center", 
+              gap: "15px", 
+              backgroundColor: isDark ? "#222" : "#f9f9f9", 
+              padding: "15px", 
+              borderRadius: "12px",
+              border: isDark ? "none" : "1px solid #eee"
+            }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div style={{ width: "45px", height: "45px", borderRadius: "50%", overflow: "hidden", border: "2px solid #1dd1a1" }}>
-                  {authUser.photoURL ? <img src={authUser.photoURL} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ width: "100%", height: "100%", backgroundColor: "#333" }} />}
+                <div style={{ width: "45px", height: "45px", borderRadius: "50%", overflow: "hidden", border: "2px solid #1dd1a1", backgroundColor: isDark ? "#333" : "#eee" }}>
+                  {authUser.photoURL ? <img src={authUser.photoURL} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#888", fontSize: "0.7rem" }}>{t("no_pfp")}</div>}
                 </div>
                 <div>
-                  <div style={{ color: "#fff", fontWeight: "600" }}>{authUser.displayName || "Usuario"}</div>
+                  <div style={{ color: isDark ? "#fff" : "#333", fontWeight: "600" }}>{authUser.displayName || "Usuario"}</div>
                   <div style={{ color: "#888", fontSize: "0.85rem" }}>{authUser.email}</div>
                 </div>
               </div>
@@ -77,7 +87,7 @@ export default function Settings() {
                 onMouseOver={(e) => { e.target.style.backgroundColor = "rgba(29, 209, 161, 0.1)"; }}
                 onMouseOut={(e) => { e.target.style.backgroundColor = "transparent"; }}
               >
-                Cambiar cuenta
+                {t("change_account")}
               </button>
             </div>
           ) : (
@@ -99,7 +109,7 @@ export default function Settings() {
                   gap: "10px"
                 }}
               >
-                Iniciar sesión con Google
+                {t("login_google")}
               </button>
               <button 
                 onClick={loginWithGoogle}
@@ -107,14 +117,14 @@ export default function Settings() {
                   flex: 1,
                   padding: "14px",
                   backgroundColor: "transparent",
-                  color: "#fff",
-                  border: "1px solid #333",
+                  color: isDark ? "#fff" : "#333",
+                  border: isDark ? "1px solid #333" : "1px solid #ddd",
                   borderRadius: "10px",
                   cursor: "pointer",
                   fontWeight: "bold"
                 }}
               >
-                Registrarse
+                {t("register")}
               </button>
             </div>
           )}

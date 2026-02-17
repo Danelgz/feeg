@@ -5,7 +5,7 @@ import { getWorkoutsFeed, searchUsers, likeWorkout, addWorkoutComment } from "..
 import { useRouter } from "next/router";
 
 export default function Home() {
-  const { user, authUser, isLoaded, following, handleFollow, handleUnfollow, isMobile, refreshData, t } = useUser();
+  const { user, authUser, isLoaded, following, handleFollow, handleUnfollow, isMobile, refreshData, t, theme } = useUser();
   const [feedWorkouts, setFeedWorkouts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -13,6 +13,8 @@ export default function Home() {
   const [expandedWorkout, setExpandedWorkout] = useState(null);
   const [newComment, setNewComment] = useState("");
   const router = useRouter();
+
+  const isDark = theme === 'dark';
 
   const getTimeAgo = (timestamp) => {
     if (!timestamp) return "";
@@ -108,13 +110,13 @@ export default function Home() {
     }
   };
 
-  if (!isLoaded) return <Layout><div style={{ padding: "20px", color: "#fff" }}>Cargando...</div></Layout>;
+  if (!isLoaded) return <Layout><div style={{ padding: "20px", color: isDark ? "#fff" : "#333" }}>Cargando...</div></Layout>;
 
   return (
     <Layout>
       <div style={{ 
-        backgroundColor: "#000", 
-        color: "#fff", 
+        backgroundColor: isDark ? "#000" : "#f0f2f5", 
+        color: isDark ? "#fff" : "#333", 
         minHeight: "100vh", 
         padding: isMobile ? "0" : "20px", 
         maxWidth: isMobile ? "100%" : "600px", 
@@ -131,22 +133,22 @@ export default function Home() {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
               </span>
               <input
-                placeholder="Buscar usuarios por nombre..."
+                placeholder={t("search_users")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={{
                   width: "100%",
-                  backgroundColor: "#1a1a1a",
-                  border: "1px solid #333",
+                  backgroundColor: isDark ? "#1a1a1a" : "#fff",
+                  border: isDark ? "1px solid #333" : "1px solid #ddd",
                   borderRadius: "20px",
                   padding: "12px 20px 12px 45px",
-                  color: "#fff",
+                  color: isDark ? "#fff" : "#333",
                   outline: "none",
                   fontSize: "1rem",
                   transition: "border-color 0.2s"
                 }}
                 onFocus={(e) => e.target.style.borderColor = "#1dd1a1"}
-                onBlur={(e) => e.target.style.borderColor = "#333"}
+                onBlur={(e) => e.target.style.borderColor = isDark ? "#333" : "#ddd"}
               />
               {searchTerm && (
                 <button 
@@ -165,11 +167,11 @@ export default function Home() {
               onClick={() => router.push("/recommended")}
               style={{ 
                 marginTop: "10px", 
-                backgroundColor: "#1a1a1a", 
+                backgroundColor: isDark ? "#1a1a1a" : "#fff", 
                 borderRadius: isMobile ? "0" : "12px", 
-                border: isMobile ? "none" : "1px solid #333",
-                borderTop: "1px solid #333",
-                borderBottom: "1px solid #333",
+                border: isMobile ? "none" : (isDark ? "1px solid #333" : "1px solid #ddd"),
+                borderTop: isDark ? "1px solid #333" : "1px solid #ddd",
+                borderBottom: isDark ? "1px solid #333" : "1px solid #ddd",
                 padding: "12px 20px",
                 display: "flex",
                 alignItems: "center",
@@ -177,11 +179,11 @@ export default function Home() {
                 cursor: "pointer",
                 transition: "background 0.2s"
               }}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#222"}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = "#1a1a1a"}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = isDark ? "#222" : "#f9f9f9"}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = isDark ? "#1a1a1a" : "#fff"}
             >
               <div style={{ color: "#1dd1a1", fontWeight: "bold", fontSize: "0.9rem" }}>
-                Gente que podrías seguir (click aquí)
+                {t("people_you_might_follow")}
               </div>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1dd1a1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M6 9l6 6 6-6"/>
@@ -193,11 +195,11 @@ export default function Home() {
           {searchTerm && searchResults.length > 0 && (
             <div style={{ 
               marginTop: "10px", 
-              backgroundColor: "#1a1a1a", 
+              backgroundColor: isDark ? "#1a1a1a" : "#fff", 
               borderRadius: isMobile ? "0" : "15px", 
-              border: isMobile ? "none" : "1px solid #333",
-              borderTop: "1px solid #333",
-              borderBottom: "1px solid #333",
+              border: isMobile ? "none" : (isDark ? "1px solid #333" : "1px solid #ddd"),
+              borderTop: isDark ? "1px solid #333" : "1px solid #ddd",
+              borderBottom: isDark ? "1px solid #333" : "1px solid #ddd",
               maxHeight: "300px", 
               overflowY: "auto",
               boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
@@ -206,8 +208,8 @@ export default function Home() {
               left: 0,
               right: 0
             }}>
-              <div style={{ padding: "10px 15px", fontSize: "0.8rem", color: "#1dd1a1", borderBottom: "1px solid #333", fontWeight: "bold" }}>
-                Resultados de búsqueda
+              <div style={{ padding: "10px 15px", fontSize: "0.8rem", color: "#1dd1a1", borderBottom: isDark ? "1px solid #333" : "1px solid #eee", fontWeight: "bold" }}>
+                {t("search_results")}
               </div>
               {searchResults.map(u => (
                 <div 
@@ -218,19 +220,19 @@ export default function Home() {
                     alignItems: "center", 
                     justifyContent: "space-between", 
                     padding: "12px 15px", 
-                    borderBottom: "1px solid #222",
+                    borderBottom: isDark ? "1px solid #222" : "1px solid #eee",
                     cursor: "pointer",
                     transition: "background 0.2s"
                   }}
-                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#222"}
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = isDark ? "#222" : "#f9f9f9"}
                   onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "transparent", overflow: "hidden" }}>
+                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "#eee", overflow: "hidden" }}>
                       {u.photoURL ? <img src={u.photoURL} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#888" }}>?</div>}
                     </div>
                     <div>
-                      <div style={{ fontWeight: "bold" }}>@{u.username}</div>
+                      <div style={{ fontWeight: "bold", color: isDark ? "#fff" : "#333" }}>@{u.username}</div>
                       <div style={{ fontSize: "0.8rem", color: "#888" }}>{u.firstName}</div>
                     </div>
                   </div>
@@ -242,7 +244,7 @@ export default function Home() {
                       }}
                       style={{
                         backgroundColor: following.includes(u.id) ? "transparent" : "#1dd1a1",
-                        color: following.includes(u.id) ? "#fff" : "#000",
+                        color: following.includes(u.id) ? (isDark ? "#fff" : "#333") : "#000",
                         border: following.includes(u.id) ? "1px solid #444" : "none",
                         padding: "6px 14px",
                         borderRadius: "15px",
@@ -251,7 +253,7 @@ export default function Home() {
                         cursor: "pointer"
                       }}
                     >
-                      {following.includes(u.id) ? "Siguiendo" : "Seguir"}
+                      {following.includes(u.id) ? t("following_btn") : t("follow_btn")}
                     </button>
                   )}
                 </div>
@@ -368,18 +370,18 @@ export default function Home() {
                 )}
 
                 {workout.comments && (
-                  <div style={{ fontSize: "0.9rem", color: "#888", fontStyle: "italic", borderLeft: "2px solid #1dd1a1", paddingLeft: "10px", margin: "10px 0" }}>
+                  <div style={{ fontSize: "0.9rem", color: isDark ? "#888" : "#666", fontStyle: "italic", borderLeft: "2px solid #1dd1a1", paddingLeft: "10px", margin: "10px 0" }}>
                     "{workout.comments}"
                   </div>
                 )}
 
-                <div style={{ display: "flex", gap: "20px", borderTop: "1px solid #333", paddingTop: "10px", marginTop: "10px" }}>
+                <div style={{ display: "flex", gap: "20px", borderTop: isDark ? "1px solid #333" : "1px solid #eee", paddingTop: "10px", marginTop: "10px" }}>
                   <button
                     onClick={() => handleLike(workout.id)}
                     style={{
                       background: "none",
                       border: "none",
-                      color: workout.likes?.includes(authUser?.uid) ? "#1dd1a1" : "#888",
+                      color: workout.likes?.includes(authUser?.uid) ? "#1dd1a1" : (isDark ? "#888" : "#999"),
                       display: "flex",
                       alignItems: "center",
                       gap: "5px",
@@ -395,7 +397,7 @@ export default function Home() {
                     style={{
                       background: "none",
                       border: "none",
-                      color: "#888",
+                      color: isDark ? "#888" : "#999",
                       display: "flex",
                       alignItems: "center",
                       gap: "5px",
@@ -412,39 +414,39 @@ export default function Home() {
                   <div style={{ 
                     marginTop: "15px", 
                     paddingTop: "20px", 
-                    borderTop: "1px solid #222",
+                    borderTop: isDark ? "1px solid #222" : "1px solid #eee",
                     display: "flex",
                     flexDirection: "column",
                     gap: "20px"
                   }}>
                     {/* Header Comentarios (Estilo Instagram) */}
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "5px" }}>
-                      <span style={{ fontSize: "0.9rem", fontWeight: "bold", color: "#888" }}>Comentarios</span>
-                      <span style={{ fontSize: "0.8rem", color: "#1dd1a1", cursor: "pointer" }} onClick={() => setCommentingOn(null)}>Cerrar</span>
+                      <span style={{ fontSize: "0.9rem", fontWeight: "bold", color: "#888" }}>{t("comments_label")}</span>
+                      <span style={{ fontSize: "0.8rem", color: "#1dd1a1", cursor: "pointer" }} onClick={() => setCommentingOn(null)}>{t("close")}</span>
                     </div>
 
                     {/* Lista de Comentarios */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "25px" }}>
                       {workout.commentsList?.length === 0 ? (
-                        <div style={{ fontSize: "0.9rem", color: "#555", textAlign: "center", padding: "10px" }}>No hay comentarios aún.</div>
+                        <div style={{ fontSize: "0.9rem", color: "#888", textAlign: "center", padding: "10px" }}>No hay comentarios aún.</div>
                       ) : (
                         workout.commentsList?.map((c, i) => (
                           <div key={i} style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
                             {/* Avatar del que comenta */}
-                            <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: "#333", overflow: "hidden", flexShrink: 0 }}>
+                            <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: isDark ? "#333" : "#eee", overflow: "hidden", flexShrink: 0 }}>
                               {c.authorPhoto ? <img src={c.authorPhoto} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem", color: "#888" }}>?</div>}
                             </div>
                             
                             <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                <span style={{ fontWeight: "bold", fontSize: "0.9rem" }}>{c.authorName}</span>
+                                <span style={{ fontWeight: "bold", fontSize: "0.9rem", color: isDark ? "#fff" : "#333" }}>{c.authorName}</span>
                                 <span style={{ color: "#888", fontSize: "0.75rem" }}>{getTimeAgo(c.createdAt)}</span>
                               </div>
-                              <div style={{ fontSize: "0.95rem", color: "#fff", lineHeight: "1.4" }}>
+                              <div style={{ fontSize: "0.95rem", color: isDark ? "#fff" : "#444", lineHeight: "1.4" }}>
                                 {c.text}
                               </div>
                               <div style={{ marginTop: "5px", fontSize: "0.8rem", color: "#888", fontWeight: "bold", cursor: "pointer" }}>
-                                Responder
+                                {t("reply")}
                               </div>
                             </div>
 
@@ -478,13 +480,13 @@ export default function Home() {
                         display: "flex", 
                         alignItems: "center", 
                         gap: "10px", 
-                        backgroundColor: "#1a1a1a", 
+                        backgroundColor: isDark ? "#1a1a1a" : "#fff", 
                         borderRadius: "25px", 
                         padding: "5px 5px 5px 15px",
-                        border: "1px solid #333"
+                        border: isDark ? "1px solid #333" : "1px solid #ddd"
                       }}>
                         <input
-                          placeholder="Agregar un comentario..."
+                          placeholder={t("add_comment_placeholder")}
                           value={newComment}
                           onChange={(e) => setNewComment(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && handleAddComment(workout.id)}
@@ -492,7 +494,7 @@ export default function Home() {
                             flex: 1,
                             backgroundColor: "transparent",
                             border: "none",
-                            color: "#fff",
+                            color: isDark ? "#fff" : "#333",
                             outline: "none",
                             fontSize: "0.95rem",
                             padding: "8px 0"

@@ -52,12 +52,17 @@ export default function Home() {
 
   const handleLike = async (workoutId) => {
     if (!authUser) return;
-    await likeWorkout(workoutId, authUser.uid);
-    // Optimistic update or refetch
-    setFeedWorkouts(prev => prev.map(w => w.id === workoutId ? {
-      ...w,
-      likes: w.likes?.includes(authUser.uid) ? w.likes.filter(id => id !== authUser.uid) : [...(w.likes || []), authUser.uid]
-    } : w));
+    try {
+      await likeWorkout(workoutId, authUser.uid);
+      // Optimistic update
+      setFeedWorkouts(prev => prev.map(w => w.id === workoutId ? {
+        ...w,
+        likes: w.likes?.includes(authUser.uid) ? w.likes.filter(id => id !== authUser.uid) : [...(w.likes || []), authUser.uid]
+      } : w));
+    } catch (error) {
+      console.error("Error al dar like:", error);
+      alert("Error al dar like: " + error.message);
+    }
   };
 
   const handleAddComment = async (workoutId) => {
@@ -68,13 +73,18 @@ export default function Home() {
       authorName: user?.username || authUser.displayName || "Usuario",
       createdAt: Date.now()
     };
-    await addWorkoutComment(workoutId, comment);
-    setFeedWorkouts(prev => prev.map(w => w.id === workoutId ? {
-      ...w,
-      commentsList: [...(w.commentsList || []), comment]
-    } : w));
-    setNewComment("");
-    setCommentingOn(null);
+    try {
+      await addWorkoutComment(workoutId, comment);
+      setFeedWorkouts(prev => prev.map(w => w.id === workoutId ? {
+        ...w,
+        commentsList: [...(w.commentsList || []), comment]
+      } : w));
+      setNewComment("");
+      setCommentingOn(null);
+    } catch (error) {
+      console.error("Error al comentar:", error);
+      alert("Error al comentar: " + error.message);
+    }
   };
 
   if (!isLoaded) return <Layout><div style={{ padding: "20px", color: "#fff" }}>Cargando...</div></Layout>;

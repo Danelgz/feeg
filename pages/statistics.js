@@ -3,7 +3,6 @@ import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import Link from "next/link";
 import BodyHeatmap from "../components/BodyHeatmap";
-import InteractiveBodyMap from "../components/InteractiveBodyMap";
 
 export default function Statistics() {
   const { t, theme, isMobile, completedWorkouts: workouts } = useUser();
@@ -67,57 +66,6 @@ export default function Statistics() {
     };
   }, [workouts]);
 
-  // Series por grupo muscular (últimos 30 días para el mapa corporal)
-  const muscleStats = useMemo(() => {
-    const counts = {};
-    Object.keys(groupMap).forEach(g => counts[g] = 0);
-    
-    const now = new Date();
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(now.getDate() - 30);
-
-    workouts.forEach(w => {
-      if (!w.completedAt) return;
-      const workoutDate = new Date(w.completedAt);
-      if (workoutDate < thirtyDaysAgo) return;
-
-      if (Array.isArray(w.details)) {
-        w.details.forEach(d => {
-          const grp = d.muscleGroup || d.group || d.category;
-          const found = Object.keys(groupMap).find(key => groupMap[key].includes(grp));
-          if (found) counts[found] += Number(d.series || 0);
-        });
-      }
-      if (!Array.isArray(w.details) && w.seriesByGroup) {
-        Object.entries(w.seriesByGroup).forEach(([k,v]) => {
-          const found = Object.keys(groupMap).find(key => groupMap[key].includes(k) || key === k);
-          if (found) counts[found] += Number(v||0);
-        });
-      }
-    });
-
-    const max = Math.max(1, ...Object.values(counts));
-    
-    const getIntensity = (val) => {
-      if (val === 0) return 0;
-      const ratio = val / max;
-      if (ratio <= 0.25) return 1;
-      if (ratio <= 0.50) return 2;
-      if (ratio <= 0.75) return 3;
-      return 4;
-    };
-
-    const getColor = (intensity) => {
-      if (intensity === 0) return isDark ? '#2a2a2a' : '#eeeeee';
-      if (intensity === 1) return isDark ? '#1a4d3c' : '#d1f2e8'; // Verde muy sutil
-      if (intensity === 2) return isDark ? '#2a7d62' : '#a2e5d1'; 
-      if (intensity === 3) return isDark ? '#3ab08a' : '#73d8ba';
-      return '#1dd1a1'; // Nivel 4: Menta fuerte original
-    };
-
-    return { counts, max, getIntensity, getColor };
-  }, [workouts, isDark]);
-
   const seriesByGroup = useMemo(() => {
     const counts = {};
     Object.keys(groupMap).forEach(g => counts[g] = 0);
@@ -153,24 +101,6 @@ export default function Statistics() {
         {t("statistics")} <span style={{ color: isDark ? "#aaa" : "#777", fontSize: isNarrow ? "0.8rem" : "0.9rem" }}>{t("stats_in_development")}</span>
       </h1>
 
-
-      {/* Visualización de cuerpo con intensidad menta */}
-      <section style={{
-        backgroundColor: isDark ? '#111' : '#fff',
-        border: isDark ? '1px solid #333' : '1px solid #e0e0e0',
-        borderRadius: '12px',
-        padding: '16px',
-        marginBottom: '16px'
-      }}>
-        <h2 style={{ margin: 0, marginBottom: '16px', color: isDark ? '#fff' : '#333', fontSize: isNarrow ? '1rem' : '1.05rem' }}>
-          Distribución de músculos (últimos 30 días) {workouts.length === 0 && <span style={{ color: isDark ? '#aaa' : '#777' }}>· {t('stats_no_data')}</span>}
-        </h2>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <InteractiveBodyMap counts={muscleStats.counts} isDark={isDark} onMuscleClick={(muscle) => console.log(muscle)} />
-        </div>
-      </section>
-
-      {/* Botones de navegación de estadísticas */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: isNarrow ? '1fr' : 'repeat(auto-fill, minmax(200px, 1fr))',
@@ -200,7 +130,6 @@ export default function Statistics() {
         ))}
       </div>
 
-      {/* KPIs */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: isNarrow ? '1fr 1fr' : 'repeat(5, 1fr)',
@@ -214,7 +143,6 @@ export default function Statistics() {
         <StatCard label={t('total_time_min')} value={stats.totalTimeMin} isDark={isDark} />
       </div>
 
-      {/* Contenido según vista activa */}
       {activeView === 'overview' && (
         <OverviewSection isDark={isDark} isMobile={isMobile} workouts={workouts} t={t} />
       )}
@@ -234,6 +162,21 @@ export default function Statistics() {
         <ExerciseStatsSection isDark={isDark} workouts={workouts} t={t} />
       )}
     </Layout>
+  );
+}
+
+function StatCard({ label, value, isDark }) {
+  return (
+    <div style={{
+      backgroundColor: isDark ? '#1a1a1a' : '#fff',
+      border: isDark ? '1px solid #333' : '1px solid #eee',
+      borderRadius: '10px',
+      padding: '12px',
+      textAlign: 'center'
+    }}>
+      <div style={{ fontSize: '0.7rem', color: isDark ? '#666' : '#999', textTransform: 'uppercase', marginBottom: '4px' }}>{label}</div>
+      <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: isDark ? '#fff' : '#333' }}>{value}</div>
+    </div>
   );
 }
 
@@ -462,10 +405,10 @@ function ExerciseStatsSection({ isDark, workouts, t }) {
             <div key={name} style={{ background: isDark ? '#0f0f0f' : '#f9f9f9', border: isDark ? '1px solid #2a2a2a' : '1px solid #eee', borderRadius: 8, padding: 12 }}>
               <strong style={{ color: '#1dd1a1' }}>{name}</strong>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginTop: 8 }}>
-                <MiniStat label={t('completed_workouts')} value={v.sessions} isDark={isDark} />
-                <MiniStat label={t('total_series')} value={v.series} isDark={isDark} />
-                <MiniStat label={t('reps_label')} value={v.reps} isDark={isDark} />
-                <MiniStat label={t('total_volume_kg')} value={v.volume.toLocaleString()} isDark={isDark} />
+                <MiniStat label="Sesiones" value={v.sessions} isDark={isDark} />
+                <MiniStat label="Series" value={v.series} isDark={isDark} />
+                <MiniStat label="Reps" value={v.reps} isDark={isDark} />
+                <MiniStat label="Vol. Total" value={v.volume.toLocaleString()} isDark={isDark} />
               </div>
             </div>
           ))}
@@ -475,26 +418,11 @@ function ExerciseStatsSection({ isDark, workouts, t }) {
   );
 }
 
-function StatCard({ label, value, isDark }) {
-  return (
-    <div style={{
-      backgroundColor: isDark ? '#1a1a1a' : '#fff',
-      border: isDark ? '1px solid #333' : '1px solid #e0e0e0',
-      borderRadius: '10px',
-      padding: '14px',
-      textAlign: 'center'
-    }}>
-      <p style={{ margin: 0, marginBottom: '6px', color: isDark ? '#aaa' : '#666', fontSize: '0.85rem' }}>{label}</p>
-      <p style={{ margin: 0, color: '#1dd1a1', fontSize: '1.3rem', fontWeight: 'bold' }}>{value}</p>
-    </div>
-  );
-}
-
 function MiniStat({ label, value, isDark }) {
   return (
-    <div style={{ backgroundColor: isDark ? '#111' : '#fff', borderRadius: '6px', padding: '8px' }}>
-      <p style={{ margin: 0, color: isDark ? '#888' : '#777', fontSize: '0.75rem' }}>{label}</p>
-      <p style={{ margin: 0, color: isDark ? '#ddd' : '#333', fontWeight: 600 }}>{value ?? '-'}</p>
+    <div style={{ textAlign: 'center' }}>
+      <div style={{ fontSize: '0.65rem', color: isDark ? '#666' : '#999', textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ fontSize: '1rem', fontWeight: 'bold', color: isDark ? '#fff' : '#333' }}>{value}</div>
     </div>
   );
 }

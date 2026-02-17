@@ -196,7 +196,6 @@ export default function StatisticsView() {
           <InteractiveBodyMap 
             counts={muscleStats.counts} 
             isDark={isDark} 
-            onMuscleClick={(muscle) => router.push(`/exercises?search=${muscle}`)}
           />
         </Section>
       )}

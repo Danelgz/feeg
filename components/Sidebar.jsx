@@ -15,6 +15,7 @@ export default function Sidebar() {
     { name: t("food"), href: "/food", icon: "" },
     { name: t("statistics"), href: "/statistics", icon: "" },
     { name: t("profile"), href: "/profile", icon: "" },
+    { name: t("exportar_datos"), href: "/export-data", icon: "" },
     { name: t("settings"), href: "/settings", icon: "" }
   ];
 

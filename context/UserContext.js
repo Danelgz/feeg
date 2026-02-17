@@ -284,6 +284,22 @@ export function UserProvider({ children }) {
     }
   };
 
+  const bulkSaveWorkouts = async (workouts) => {
+    lastLocalUpdate.current = Date.now();
+    const newList = [...workouts, ...completedWorkouts];
+    // Sort by date descending if they have completedAt
+    newList.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+    
+    setCompletedWorkouts(newList);
+    localStorage.setItem('completedWorkouts', JSON.stringify(newList));
+    
+    if (authUser) {
+      await saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList });
+      // For bulk, we might skip saving all to the global feed to avoid hitting limits or spamming,
+      // but let's at least save them to the user's private collection.
+    }
+  };
+
   const deleteCompletedWorkout = async (id) => {
     lastLocalUpdate.current = Date.now();
     const newList = completedWorkouts.filter(w => w.id !== id);
@@ -403,6 +419,7 @@ export function UserProvider({ children }) {
       clearWorkoutState,
       completedWorkouts,
       saveCompletedWorkout,
+      bulkSaveWorkouts,
       deleteCompletedWorkout,
       updateCompletedWorkout,
       routines,

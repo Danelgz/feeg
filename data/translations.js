@@ -9,6 +9,7 @@ export const translations = {
     statistics: "Estadísticas",
     ia: "IA",
     food: "Comida",
+    exportar_datos: "Exportar datos",
     measures: "Medidas",
     calendar: "Calendario",
     stats_overview: "Resumen",
@@ -260,6 +261,7 @@ export const translations = {
     register: "Registrarse",
     google_account: "Cuenta de Google",
     no_pfp: "Sin foto",
+    please_login_to_import: "Inicia sesión para importar tus datos",
   },
   eu: {
     // Sidebar
@@ -271,6 +273,7 @@ export const translations = {
     statistics: "Estatistikak",
     ia: "IA",
     food: "Janaria",
+    exportar_datos: "Datuak esportatu",
     measures: "Neurketak",
     calendar: "Egutegia",
     stats_overview: "Laburpena",
@@ -521,5 +524,6 @@ export const translations = {
     register: "Erregistratu",
     google_account: "Google Kontua",
     no_pfp: "Argazkirik gabe",
+    please_login_to_import: "Hasi saioa zure datuak inportatzeko",
   }
 };

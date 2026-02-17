@@ -5,11 +5,12 @@ import { getWorkoutsFeed, searchUsers, likeWorkout, addWorkoutComment } from "..
 import { useRouter } from "next/router";
 
 export default function Home() {
-  const { user, authUser, isLoaded, following, handleFollow, handleUnfollow, isMobile, refreshData } = useUser();
+  const { user, authUser, isLoaded, following, handleFollow, handleUnfollow, isMobile, refreshData, t } = useUser();
   const [feedWorkouts, setFeedWorkouts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [commentingOn, setCommentingOn] = useState(null);
+  const [expandedWorkout, setExpandedWorkout] = useState(null);
   const [newComment, setNewComment] = useState("");
   const router = useRouter();
 
@@ -230,7 +231,7 @@ export default function Home() {
 
         <h1 style={{ fontSize: "1.8rem", fontWeight: "bold", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px", padding: isMobile ? "0 15px" : "0" }}>
           <span style={{ width: "4px", height: "24px", backgroundColor: "#1dd1a1", borderRadius: "2px" }}></span>
-          Actividad
+          {t("feed")}
         </h1>
 
         {/* Feed de Entrenamientos */}
@@ -252,10 +253,49 @@ export default function Home() {
 
                 <div style={{ marginBottom: "10px" }}>
                   <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#1dd1a1" }}>{workout.name}</div>
-                  <div style={{ fontSize: "0.9rem", color: "#ccc", marginTop: "5px" }}>
-                    {workout.series} series • {workout.totalVolume?.toLocaleString()} kg • {workout.totalReps} reps
+                  <div style={{ fontSize: "0.9rem", color: "#ccc", marginTop: "5px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span>{workout.series} series • {workout.totalVolume?.toLocaleString()} kg • {workout.totalReps} reps</span>
+                    <button 
+                      onClick={() => setExpandedWorkout(expandedWorkout === workout.id ? null : workout.id)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#1dd1a1",
+                        fontSize: "0.8rem",
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                        padding: 0
+                      }}
+                    >
+                      {expandedWorkout === workout.id ? "Ocultar detalles" : "Ver detalles"}
+                    </button>
                   </div>
                 </div>
+
+                {expandedWorkout === workout.id && workout.exerciseDetails && (
+                  <div style={{ 
+                    backgroundColor: "#222", 
+                    borderRadius: "8px", 
+                    padding: "12px", 
+                    marginBottom: "15px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "12px"
+                  }}>
+                    {workout.exerciseDetails.map((ex, idx) => (
+                      <div key={idx} style={{ borderBottom: idx === workout.exerciseDetails.length - 1 ? "none" : "1px solid #333", paddingBottom: "8px" }}>
+                        <div style={{ fontWeight: "bold", fontSize: "0.9rem", color: "#1dd1a1", marginBottom: "5px" }}>{ex.name}</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(70px, 1fr))", gap: "8px" }}>
+                          {ex.series.map((s, sIdx) => (
+                            <div key={sIdx} style={{ fontSize: "0.8rem", color: "#aaa" }}>
+                              <span style={{ fontWeight: "bold", color: "#fff" }}>S{sIdx + 1}:</span> {s.weight}kg x {s.reps}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {workout.comments && (
                   <div style={{ fontSize: "0.9rem", color: "#888", fontStyle: "italic", borderLeft: "2px solid #1dd1a1", paddingLeft: "10px", margin: "10px 0" }}>

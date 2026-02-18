@@ -753,10 +753,10 @@ export default function RoutineDetail() {
     }
   };
 
+  let content = null;
   if (workoutState === "preview") {
-    return (
-      <Layout>
-        <div style={{ padding: "20px", maxWidth: "900px", margin: "0 auto" }}>
+    content = (
+      <div style={{ padding: "20px", maxWidth: "900px", margin: "0 auto" }}>
           <h1 style={{ color: isDark ? "#fff" : "#333" }}>{routine.name}</h1>
           <p style={{ color: isDark ? "#aaa" : "#666", marginBottom: "20px" }}>
             {routine.exercises.length} {t("exercises_count")} · {routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0)} {t("total_series")}
@@ -854,14 +854,12 @@ export default function RoutineDetail() {
             </div>
           )}
         </div>
-      </Layout>
     );
   }
 
   // Modal de confirmación para terminar rutina - DEBE ESTAR ANTES DEL ESTADO ONGOING
-  if (showFinishConfirmation) {
-    return (
-      <Layout>
+  } else if (showFinishConfirmation) {
+    content = (
         <div style={{
           padding: "20px",
           display: "flex",
@@ -924,19 +922,17 @@ export default function RoutineDetail() {
             </div>
           </div>
         </div>
-      </Layout>
     );
   }
 
   // Formulario para finalizar rutina - DEBE ESTAR ANTES DEL ESTADO ONGOING
-  if (showFinishForm) {
+  } else if (showFinishForm) {
     const totalSeries = routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0);
     const totalReps = Object.values(currentReps).reduce((sum, val) => sum + (parseInt(val) || 0), 0);
     const totalWeight = Object.values(currentWeight).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
     const totalExercises = routine.exercises.length;
 
-    return (
-      <Layout>
+    content = (
         <div style={{
           padding: "20px",
           display: "flex",
@@ -1118,11 +1114,10 @@ export default function RoutineDetail() {
             </div>
           </div>
         </div>
-      </Layout>
     );
   }
 
-  if (workoutState === "ongoing") {
+  } else if (workoutState === "ongoing") {
     // Calcular estadísticas en tiempo real
     const totalCompletedSeries = Object.keys(seriesCompleted).filter(key => seriesCompleted[key]).length;
     const totalVolume = Object.keys(seriesCompleted).reduce((sum, key) => {
@@ -1132,8 +1127,7 @@ export default function RoutineDetail() {
       return sum + (weight * reps);
     }, 0);
 
-    return (
-      <Layout>
+    content = (
         <div style={{ 
           padding: 0, 
           maxWidth: "900px", 
@@ -2085,14 +2079,11 @@ export default function RoutineDetail() {
             );
           })()}
         </div>
-        <FloatingTimerUI />
-      </Layout>
     );
   }
 
-  if (workoutState === "completed") {
-    return (
-      <Layout>
+  } else if (workoutState === "completed") {
+    content = (
         <div style={{ padding: "20px", maxWidth: "900px", margin: "0 auto" }}>
           {!showFullSummary ? (
             <>
@@ -2298,7 +2289,15 @@ export default function RoutineDetail() {
             </>
           )}
         </div>
-      </Layout>
     );
   }
+
+  return (
+    <>
+      <Layout>
+        {content}
+      </Layout>
+      <FloatingTimerUI />
+    </>
+  );
 }

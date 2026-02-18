@@ -858,7 +858,7 @@ export default function RoutineDetail() {
   }
 
   // Modal de confirmación para terminar rutina - DEBE ESTAR ANTES DEL ESTADO ONGOING
-  } else if (showFinishConfirmation) {
+  else if (showFinishConfirmation) {
     content = (
         <div style={{
           padding: "20px",
@@ -926,7 +926,7 @@ export default function RoutineDetail() {
   }
 
   // Formulario para finalizar rutina - DEBE ESTAR ANTES DEL ESTADO ONGOING
-  } else if (showFinishForm) {
+  else if (showFinishForm) {
     const totalSeries = routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0);
     const totalReps = Object.values(currentReps).reduce((sum, val) => sum + (parseInt(val) || 0), 0);
     const totalWeight = Object.values(currentWeight).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
@@ -1117,7 +1117,7 @@ export default function RoutineDetail() {
     );
   }
 
-  } else if (workoutState === "ongoing") {
+  else if (workoutState === "ongoing") {
     // Calcular estadísticas en tiempo real
     const totalCompletedSeries = Object.keys(seriesCompleted).filter(key => seriesCompleted[key]).length;
     const totalVolume = Object.keys(seriesCompleted).reduce((sum, key) => {
@@ -2082,7 +2082,7 @@ export default function RoutineDetail() {
     );
   }
 
-  } else if (workoutState === "completed") {
+  else if (workoutState === "completed") {
     content = (
         <div style={{ padding: "20px", maxWidth: "900px", margin: "0 auto" }}>
           {!showFullSummary ? (

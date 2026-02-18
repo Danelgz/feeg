@@ -224,10 +224,10 @@ export const exercisesList = {
     { id: 195, name: "Crunch con cable", type: "weight_reps" },
   ],
   Cardio: [
-    { id: 196, name: "Cinta de correr", type: "time" },
-    { id: 197, name: "Elíptica", type: "time" },
-    { id: 198, name: "Bicicleta estática", type: "time" },
+    { id: 196, name: "Cinta de correr", type: "time", unit: "kmh" },
+    { id: 197, name: "Elíptica", type: "time", unit: "kmh" },
+    { id: 198, name: "Bicicleta estática", type: "time", unit: "kmh" },
     { id: 199, name: "Remo", type: "time" },
-    { id: 200, name: "Saltar la cuerda", type: "time" },
+    { id: 200, name: "Saltar la cuerda", type: "time", unit: "saltos" },
   ],
 };

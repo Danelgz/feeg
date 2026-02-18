@@ -7,7 +7,7 @@ import { exercisesList } from "../../data/exercises";
 
 export default function RoutineDetail() {
   const router = useRouter();
-  const { theme, routines: allRoutines, activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, completedWorkouts, t } = useUser();
+  const { theme, routines: allRoutines, activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, completedWorkouts, t, updateRoutine } = useUser();
   const isDark = theme === 'dark';
   const mint = "#2EE6C5";
   const mintSoft = "rgba(46, 230, 197, 0.12)";
@@ -56,6 +56,9 @@ export default function RoutineDetail() {
   const [restCountdown, setRestCountdown] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [previousData, setPreviousData] = useState({}); // key: exerciseName, value: { weight, reps }
+  const [initialRoutine, setInitialRoutine] = useState(null);
+  const [showUpdateRoutinePrompt, setShowUpdateRoutinePrompt] = useState(false);
+  const [routineChanges, setRoutineChanges] = useState({ exercises: 0, series: 0 });
 
   // Load persistent state on mount
   useEffect(() => {
@@ -183,7 +186,7 @@ export default function RoutineDetail() {
   const getExerciseInfo = (name) => {
     for (const group in exercisesList) {
       const ex = exercisesList[group].find(e => e.name === name);
-      if (ex) return ex;
+      if (ex) return { ...ex, group };
     }
     return null;
   };
@@ -301,6 +304,7 @@ export default function RoutineDetail() {
       const foundRoutine = allRoutines.find(r => r.id.toString() === id.toString());
       if (foundRoutine) {
         setRoutine(foundRoutine);
+        setInitialRoutine(JSON.parse(JSON.stringify(foundRoutine))); // Deep clone
         // Initialize tracking objects
         const seriesTracker = {};
         const typeTracker = {};
@@ -663,6 +667,31 @@ export default function RoutineDetail() {
 
   const handleConfirmFinish = () => {
     setShowFinishConfirmation(false);
+    
+    // Calcular cambios realizados respecto a la rutina original
+    let addedExercises = 0;
+    let addedSeries = 0;
+    
+    if (initialRoutine) {
+      // Contar ejercicios nuevos (que no estaban en la rutina inicial por nombre)
+      routine.exercises.forEach(ex => {
+        const initialEx = initialRoutine.exercises.find(iEx => iEx.name === ex.name);
+        if (!initialEx) {
+          addedExercises++;
+        }
+      });
+      
+      // Contar series adicionales en los ejercicios que ya existían
+      routine.exercises.forEach(ex => {
+        const initialEx = initialRoutine.exercises.find(iEx => iEx.name === ex.name);
+        if (initialEx && ex.series.length > initialEx.series.length) {
+          addedSeries += (ex.series.length - initialEx.series.length);
+        }
+      });
+    }
+    
+    setRoutineChanges({ exercises: addedExercises, series: addedSeries });
+    
     setFinishFormData({
       name: routine.name,
       comments: '',
@@ -735,6 +764,11 @@ export default function RoutineDetail() {
 
     // Guardar usando el contexto (esto también sincroniza con la nube)
     saveCompletedWorkout(completedRoutine);
+
+    // Si el usuario marcó actualizar la rutina original
+    if (showUpdateRoutinePrompt) {
+      updateRoutine(routine);
+    }
 
     setSavingWorkout(true);
     endRoutine();
@@ -1043,6 +1077,45 @@ export default function RoutineDetail() {
               </p>
             </div>
 
+            { (routineChanges.exercises > 0 || routineChanges.series > 0) && (
+              <div style={{ 
+                backgroundColor: isDark ? "rgba(46, 230, 197, 0.1)" : "#f0fff4", 
+                padding: "15px", 
+                borderRadius: "8px", 
+                marginBottom: "25px",
+                border: `1px solid ${mint}`
+              }}>
+                <p style={{ color: mint, fontWeight: "bold", margin: "0 0 10px 0", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span>✨</span> ¡Has mejorado la rutina!
+                </p>
+                <p style={{ color: isDark ? "#ccc" : "#666", fontSize: "0.9rem", margin: "0 0 15px 0", lineHeight: "1.4" }}>
+                  Has realizado cambios: 
+                  <strong> {routineChanges.exercises > 0 && `${routineChanges.exercises} ejercicios nuevos`}
+                  {routineChanges.exercises > 0 && routineChanges.series > 0 && " y "}
+                  {routineChanges.series > 0 && `${routineChanges.series} series adicionales`}</strong>.
+                </p>
+                <label style={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: "12px", 
+                  cursor: "pointer", 
+                  color: isDark ? "#fff" : "#333",
+                  backgroundColor: isDark ? "#121212" : "#fff",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: `1px solid ${isDark ? "#333" : "#eee"}`
+                }}>
+                  <input 
+                    type="checkbox" 
+                    checked={showUpdateRoutinePrompt} 
+                    onChange={(e) => setShowUpdateRoutinePrompt(e.target.checked)}
+                    style={{ width: "20px", height: "20px", accentColor: mint, cursor: "pointer" }}
+                  />
+                  <span style={{ fontSize: "0.95rem" }}>Actualizar rutina original con estos cambios</span>
+                </label>
+              </div>
+            )}
+
             <div style={{
               backgroundColor: isDark ? "#0f0f0f" : "#f1f1f1",
               borderRadius: "8px",
@@ -1256,6 +1329,7 @@ export default function RoutineDetail() {
               const exerciseInfo = getExerciseInfo(exercise.name);
               const isTimeBased = exerciseInfo?.type === 'time';
               const isLastre = exerciseInfo?.unit === 'lastre';
+              const isCardio = exerciseInfo?.group === 'Cardio';
               
               return (
               <div
@@ -1548,7 +1622,7 @@ export default function RoutineDetail() {
                     <div>SERIE</div>
                     <div>ANTERIOR</div>
                     <div style={{ textAlign: "center" }}>{isTimeBased ? "TIEMPO" : isLastre ? "LASTRE" : "KG"}</div>
-                    <div style={{ textAlign: "center" }}>{isTimeBased ? "KM/H" : "REPS"}</div>
+                    <div style={{ textAlign: "center" }}>{isTimeBased ? (exerciseInfo?.unit ? exerciseInfo.unit.toUpperCase() : (isCardio ? "KM/H" : "REPS")) : "REPS"}</div>
                     <div style={{ textAlign: "right" }}>✓</div>
                     <div style={{ textAlign: "right" }}></div>
                   </div>
@@ -1597,7 +1671,7 @@ export default function RoutineDetail() {
                         <div style={{ color: "#666", fontSize: "0.9rem" }}>
                           {prev && prev[serieIdx] ? (
                             isTimeBased 
-                              ? `${prev[serieIdx].weight}m x ${prev[serieIdx].reps}`
+                              ? `${prev[serieIdx].weight}m x ${prev[serieIdx].reps}${exerciseInfo?.unit ? exerciseInfo.unit : (isCardio ? 'kmh' : '')}`
                               : isLastre
                                 ? `${prev[serieIdx].weight}L x ${prev[serieIdx].reps}`
                                 : `${prev[serieIdx].weight}kg x ${prev[serieIdx].reps}`

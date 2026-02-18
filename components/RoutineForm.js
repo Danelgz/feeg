@@ -105,8 +105,9 @@ export default function RoutineForm({ saveRoutine }) {
           border: `1px solid ${isDark ? "#333" : "#eee"}`
         }}>
           <span style={{ color: isDark ? "#fff" : "#333", fontSize: "0.9rem" }}>
-            {t(ex.name) || ex.name} — {ex.series} {t("series").toLowerCase()} | {ex.reps} {ex.type === 'time' ? 's' : 'rep'}
-            {(ex.type === 'weight_reps' || !ex.type) && ` | ${ex.weight}kg`}
+            {t(ex.name) || ex.name} — {ex.series} {t("series").toLowerCase()} | {ex.reps} {ex.type === 'time' ? 'm' : 'rep'}
+            {(ex.type === 'weight_reps' || !ex.type) && ` | ${ex.weight}${ex.unit === 'lastre' ? 'L' : 'kg'}`}
+            {ex.type === 'time' && ` | ${ex.weight}m`}
           </span>
           <button
             onClick={() => deleteExercise(i)}

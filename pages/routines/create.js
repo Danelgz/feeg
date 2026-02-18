@@ -63,6 +63,14 @@ export default function CreateRoutine() {
 
   const groups = Object.keys(exercisesList);
 
+  const getExerciseInfo = (name) => {
+    for (const group in exercisesList) {
+      const ex = exercisesList[group].find(e => e.name === name);
+      if (ex) return ex;
+    }
+    return null;
+  };
+
   const saveRoutine = async () => {
     if (!routineName || exercises.length === 0) {
       alert(t("alert_fill_fields"));
@@ -266,7 +274,12 @@ export default function CreateRoutine() {
         </div>
 
         <div style={{ padding: "20px 15px" }}>
-          {exercises.map((exercise, exIdx) => (
+          {exercises.map((exercise, exIdx) => {
+            const exerciseInfo = getExerciseInfo(exercise.name);
+            const isTimeBased = exerciseInfo?.type === 'time';
+            const isLastre = exerciseInfo?.unit === 'lastre';
+
+            return (
             <div
               key={exIdx}
               style={{
@@ -523,8 +536,8 @@ export default function CreateRoutine() {
                 }}>
                   <div>SERIE</div>
                   <div>ANTERIOR</div>
-                  <div style={{ textAlign: "center" }}>KG</div>
-                  <div style={{ textAlign: "center" }}>REPS</div>
+                  <div style={{ textAlign: "center" }}>{isTimeBased ? "TIEMPO" : isLastre ? "LASTRE" : "KG"}</div>
+                  <div style={{ textAlign: "center" }}>{isTimeBased ? "KM/H" : "REPS"}</div>
                   <div style={{ textAlign: "right" }}></div>
                 </div>
 

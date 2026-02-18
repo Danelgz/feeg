@@ -180,6 +180,14 @@ export default function RoutineDetail() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  const getExerciseInfo = (name) => {
+    for (const group in exercisesList) {
+      const ex = exercisesList[group].find(e => e.name === name);
+      if (ex) return ex;
+    }
+    return null;
+  };
+
   const getExerciseHistory = (exerciseName) => {
     if (!completedWorkouts) return [];
     
@@ -300,14 +308,21 @@ export default function RoutineDetail() {
         const weightTracker = {};
         
         foundRoutine.exercises.forEach((ex, exIdx) => {
+          // Find previous data for this specific exercise
+          const lastWorkout = completedWorkouts?.find(w => 
+            w.exerciseDetails && w.exerciseDetails.some(ed => ed.name === ex.name)
+          );
+          const lastExDetail = lastWorkout?.exerciseDetails.find(ed => ed.name === ex.name);
+
           ex.series.forEach((serie, serieIdx) => {
             const key = `${exIdx}-${serieIdx}`;
             seriesTracker[key] = false;
-            // First 2 series are typically warmups by default in many apps, 
-            // but let's stick to user request. Default is "N" (Normal)
             typeTracker[key] = serieIdx < 2 ? "W" : "N"; 
-            repsTracker[key] = serie.reps || "";
-            weightTracker[key] = serie.weight || "";
+            
+            // Use previous data if available, otherwise fallback to routine defaults
+            const prevSerie = lastExDetail?.series[serieIdx];
+            repsTracker[key] = prevSerie?.reps || serie.reps || "";
+            weightTracker[key] = prevSerie?.weight || serie.weight || "";
           });
         });
         
@@ -318,7 +333,7 @@ export default function RoutineDetail() {
         setRestTime(foundRoutine.exercises[0]?.rest || 60);
       }
     }
-  }, [id, allRoutines, workoutState, isTimerLoaded]);
+  }, [id, allRoutines, workoutState, isTimerLoaded, completedWorkouts]);
 
   // Background workout timer effect
   useEffect(() => {
@@ -771,7 +786,9 @@ export default function RoutineDetail() {
             boxShadow: isDark ? "none" : "0 2px 8px rgba(0,0,0,0.05)"
           }}>
             <h2 style={{ marginTop: 0, color: isDark ? "#fff" : "#333" }}>{t("workout_summary")}</h2>
-            {routine.exercises.map((exercise, idx) => (
+            {routine.exercises.map((exercise, idx) => {
+              const info = getExerciseInfo(exercise.name);
+              return (
               <div key={idx} style={{
                 backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
                 padding: "12px",
@@ -785,12 +802,13 @@ export default function RoutineDetail() {
                 </p>
                 {exercise.series.map((serie, sIdx) => (
                   <div key={sIdx} style={{ fontSize: "0.9rem", color: isDark ? "#999" : "#888", marginLeft: "10px" }}>
-                    {t("series_label")} {sIdx + 1}: {serie.reps} {exercise.type === 'time' ? 's' : t("reps_label")}
-                    {(exercise.type === 'weight_reps' || !exercise.type) && ` - ${serie.weight}kg`}
+                    {t("series_label")} {sIdx + 1}: {serie.reps} {info?.type === 'time' ? 'm' : t("reps_label")}
+                    {(info?.type === 'weight_reps' || !info?.type) && ` - ${serie.weight}${info?.unit === 'lastre' ? 'L' : 'kg'}`}
+                    {info?.type === 'time' && ` - ${serie.weight}m`}
                   </div>
                 ))}
               </div>
-            ))}
+            );})}
           </div>
 
           <button
@@ -1230,7 +1248,12 @@ export default function RoutineDetail() {
           </div>
 
           <div style={{ padding: "20px 15px" }}>
-            {routine.exercises.map((exercise, exIdx) => (
+            {routine.exercises.map((exercise, exIdx) => {
+              const exerciseInfo = getExerciseInfo(exercise.name);
+              const isTimeBased = exerciseInfo?.type === 'time';
+              const isLastre = exerciseInfo?.unit === 'lastre';
+              
+              return (
               <div
                 key={exIdx}
                 style={{
@@ -1520,8 +1543,8 @@ export default function RoutineDetail() {
                   }}>
                     <div>SERIE</div>
                     <div>ANTERIOR</div>
-                    <div style={{ textAlign: "center" }}>KG</div>
-                    <div style={{ textAlign: "center" }}>REPS</div>
+                    <div style={{ textAlign: "center" }}>{isTimeBased ? "TIEMPO" : isLastre ? "LASTRE" : "KG"}</div>
+                    <div style={{ textAlign: "center" }}>{isTimeBased ? "KM/H" : "REPS"}</div>
                     <div style={{ textAlign: "right" }}>✓</div>
                     <div style={{ textAlign: "right" }}></div>
                   </div>
@@ -1568,7 +1591,13 @@ export default function RoutineDetail() {
                         </div>
                         
                         <div style={{ color: "#666", fontSize: "0.9rem" }}>
-                          {prev && prev[serieIdx] ? `${prev[serieIdx].weight}kg x ${prev[serieIdx].reps}` : "—"}
+                          {prev && prev[serieIdx] ? (
+                            isTimeBased 
+                              ? `${prev[serieIdx].weight}m x ${prev[serieIdx].reps}`
+                              : isLastre
+                                ? `${prev[serieIdx].weight}L x ${prev[serieIdx].reps}`
+                                : `${prev[serieIdx].weight}kg x ${prev[serieIdx].reps}`
+                          ) : "—"}
                         </div>
                         
                         <div>
@@ -2207,7 +2236,9 @@ export default function RoutineDetail() {
                   {routine.name}
                 </h1>
 
-                {routine.exercises.map((exercise, exIdx) => (
+                {routine.exercises.map((exercise, exIdx) => {
+                  const info = getExerciseInfo(exercise.name);
+                  return (
                   <div key={exIdx} style={{
                     marginBottom: "25px",
                     paddingBottom: "20px",
@@ -2241,14 +2272,15 @@ export default function RoutineDetail() {
                             color: "#ccc",
                             fontSize: "0.9rem"
                           }}>
-                            {t("series_label")} {sIdx + 1}: {currentReps[key] || serie.reps} {exercise.type === 'time' ? 's' : t("reps_label")}
-                            {(exercise.type === 'weight_reps' || !exercise.type) && ` - ${currentWeight[key] || serie.weight}kg`}
+                            {t("series_label")} {sIdx + 1}: {currentReps[key] || serie.reps} {info?.type === 'time' ? 'm' : t("reps_label")}
+                            {(info?.type === 'weight_reps' || !info?.type) && ` - ${currentWeight[key] || serie.weight}${info?.unit === 'lastre' ? 'L' : 'kg'}`}
+                            {info?.type === 'time' && ` - ${currentWeight[key] || serie.weight}m`}
                           </div>
                         );
                       })}
                     </div>
                   </div>
-                ))}
+                );})}
 
                 <div style={{
                   backgroundColor: "#0f0f0f",

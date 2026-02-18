@@ -20,24 +20,34 @@ export default function ExerciseForm({ addExercise }) {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  const [exerciseInfo, setExerciseInfo] = useState(null);
+
+  useEffect(() => {
+    if (!name) {
+      setExerciseInfo(null);
+      return;
+    }
+    for (const group in exercisesList) {
+      const found = exercisesList[group].find(ex => ex.name.toLowerCase() === name.toLowerCase());
+      if (found) {
+        setExerciseInfo(found);
+        return;
+      }
+    }
+    setExerciseInfo(null);
+  }, [name]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!name || !series) return; // mínimo nombre y series
+    if (!name || !series) return;
     
-    // Buscar tipo de ejercicio en la lista global
-    let exerciseType = "weight_reps";
-    
-    Object.values(exercisesList).forEach(group => {
-      const found = group.find(ex => ex.name.toLowerCase() === name.toLowerCase());
-      if (found) exerciseType = found.type;
-    });
-
     addExercise({
       name,
       series,
       reps: reps || "-", 
       weight: weight || "-",
-      type: exerciseType
+      type: exerciseInfo?.type || "weight_reps",
+      unit: exerciseInfo?.unit
     });
     setName("");
     setSeries("");
@@ -76,14 +86,14 @@ export default function ExerciseForm({ addExercise }) {
       />
       <input
         type="text"
-        placeholder={t("reps_optional_placeholder")}
+        placeholder={exerciseInfo?.type === 'time' ? "Velocidad (opcional)" : t("reps_optional_placeholder")}
         value={reps}
         onChange={(e) => setReps(e.target.value)}
         style={inputStyle}
       />
       <input
         type="text"
-        placeholder={t("weight_optional_placeholder")}
+        placeholder={exerciseInfo?.type === 'time' ? "Tiempo (min)" : exerciseInfo?.unit === 'lastre' ? "Lastre (kg)" : t("weight_optional_placeholder")}
         value={weight}
         onChange={(e) => setWeight(e.target.value)}
         style={inputStyle}

@@ -487,7 +487,7 @@ export default function RoutineDetail() {
   };
 
   const FloatingTimerUI = () => {
-    if ((workoutState !== "ongoing" && !restTimerActive) || workoutState === "completed") return null;
+    if (workoutState !== "ongoing" || showFinishConfirmation || showFinishForm || workoutState === "completed") return null;
 
     return (
       <div style={{ 
@@ -854,8 +854,6 @@ export default function RoutineDetail() {
             </div>
           )}
         </div>
-
-        <FloatingTimerUI />
       </Layout>
     );
   }
@@ -926,8 +924,6 @@ export default function RoutineDetail() {
             </div>
           </div>
         </div>
-
-        <FloatingTimerUI />
       </Layout>
     );
   }
@@ -1122,8 +1118,6 @@ export default function RoutineDetail() {
             </div>
           </div>
         </div>
-
-        <FloatingTimerUI />
       </Layout>
     );
   }
@@ -2091,6 +2085,7 @@ export default function RoutineDetail() {
             );
           })()}
         </div>
+        <FloatingTimerUI />
       </Layout>
     );
   }
@@ -2303,8 +2298,6 @@ export default function RoutineDetail() {
             </>
           )}
         </div>
-
-        <FloatingTimerUI />
       </Layout>
     );
   }

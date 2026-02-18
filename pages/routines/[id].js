@@ -1145,6 +1145,10 @@ export default function RoutineDetail() {
       return sum + (weight * reps);
     }, 0);
 
+    const anyCardio = routine.exercises.some(ex => getExerciseInfo(ex.name)?.type === 'time');
+    const anyLastre = routine.exercises.some(ex => getExerciseInfo(ex.name)?.unit === 'lastre');
+    const volUnit = anyCardio ? "vol" : anyLastre ? "vol" : "kg";
+
     content = (
         <div style={{ 
           padding: 0, 
@@ -1239,7 +1243,7 @@ export default function RoutineDetail() {
             </div>
             <div>
               <div style={{ color: "#666", fontSize: "0.75rem", marginBottom: "4px" }}>Volumen</div>
-              <div style={{ color: "#fff", fontSize: "1.1rem", fontWeight: "500" }}>{totalVolume.toLocaleString()} kg</div>
+              <div style={{ color: "#fff", fontSize: "1.1rem", fontWeight: "500" }}>{totalVolume.toLocaleString()} {volUnit}</div>
             </div>
             <div>
               <div style={{ color: "#666", fontSize: "0.75rem", marginBottom: "4px" }}>Series</div>
@@ -1690,7 +1694,7 @@ export default function RoutineDetail() {
                   <span style={{ fontSize: "1.2rem" }}>+</span> Agregar Serie
                 </button>
               </div>
-            ))}
+            );})}
 
             {/* Selector de Tipo de Serie */}
             {showTypeSelector && (
@@ -1982,6 +1986,8 @@ export default function RoutineDetail() {
 
           {showHistoryModal && (() => {
             const history = getExerciseHistory(showHistoryModal);
+            const info = getExerciseInfo(showHistoryModal);
+            const unit = info?.type === 'time' ? 'm' : info?.unit === 'lastre' ? 'L' : 'kg';
             
             // Dimensiones del gráfico SVG
             const w = isMobile ? 280 : 350;
@@ -2010,8 +2016,8 @@ export default function RoutineDetail() {
               content = (
                 <div style={{ position: "relative", marginTop: "10px", padding: "10px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", color: "#666", fontSize: "0.7rem", padding: `0 ${p}px` }}>
-                    <span>{minW.toFixed(1)}kg</span>
-                    <span>{maxW.toFixed(1)}kg</span>
+                    <span>{minW.toFixed(1)}{unit}</span>
+                    <span>{maxW.toFixed(1)}{unit}</span>
                   </div>
                   <svg width={w} height={h} style={{ overflow: "visible", display: "block", margin: "0 auto" }}>
                     {/* Ejes */}
@@ -2060,7 +2066,7 @@ export default function RoutineDetail() {
                       border: `1px solid ${mint}`,
                       pointerEvents: "none"
                     }}>
-                      <div style={{ fontWeight: "bold", color: mint }}>{history[selectedGraphPoint].weight} kg</div>
+                      <div style={{ fontWeight: "bold", color: mint }}>{history[selectedGraphPoint].weight} {unit}</div>
                       <div style={{ fontSize: "0.75rem", opacity: 0.8 }}>{history[selectedGraphPoint].formattedDate}</div>
                     </div>
                   )}

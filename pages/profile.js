@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import Layout from "../components/Layout";
 import RegisterForm from "../components/RegisterForm";
 import { useUser } from "../context/UserContext";
+import { exercisesList } from "../data/exercises";
 import { getFollowersList, getFollowingList, uploadProfilePhoto } from "../lib/firebase";
 
 export default function Profile() {
@@ -133,6 +134,14 @@ export default function Profile() {
         }, 'image/jpeg', 0.9);
       };
     });
+  };
+
+  const getExerciseInfo = (name) => {
+    for (const group in exercisesList) {
+      const ex = exercisesList[group].find(e => e.name === name);
+      if (ex) return ex;
+    }
+    return null;
   };
 
   const handleOpenFollowers = async () => {
@@ -398,7 +407,12 @@ export default function Profile() {
           border: "1px solid #1a1a1a",
           marginTop: "10px"
         }}>
-          {workout.exerciseDetails.map((ex, idx) => (
+          {workout.exerciseDetails.map((ex, idx) => {
+            const info = getExerciseInfo(ex.name);
+            const isTimeBased = info?.type === 'time';
+            const isLastre = info?.unit === 'lastre';
+            
+            return (
             <div key={idx}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
                 <div style={{
@@ -424,8 +438,8 @@ export default function Profile() {
               <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr", padding: "5px 0", borderBottom: "1px solid #1a1a1a", color: "#666", fontSize: "0.75rem", fontWeight: "bold", textAlign: "center" }}>
                   <div>SERIE</div>
-                  <div>PESO (KG)</div>
-                  <div>REPS</div>
+                  <div>{isTimeBased ? "TIEMPO (MIN)" : isLastre ? "LASTRE (KG)" : "PESO (KG)"}</div>
+                  <div>{isTimeBased ? "KM/H" : "REPS"}</div>
                 </div>
                 {ex.series.map((s, sIdx) => (
                   <div key={sIdx} style={{ 
@@ -438,13 +452,13 @@ export default function Profile() {
                     backgroundColor: sIdx % 2 === 0 ? "transparent" : "#0a0a0a"
                   }}>
                     <div style={{ color: "#666", fontWeight: "bold" }}>{sIdx + 1}</div>
-                    <div>{s.weight || "-"}</div>
+                    <div>{s.weight || "-"}{isTimeBased ? "m" : isLastre ? "L" : ""}</div>
                     <div>{s.reps || "-"}</div>
                   </div>
                 ))}
               </div>
             </div>
-          ))}
+          );})}
         </div>
       )}
     </div>

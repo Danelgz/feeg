@@ -331,6 +331,14 @@ export default function EmptyRoutine() {
     setRoutine({ ...routine, exercises: updatedExercises });
   };
 
+  const getExerciseInfo = (name) => {
+    for (const group in exercisesList) {
+      const ex = exercisesList[group].find(e => e.name === name);
+      if (ex) return ex;
+    }
+    return null;
+  };
+
   const handleCompleteWorkout = () => setShowFinishConfirmation(true);
 
   const clearPersistentTimer = () => {
@@ -571,7 +579,12 @@ export default function EmptyRoutine() {
         </div>
 
         <div style={{ padding: "20px 15px" }}>
-          {routine.exercises.map((exercise, exIdx) => (
+          {routine.exercises.map((exercise, exIdx) => {
+            const exerciseInfo = getExerciseInfo(exercise.name);
+            const isTimeBased = exerciseInfo?.type === 'time';
+            const isLastre = exerciseInfo?.unit === 'lastre';
+            
+            return (
             <div key={exIdx} style={{ marginBottom: "40px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
                 <h2 style={{ margin: 0, color: mint, fontSize: "1.15rem", fontWeight: "500" }}>{t(exercise.name)}</h2>
@@ -581,8 +594,8 @@ export default function EmptyRoutine() {
               <div style={{ display: "grid", gridTemplateColumns: "50px 1fr 70px 70px 45px", gap: "10px", marginBottom: "10px", color: "#666", fontSize: "0.75rem", fontWeight: "600" }}>
                 <div>SERIE</div>
                 <div>ANTERIOR</div>
-                <div style={{ textAlign: "center" }}>KG</div>
-                <div style={{ textAlign: "center" }}>REPS</div>
+                <div style={{ textAlign: "center" }}>{isTimeBased ? "TIEMPO" : isLastre ? "LASTRE" : "KG"}</div>
+                <div style={{ textAlign: "center" }}>{isTimeBased ? "KM/H" : "REPS"}</div>
                 <div style={{ textAlign: "right" }}>✓</div>
               </div>
 
@@ -608,7 +621,7 @@ export default function EmptyRoutine() {
               })}
               <button onClick={() => handleAddSeries(exIdx)} style={{ width: "100%", padding: "10px", backgroundColor: "#1a1a1a", color: "#fff", border: "none", borderRadius: "8px", marginTop: "10px" }}>+ Agregar Serie</button>
             </div>
-          ))}
+          );})}
 
           <button onClick={handleAddExercise} style={{ width: "100%", padding: "15px", backgroundColor: "#1a1a1a", color: mint, border: `1px dashed ${mint}`, borderRadius: "10px", fontWeight: "600" }}>+ Agregar Ejercicio</button>
         </div>

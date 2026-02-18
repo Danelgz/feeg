@@ -647,7 +647,7 @@ export default function CreateRoutine() {
                 + Agregar Serie
               </button>
             </div>
-          ))}
+          );})}
 
           <button 
             onClick={() => setShowSelector(true)}

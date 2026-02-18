@@ -38,6 +38,7 @@ export default function Profile() {
   const [isPhotoFullScreen, setIsPhotoFullScreen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [expandedWorkout, setExpandedWorkout] = useState(null);
+  const [showInfoDropdown, setShowInfoDropdown] = useState(false);
 
   // Forzar refresco de datos al entrar al perfil
   useEffect(() => {
@@ -315,15 +316,71 @@ export default function Profile() {
           <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#1dd1a1" }}>{workout.name}</div>
           <div style={{ fontSize: "0.8rem", color: "#888" }}>{new Date(workout.completedAt).toLocaleString()}</div>
         </div>
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div style={{ display: "flex", gap: "8px" }}>
           <button 
             onClick={() => setExpandedWorkout(expandedWorkout === workout.id ? null : workout.id)} 
-            style={{ background: "none", border: "none", cursor: "pointer", color: "#1dd1a1", fontSize: "0.85rem", textDecoration: "underline" }}
+            style={{ 
+              backgroundColor: expandedWorkout === workout.id ? "#1dd1a1" : "rgba(29, 209, 161, 0.1)", 
+              border: "none", 
+              borderRadius: "8px",
+              padding: "6px 12px",
+              cursor: "pointer", 
+              color: expandedWorkout === workout.id ? "#000" : "#1dd1a1", 
+              fontSize: "0.8rem",
+              fontWeight: "700",
+              transition: "all 0.2s ease"
+            }}
           >
             {expandedWorkout === workout.id ? "Ocultar" : "Detalles"}
           </button>
-          <button onClick={() => router.push(`/routines/${workout.routineId || 'edit'}?editWorkoutId=${workout.id}`)} style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: "0.85rem" }}>Editar</button>
-          <button onClick={() => setConfirmDelete(workout.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#ff4757", fontSize: "0.85rem" }}>Borrar</button>
+          <button 
+            onClick={() => router.push(`/routines/${workout.routineId || 'edit'}?editWorkoutId=${workout.id}`)} 
+            style={{ 
+              backgroundColor: "rgba(255, 255, 255, 0.05)", 
+              border: "none", 
+              borderRadius: "8px",
+              padding: "6px 12px",
+              cursor: "pointer", 
+              color: "#aaa", 
+              fontSize: "0.8rem",
+              fontWeight: "600",
+              transition: "all 0.2s ease"
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+              e.currentTarget.style.color = "#fff";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+              e.currentTarget.style.color = "#aaa";
+            }}
+          >
+            Editar
+          </button>
+          <button 
+            onClick={() => setConfirmDelete(workout.id)} 
+            style={{ 
+              backgroundColor: "rgba(255, 71, 87, 0.1)", 
+              border: "none", 
+              borderRadius: "8px",
+              padding: "6px 12px",
+              cursor: "pointer", 
+              color: "#ff4757", 
+              fontSize: "0.8rem",
+              fontWeight: "600",
+              transition: "all 0.2s ease"
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = "#ff4757";
+              e.currentTarget.style.color = "#fff";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = "rgba(255, 71, 87, 0.1)";
+              e.currentTarget.style.color = "#ff4757";
+            }}
+          >
+            Borrar
+          </button>
         </div>
       </div>
       <div style={{ fontSize: "0.9rem", color: "#ccc", marginBottom: expandedWorkout === workout.id ? "15px" : "0" }}>
@@ -697,36 +754,106 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Information Buttons */}
-        <h3 style={{ fontSize: "1rem", color: "#888", marginBottom: "15px" }}>Información</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginBottom: "30px" }}>
-          {[
-            { label: "Estadísticas", path: "/statistics", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg> },
-            { label: "Ejercicios", path: "/exercises", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 18h12"></path><path d="M6 6h12"></path><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="12" r="3"></circle></svg> },
-            { label: "Medidas", path: "/measures", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="18" y1="8" x2="23" y2="13"></line><line x1="23" y1="8" x2="18" y2="13"></line></svg> },
-            { label: "Calendario", path: "/calendar", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> }
-          ].map(btn => (
-            <button 
-              key={btn.label} 
-              onClick={() => router.push(btn.path)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                padding: "15px",
-                backgroundColor: "#1a1a1a",
-                color: "#fff",
-                border: "none",
-                borderRadius: "10px",
-                fontSize: "1rem",
-                fontWeight: "500",
-                cursor: "pointer"
+        {/* Information Section */}
+        <div style={{ marginBottom: "30px" }}>
+          <button 
+            onClick={() => setShowInfoDropdown(!showInfoDropdown)}
+            style={{
+              width: "100%",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "16px 20px",
+              backgroundColor: "#111",
+              color: "#fff",
+              border: `1px solid ${showInfoDropdown ? "#1dd1a1" : "#333"}`,
+              borderRadius: "15px",
+              fontSize: "1.1rem",
+              fontWeight: "600",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+              boxShadow: showInfoDropdown ? "0 4px 15px rgba(29, 209, 161, 0.15)" : "none"
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div style={{ 
+                width: "36px", 
+                height: "36px", 
+                borderRadius: "10px", 
+                backgroundColor: "rgba(29, 209, 161, 0.1)", 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "center",
+                color: "#1dd1a1"
+              }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              </div>
+              Información
+            </div>
+            <svg 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="#1dd1a1" 
+              strokeWidth="3" 
+              style={{ 
+                transform: showInfoDropdown ? "rotate(180deg)" : "rotate(0)", 
+                transition: "transform 0.3s ease" 
               }}
             >
-              {btn.icon}
-              {btn.label}
-            </button>
-          ))}
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+
+          {showInfoDropdown && (
+            <div style={{ 
+              display: "grid", 
+              gridTemplateColumns: "1fr 1fr", 
+              gap: "12px", 
+              marginTop: "12px",
+              animation: "fadeIn 0.3s ease" 
+            }}>
+              {[
+                { label: "Estadísticas", path: "/statistics", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg> },
+                { label: "Ejercicios", path: "/exercises", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 18h12"></path><path d="M6 6h12"></path><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="12" r="3"></circle></svg> },
+                { label: "Medidas", path: "/measures", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="18" y1="8" x2="23" y2="13"></line><line x1="23" y1="8" x2="18" y2="13"></line></svg> },
+                { label: "Calendario", path: "/calendar", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> }
+              ].map(btn => (
+                <button 
+                  key={btn.label} 
+                  onClick={() => router.push(btn.path)}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "10px",
+                    padding: "20px 10px",
+                    backgroundColor: "#1a1a1a",
+                    color: "#fff",
+                    border: "1px solid #333",
+                    borderRadius: "15px",
+                    fontSize: "0.9rem",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease"
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = "#222";
+                    e.currentTarget.style.borderColor = "#1dd1a1";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = "#1a1a1a";
+                    e.currentTarget.style.borderColor = "#333";
+                  }}
+                >
+                  <div style={{ color: "#1dd1a1" }}>{btn.icon}</div>
+                  {btn.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Workouts Section */}

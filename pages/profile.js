@@ -394,7 +394,7 @@ export default function Profile() {
         </div>
       </div>
       <div style={{ fontSize: "0.9rem", color: "#ccc", marginBottom: expandedWorkout === workout.id ? "15px" : "0" }}>
-        {workout.series} series • {workout.totalVolume?.toLocaleString()} kg • {workout.totalReps} reps
+        {workout.series} series • {workout.totalVolume?.toLocaleString()} kg • {workout.totalReps} reps • {workout.totalTime || Math.floor((workout.elapsedTime || 0) / 60)} min
       </div>
 
       {expandedWorkout === workout.id && workout.exerciseDetails && (

@@ -290,7 +290,7 @@ export default function Home() {
                 <div style={{ marginBottom: "10px" }}>
                   <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#1dd1a1" }}>{workout.name}</div>
                   <div style={{ fontSize: "0.9rem", color: "#ccc", marginTop: "5px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span>{workout.series} series • {workout.totalVolume?.toLocaleString()} kg • {workout.totalReps} reps</span>
+                    <span>{workout.series} series • {workout.totalVolume?.toLocaleString()} kg • {workout.totalReps} reps • {workout.totalTime || Math.floor((workout.elapsedTime || 0) / 60)} min</span>
                     <button 
                       onClick={() => setExpandedWorkout(expandedWorkout === workout.id ? null : workout.id)}
                       style={{

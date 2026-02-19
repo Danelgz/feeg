@@ -141,11 +141,19 @@ export default function ExportData() {
       // Parse dates to calculate duration
       let completedAt;
       let elapsedTime = 0;
+      
+      // Use duration_seconds if available in the first row, otherwise calculate from start/end
+      if (firstRow.duration_seconds && !isNaN(parseInt(firstRow.duration_seconds))) {
+        elapsedTime = parseInt(firstRow.duration_seconds);
+      }
+
       try {
         const start = new Date(firstRow.start_time);
         const end = new Date(firstRow.end_time);
         completedAt = start.toISOString();
-        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        
+        // If elapsedTime is still 0, calculate from start/end
+        if (elapsedTime === 0 && !isNaN(start.getTime()) && !isNaN(end.getTime())) {
           elapsedTime = Math.floor((end.getTime() - start.getTime()) / 1000);
         }
       } catch (e) {

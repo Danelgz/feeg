@@ -70,11 +70,12 @@ export default function ExportData() {
   };
 
   const parseHevyCSV = (text) => {
+    // Basic cleaning of lines
     const lines = text.split(/\r?\n/).filter(line => line.trim());
     if (lines.length < 2) return { workouts: [], latestWeight: null, weightMeasures: [] };
 
-    // Header parsing
-    const headerLine = lines[0];
+    // Robust Header parsing: remove BOM, quotes, and normalize to lowercase
+    const headerLine = lines[0].replace(/^\uFEFF/, '').trim();
     const regex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
     const headers = headerLine.split(regex).map(h => h.trim().replace(/^"|"$/g, '').toLowerCase());
 
@@ -82,12 +83,31 @@ export default function ExportData() {
       const parts = line.split(regex).map(p => p.trim().replace(/^"|"$/g, ''));
       const row = {};
       headers.forEach((h, i) => {
-        if (parts[i] !== undefined) {
+        if (h && parts[i] !== undefined) {
           row[h] = parts[i];
         }
       });
       return row;
     });
+
+    // Helper for date parsing (handles YYYY-MM-DD HH:mm:ss and locale formats)
+    const parseDateSafe = (dateStr) => {
+      if (!dateStr) return new Date();
+      // Try YYYY-MM-DD with T
+      let d = new Date(dateStr.replace(" ", "T"));
+      if (!isNaN(d.getTime())) return d;
+      
+      // Try manual split for YYYY-MM-DD or DD/MM/YYYY
+      const parts = dateStr.split(/[\/\-\s:]/);
+      if (parts.length >= 3) {
+        if (parts[0].length === 4) { // YYYY MM DD ...
+          d = new Date(parts[0], parts[1] - 1, parts[2], parts[3] || 0, parts[4] || 0, parts[5] || 0);
+        } else { // DD MM YYYY ...
+          d = new Date(parts[2], parts[1] - 1, parts[0], parts[3] || 0, parts[4] || 0, parts[5] || 0);
+        }
+      }
+      return isNaN(d.getTime()) ? new Date() : d;
+    };
 
     // Group by Workout REAL: title + start_time
     const workoutGroups = {};
@@ -138,30 +158,25 @@ export default function ExportData() {
       
       const totalSeries = exerciseDetails.reduce((sum, ex) => sum + ex.series.length, 0);
 
-      // Parse dates to calculate duration
+      // Robust date and duration parsing
       let completedAt;
       let elapsedTime = 0;
       
-      // Use duration_seconds if available in the first row, otherwise calculate from start/end
       if (firstRow.duration_seconds && !isNaN(parseInt(firstRow.duration_seconds))) {
         elapsedTime = parseInt(firstRow.duration_seconds);
       }
 
-      try {
-        const start = new Date(firstRow.start_time);
-        const end = new Date(firstRow.end_time);
-        completedAt = start.toISOString();
-        
-        // If elapsedTime is still 0, calculate from start/end
-        if (elapsedTime === 0 && !isNaN(start.getTime()) && !isNaN(end.getTime())) {
-          elapsedTime = Math.floor((end.getTime() - start.getTime()) / 1000);
-        }
-      } catch (e) {
-        completedAt = new Date().toISOString();
+      const startDate = parseDateSafe(firstRow.start_time);
+      const endDate = parseDateSafe(firstRow.end_time);
+      
+      completedAt = startDate.toISOString();
+      
+      if (elapsedTime === 0 && !isNaN(endDate.getTime())) {
+        elapsedTime = Math.floor((endDate.getTime() - startDate.getTime()) / 1000);
       }
 
       return {
-        id: Date.parse(completedAt) + index,
+        id: (Date.parse(completedAt) + index).toString(),
         name: firstRow.title || "Entrenamiento importado",
         comments: firstRow.description || "",
         completedAt,
@@ -175,8 +190,6 @@ export default function ExportData() {
       };
     });
 
-    // In this specific Hevy CSV format provided by user, body weight doesn't seem to be a column.
-    // We return empty for these to avoid errors.
     return { workouts, latestWeight: null, weightMeasures: [] };
   };
 

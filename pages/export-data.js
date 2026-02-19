@@ -76,40 +76,24 @@ export default function ExportData() {
     // Header parsing
     const headerLine = lines[0];
     const regex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
-    const headers = headerLine.split(regex).map(h => h.trim().replace(/^"|"$/g, ''));
+    const headers = headerLine.split(regex).map(h => h.trim().replace(/^"|"$/g, '').toLowerCase());
 
     const rows = lines.slice(1).map(line => {
       const parts = line.split(regex).map(p => p.trim().replace(/^"|"$/g, ''));
       const row = {};
       headers.forEach((h, i) => {
-        row[h] = parts[i];
+        if (parts[i] !== undefined) {
+          row[h] = parts[i];
+        }
       });
       return row;
     });
 
-    // Extract weights
-    const weightMap = {}; // date -> weight
-    rows.forEach(row => {
-      const weight = parseFloat(row["Body Weight"]);
-      if (weight > 0 && row.Date) {
-        const dateStr = row.Date.split(' ')[0]; // Use only the date part
-        weightMap[dateStr] = weight;
-      }
-    });
-
-    const weightMeasures = Object.entries(weightMap).map(([date, weight]) => ({
-      id: Date.parse(date),
-      date: date,
-      weight: weight,
-      type: "weight"
-    })).sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    const latestWeight = weightMeasures.length > 0 ? weightMeasures[0].weight : null;
-
-    // Group by Date and Workout Name
+    // Group by Workout REAL: title + start_time
     const workoutGroups = {};
     rows.forEach(row => {
-      const workoutKey = `${row.Date}_${row["Workout Name"]}`;
+      if (!row.start_time || !row.title) return;
+      const workoutKey = `${row.start_time}_${row.title}`;
       if (!workoutGroups[workoutKey]) {
         workoutGroups[workoutKey] = [];
       }
@@ -119,10 +103,11 @@ export default function ExportData() {
     const workouts = Object.values(workoutGroups).map((groupRows, index) => {
       const firstRow = groupRows[0];
       
-      // Group exercises within the workout
+      // Group exercises within the workout: exercise_title
       const exerciseGroups = {};
       groupRows.forEach(row => {
-        const exName = row["Exercise Name"];
+        const exName = row.exercise_title;
+        if (!exName) return;
         if (!exerciseGroups[exName]) {
           exerciseGroups[exName] = [];
         }
@@ -131,9 +116,9 @@ export default function ExportData() {
 
       const exerciseDetails = Object.entries(exerciseGroups).map(([name, exRows]) => {
         const series = exRows.map(row => ({
-          reps: row.Reps || "0",
-          weight: row.Weight || "0",
-          type: "N" // Default to normal
+          reps: parseInt(row.reps) || 0,
+          weight: parseFloat(row.weight_kg) || 0,
+          type: row.set_type === "warmup" ? "W" : "N"
         }));
 
         return {
@@ -144,30 +129,36 @@ export default function ExportData() {
       });
 
       const totalReps = exerciseDetails.reduce((sum, ex) => 
-        sum + ex.series.reduce((sSum, s) => sSum + (parseInt(s.reps) || 0), 0)
+        sum + ex.series.reduce((sSum, s) => sSum + (s.reps || 0), 0)
       , 0);
       
       const totalVolume = exerciseDetails.reduce((sum, ex) => 
-        sum + ex.series.reduce((sSum, s) => sSum + ((parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0)), 0)
+        sum + ex.series.reduce((sSum, s) => sSum + ((s.weight || 0) * (s.reps || 0)), 0)
       , 0);
       
       const totalSeries = exerciseDetails.reduce((sum, ex) => sum + ex.series.length, 0);
 
-      // Parse date. Hevy format is usually "YYYY-MM-DD HH:mm:ss"
+      // Parse dates to calculate duration
       let completedAt;
+      let elapsedTime = 0;
       try {
-        completedAt = new Date(firstRow.Date).toISOString();
+        const start = new Date(firstRow.start_time);
+        const end = new Date(firstRow.end_time);
+        completedAt = start.toISOString();
+        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+          elapsedTime = Math.floor((end.getTime() - start.getTime()) / 1000);
+        }
       } catch (e) {
         completedAt = new Date().toISOString();
       }
 
       return {
         id: Date.parse(completedAt) + index,
-        name: firstRow["Workout Name"] || "Entrenamiento importado",
-        comments: firstRow["Workout Notes"] || "",
+        name: firstRow.title || "Entrenamiento importado",
+        comments: firstRow.description || "",
         completedAt,
-        totalTime: Math.floor((parseInt(firstRow.Seconds) || 0) / 60) || 0,
-        elapsedTime: parseInt(firstRow.Seconds) || 0,
+        totalTime: Math.floor(elapsedTime / 60) || 0,
+        elapsedTime: elapsedTime,
         exercises: exerciseDetails.length,
         series: totalSeries,
         totalReps,
@@ -176,7 +167,9 @@ export default function ExportData() {
       };
     });
 
-    return { workouts, latestWeight, weightMeasures };
+    // In this specific Hevy CSV format provided by user, body weight doesn't seem to be a column.
+    // We return empty for these to avoid errors.
+    return { workouts, latestWeight: null, weightMeasures: [] };
   };
 
   if (!authUser) {

@@ -23,6 +23,7 @@ export default function Profile() {
     logout,
     completedWorkouts,
     deleteCompletedWorkout,
+    deleteAllWorkouts,
     followers,
     following,
     showNotification
@@ -33,6 +34,7 @@ export default function Profile() {
   const [chartMode, setChartMode] = useState("duration"); // duration, volume, reps
   const [activeBar, setActiveBar] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
   const [followersList, setFollowersList] = useState([]);
@@ -877,6 +879,32 @@ export default function Profile() {
             <span style={{ width: "4px", height: "20px", backgroundColor: "#1dd1a1", borderRadius: "2px" }}></span>
             Entrenamientos
           </h3>
+          {completedWorkouts?.length > 0 && (
+            <button 
+              onClick={() => setConfirmDeleteAll(true)}
+              style={{
+                backgroundColor: "transparent",
+                color: "#ff4757",
+                border: "1px solid #ff4757",
+                borderRadius: "8px",
+                padding: "4px 10px",
+                fontSize: "0.75rem",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "all 0.2s"
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = "#ff4757";
+                e.currentTarget.style.color = "#fff";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+                e.currentTarget.style.color = "#ff4757";
+              }}
+            >
+              {t("delete_all")}
+            </button>
+          )}
         </div>
         
         <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
@@ -909,6 +937,32 @@ export default function Profile() {
             <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={() => setConfirmDelete(null)} style={{ flex: 1, padding: "12px", borderRadius: "8px", border: "1px solid #333", backgroundColor: "transparent", color: "#fff" }}>Cancelar</button>
               <button onClick={() => handleDeleteWorkout(confirmDelete)} style={{ flex: 1, padding: "12px", borderRadius: "8px", border: "none", backgroundColor: "#ff4d4d", color: "#fff", fontWeight: "bold" }}>Borrar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Delete All Modal */}
+      {confirmDeleteAll && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center",
+          justifyContent: "center", zIndex: 3000, padding: "20px"
+        }}>
+          <div style={{ backgroundColor: "#1a1a1a", padding: "25px", borderRadius: "15px", width: "100%", maxWidth: "400px", textAlign: "center" }}>
+            <h2 style={{ color: "#fff", marginBottom: "15px" }}>{t("confirm_delete_all_title")}</h2>
+            <p style={{ color: "#888", marginBottom: "25px" }}>{t("confirm_delete_all_msg")}</p>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button onClick={() => setConfirmDeleteAll(false)} style={{ flex: 1, padding: "12px", borderRadius: "8px", border: "1px solid #333", backgroundColor: "transparent", color: "#fff" }}>{t("cancel")}</button>
+              <button 
+                onClick={async () => {
+                  await deleteAllWorkouts();
+                  setConfirmDeleteAll(false);
+                }} 
+                style={{ flex: 1, padding: "12px", borderRadius: "8px", border: "none", backgroundColor: "#ff4757", color: "#fff", fontWeight: "bold" }}
+              >
+                {t("delete_all")}
+              </button>
             </div>
           </div>
         </div>

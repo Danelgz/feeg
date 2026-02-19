@@ -230,4 +230,21 @@ export const exercisesList = {
     { id: 199, name: "Remo", type: "time" },
     { id: 200, name: "Saltar la cuerda", type: "time", unit: "saltos" },
   ],
+  Aductor: [
+    { id: 207, name: "Máquina de aductores", type: "weight_reps" },
+    { id: 208, name: "Sentadilla sumo", type: "weight_reps" },
+    { id: 209, name: "Zancada lateral", type: "weight_reps" },
+    { id: 210, name: "Peso muerto sumo", type: "weight_reps" },
+    { id: 211, name: "Prensa de piernas con pies abiertos", type: "weight_reps" },
+    { id: 212, name: "Aducción de cadera en polea", type: "weight_reps" },
+  ],
+  Abductor: [
+    { id: 213, name: "Máquina de abductores", type: "weight_reps" },
+    { id: 214, name: "Abducción de cadera en polea", type: "weight_reps" },
+    { id: 215, name: "Caminata lateral con banda elástica", type: "reps" },
+    { id: 216, name: "Patada lateral de cadera", type: "reps" },
+    { id: 217, name: "Sentadilla con banda en las rodillas", type: "reps" },
+    { id: 218, name: "Elevaciones laterales de pierna", type: "reps" },
+    { id: 219, name: "Saltos laterales cortos", type: "reps" },
+  ],
 };

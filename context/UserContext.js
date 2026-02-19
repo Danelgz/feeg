@@ -364,6 +364,15 @@ export function UserProvider({ children }) {
     }
   };
 
+  const deleteAllWorkouts = async () => {
+    lastLocalUpdate.current = Date.now();
+    setCompletedWorkouts([]);
+    localStorage.setItem('completedWorkouts', JSON.stringify([]));
+    if (authUser) {
+      await saveToCloud(`users/${authUser.uid}`, { completedWorkouts: [] });
+    }
+  };
+
   const updateCompletedWorkout = async (updatedWorkout) => {
     lastLocalUpdate.current = Date.now();
     const newList = completedWorkouts.map(w => w.id === updatedWorkout.id ? updatedWorkout : w);
@@ -476,6 +485,7 @@ export function UserProvider({ children }) {
       bulkSaveWorkouts,
       bulkSaveMeasures,
       deleteCompletedWorkout,
+      deleteAllWorkouts,
       updateCompletedWorkout,
       routines,
       saveRoutine,

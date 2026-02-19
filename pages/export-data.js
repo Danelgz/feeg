@@ -11,11 +11,28 @@ export default function ExportData() {
   const [importedCount, setImportedCount] = useState(0);
 
   const findMuscleGroup = (exerciseName) => {
+    if (!exerciseName) return "Otros";
+    const name = exerciseName.toLowerCase();
+    
+    // Exact match in our exercisesList
     for (const [group, exercises] of Object.entries(exercisesList)) {
-      if (exercises.some(e => e.name.toLowerCase() === exerciseName.toLowerCase())) {
+      if (exercises.some(e => e.name.toLowerCase() === name)) {
         return group;
       }
     }
+
+    // Partial match keywords
+    if (name.includes("pecho") || name.includes("banca") || name.includes("chest") || name.includes("bench")) return "Pecho";
+    if (name.includes("espalda") || name.includes("jalón") || name.includes("remo") || name.includes("back") || name.includes("row") || name.includes("dominada")) return "Espalda";
+    if (name.includes("hombro") || name.includes("militar") || name.includes("lateral") || name.includes("shoulder") || name.includes("press militar")) return "Hombros";
+    if (name.includes("bíceps") || name.includes("biceps") || name.includes("curl")) return "Bíceps";
+    if (name.includes("tríceps") || name.includes("triceps") || name.includes("extensión de tríceps") || name.includes("skull crusher")) return "Tríceps";
+    if (name.includes("cuádriceps") || name.includes("quads") || name.includes("sentadilla") || name.includes("prensa") || name.includes("squat")) return "Cuádriceps";
+    if (name.includes("femoral") || name.includes("hamstring") || name.includes("peso muerto rumano")) return "Femoral";
+    if (name.includes("glúteo") || name.includes("glute") || name.includes("hip thrust")) return "Glúteos";
+    if (name.includes("gemelo") || name.includes("calf") || name.includes("talones")) return "Gemelos";
+    if (name.includes("abdomen") || name.includes("abs") || name.includes("crunch") || name.includes("plancha")) return "Abdomen";
+
     return "Otros";
   };
 
@@ -183,9 +200,12 @@ export default function ExportData() {
           type: row.set_type === "warmup" ? "W" : "N"
         }));
 
+        const muscleGroup = findMuscleGroup(name);
+
         return {
           name,
-          muscleGroup: findMuscleGroup(name),
+          muscleGroup,
+          group: muscleGroup, // Compatibility with statistics
           series
         };
       });

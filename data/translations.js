@@ -153,6 +153,9 @@ export const translations = {
     goal_label: "Objetivo:",
     registered_label: "Registrado:",
     edit_profile: "Editar Perfil",
+    delete_all: "Borrar todo",
+    confirm_delete_all_title: "¿Borrar todos los entrenamientos?",
+    confirm_delete_all_msg: "Se eliminarán todos tus registros permanentemente. Esta acción no se puede deshacer.",
     // Muscle Groups
     Pecho: "Pecho",
     Espalda: "Espalda",
@@ -416,6 +419,9 @@ export const translations = {
     goal_label: "Helburua:",
     registered_label: "Erregistratua:",
     edit_profile: "Profila Editatu",
+    delete_all: "Guztia ezabatu",
+    confirm_delete_all_title: "Entrenamendu guztiak ezabatu?",
+    confirm_delete_all_msg: "Zure erregistro guztiak betiko ezabatuko dira. Ekintza hau ezin da desegin.",
     // Muscle Groups
     Pecho: "Bularra",
     Espalda: "Bizkarra",

@@ -90,22 +90,64 @@ export default function ExportData() {
       return row;
     });
 
-    // Helper for date parsing (handles YYYY-MM-DD HH:mm:ss and locale formats)
+    // Helper for date parsing (handles YYYY-MM-DD HH:mm:ss and Spanish formats like "17 feb 2026, 11:44")
     const parseDateSafe = (dateStr) => {
       if (!dateStr) return new Date();
-      // Try YYYY-MM-DD with T
+      
+      // Clean string: remove commas and normalize to lowercase
+      const cleanStr = dateStr.replace(/,/g, '').toLowerCase().trim();
+      
+      // Try standard JS parsing first
       let d = new Date(dateStr.replace(" ", "T"));
       if (!isNaN(d.getTime())) return d;
       
-      // Try manual split for YYYY-MM-DD or DD/MM/YYYY
-      const parts = dateStr.split(/[\/\-\s:]/);
+      // Spanish months mapping
+      const monthsEs = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+      const monthsEsFull = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+      
+      // Split by spaces, slashes, dashes, or colons
+      const parts = cleanStr.split(/[\/\-\s:]+/).filter(p => p.trim());
+      // Case "17 feb 2026 11 44" -> parts: ["17", "feb", "2026", "11", "44"]
+      
       if (parts.length >= 3) {
+        let day, monthIdx = -1, year, hour = 0, min = 0, sec = 0;
+        
+        // 1. Try to find if any part is a Spanish month (short or full)
+        parts.forEach((p, i) => {
+          // Check for abbreviations (ene, feb...) or full names (enero, febrero...)
+          const idxShort = monthsEs.findIndex(m => p.startsWith(m));
+          const idxFull = monthsEsFull.findIndex(m => p === m);
+          const finalIdx = idxShort !== -1 ? idxShort : idxFull;
+          
+          if (finalIdx !== -1) {
+            monthIdx = finalIdx;
+            // Typical format: DD MONTH YYYY HH MM
+            if (i > 0) day = parseInt(parts[i-1]);
+            if (i < parts.length - 1) year = parseInt(parts[i+1]);
+            
+            // Hours and minutes follow the year
+            if (i < parts.length - 2) hour = parseInt(parts[i+2]) || 0;
+            if (i < parts.length - 3) min = parseInt(parts[i+3]) || 0;
+            if (i < parts.length - 4) sec = parseInt(parts[i+4]) || 0;
+          }
+        });
+        
+        // 2. If month name found and day/year parsed
+        if (monthIdx !== -1 && !isNaN(day) && !isNaN(year)) {
+          // Normalize year (e.g., "26" to 2026)
+          if (year < 100) year += 2000;
+          return new Date(year, monthIdx, day, hour, min, sec);
+        }
+
+        // 3. Fallback to numeric logic
         if (parts[0].length === 4) { // YYYY MM DD ...
-          d = new Date(parts[0], parts[1] - 1, parts[2], parts[3] || 0, parts[4] || 0, parts[5] || 0);
-        } else { // DD MM YYYY ...
-          d = new Date(parts[2], parts[1] - 1, parts[0], parts[3] || 0, parts[4] || 0, parts[5] || 0);
+          return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), parseInt(parts[3]) || 0, parseInt(parts[4]) || 0, parseInt(parts[5]) || 0);
+        } else if (parts[2] && parts[2].length === 4) { // DD MM YYYY ...
+          return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]), parseInt(parts[3]) || 0, parseInt(parts[4]) || 0, parseInt(parts[5]) || 0);
         }
       }
+      
+      // Final attempt if d is still invalid
       return isNaN(d.getTime()) ? new Date() : d;
     };
 

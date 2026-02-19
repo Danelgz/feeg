@@ -30,6 +30,15 @@ export function UserProvider({ children }) {
   const [following, setFollowing] = useState([]);
   const [followers, setFollowers] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
+  const [notification, setNotification] = useState(null);
+
+  // Función para mostrar notificaciones personalizadas
+  const showNotification = (message, type = 'info', duration = 4000) => {
+    setNotification({ message, type });
+    setTimeout(() => {
+      setNotification(null);
+    }, duration);
+  };
 
   // Detectar móvil
   useEffect(() => {
@@ -233,7 +242,30 @@ export function UserProvider({ children }) {
   const loginWithGoogle = async () => {
     setIsLoggingIn(true);
     try {
-      await signInWithGoogle();
+      const result = await signInWithGoogle();
+      if (result === 'cancelled') {
+        // Ignorar silenciosamente si el usuario canceló
+        return;
+      }
+      if (result && result.error) {
+        throw result.error;
+      }
+    } catch (error) {
+      console.error("Error en login:", error);
+      let errorMsg = "Ocurrió un error al iniciar sesión";
+      
+      // Mapear errores de Firebase
+      if (error.code === 'auth/popup-blocked') {
+        errorMsg = "El navegador bloqueó la ventana de inicio de sesión. Por favor, permite los popups.";
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMsg = "Error de red. Revisa tu conexión a internet.";
+      } else if (error.code === 'auth/internal-error') {
+        errorMsg = "Error interno de Firebase. Inténtalo de nuevo.";
+      } else if (error.message) {
+        errorMsg = `Error: ${error.message}`;
+      }
+      
+      showNotification(errorMsg, 'error');
     } finally {
       setIsLoggingIn(false);
     }
@@ -456,6 +488,8 @@ export function UserProvider({ children }) {
       isMobile,
       handleFollow,
       handleUnfollow,
+      notification,
+      showNotification,
       t
     }}>
       {children}

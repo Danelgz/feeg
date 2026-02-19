@@ -7,7 +7,7 @@ import { useUser } from "../../context/UserContext";
 export default function CreateRoutine() {
   const router = useRouter();
   const { id, editWorkout } = router.query;
-  const { theme, t, routines, completedWorkouts, saveRoutine: contextSaveRoutine, updateRoutine: contextUpdateRoutine, updateCompletedWorkout } = useUser();
+  const { theme, t, routines, completedWorkouts, saveRoutine: contextSaveRoutine, updateRoutine: contextUpdateRoutine, updateCompletedWorkout, showNotification } = useUser();
   const [isMobile, setIsMobile] = useState(false);
   const isDark = true; // Always dark like workout mode
   const mint = "#2EE6C5";
@@ -73,7 +73,7 @@ export default function CreateRoutine() {
 
   const saveRoutine = async () => {
     if (!routineName || exercises.length === 0) {
-      alert(t("alert_fill_fields"));
+      showNotification(t("alert_fill_fields"), 'error');
       return;
     }
 

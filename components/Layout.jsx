@@ -6,7 +6,7 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 
 export default function Layout({ children }) {
-  const { theme, isMobile, activeRoutine, endRoutine, t } = useUser();
+  const { theme, isMobile, activeRoutine, endRoutine, notification, t } = useUser();
   const isDark = theme === 'dark';
   const [isMounted, setIsMounted] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
@@ -131,6 +131,39 @@ export default function Layout({ children }) {
 
       {isMounted && (
         <>
+          {/* Sistema de Notificaciones Web */}
+          {notification && (
+            <div style={{
+              position: "fixed",
+              top: "20px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 11000,
+              backgroundColor: notification.type === 'error' ? "#ff4d4d" : (isDark ? "#1dd1a1" : "#19b088"),
+              color: notification.type === 'error' ? "#fff" : "#000",
+              padding: "12px 24px",
+              borderRadius: "12px",
+              boxShadow: "0 8px 30px rgba(0,0,0,0.3)",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              minWidth: "280px",
+              maxWidth: "90vw",
+              animation: "slideDown 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28)",
+              fontWeight: "bold",
+              textAlign: "center",
+              justifyContent: "center"
+            }}>
+              <style>{`
+                @keyframes slideDown {
+                  from { opacity: 0; transform: translate(-50%, -40px); }
+                  to { opacity: 1; transform: translate(-50%, 0); }
+                }
+              `}</style>
+              <span>{notification.message}</span>
+            </div>
+          )}
+
           {/* Intro de Logo (Solo Móvil) */}
           {showIntro && (
             <div style={{

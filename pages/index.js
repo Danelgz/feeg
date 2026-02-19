@@ -5,7 +5,7 @@ import { getWorkoutsFeed, searchUsers, likeWorkout, addWorkoutComment } from "..
 import { useRouter } from "next/router";
 
 export default function Home() {
-  const { user, authUser, isLoaded, following, handleFollow, handleUnfollow, isMobile, refreshData, t, theme } = useUser();
+  const { user, authUser, isLoaded, following, handleFollow, handleUnfollow, isMobile, refreshData, t, theme, showNotification } = useUser();
   const [feedWorkouts, setFeedWorkouts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -83,7 +83,7 @@ export default function Home() {
       } : w));
     } catch (error) {
       console.error("Error al dar like:", error);
-      alert("Error al dar like: " + error.message);
+      showNotification("Error al dar like: " + error.message, 'error');
     }
   };
 
@@ -106,7 +106,7 @@ export default function Home() {
       setCommentingOn(null);
     } catch (error) {
       console.error("Error al comentar:", error);
-      alert("Error al comentar: " + error.message);
+      showNotification("Error al comentar: " + error.message, 'error');
     }
   };
 

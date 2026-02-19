@@ -24,7 +24,8 @@ export default function Profile() {
     completedWorkouts,
     deleteCompletedWorkout,
     followers,
-    following
+    following,
+    showNotification
   } = useUser();
   const isDark = theme === 'dark';
   const [isEditing, setIsEditing] = useState(false);
@@ -309,7 +310,7 @@ export default function Profile() {
       setSelectedFile(null);
     } catch (e) {
       console.error("Error en handleEditSave:", e);
-      alert(e.message || "Hubo un problema al guardar.");
+      showNotification(e.message || "Hubo un problema al guardar.", 'error');
     } finally {
       setSaving(false);
       setIsProcessingImage(false);

@@ -4,10 +4,12 @@ import Layout from "../components/Layout";
 import { exercisesList } from "../data/exercises";
 import { useUser } from "../context/UserContext";
 import InteractiveBodyMap from "../components/InteractiveBodyMap";
+import ExerciseInstructionsModal from "../components/ExerciseInstructionsModal";
 
 export default function Exercises() {
   const [search, setSearch] = useState("");
   const [expandedGroups, setExpandedGroups] = useState({});
+  const [selectedExercise, setSelectedExercise] = useState(null);
   const { theme, isMobile, t } = useUser();
   const isDark = theme === 'dark';
 
@@ -112,6 +114,7 @@ export default function Exercises() {
                   {exercises.map((exercise) => (
                     <li
                       key={exercise.id}
+                      onClick={() => setSelectedExercise(exercise)}
                       style={{
                         padding: "12px",
                         border: `1px solid ${isDark ? "#333" : "#eee"}`,
@@ -121,22 +124,46 @@ export default function Exercises() {
                         backgroundColor: isDark ? "#1a1a1a" : "#fff",
                         color: isDark ? "#fff" : "#333",
                         transition: "all 0.3s ease",
-                        marginLeft: "1rem"
+                        marginLeft: "1rem",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center"
                       }}
                       onMouseOver={(e) => {
-                        e.target.style.backgroundColor = isDark ? "#2a2a2a" : "#f9f9f9";
-                        e.target.style.borderColor = "#1dd1a1";
-                        e.target.style.boxShadow = "0 2px 6px rgba(29, 209, 161, 0.2)";
-                        e.target.style.transform = "translateX(4px)";
+                        e.currentTarget.style.backgroundColor = isDark ? "#2a2a2a" : "#f9f9f9";
+                        e.currentTarget.style.borderColor = "#1dd1a1";
+                        e.currentTarget.style.boxShadow = "0 2px 6px rgba(29, 209, 161, 0.2)";
+                        e.currentTarget.style.transform = "translateX(4px)";
                       }}
                       onMouseOut={(e) => {
-                        e.target.style.backgroundColor = isDark ? "#1a1a1a" : "#fff";
-                        e.target.style.borderColor = isDark ? "#333" : "#eee";
-                        e.target.style.boxShadow = "none";
-                        e.target.style.transform = "translateX(0)";
+                        e.currentTarget.style.backgroundColor = isDark ? "#1a1a1a" : "#fff";
+                        e.currentTarget.style.borderColor = isDark ? "#333" : "#eee";
+                        e.currentTarget.style.boxShadow = "none";
+                        e.currentTarget.style.transform = "translateX(0)";
                       }}
                     >
-                      {t(exercise.name)}
+                      <span>{t(exercise.name) || exercise.name}</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedExercise(exercise);
+                        }}
+                        style={{
+                          padding: "4px 12px",
+                          backgroundColor: "#1dd1a1",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: "4px",
+                          fontSize: "0.8rem",
+                          fontWeight: "600",
+                          cursor: "pointer",
+                          transition: "opacity 0.2s"
+                        }}
+                        onMouseOver={(e) => e.target.style.opacity = "0.8"}
+                        onMouseOut={(e) => e.target.style.opacity = "1"}
+                      >
+                        {t("indications") || "Indicaciones"}
+                      </button>
                     </li>
                   ))}
                 </ul>
@@ -147,6 +174,13 @@ export default function Exercises() {
           <p style={{ color: "#ccc", textAlign: "center", marginTop: "2rem" }}>{t("no_exercises_found")}</p>
         )}
       </div>
+
+      {selectedExercise && (
+        <ExerciseInstructionsModal 
+          exercise={selectedExercise} 
+          onClose={() => setSelectedExercise(null)} 
+        />
+      )}
     </Layout>
   );
 }

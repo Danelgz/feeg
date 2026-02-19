@@ -169,6 +169,10 @@ export const translations = {
     Cuello: "Cuello",
     Abdomen: "Abdomen",
     Cardio: "Cardio",
+    Aductor: "Aductor",
+    Abductor: "Abductor",
+    Antebrazo: "Antebrazo",
+    "Cuerpo Completo": "Cuerpo Completo",
     // Common Exercises
     "Press de banca plano con barra": "Press de banca plano con barra",
     "Press de banca inclinado con barra": "Press de banca inclinado con barra",
@@ -435,6 +439,10 @@ export const translations = {
     Cuello: "Lepoa",
     Abdomen: "Abdomena",
     Cardio: "Kardioa",
+    Aductor: "Aduktorea",
+    Abductor: "Abduktorea",
+    Antebrazo: "Aurrebesoa",
+    "Cuerpo Completo": "Gorputz Osoa",
     // Common Exercises
     "Press de banca plano con barra": "Bularreko press horizontala barrarekin",
     "Press de banca inclinado con barra": "Bularreko press inklinatua barrarekin",

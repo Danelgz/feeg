@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useUser } from "../../context/UserContext";
 import { exercisesList } from "../../data/exercises";
-import ExerciseInstructionsModal from "../../components/ExerciseInstructionsModal";
 
 export default function RoutineDetail() {
   const router = useRouter();
@@ -49,7 +48,6 @@ export default function RoutineDetail() {
   const [showRoutineActiveAlert, setShowRoutineActiveAlert] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(null); // exerciseName
-  const [selectedExerciseInstructions, setSelectedExerciseInstructions] = useState(null);
   const [selectedGraphPoint, setSelectedGraphPoint] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isTimerLoaded, setIsTimerLoaded] = useState(false);
@@ -832,24 +830,7 @@ export default function RoutineDetail() {
                 borderRadius: "6px",
                 border: `1px solid ${isDark ? "#2a2a2a" : "#eee"}`
               }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                  <h3 style={{ margin: "0", color: "#1dd1a1" }}>{t(exercise.name)}</h3>
-                  <button
-                    onClick={() => setSelectedExerciseInstructions(info)}
-                    style={{
-                      padding: "4px 10px",
-                      backgroundColor: "rgba(29, 209, 161, 0.1)",
-                      color: "#1dd1a1",
-                      border: "1px solid #1dd1a1",
-                      borderRadius: "4px",
-                      fontSize: "0.75rem",
-                      fontWeight: "600",
-                      cursor: "pointer"
-                    }}
-                  >
-                    {t("indications") || "Indicaciones"}
-                  </button>
-                </div>
+                <h3 style={{ margin: "0 0 8px 0", color: "#1dd1a1" }}>{t(exercise.name)}</h3>
                 <p style={{ margin: "0", color: isDark ? "#aaa" : "#666" }}>
                   {exercise.series.length} {t("series_label")} · {t("rest_between_series")} {exercise.rest}s
                 </p>
@@ -1377,34 +1358,19 @@ export default function RoutineDetail() {
                         style={{ width: "80%", height: "auto" }} 
                       />
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                      <h2 
-                        onClick={() => setShowHistoryModal(exercise.name)}
-                        style={{ 
-                          margin: 0, 
-                          color: mint, 
-                          fontSize: "1.15rem", 
-                          fontWeight: "500",
-                          lineHeight: "1.2",
-                          cursor: "pointer"
-                        }}
-                      >
-                        {t(exercise.name)}
-                      </h2>
-                      <div
-                        onClick={() => setSelectedExerciseInstructions(exerciseInfo)}
-                        style={{
-                          display: "inline-block",
-                          color: mint,
-                          fontSize: "0.75rem",
-                          fontWeight: "500",
-                          cursor: "pointer",
-                          textDecoration: "underline"
-                        }}
-                      >
-                        {t("indications") || "Indicaciones"}
-                      </div>
-                    </div>
+                    <h2 
+                      onClick={() => setShowHistoryModal(exercise.name)}
+                      style={{ 
+                        margin: 0, 
+                        color: mint, 
+                        fontSize: "1.15rem", 
+                        fontWeight: "500",
+                        lineHeight: "1.2",
+                        cursor: "pointer"
+                      }}
+                    >
+                      {t(exercise.name)}
+                    </h2>
                   </div>
                   <div style={{ position: "relative" }}>
                     <button 
@@ -2444,12 +2410,6 @@ export default function RoutineDetail() {
         {content}
       </Layout>
       <FloatingTimerUI />
-      {selectedExerciseInstructions && (
-        <ExerciseInstructionsModal 
-          exercise={selectedExerciseInstructions} 
-          onClose={() => setSelectedExerciseInstructions(null)} 
-        />
-      )}
     </>
   );
 }

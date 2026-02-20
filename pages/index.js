@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
+import MuscleGroupChart from "../components/MuscleGroupChart";
 import { useUser } from "../context/UserContext";
 import { getWorkoutsFeed, searchUsers, likeWorkout, addWorkoutComment } from "../lib/firebase";
+import { getMuscleGroupsForWorkout } from "../lib/muscleGroupHelper";
 import { useRouter } from "next/router";
 
 export default function Home() {
-  const { user, authUser, isLoaded, following, handleFollow, handleUnfollow, isMobile, refreshData, t, theme, showNotification } = useUser();
+  const { user, authUser, isLoaded, following, handleFollow, handleUnfollow, isMobile, refreshData, t, theme, completedWorkouts, showNotification } = useUser();
   const [feedWorkouts, setFeedWorkouts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -261,6 +263,65 @@ export default function Home() {
             </div>
           )}
         </div>
+
+        {authUser && completedWorkouts && completedWorkouts.length > 0 && (
+          <div style={{ marginBottom: "30px", padding: isMobile ? "0 10px" : "0" }}>
+            <h2 style={{ fontSize: "1.3rem", fontWeight: "bold", marginBottom: "15px", display: "flex", alignItems: "center", gap: "10px", color: isDark ? "#fff" : "#333" }}>
+              <span style={{ width: "3px", height: "20px", backgroundColor: "#1dd1a1", borderRadius: "2px" }}></span>
+              Mi Último Entrenamiento
+            </h2>
+
+            {(() => {
+              const lastWorkout = completedWorkouts[0];
+              const musclePercentages = lastWorkout ? getMuscleGroupsForWorkout(lastWorkout) : {};
+              const totalExercises = lastWorkout?.exerciseDetails?.length || 0;
+              const totalTime = lastWorkout?.totalTime || Math.floor((lastWorkout?.elapsedTime || 0) / 60);
+
+              return (
+                <div style={{
+                  backgroundColor: isDark ? "#1a1a1a" : "#fff",
+                  borderRadius: isMobile ? "0" : "12px",
+                  padding: "20px",
+                  border: isDark ? "1px solid #333" : "1px solid #eee",
+                  marginBottom: "20px"
+                }}>
+                  <div style={{ marginBottom: "15px" }}>
+                    <h3 style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#1dd1a1", marginBottom: "5px" }}>
+                      {lastWorkout?.name}
+                    </h3>
+                    <p style={{ fontSize: "0.85rem", color: isDark ? "#aaa" : "#666", margin: "0" }}>
+                      {new Date(lastWorkout?.completedAt).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    </p>
+                  </div>
+
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr",
+                    gap: "10px",
+                    marginBottom: "15px",
+                    paddingBottom: "15px",
+                    borderBottom: isDark ? "1px solid #333" : "1px solid #eee"
+                  }}>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#1dd1a1" }}>{totalExercises}</div>
+                      <div style={{ fontSize: "0.75rem", color: isDark ? "#888" : "#999", marginTop: "3px" }}>Ejercicios</div>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#FF6B6B" }}>{lastWorkout?.series}</div>
+                      <div style={{ fontSize: "0.75rem", color: isDark ? "#888" : "#999", marginTop: "3px" }}>Series</div>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#45B7D1" }}>{totalTime}m</div>
+                      <div style={{ fontSize: "0.75rem", color: isDark ? "#888" : "#999", marginTop: "3px" }}>Duración</div>
+                    </div>
+                  </div>
+
+                  <MuscleGroupChart percentages={musclePercentages} isDark={isDark} />
+                </div>
+              );
+            })()}
+          </div>
+        )}
 
         <h1 style={{ fontSize: "1.8rem", fontWeight: "bold", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px", padding: isMobile ? "0 15px" : "0" }}>
           <span style={{ width: "4px", height: "24px", backgroundColor: "#1dd1a1", borderRadius: "2px" }}></span>

@@ -49,6 +49,26 @@ export const FRONT_PATHS = {
   ]
 };
 
+export const FRONT_LINES = {
+  pecho_separation: "M50,37 L50,55",
+  pecho_curvas_izq: "M42,40 Q38,45,37,50 M45,38 Q40,42,40,48",
+  pecho_curvas_der: "M58,40 Q62,45,63,50 M55,38 Q60,42,60,48",
+  biceps_izq: "M25,54 L23,65 M27,56 L26,68",
+  biceps_der: "M75,54 L77,65 M73,56 L74,68",
+  antebrazo_lineas_izq: "M25,75 L24,85 M28,76 L27,90",
+  antebrazo_lineas_der: "M75,75 L76,85 M72,76 L73,90",
+  abdomen_lineas: "M50,65 L50,100",
+  abdomen_laterales_izq: "M42,65 L38,90",
+  abdomen_laterales_der: "M58,65 L62,90",
+  cuadriceps_izq_lineas: "M38,108 L36,135 M41,107 L40,140",
+  cuadriceps_centro_linea: "M50,105 L50,150",
+  cuadriceps_der_lineas: "M59,107 L60,140 M62,108 L64,135",
+  cuadriceps_curvas: "M41,125 Q45,130,50,132 Q55,130,59,125",
+  gemelo_izq_lineas: "M38,165 L36,185 M42,168 L41,188",
+  gemelo_der_lineas: "M58,168 L59,188 M62,165 L64,185",
+  gemelo_separation: "M50,165 L50,190"
+};
+
 export const BACK_PATHS = {
   Cabeza: [
     "M50,1c-5.5,0-10,4.5-10,10s4.5,10,10,10s10-4.5,10-10S55.5,1,50,1z"
@@ -90,4 +110,24 @@ export const BACK_PATHS = {
     "M39,178c-2,6-2,14,0,21c2,5,6,9,10,10c1-8,1-16,0-24C45,181,42,180,39,178z",
     "M61,178c2,6,2,14,0,21c-2,5-6,9-10,10c-1-8-1-16,0-24C55,181,58,180,61,178z"
   ]
+};
+
+export const BACK_LINES = {
+  espalda_central: "M50,45 L50,105",
+  trapecio_lineas_izq: "M40,30 L35,50 M45,35 L42,55",
+  trapecio_lineas_der: "M60,30 L65,50 M55,35 L58,55",
+  espalda_musculos_izq: "M38,50 Q32,60,35,75 M42,48 Q36,65,40,85",
+  espalda_musculos_der: "M62,50 Q68,60,65,75 M58,48 Q64,65,60,85",
+  dorsales_lineas: "M45,55 Q40,70,42,90 M55,55 Q60,70,58,90",
+  triceps_lineas_izq: "M28,60 L25,75 M32,62 L30,80",
+  triceps_lineas_der: "M72,60 L75,75 M68,62 L70,80",
+  gluteos_separation: "M50,94 L50,125",
+  gluteos_lineas_izq: "M42,98 L38,120 M46,100 L44,128",
+  gluteos_lineas_der: "M54,100 L56,128 M58,98 L62,120",
+  femoral_lineas_izq: "M38,128 L36,155 M42,130 L41,165",
+  femoral_lineas_der: "M58,130 L59,165 M62,128 L64,155",
+  femoral_separation: "M50,126 L50,170",
+  gemelo_lineas_izq: "M39,178 L37,200 M43,180 L42,205",
+  gemelo_lineas_der: "M57,180 L58,205 M61,178 L63,200",
+  gemelo_separation: "M50,178 L50,210"
 };

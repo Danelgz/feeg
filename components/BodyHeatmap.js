@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FRONT_PATHS, BACK_PATHS } from "../data/bodyPaths";
+import { FRONT_PATHS, BACK_PATHS, FRONT_LINES, BACK_LINES } from "../data/bodyPaths";
 
 export default function BodyHeatmap({
   counts = {},
@@ -28,6 +28,8 @@ export default function BodyHeatmap({
       default: return "#2fd6a2";
     }
   };
+
+  const lines = side === "front" ? FRONT_LINES : BACK_LINES;
 
   return (
     <div style={{ textAlign: "center", width: "100%" }}>
@@ -97,23 +99,19 @@ export default function BodyHeatmap({
             })
           )}
 
-          {/* Líneas grises para delinear músculos */}
-          {/* Separación vertical central */}
-          <line x1="50" y1="37" x2="50" y2="190" stroke="#888888" strokeWidth="0.6" opacity="0.4" />
-          
-          {/* Líneas horizontales para separar grupos musculares */}
-          <line x1="20" y1="37" x2="80" y2="37" stroke="#888888" strokeWidth="0.5" opacity="0.3" />
-          <line x1="18" y1="50" x2="82" y2="50" stroke="#888888" strokeWidth="0.5" opacity="0.3" />
-          <line x1="15" y1="105" x2="85" y2="105" stroke="#888888" strokeWidth="0.5" opacity="0.3" />
-          <line x1="20" y1="155" x2="80" y2="155" stroke="#888888" strokeWidth="0.5" opacity="0.3" />
-          
-          {/* Separaciones entre brazos y torso */}
-          <line x1="28" y1="35" x2="28" y2="100" stroke="#888888" strokeWidth="0.5" opacity="0.3" />
-          <line x1="72" y1="35" x2="72" y2="100" stroke="#888888" strokeWidth="0.5" opacity="0.3" />
-          
-          {/* Separaciones entre cuádriceps */}
-          <line x1="41" y1="105" x2="41" y2="155" stroke="#888888" strokeWidth="0.5" opacity="0.3" />
-          <line x1="59" y1="105" x2="59" y2="155" stroke="#888888" strokeWidth="0.5" opacity="0.3" />
+          {/* Líneas anatómicas detalladas */}
+          {Object.entries(lines).map(([key, pathData]) => (
+            <path
+              key={key}
+              d={pathData}
+              stroke={isDark ? "#888888" : "#666666"}
+              strokeWidth="0.7"
+              fill="none"
+              opacity="0.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          ))}
           
           {/* Cara mejorada */}
           {/* Ojos */}

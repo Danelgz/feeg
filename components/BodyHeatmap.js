@@ -67,11 +67,12 @@ export default function BodyHeatmap({
           viewBox="0 0 100 220"
           width="100%"
           style={{ 
-            maxWidth: 300, 
-            background: isDark ? "#111" : "#f9f9f9",
-            borderRadius: "20px",
-            padding: "20px",
-            border: `1px solid ${isDark ? "#333" : "#eee"}`
+            maxWidth: 320, 
+            background: isDark ? "#0a0a0a" : "#fafafa",
+            borderRadius: "16px",
+            padding: "25px",
+            border: `1px solid ${isDark ? "#2a2a2a" : "#e8e8e8"}`,
+            boxShadow: isDark ? "0 4px 12px rgba(0,0,0,0.4)" : "0 4px 12px rgba(0,0,0,0.08)"
           }}
         >
           {Object.entries(paths).map(([muscle, list]) =>
@@ -85,8 +86,10 @@ export default function BodyHeatmap({
                   key={muscle + i}
                   d={d}
                   fill={getColor(level)}
-                  stroke={isDark ? "#000" : "#fff"}
-                  strokeWidth="0.5"
+                  stroke={isDark ? "#fff" : "#000"}
+                  strokeWidth="1.2"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
                   onClick={() => onMuscleClick(muscle)}
                   style={{ cursor: "pointer", transition: "fill 0.3s ease" }}
                 />

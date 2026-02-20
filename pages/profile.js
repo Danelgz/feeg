@@ -26,7 +26,8 @@ export default function Profile() {
     deleteAllWorkouts,
     followers,
     following,
-    showNotification
+    showNotification,
+    saveRoutine
   } = useUser();
   const isDark = theme === 'dark';
   const [isEditing, setIsEditing] = useState(false);
@@ -43,6 +44,8 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [expandedWorkout, setExpandedWorkout] = useState(null);
   const [showInfoDropdown, setShowInfoDropdown] = useState(false);
+  const [addingToRoutine, setAddingToRoutine] = useState(null);
+  const [routineName, setRoutineName] = useState("");
 
   // Forzar refresco de datos al entrar al perfil
   useEffect(() => {
@@ -265,6 +268,31 @@ export default function Profile() {
     setConfirmDelete(null);
   };
 
+  const handleAddToRoutine = async (workout) => {
+    if (!routineName.trim()) {
+      showNotification("Por favor ingresa un nombre para la rutina", 'error');
+      return;
+    }
+
+    const exercisesForRoutine = workout.details || workout.exerciseDetails || [];
+    
+    if (exercisesForRoutine.length === 0) {
+      showNotification("Este entrenamiento no tiene ejercicios", 'error');
+      return;
+    }
+
+    const newRoutine = {
+      id: Date.now(),
+      name: routineName,
+      exercises: exercisesForRoutine
+    };
+
+    await saveRoutine(newRoutine);
+    showNotification(`Rutina "${routineName}" creada exitosamente`, 'success');
+    setAddingToRoutine(null);
+    setRoutineName("");
+  };
+
   const handleEditSave = async () => {
     if (saving) return;
     setSaving(true);
@@ -328,7 +356,7 @@ export default function Profile() {
           <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#1dd1a1" }}>{workout.name}</div>
           <div style={{ fontSize: "0.8rem", color: "#888" }}>{new Date(workout.completedAt).toLocaleString()}</div>
         </div>
-        <div style={{ display: "flex", gap: "8px" }}>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "flex-end" }}>
           <button 
             onClick={() => setExpandedWorkout(expandedWorkout === workout.id ? null : workout.id)} 
             style={{ 
@@ -344,6 +372,28 @@ export default function Profile() {
             }}
           >
             {expandedWorkout === workout.id ? "Ocultar" : "Detalles"}
+          </button>
+          <button 
+            onClick={() => setAddingToRoutine(workout.id)} 
+            style={{ 
+              backgroundColor: "rgba(46, 230, 197, 0.1)", 
+              border: "none", 
+              borderRadius: "8px",
+              padding: "6px 12px",
+              cursor: "pointer", 
+              color: "#2EE6C5", 
+              fontSize: "0.8rem",
+              fontWeight: "600",
+              transition: "all 0.2s ease"
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = "rgba(46, 230, 197, 0.2)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = "rgba(46, 230, 197, 0.1)";
+            }}
+          >
+            Añadir a Rutinas
           </button>
           <button 
             onClick={() => router.push(`/routines/${workout.routineId || 'edit'}?editWorkoutId=${workout.id}`)} 
@@ -962,6 +1012,64 @@ export default function Profile() {
                 style={{ flex: 1, padding: "12px", borderRadius: "8px", border: "none", backgroundColor: "#ff4757", color: "#fff", fontWeight: "bold" }}
               >
                 {t("delete_all")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add to Routine Modal */}
+      {addingToRoutine && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center",
+          justifyContent: "center", zIndex: 3500, padding: "20px"
+        }}>
+          <div style={{ backgroundColor: "#1a1a1a", padding: "25px", borderRadius: "15px", width: "100%", maxWidth: "400px", textAlign: "center", border: "1px solid #333" }}>
+            <h2 style={{ color: "#fff", marginBottom: "15px" }}>Crear Rutina desde Entrenamiento</h2>
+            <p style={{ color: "#888", marginBottom: "20px", fontSize: "0.9rem" }}>Ingresa un nombre para la nueva rutina</p>
+            <input 
+              type="text" 
+              placeholder="Nombre de la rutina" 
+              value={routineName}
+              onChange={(e) => setRoutineName(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  const workout = completedWorkouts.find(w => w.id === addingToRoutine);
+                  if (workout) handleAddToRoutine(workout);
+                }
+              }}
+              style={{ 
+                width: "100%", 
+                padding: "12px", 
+                borderRadius: "8px", 
+                border: "1px solid #333", 
+                backgroundColor: "#000", 
+                color: "#fff", 
+                marginBottom: "20px",
+                fontSize: "1rem",
+                boxSizing: "border-box"
+              }} 
+              autoFocus
+            />
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button 
+                onClick={() => {
+                  setAddingToRoutine(null);
+                  setRoutineName("");
+                }} 
+                style={{ flex: 1, padding: "12px", borderRadius: "8px", border: "1px solid #333", backgroundColor: "transparent", color: "#fff", cursor: "pointer" }}
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => {
+                  const workout = completedWorkouts.find(w => w.id === addingToRoutine);
+                  if (workout) handleAddToRoutine(workout);
+                }} 
+                style={{ flex: 1, padding: "12px", borderRadius: "8px", border: "none", backgroundColor: "#1dd1a1", color: "#000", fontWeight: "bold", cursor: "pointer" }}
+              >
+                Crear
               </button>
             </div>
           </div>

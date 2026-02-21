@@ -11,6 +11,7 @@ export default function ExerciseHistory() {
   const mint = '#2EE6C5';
   const mintSoft = 'rgba(46, 230, 197, 0.12)';
   const surface = isDark ? '#141414' : '#fff';
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   
   const exerciseName = router.query.exercise;
   const [selectedGraphPoint, setSelectedGraphPoint] = useState(null);
@@ -117,9 +118,9 @@ export default function ExerciseHistory() {
   const unit = info?.type === 'time' ? 'm' : info?.unit === 'lastre' ? 'L' : 'kg';
   const metrics = calculateMetrics();
 
-  const w = 380;
-  const h = 220;
-  const p = 40;
+  const w = isMobile ? 280 : 380;
+  const h = isMobile ? 160 : 220;
+  const p = isMobile ? 30 : 40;
 
   let graphContent;
   if (history.length < 2) {
@@ -226,15 +227,14 @@ export default function ExerciseHistory() {
 
         <div style={{
           backgroundColor: isDark ? '#0f0f0f' : '#f9f9f9',
-          border: `2px solid ${mint}`,
           borderRadius: '16px',
-          padding: '30px',
+          padding: isMobile ? '20px' : '30px',
           marginBottom: '30px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '30px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '15px' : '20px', marginBottom: '30px' }}>
             <div style={{
-              width: '70px',
-              height: '70px',
+              width: isMobile ? '50px' : '70px',
+              height: isMobile ? '50px' : '70px',
               borderRadius: '12px',
               backgroundColor: mint,
               display: 'flex',
@@ -250,7 +250,7 @@ export default function ExerciseHistory() {
               />
             </div>
             <div>
-              <h1 style={{ margin: 0, color: mint, fontSize: '2rem' }}>{t(exerciseName)}</h1>
+              <h1 style={{ margin: 0, color: mint, fontSize: isMobile ? '1.3rem' : '2rem' }}>{t(exerciseName)}</h1>
               <p style={{ margin: '8px 0 0 0', color: isDark ? '#aaa' : '#666', fontSize: '0.95rem' }}>
                 {info?.group ? t(info.group) : 'Ejercicio'}
               </p>
@@ -260,10 +260,9 @@ export default function ExerciseHistory() {
           {graphContent}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '30px' }}>
           <div style={{
             backgroundColor: isDark ? '#1a1a1a' : '#fff',
-            border: `1px solid ${mint}`,
             borderRadius: '12px',
             padding: '20px',
             textAlign: 'center'
@@ -271,14 +270,13 @@ export default function ExerciseHistory() {
             <p style={{ margin: '0 0 10px 0', color: '#888', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: '600' }}>
               1RM (Estimado)
             </p>
-            <h2 style={{ margin: 0, color: mint, fontSize: '2rem', fontWeight: 'bold' }}>
+            <h2 style={{ margin: 0, color: mint, fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold' }}>
               {metrics.oneRM > 0 ? metrics.oneRM.toFixed(1) : '-'} {unit}
             </h2>
           </div>
 
           <div style={{
             backgroundColor: isDark ? '#1a1a1a' : '#fff',
-            border: `1px solid ${mint}`,
             borderRadius: '12px',
             padding: '20px',
             textAlign: 'center'
@@ -286,7 +284,7 @@ export default function ExerciseHistory() {
             <p style={{ margin: '0 0 10px 0', color: '#888', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: '600' }}>
               Mayor Volumen (Serie)
             </p>
-            <h2 style={{ margin: 0, color: mint, fontSize: '2rem', fontWeight: 'bold' }}>
+            <h2 style={{ margin: 0, color: mint, fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold' }}>
               {metrics.maxSingleSetVolume > 0 ? metrics.maxSingleSetVolume.toFixed(1) : '-'}
             </h2>
             <p style={{ margin: '5px 0 0 0', color: '#666', fontSize: '0.75rem' }}>kg × reps</p>
@@ -294,7 +292,6 @@ export default function ExerciseHistory() {
 
           <div style={{
             backgroundColor: isDark ? '#1a1a1a' : '#fff',
-            border: `1px solid ${mint}`,
             borderRadius: '12px',
             padding: '20px',
             textAlign: 'center'
@@ -302,7 +299,7 @@ export default function ExerciseHistory() {
             <p style={{ margin: '0 0 10px 0', color: '#888', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: '600' }}>
               Volumen Total
             </p>
-            <h2 style={{ margin: 0, color: mint, fontSize: '2rem', fontWeight: 'bold' }}>
+            <h2 style={{ margin: 0, color: mint, fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold' }}>
               {metrics.totalVolume > 0 ? Math.round(metrics.totalVolume) : '-'}
             </h2>
             <p style={{ margin: '5px 0 0 0', color: '#666', fontSize: '0.75rem' }}>Todas las sesiones</p>
@@ -311,11 +308,10 @@ export default function ExerciseHistory() {
 
         <div style={{
           backgroundColor: isDark ? '#1a1a1a' : '#fff',
-          border: `1px solid ${mint}`,
           borderRadius: '12px',
           padding: '25px'
         }}>
-          <h3 style={{ margin: '0 0 20px 0', color: mint, fontSize: '1.3rem' }}>Mejores Marcas Personales</h3>
+          <h3 style={{ margin: '0 0 20px 0', color: mint, fontSize: isMobile ? '1.1rem' : '1.3rem' }}>Mejores Marcas Personales</h3>
           
           {Object.keys(metrics.personalRecordsByReps).length === 0 ? (
             <p style={{ color: '#888', textAlign: 'center', margin: '20px 0' }}>Sin datos de personal records</p>
@@ -342,51 +338,6 @@ export default function ExerciseHistory() {
                   <p style={{ margin: 0, color: mint, fontSize: '1.5rem', fontWeight: 'bold' }}>
                     {weight.toFixed(1)} {unit}
                   </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div style={{
-          backgroundColor: isDark ? '#1a1a1a' : '#fff',
-          border: `1px solid ${mint}`,
-          borderRadius: '12px',
-          padding: '25px',
-          marginTop: '30px'
-        }}>
-          <h3 style={{ margin: '0 0 20px 0', color: mint, fontSize: '1.3rem' }}>Historial Completo</h3>
-          
-          {history.length === 0 ? (
-            <p style={{ color: '#888', textAlign: 'center', margin: '20px 0' }}>Sin historial disponible</p>
-          ) : (
-            <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-              {history.map((session, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    backgroundColor: isDark ? '#0f0f0f' : '#f9f9f9',
-                    border: `1px solid ${isDark ? '#333' : '#eee'}`,
-                    borderRadius: '10px',
-                    padding: '15px',
-                    marginBottom: '10px'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <p style={{ margin: 0, color: mint, fontWeight: '600' }}>
-                      {new Date(session.date).toLocaleDateString('es-ES', { weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit' })}
-                    </p>
-                    <p style={{ margin: 0, color: '#888', fontSize: '0.85rem' }}>
-                      Peso máximo: <span style={{ color: mint, fontWeight: 'bold' }}>{session.weight.toFixed(1)} {unit}</span>
-                    </p>
-                  </div>
-                  <div style={{ fontSize: '0.85rem', color: '#666' }}>
-                    {session.series.map((s, i) => (
-                      <div key={i} style={{ margin: '4px 0' }}>
-                        Serie {i + 1}: {s.reps} reps × {s.weight} {unit}
-                      </div>
-                    ))}
-                  </div>
                 </div>
               ))}
             </div>

@@ -7,6 +7,7 @@ export default function ExerciseSelector({ onSelectExercise, onCancel }) {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [customExercises, setCustomExercises] = useState({});
+  const [searchQuery, setSearchQuery] = useState("");
   const { theme } = useUser();
   const isDark = theme === "dark";
 
@@ -90,8 +91,8 @@ export default function ExerciseSelector({ onSelectExercise, onCancel }) {
   const createButtonStyle = {
     padding: "15px",
     marginBottom: "20px",
-    backgroundColor: "#008CFF",
-    color: "#fff",
+    backgroundColor: "#1dd1a1",
+    color: "#000",
     border: "none",
     borderRadius: "8px",
     cursor: "pointer",
@@ -163,6 +164,18 @@ export default function ExerciseSelector({ onSelectExercise, onCancel }) {
     transition: "all 0.3s ease",
   };
 
+  const searchInputStyle = {
+    width: "100%",
+    padding: "12px",
+    marginBottom: "15px",
+    borderRadius: "8px",
+    border: `1px solid ${isDark ? "#444" : "#ddd"}`,
+    backgroundColor: isDark ? "#2a2a2a" : "#fff",
+    color: isDark ? "#fff" : "#333",
+    fontSize: "1rem",
+    boxSizing: "border-box",
+  };
+
   return (
     <>
       <div style={modalStyle} onClick={onCancel}>
@@ -180,7 +193,10 @@ export default function ExerciseSelector({ onSelectExercise, onCancel }) {
             <>
               <button
                 style={backButtonStyle}
-                onClick={() => setSelectedGroup(null)}
+                onClick={() => {
+                  setSelectedGroup(null);
+                  setSearchQuery("");
+                }}
                 onMouseOver={(e) =>
                   (e.target.style.backgroundColor = isDark ? "#555" : "#d0d0d0")
                 }
@@ -191,8 +207,20 @@ export default function ExerciseSelector({ onSelectExercise, onCancel }) {
                 ← Volver
               </button>
 
+              <input
+                type="text"
+                placeholder="Buscar ejercicio..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={searchInputStyle}
+              />
+
               <div style={exercisesContainerStyle}>
-                {exercisesList[selectedGroup]?.map((exercise, index) => (
+                {exercisesList[selectedGroup]
+                  ?.filter((exercise) =>
+                    exercise.name.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+                  .map((exercise, index) => (
                   <div
                     key={`predefined-${index}`}
                     style={exerciseItemStyle}
@@ -219,7 +247,11 @@ export default function ExerciseSelector({ onSelectExercise, onCancel }) {
                   </div>
                 ))}
                 
-                {customExercises[selectedGroup]?.map((exercise, index) => (
+                {customExercises[selectedGroup]
+                  ?.filter((exercise) =>
+                    exercise.name.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+                  .map((exercise, index) => (
                   <div
                     key={`custom-${index}`}
                     style={{
@@ -257,10 +289,10 @@ export default function ExerciseSelector({ onSelectExercise, onCancel }) {
               <button
                 style={createButtonStyle}
                 onClick={() => setShowCreateModal(true)}
-                onMouseOver={(e) => (e.target.style.backgroundColor = "#0067cc")}
-                onMouseOut={(e) => (e.target.style.backgroundColor = "#008CFF")}
+                onMouseOver={(e) => (e.target.style.backgroundColor = "#16a085")}
+                onMouseOut={(e) => (e.target.style.backgroundColor = "#1dd1a1")}
               >
-                ➕ Crear ejercicio personalizado
+                Crear ejercicio personalizado
               </button>
 
               <div style={groupsContainerStyle}>

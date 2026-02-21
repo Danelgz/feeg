@@ -634,7 +634,7 @@ export default function EmptyRoutine() {
   }
 
   return (
-    <Layout>
+    <Layout hideBottomNav={workoutState === "ongoing"}>
       <div style={{ padding: 0, maxWidth: "900px", margin: "0 auto", backgroundColor: "#000", minHeight: "100vh", color: "#fff" }}>
         {/* Header */}
         <div style={{ padding: "15px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, backgroundColor: "#000", zIndex: 1002 }}>

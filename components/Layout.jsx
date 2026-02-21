@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 
-export default function Layout({ children }) {
+export default function Layout({ children, hideBottomNav = false }) {
   const { theme, isMobile, activeRoutine, endRoutine, notification, t } = useUser();
   const isDark = theme === 'dark';
   const [isMounted, setIsMounted] = useState(false);
@@ -269,7 +269,7 @@ export default function Layout({ children }) {
               </main>
 
               {/* Navegación Inferior para Móvil */}
-              {currentIsMobile && <BottomNavigation />}
+              {currentIsMobile && !hideBottomNav && <BottomNavigation />}
 
               {/* Pestaña de Rutina Activa */}
               {activeRoutine && router.asPath !== (activeRoutine?.id ? `/routines/${activeRoutine.id}` : activeRoutine.path) && (

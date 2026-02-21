@@ -2264,7 +2264,7 @@ export default function RoutineDetail() {
 
   return (
     <>
-      <Layout>
+      <Layout hideBottomNav={workoutState === "ongoing"}>
         {content}
       </Layout>
       <FloatingTimerUI />

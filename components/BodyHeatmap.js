@@ -31,6 +31,8 @@ export default function BodyHeatmap({
     }
   };
 
+  const hasData = Object.keys(paths).length > 0;
+
   return (
     <div style={{ textAlign: "center", width: "100%" }}>
       <div style={{ marginBottom: 15, display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
@@ -85,37 +87,54 @@ export default function BodyHeatmap({
       </div>
 
       <div style={{ display: "flex", justifyContent: "center" }}>
-        <svg
-          viewBox="0 0 100 220"
-          width="100%"
-          style={{ 
-            maxWidth: 300, 
-            background: isDark ? "#111" : "#f9f9f9",
-            borderRadius: "20px",
-            padding: "20px",
-            border: `1px solid ${isDark ? "#333" : "#eee"}`
-          }}
-        >
-          {Object.entries(paths).map(([muscle, list]) =>
-            list.map((d, i) => {
-              const level =
-                manualLevels[muscle] ??
-                getIntensity(counts[muscle] || 0);
+        {!hasData ? (
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 300,
+              background: isDark ? "#111" : "#f9f9f9",
+              borderRadius: "20px",
+              padding: "40px 20px",
+              border: `1px solid ${isDark ? "#333" : "#eee"}`,
+              color: isDark ? "#aaa" : "#666",
+              fontSize: "0.9rem"
+            }}
+          >
+            Cuerpo en construcción...
+          </div>
+        ) : (
+          <svg
+            viewBox="0 0 100 220"
+            width="100%"
+            style={{ 
+              maxWidth: 300, 
+              background: isDark ? "#111" : "#f9f9f9",
+              borderRadius: "20px",
+              padding: "20px",
+              border: `1px solid ${isDark ? "#333" : "#eee"}`
+            }}
+          >
+            {Object.entries(paths).map(([muscle, list]) =>
+              list.map((d, i) => {
+                const level =
+                  manualLevels[muscle] ??
+                  getIntensity(counts[muscle] || 0);
 
-              return (
-                <path
-                  key={muscle + i}
-                  d={d}
-                  fill={getColor(level)}
-                  stroke={isDark ? "#000" : "#fff"}
-                  strokeWidth="0.5"
-                  onClick={() => onMuscleClick(muscle)}
-                  style={{ cursor: "pointer", transition: "fill 0.3s ease" }}
-                />
-              );
-            })
-          )}
-        </svg>
+                return (
+                  <path
+                    key={muscle + i}
+                    d={d}
+                    fill={getColor(level)}
+                    stroke={isDark ? "#000" : "#fff"}
+                    strokeWidth="0.5"
+                    onClick={() => onMuscleClick(muscle)}
+                    style={{ cursor: "pointer", transition: "fill 0.3s ease" }}
+                  />
+                );
+              })
+            )}
+          </svg>
+        )}
       </div>
     </div>
   );

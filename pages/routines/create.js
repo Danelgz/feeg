@@ -195,6 +195,72 @@ export default function CreateRoutine() {
     return { value: iVal, label };
   });
 
+  if (showDeleteExerciseConfirm !== null) {
+    return (
+      <Layout>
+        <div style={{
+          padding: "20px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "calc(100vh - 100px)"
+        }}>
+          <div style={{
+            backgroundColor: "#1a1a1a",
+            borderRadius: "12px",
+            padding: "40px",
+            width: "320px",
+            textAlign: "center",
+            border: "1px solid #333",
+            maxWidth: "100%",
+            boxSizing: "border-box"
+          }}>
+            <h3 style={{ color: "#fff", margin: "0 0 15px 0", fontSize: "1.2rem" }}>¿Eliminar ejercicio?</h3>
+            <p style={{ color: "#aaa", fontSize: "0.9rem", marginBottom: "25px" }}>
+              Esta acción no se puede deshacer.
+            </p>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button
+                onClick={() => setShowDeleteExerciseConfirm(null)}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  backgroundColor: "#333",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: "600"
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  const newExercises = exercises.filter((_, i) => i !== showDeleteExerciseConfirm);
+                  setExercises(newExercises);
+                  setShowDeleteExerciseConfirm(null);
+                }}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  backgroundColor: "#ff4d4d",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: "600"
+                }}
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div style={{ 
@@ -378,64 +444,6 @@ export default function CreateRoutine() {
                   )}
                 </div>
               </div>
-
-              {/* Confirmación de eliminación de ejercicio */}
-              {showDeleteExerciseConfirm === exIdx && (
-                <div style={{
-                  position: "fixed",
-                  top: 0, left: 0, right: 0, bottom: 0,
-                  backgroundColor: "rgba(0,0,0,0.8)",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  zIndex: 2100
-                }}>
-                  <div style={{
-                    backgroundColor: "#1a1a1a",
-                    borderRadius: "12px",
-                    padding: "25px",
-                    width: "300px",
-                    textAlign: "center",
-                    border: "1px solid #333"
-                  }}>
-                    <h3 style={{ color: "#fff", margin: "0 0 15px 0" }}>¿Eliminar ejercicio?</h3>
-                    <div style={{ display: "flex", gap: "10px" }}>
-                      <button
-                        onClick={() => setShowDeleteExerciseConfirm(null)}
-                        style={{
-                          flex: 1,
-                          padding: "10px",
-                          backgroundColor: "#333",
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: "8px",
-                          cursor: "pointer"
-                        }}
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        onClick={() => {
-                          const newExercises = exercises.filter((_, i) => i !== exIdx);
-                          setExercises(newExercises);
-                          setShowDeleteExerciseConfirm(null);
-                        }}
-                        style={{
-                          flex: 1,
-                          padding: "10px",
-                          backgroundColor: "#ff4d4d",
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: "8px",
-                          cursor: "pointer"
-                        }}
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Temporizador de Descanso */}
               <div style={{ 

@@ -406,6 +406,115 @@ export default function EmptyRoutine() {
     setTimeout(() => router.push('/routines?tab=completed'), 1500);
   };
 
+  if (showDiscardConfirm) {
+    return (
+      <Layout>
+        <div style={{
+          padding: "20px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "calc(100vh - 100px)"
+        }}>
+          <div style={{
+            backgroundColor: "#1a1a1a",
+            borderRadius: "15px",
+            padding: "40px",
+            width: "320px",
+            textAlign: "center",
+            border: "2px solid #ff4d4d",
+            maxWidth: "100%",
+            boxSizing: "border-box"
+          }}>
+            <h3 style={{ color: "#fff", margin: "0 0 15px 0", fontSize: "1.2rem" }}>¿Cancelar entrenamiento?</h3>
+            <p style={{ color: "#aaa", fontSize: "0.95rem", marginBottom: "25px", lineHeight: "1.4" }}>
+              Se perderán todos los datos registrados en esta sesión.
+            </p>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button 
+                onClick={() => setShowDiscardConfirm(false)} 
+                style={{ flex: 1, padding: "12px", backgroundColor: "#333", color: "#fff", border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}
+              >
+                No, continuar
+              </button>
+              <button 
+                onClick={handleDiscardWorkout} 
+                style={{ flex: 1, padding: "12px", backgroundColor: "#ff4d4d", color: "#fff", border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}
+              >
+                Sí, cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (showDeleteExerciseConfirm !== null) {
+    return (
+      <Layout>
+        <div style={{
+          padding: "20px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "calc(100vh - 100px)"
+        }}>
+          <div style={{
+            backgroundColor: "#1a1a1a",
+            borderRadius: "12px",
+            padding: "40px",
+            width: "320px",
+            textAlign: "center",
+            border: "1px solid #333",
+            maxWidth: "100%",
+            boxSizing: "border-box"
+          }}>
+            <h3 style={{ color: "#fff", margin: "0 0 15px 0", fontSize: "1.2rem" }}>¿Eliminar ejercicio?</h3>
+            <p style={{ color: "#aaa", fontSize: "0.9rem", marginBottom: "25px" }}>
+              Esta acción no se puede deshacer.
+            </p>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button
+                onClick={() => setShowDeleteExerciseConfirm(null)}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  backgroundColor: "#333",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: "600"
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  handleDeleteExercise(showDeleteExerciseConfirm);
+                  setShowDeleteExerciseConfirm(null);
+                }}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  backgroundColor: "#ff4d4d",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: "600"
+                }}
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   if (workoutState === "preview") {
     return (
       <Layout>

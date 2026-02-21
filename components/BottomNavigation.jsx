@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useUser } from "../context/UserContext";
+import { useState } from "react";
 
 export default function BottomNavigation() {
   const { theme, t } = useUser();
   const router = useRouter();
   const isDark = theme === 'dark';
+  const [showMenu, setShowMenu] = useState(false);
 
   const navItems = [
     { 
@@ -37,6 +39,17 @@ export default function BottomNavigation() {
           <circle cx="12" cy="7" r="4"></circle>
         </svg>
       )
+    },
+    { 
+      name: t("menu"), 
+      action: true,
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      )
     }
   ];
 
@@ -56,6 +69,56 @@ export default function BottomNavigation() {
       boxShadow: isDark ? "0 -2px 10px rgba(0,0,0,0.3)" : "0 -2px 10px rgba(0,0,0,0.1)"
     }}>
       {navItems.map(item => {
+        if (item.action) {
+          return (
+            <button
+              key={item.name}
+              onClick={() => setShowMenu(!showMenu)}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                textDecoration: "none",
+                color: showMenu ? "#1dd1a1" : (isDark ? "#999" : "#666"),
+                transition: "all 0.2s ease",
+                padding: "5px 10px",
+                borderRadius: "8px",
+                minWidth: "60px",
+                border: "none",
+                background: "transparent",
+                cursor: "pointer"
+              }}
+              onMouseOver={(e) => {
+                if (!showMenu) {
+                  e.currentTarget.style.color = "#1dd1a1";
+                  e.currentTarget.style.backgroundColor = isDark ? "#2a2a2a" : "#f5f5f5";
+                }
+              }}
+              onMouseOut={(e) => {
+                if (!showMenu) {
+                  e.currentTarget.style.color = isDark ? "#999" : "#666";
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }
+              }}
+            >
+              <span style={{
+                fontSize: "1.5rem",
+                marginBottom: "2px",
+                display: "block"
+              }}>
+                {item.icon}
+              </span>
+              <span style={{
+                fontSize: "0.75rem",
+                fontWeight: showMenu ? "bold" : "normal",
+                textAlign: "center"
+              }}>
+                {item.name}
+              </span>
+            </button>
+          );
+        }
+        
         const isActive = router.pathname === item.href;
         return (
           <Link

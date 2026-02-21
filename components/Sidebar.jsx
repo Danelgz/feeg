@@ -1,57 +1,11 @@
 import Link from "next/link";
 import { useUser } from "../context/UserContext";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function Sidebar() {
   const { theme, t, isMobile } = useUser();
   const isDark = theme === 'dark';
   const [isOpen, setIsOpen] = useState(false);
-  const [touchStartY, setTouchStartY] = useState(null);
-  const [swipeCount, setSwipeCount] = useState(0);
-  const [lastSwipeTime, setLastSwipeTime] = useState(0);
-
-  useEffect(() => {
-    if (!isMobile) return;
-
-    const handleTouchStart = (e) => {
-      const touch = e.touches[0];
-      if (touch.clientY < 60) {
-        setTouchStartY(touch.clientY);
-      }
-    };
-
-    const handleTouchEnd = (e) => {
-      if (touchStartY === null) return;
-      
-      const touch = e.changedTouches[0];
-      const deltaY = touchStartY - touch.clientY;
-      const now = Date.now();
-      
-      if (deltaY > 40 && touch.clientY < 60) {
-        if (now - lastSwipeTime < 800) {
-          setSwipeCount(prev => prev + 1);
-          
-          if (swipeCount + 1 >= 2) {
-            setIsOpen(true);
-            setSwipeCount(0);
-          }
-        } else {
-          setSwipeCount(1);
-        }
-        setLastSwipeTime(now);
-      }
-      
-      setTouchStartY(null);
-    };
-
-    document.addEventListener('touchstart', handleTouchStart);
-    document.addEventListener('touchend', handleTouchEnd);
-
-    return () => {
-      document.removeEventListener('touchstart', handleTouchStart);
-      document.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [isMobile, touchStartY, swipeCount, lastSwipeTime]);
 
   const links = [
     { name: t("feed"), href: "/", icon: "" },
@@ -68,6 +22,34 @@ export default function Sidebar() {
   if (isMobile) {
     return (
       <>
+        {/* Botón Hamburguesa */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          style={{
+            position: "fixed",
+            top: "15px",
+            left: "15px",
+            zIndex: 2000,
+            width: "45px",
+            height: "45px",
+            borderRadius: "50%",
+            backgroundColor: "#1dd1a1",
+            border: "none",
+            cursor: "pointer",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: "5px",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
+            padding: "0"
+          }}
+        >
+          <div style={{ width: "20px", height: "2px", backgroundColor: "#000", transition: "0.3s", transform: isOpen ? "rotate(45deg) translate(5px, 5px)" : "none" }} />
+          <div style={{ width: "20px", height: "2px", backgroundColor: "#000", transition: "0.3s", opacity: isOpen ? 0 : 1 }} />
+          <div style={{ width: "20px", height: "2px", backgroundColor: "#000", transition: "0.3s", transform: isOpen ? "rotate(-45deg) translate(5px, -5px)" : "none" }} />
+        </button>
+
         {/* Menú Desplegable */}
         <div style={{
           position: "fixed",

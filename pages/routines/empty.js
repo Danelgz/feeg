@@ -175,6 +175,12 @@ export default function EmptyRoutine() {
     return () => clearInterval(interval);
   }, [restTimerActive, restCountdown]);
 
+  useEffect(() => {
+    if (showDeleteExerciseConfirm !== null || showDiscardConfirm || showFinishConfirmation) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [showDeleteExerciseConfirm, showDiscardConfirm, showFinishConfirmation]);
+
   const formatRestTime = (seconds) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;

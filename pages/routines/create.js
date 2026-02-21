@@ -57,11 +57,7 @@ export default function CreateRoutine() {
     }
   }, [editWorkout, completedWorkouts]);
 
-  useEffect(() => {
-    if (showDeleteExerciseConfirm !== null || showTypeSelector !== null) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [showDeleteExerciseConfirm, showTypeSelector]);
+
 
   const [showSelector, setShowSelector] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState("");

@@ -396,11 +396,7 @@ export default function RoutineDetail() {
     return () => clearInterval(interval);
   }, [countdownActive, countdown]);
 
-  useEffect(() => {
-    if (showDeleteExerciseConfirm !== null || showDiscardConfirm || showFinishConfirmation) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [showDeleteExerciseConfirm, showDiscardConfirm, showFinishConfirmation]);
+
 
   const formatElapsedTime = (seconds) => {
     const d = Math.floor(seconds / (3600 * 24));

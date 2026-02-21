@@ -299,7 +299,43 @@ function DistributionChartSection({ isDark, seriesByGroup, t }) {
 }
 
 function WeeklyBodyMapSection({ isDark, workouts, t }) {
-  const days = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+  const groupMap = {
+    Pecho: ['Pecho', 'Chest'],
+    Espalda: ['Espalda', 'Back'],
+    Hombros: ['Hombros', 'Shoulders'],
+    Bíceps: ['Bíceps', 'Biceps'],
+    Tríceps: ['Tríceps', 'Triceps'],
+    Cuádriceps: ['Cuádriceps', 'Quads'],
+    Femoral: ['Femoral', 'Hamstrings'],
+    Glúteos: ['Glúteos', 'Glutes'],
+    Gemelos: ['Gemelos', 'Calves'],
+    Abdomen: ['Abdomen', 'Abs', 'Core'],
+    Antebrazos: ['Antebrazos', 'Forearms'],
+    Oblicuos: ['Oblicuos', 'Obliques'],
+    Trapecio: ['Trapecio', 'Trapezius'],
+    Cuello: ['Cuello', 'Neck'],
+    Cabeza: ['Cabeza', 'Head']
+  };
+
+  const muscleSeriesCount = {};
+  Object.keys(groupMap).forEach(g => muscleSeriesCount[g] = 0);
+  
+  workouts.forEach(w => {
+    if (Array.isArray(w.details)) {
+      w.details.forEach(d => {
+        const grp = d.muscleGroup || d.group || d.category;
+        const found = Object.keys(groupMap).find(key => groupMap[key].includes(grp));
+        if (found) muscleSeriesCount[found] += Number(d.series || 0);
+      });
+    }
+    if (!Array.isArray(w.details) && w.seriesByGroup) {
+      Object.entries(w.seriesByGroup).forEach(([k,v]) => {
+        const found = Object.keys(groupMap).find(key => groupMap[key].includes(k) || key === k);
+        if (found) muscleSeriesCount[found] += Number(v||0);
+      });
+    }
+  });
+
   return (
     <section style={{
       backgroundColor: isDark ? '#1a1a1a' : '#fff',
@@ -307,13 +343,9 @@ function WeeklyBodyMapSection({ isDark, workouts, t }) {
       borderRadius: '10px',
       padding: '16px'
     }}>
-      <h2 style={{ margin: 0, marginBottom: '12px', color: isDark ? '#fff' : '#333', fontSize: '1.1rem' }}>Distribución de músculos (cuerpo) — semanal</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
-        {days.map((d) => (
-          <div key={d} style={{ background: isDark ? '#0f0f0f' : '#f5f5f5', border: isDark ? '1px solid #2a2a2a' : '1px solid #eee', borderRadius: 8, padding: 8, textAlign: 'center', color: isDark ? '#aaa' : '#666' }}>
-            {d}
-          </div>
-        ))}
+      <h2 style={{ margin: 0, marginBottom: '12px', color: isDark ? '#fff' : '#333', fontSize: '1.1rem' }}>Distribución de músculos (cuerpo)</h2>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <BodyHeatmap counts={muscleSeriesCount} isDark={isDark} />
       </div>
     </section>
   );

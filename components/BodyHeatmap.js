@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FRONT_PATHS, BACK_PATHS, FRONT_LINES, BACK_LINES } from "../data/bodyPaths";
+import { bodyTypes } from "../data/bodyPaths";
 
 export default function BodyHeatmap({
   counts = {},
@@ -8,8 +8,10 @@ export default function BodyHeatmap({
   isDark = false
 }) {
   const [side, setSide] = useState("front");
+  const [selectedBodyType, setSelectedBodyType] = useState("man1");
 
-  const paths = side === "front" ? FRONT_PATHS : BACK_PATHS;
+  const currentBodyType = bodyTypes[selectedBodyType];
+  const paths = side === "front" ? currentBodyType.front : currentBodyType.back;
 
   const getIntensity = (value) => {
     if (value >= 10) return 4;
@@ -29,11 +31,9 @@ export default function BodyHeatmap({
     }
   };
 
-  const lines = side === "front" ? FRONT_LINES : BACK_LINES;
-
   return (
     <div style={{ textAlign: "center", width: "100%" }}>
-      <div style={{ marginBottom: 15, display: "flex", justifyContent: "center", gap: 10 }}>
+      <div style={{ marginBottom: 15, display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
         <button 
           onClick={() => setSide("front")}
           style={{
@@ -64,17 +64,36 @@ export default function BodyHeatmap({
         </button>
       </div>
 
+      <div style={{ marginBottom: 15, display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
+        {Object.entries(bodyTypes).map(([key, value]) => (
+          <button
+            key={key}
+            onClick={() => setSelectedBodyType(key)}
+            style={{
+              padding: "8px 16px",
+              backgroundColor: selectedBodyType === key ? "#008CFF" : (isDark ? "#333" : "#ddd"),
+              color: selectedBodyType === key ? "#fff" : (isDark ? "#fff" : "#000"),
+              border: "none",
+              borderRadius: "20px",
+              cursor: "pointer",
+              fontWeight: "bold"
+            }}
+          >
+            {value.label}
+          </button>
+        ))}
+      </div>
+
       <div style={{ display: "flex", justifyContent: "center" }}>
         <svg
           viewBox="0 0 100 220"
           width="100%"
           style={{ 
-            maxWidth: 320, 
-            background: isDark ? "#0a0a0a" : "#fafafa",
-            borderRadius: "16px",
-            padding: "25px",
-            border: `1px solid ${isDark ? "#2a2a2a" : "#e8e8e8"}`,
-            boxShadow: isDark ? "0 4px 12px rgba(0,0,0,0.4)" : "0 4px 12px rgba(0,0,0,0.08)"
+            maxWidth: 300, 
+            background: isDark ? "#111" : "#f9f9f9",
+            borderRadius: "20px",
+            padding: "20px",
+            border: `1px solid ${isDark ? "#333" : "#eee"}`
           }}
         >
           {Object.entries(paths).map(([muscle, list]) =>
@@ -88,47 +107,14 @@ export default function BodyHeatmap({
                   key={muscle + i}
                   d={d}
                   fill={getColor(level)}
-                  stroke={isDark ? "#fff" : "#000"}
-                  strokeWidth="1.2"
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
+                  stroke={isDark ? "#000" : "#fff"}
+                  strokeWidth="0.5"
                   onClick={() => onMuscleClick(muscle)}
                   style={{ cursor: "pointer", transition: "fill 0.3s ease" }}
                 />
               );
             })
           )}
-
-          {/* Líneas anatómicas detalladas */}
-          {Object.entries(lines).map(([key, pathData]) => (
-            <path
-              key={key}
-              d={pathData}
-              stroke={isDark ? "#888888" : "#666666"}
-              strokeWidth="0.7"
-              fill="none"
-              opacity="0.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          ))}
-          
-          {/* Cara mejorada */}
-          {/* Ojos */}
-          <circle cx="44" cy="7" r="1.5" fill="#333333" />
-          <circle cx="56" cy="7" r="1.5" fill="#333333" />
-          
-          {/* Cejas */}
-          <line x1="42" y1="5" x2="46" y2="4.5" stroke="#555555" strokeWidth="0.8" />
-          <line x1="54" y1="4.5" x2="58" y2="5" stroke="#555555" strokeWidth="0.8" />
-          
-          {/* Nariz */}
-          <line x1="50" y1="7" x2="50" y2="11" stroke="#666666" strokeWidth="0.7" />
-          <circle cx="48.5" cy="11" r="0.6" fill="#888888" />
-          <circle cx="51.5" cy="11" r="0.6" fill="#888888" />
-          
-          {/* Boca */}
-          <path d="M 45 14 Q 50 15 55 14" stroke="#777777" strokeWidth="0.8" fill="none" strokeLinecap="round" />
         </svg>
       </div>
     </div>

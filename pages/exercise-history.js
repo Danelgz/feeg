@@ -207,6 +207,24 @@ export default function ExerciseHistory() {
   return (
     <Layout>
       <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px' }}>
+        <button
+          onClick={() => router.back()}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: mint,
+            fontSize: '1rem',
+            cursor: 'pointer',
+            fontWeight: '600',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px'
+          }}
+        >
+          ← Volver
+        </button>
+
         <div style={{
           backgroundColor: isDark ? '#0f0f0f' : '#f9f9f9',
           borderRadius: '16px',

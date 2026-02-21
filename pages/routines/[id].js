@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useUser } from "../../context/UserContext";
 import { exercisesList } from "../../data/exercises";
+import ExerciseSelector from "../../components/ExerciseSelector";
 
 export default function RoutineDetail() {
   const router = useRouter();
@@ -24,12 +25,10 @@ export default function RoutineDetail() {
   const [restTime, setRestTime] = useState(null);
   const [editingRestTime, setEditingRestTime] = useState(false);
   const [tempRestTime, setTempRestTime] = useState("");
-  const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
+  const [showExerciseSelector, setShowExerciseSelector] = useState(false);
   const [activeExerciseMenu, setActiveExerciseMenu] = useState(null); // exIdx
   const [showDeleteExerciseConfirm, setShowDeleteExerciseConfirm] = useState(null); // exIdx
   const [substitutingExerciseIdx, setSubstitutingExerciseIdx] = useState(null);
-  const [selectedGroup, setSelectedGroup] = useState(null);
-  const [exercisesData, setExercisesData] = useState(null);
   const [showFullSummary, setShowFullSummary] = useState(false);
   const [countdown, setCountdown] = useState(null);
   const [countdownActive, setCountdownActive] = useState(false);
@@ -563,8 +562,7 @@ export default function RoutineDetail() {
   };
 
   const handleAddExercise = () => {
-    setExercisesData(exercisesList);
-    setShowAddExerciseModal(true);
+    setShowExerciseSelector(true);
   };
 
   const handleSelectExercise = (exercise) => {
@@ -596,8 +594,7 @@ export default function RoutineDetail() {
     setCurrentWeight({ ...currentWeight, [newKey]: 0 });
     
     // Close modal and reset substitution state
-    setShowAddExerciseModal(false);
-    setSelectedGroup(null);
+    setShowExerciseSelector(false);
     setSubstitutingExerciseIdx(null);
   };
 
@@ -1881,181 +1878,12 @@ export default function RoutineDetail() {
           </div>
 
 
-          {/* Modal para agregar ejercicio (Mantenemos la lógica existente) */}
-          {showAddExerciseModal && exercisesData && (
-            <div
-              style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: "rgba(0, 0, 0, 0.7)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 1000
-              }}
-              onClick={() => {
-                setShowAddExerciseModal(false);
-                setSelectedGroup(null);
-              }}
-            >
-              <div
-                style={{
-                  backgroundColor: isDark ? "#1a1a1a" : "#fff",
-                  border: `2px solid ${isDark ? "#1dd1a1" : "#eee"}`,
-                  borderRadius: "12px",
-                  padding: "30px",
-                  maxWidth: "500px",
-                  maxHeight: "80vh",
-                  overflowY: "auto",
-                  width: "90%",
-                  boxShadow: isDark ? "0 4px 20px rgba(0,0,0,0.5)" : "0 4px 20px rgba(0,0,0,0.1)"
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <h2 style={{ marginTop: 0, color: isDark ? "#1dd1a1" : "#333", marginBottom: "20px" }}>
-                  {selectedGroup ? `${t('exercises')} - ${t(selectedGroup)}` : t('select_muscle_group')}
-                </h2>
-
-                {!selectedGroup ? (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
-                    {Object.keys(exercisesData).map((group) => (
-                      <button
-                        key={group}
-                        onClick={() => setSelectedGroup(group)}
-                        style={{
-                          padding: "15px",
-                          backgroundColor: isDark ? "#2a2a2a" : "#f1f1f1",
-                          color: isDark ? mint : "#333",
-                          border: `1px solid ${isDark ? "#333" : "#ddd"}`,
-                          borderRadius: "12px",
-                          cursor: "pointer",
-                          fontSize: "0.95rem",
-                          fontWeight: "600",
-                          transition: "all 0.3s ease",
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          gap: "10px"
-                        }}
-                      >
-                        <div style={{
-                          width: "60px",
-                          height: "60px",
-                          borderRadius: "50%",
-                          backgroundColor: "#fff",
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          overflow: "hidden"
-                        }}>
-                          <img 
-                            src={`/muscle_groups/${(group || "").toLowerCase().replace(/ /g, "_")}.png`} 
-                            onError={(e) => { e.target.src = "/logo3.png"; }}
-                            alt="" 
-                            style={{ width: "80%", height: "auto" }} 
-                          />
-                        </div>
-                        {t(group) || group}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div>
-                    <input 
-                      type="text"
-                      placeholder="Buscar ejercicio..."
-                      value={exerciseSearchQuery}
-                      onChange={(e) => setExerciseSearchQuery(e.target.value)}
-                      style={{
-                        width: "100%",
-                        padding: "12px",
-                        backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
-                        border: `1px solid ${isDark ? "#333" : "#ddd"}`,
-                        borderRadius: "8px",
-                        color: isDark ? "#fff" : "#333",
-                        marginBottom: "15px",
-                        fontSize: "1rem",
-                        boxSizing: "border-box"
-                      }}
-                    />
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "15px" }}>
-                      {exercisesData[selectedGroup]
-                        ?.filter(ex => t(ex.name).toLowerCase().includes(exerciseSearchQuery.toLowerCase()))
-                        .map((exercise, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => {
-                            handleSelectExercise(exercise);
-                            setExerciseSearchQuery("");
-                          }}
-                          style={{
-                            padding: "12px",
-                            backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
-                            color: isDark ? "#1dd1a1" : "#333",
-                            border: `1px solid ${isDark ? "#333" : "#eee"}`,
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                            fontSize: "0.95rem",
-                            fontWeight: "600",
-                            transition: "all 0.3s ease",
-                            textAlign: "left"
-                          }}
-                        >
-                          {t(exercise.name)}
-                        </button>
-                      ))}
-                      {exercisesData[selectedGroup]?.filter(ex => t(ex.name).toLowerCase().includes(exerciseSearchQuery.toLowerCase())).length === 0 && (
-                        <p style={{ textAlign: "center", color: "#666", padding: "10px" }}>No se encontraron ejercicios</p>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => {
-                        setSelectedGroup(null);
-                        setExerciseSearchQuery("");
-                      }}
-                      style={{
-                        width: "100%",
-                        padding: "10px",
-                        backgroundColor: isDark ? "#444" : "#ddd",
-                        color: isDark ? "#fff" : "#333",
-                        border: "none",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        fontSize: "0.95rem",
-                        fontWeight: "600"
-                      }}
-                    >
-                      {t('back')}
-                    </button>
-                  </div>
-                )}
-
-                <button
-                  onClick={() => {
-                    setShowAddExerciseModal(false);
-                    setSelectedGroup(null);
-                    setExerciseSearchQuery("");
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: "10px",
-                    marginTop: "15px",
-                    backgroundColor: "#ff4d4d",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    fontSize: "0.95rem",
-                    fontWeight: "600"
-                  }}
-                >
-                  {t('close')}
-                </button>
-              </div>
-            </div>
+          {/* Exercise Selector Modal */}
+          {showExerciseSelector && (
+            <ExerciseSelector
+              onSelectExercise={handleSelectExercise}
+              onCancel={() => setShowExerciseSelector(false)}
+            />
           )}
 
           {showHistoryModal && (() => {

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useUser } from "../../context/UserContext";
 import { exercisesList } from "../../data/exercises";
+import ExerciseSelector from "../../components/ExerciseSelector";
 
 export default function EmptyRoutine() {
   const router = useRouter();
@@ -20,13 +21,10 @@ export default function EmptyRoutine() {
   const [seriesTypes, setSeriesTypes] = useState({});
   const [currentReps, setCurrentReps] = useState({});
   const [currentWeight, setCurrentWeight] = useState({});
-  const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
+  const [showExerciseSelector, setShowExerciseSelector] = useState(false);
   const [activeExerciseMenu, setActiveExerciseMenu] = useState(null);
   const [showDeleteExerciseConfirm, setShowDeleteExerciseConfirm] = useState(null);
   const [substitutingExerciseIdx, setSubstitutingExerciseIdx] = useState(null);
-  const [selectedGroup, setSelectedGroup] = useState(null);
-  const [exercisesData, setExercisesData] = useState(null);
-  const [exerciseSearchQuery, setExerciseSearchQuery] = useState("");
   const [openTimePickerId, setOpenTimePickerId] = useState(null);
   const [showTypeSelector, setShowTypeSelector] = useState(null);
   const [showFinishConfirmation, setShowFinishConfirmation] = useState(false);
@@ -291,8 +289,7 @@ export default function EmptyRoutine() {
   };
 
   const handleAddExercise = () => {
-    setExercisesData(exercisesList);
-    setShowAddExerciseModal(true);
+    setShowExerciseSelector(true);
   };
 
   const handleSelectExercise = (exercise) => {
@@ -321,8 +318,7 @@ export default function EmptyRoutine() {
     setCurrentReps({ ...currentReps, [newKey]: 10 });
     setCurrentWeight({ ...currentWeight, [newKey]: 0 });
     
-    setShowAddExerciseModal(false);
-    setSelectedGroup(null);
+    setShowExerciseSelector(false);
     setSubstitutingExerciseIdx(null);
   };
 
@@ -626,34 +622,12 @@ export default function EmptyRoutine() {
           <button onClick={handleAddExercise} style={{ width: "100%", padding: "15px", backgroundColor: "#1a1a1a", color: mint, border: `1px dashed ${mint}`, borderRadius: "10px", fontWeight: "600" }}>+ Agregar Ejercicio</button>
         </div>
 
-        {/* Modal Ejercicios */}
-        {showAddExerciseModal && exercisesData && (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 2000 }}>
-            <div style={{ backgroundColor: "#1a1a1a", borderRadius: "12px", padding: "25px", width: "90%", maxWidth: "500px", maxHeight: "80vh", overflowY: "auto" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                <h3 style={{ color: mint, margin: 0 }}>{selectedGroup ? t(selectedGroup) : "Elegir grupo muscular"}</h3>
-                <button onClick={() => { setShowAddExerciseModal(false); setSelectedGroup(null); }} style={{ background: "none", border: "none", color: "#fff", fontSize: "1.5rem" }}>×</button>
-              </div>
-
-              {!selectedGroup ? (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                  {Object.keys(exercisesData).map(group => (
-                    <button key={group} onClick={() => setSelectedGroup(group)} style={{ padding: "15px", background: "#2a2a2a", border: "none", borderRadius: "10px", color: "#fff", fontWeight: "bold" }}>{t(group)}</button>
-                  ))}
-                </div>
-              ) : (
-                <>
-                  <input type="text" placeholder="Buscar ejercicio..." value={exerciseSearchQuery} onChange={(e) => setExerciseSearchQuery(e.target.value)} style={{ width: "100%", padding: "10px", background: "#000", border: "1px solid #333", borderRadius: "8px", color: "#fff", marginBottom: "15px" }} />
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                    {exercisesData[selectedGroup].filter(ex => ex.name.toLowerCase().includes(exerciseSearchQuery.toLowerCase())).map(ex => (
-                      <button key={ex.name} onClick={() => handleSelectExercise(ex)} style={{ padding: "12px", background: "#2a2a2a", border: "none", borderRadius: "8px", color: "#fff", textAlign: "left" }}>{t(ex.name)}</button>
-                    ))}
-                    <button onClick={() => setSelectedGroup(null)} style={{ padding: "10px", color: mint, background: "none", border: "none", marginTop: "10px" }}>← Volver</button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
+        {/* Exercise Selector Modal */}
+        {showExerciseSelector && (
+          <ExerciseSelector
+            onSelectExercise={handleSelectExercise}
+            onCancel={() => setShowExerciseSelector(false)}
+          />
         )}
 
       </div>

@@ -1318,12 +1318,10 @@ export default function RoutineDetail() {
 
   if (showExerciseSelector && workoutState === "ongoing") {
     return (
-      <Layout>
-        <ExerciseSelector
-          onSelectExercise={handleSelectExercise}
-          onCancel={() => setShowExerciseSelector(false)}
-        />
-      </Layout>
+      <ExerciseSelector
+        onSelectExercise={handleSelectExercise}
+        onCancel={() => setShowExerciseSelector(false)}
+      />
     );
   }
 

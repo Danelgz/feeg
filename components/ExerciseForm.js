@@ -91,6 +91,26 @@ export default function ExerciseForm({ addExercise }) {
 
   const exerciseTypeInfo = selectedExercise || exerciseInfo;
 
+  if (showExerciseSelector || showCreateModal) {
+    return (
+      <>
+        {showExerciseSelector && (
+          <ExerciseSelector
+            onSelectExercise={handleSelectFromModal}
+            onCancel={() => setShowExerciseSelector(false)}
+          />
+        )}
+
+        {showCreateModal && (
+          <CreateCustomExerciseModal
+            onSave={handleCreateCustomExercise}
+            onCancel={() => setShowCreateModal(false)}
+          />
+        )}
+      </>
+    );
+  }
+
   return (
     <>
       <div style={{ marginBottom: "20px" }}>
@@ -212,20 +232,6 @@ export default function ExerciseForm({ addExercise }) {
             {t("add_exercise_btn")}
           </button>
         </form>
-      )}
-
-      {showExerciseSelector && (
-        <ExerciseSelector
-          onSelectExercise={handleSelectFromModal}
-          onCancel={() => setShowExerciseSelector(false)}
-        />
-      )}
-
-      {showCreateModal && (
-        <CreateCustomExerciseModal
-          onSave={handleCreateCustomExercise}
-          onCancel={() => setShowCreateModal(false)}
-        />
       )}
     </>
   );

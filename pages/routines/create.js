@@ -220,6 +220,15 @@ export default function CreateRoutine() {
     return { value: iVal, label };
   });
 
+  if (showExerciseSelector) {
+    return (
+      <ExerciseSelector
+        onSelectExercise={handleSelectExercise}
+        onCancel={() => setShowExerciseSelector(false)}
+      />
+    );
+  }
+
   if (showDeleteExerciseConfirm !== null) {
     return (
       <Layout>
@@ -282,17 +291,6 @@ export default function CreateRoutine() {
             </div>
           </div>
         </div>
-      </Layout>
-    );
-  }
-
-  if (showExerciseSelector) {
-    return (
-      <Layout>
-        <ExerciseSelector
-          onSelectExercise={handleSelectExercise}
-          onCancel={() => setShowExerciseSelector(false)}
-        />
       </Layout>
     );
   }

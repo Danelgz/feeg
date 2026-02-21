@@ -624,12 +624,10 @@ export default function EmptyRoutine() {
 
   if (showExerciseSelector) {
     return (
-      <Layout>
-        <ExerciseSelector
-          onSelectExercise={handleSelectExercise}
-          onCancel={() => setShowExerciseSelector(false)}
-        />
-      </Layout>
+      <ExerciseSelector
+        onSelectExercise={handleSelectExercise}
+        onCancel={() => setShowExerciseSelector(false)}
+      />
     );
   }
 

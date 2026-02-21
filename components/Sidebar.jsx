@@ -1,11 +1,9 @@
 import Link from "next/link";
 import { useUser } from "../context/UserContext";
-import { useState } from "react";
 
 export default function Sidebar() {
-  const { theme, t, isMobile } = useUser();
+  const { theme, t, isMobile, isMenuOpen, setIsMenuOpen } = useUser();
   const isDark = theme === 'dark';
-  const [isOpen, setIsOpen] = useState(false);
 
   const links = [
     { name: t("feed"), href: "/", icon: "" },
@@ -22,34 +20,6 @@ export default function Sidebar() {
   if (isMobile) {
     return (
       <>
-        {/* Botón Hamburguesa */}
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          style={{
-            position: "fixed",
-            top: "15px",
-            left: "15px",
-            zIndex: 2000,
-            width: "45px",
-            height: "45px",
-            borderRadius: "50%",
-            backgroundColor: "#1dd1a1",
-            border: "none",
-            cursor: "pointer",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: "5px",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.2)",
-            padding: "0"
-          }}
-        >
-          <div style={{ width: "20px", height: "2px", backgroundColor: "#000", transition: "0.3s", transform: isOpen ? "rotate(45deg) translate(5px, 5px)" : "none" }} />
-          <div style={{ width: "20px", height: "2px", backgroundColor: "#000", transition: "0.3s", opacity: isOpen ? 0 : 1 }} />
-          <div style={{ width: "20px", height: "2px", backgroundColor: "#000", transition: "0.3s", transform: isOpen ? "rotate(-45deg) translate(5px, -5px)" : "none" }} />
-        </button>
-
         {/* Menú Desplegable */}
         <div style={{
           position: "fixed",
@@ -61,11 +31,11 @@ export default function Sidebar() {
           zIndex: 1500,
           display: "flex",
           flexDirection: "column",
-          padding: "80px 40px", // Espacio para el botón de cerrar y margen lateral
+          padding: "80px 40px",
           transition: "all 0.3s ease-in-out",
-          opacity: isOpen ? 1 : 0,
-          visibility: isOpen ? "visible" : "hidden",
-          transform: isOpen ? "translateY(0)" : "translateY(-100%)"
+          opacity: isMenuOpen ? 1 : 0,
+          visibility: isMenuOpen ? "visible" : "hidden",
+          transform: isMenuOpen ? "translateY(0)" : "translateY(-100%)"
         }}>
           {/* Enlaces arriba a la izquierda */}
           <div style={{
@@ -79,7 +49,7 @@ export default function Sidebar() {
               <Link 
                 key={link.name} 
                 href={link.href} 
-                onClick={() => setIsOpen(false)}
+                onClick={() => setIsMenuOpen(false)}
                 style={{
                   display: "flex",
                   alignItems: "center",

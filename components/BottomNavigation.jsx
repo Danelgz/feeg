@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import { useUser } from "../context/UserContext";
 
 export default function BottomNavigation() {
-  const { theme, t } = useUser();
+  const { theme, t, isMenuOpen, setIsMenuOpen } = useUser();
   const router = useRouter();
   const isDark = theme === 'dark';
 

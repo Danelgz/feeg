@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "../context/UserContext";
 import { exercisesList } from "../data/exercises";
 import CreateCustomExerciseModal from "./CreateCustomExerciseModal";
@@ -6,10 +6,29 @@ import CreateCustomExerciseModal from "./CreateCustomExerciseModal";
 export default function ExerciseSelector({ onSelectExercise, onCancel }) {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [customExercises, setCustomExercises] = useState({});
   const { theme } = useUser();
   const isDark = theme === "dark";
 
+  useEffect(() => {
+    const saved = localStorage.getItem('customExercises');
+    if (saved) {
+      try {
+        setCustomExercises(JSON.parse(saved));
+      } catch (e) {
+        console.error('Error loading custom exercises', e);
+      }
+    }
+  }, []);
+
   const handleCreateCustomExercise = (customExercise) => {
+    const group = customExercise.muscleGroup;
+    const updated = {
+      ...customExercises,
+      [group]: [...(customExercises[group] || []), customExercise]
+    };
+    setCustomExercises(updated);
+    localStorage.setItem('customExercises', JSON.stringify(updated));
     onSelectExercise(customExercise);
     setShowCreateModal(false);
   };
@@ -172,19 +191,10 @@ export default function ExerciseSelector({ onSelectExercise, onCancel }) {
                 ← Volver
               </button>
 
-              <button
-                style={createButtonStyle}
-                onClick={() => setShowCreateModal(true)}
-                onMouseOver={(e) => (e.target.style.backgroundColor = "#0067cc")}
-                onMouseOut={(e) => (e.target.style.backgroundColor = "#008CFF")}
-              >
-                ➕ Crear ejercicio personalizado
-              </button>
-
               <div style={exercisesContainerStyle}>
                 {exercisesList[selectedGroup]?.map((exercise, index) => (
                   <div
-                    key={index}
+                    key={`predefined-${index}`}
                     style={exerciseItemStyle}
                     onClick={() => handleSelectExercise(exercise)}
                     onMouseOver={(e) => {
@@ -203,6 +213,38 @@ export default function ExerciseSelector({ onSelectExercise, onCancel }) {
                         {exercise.type === "reps" && "Solo Reps"}
                         {exercise.type === "time" && "Tiempo"}
                         {exercise.unit === "lastre" && " (con lastre)"}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: "1.2rem" }}>→</span>
+                  </div>
+                ))}
+                
+                {customExercises[selectedGroup]?.map((exercise, index) => (
+                  <div
+                    key={`custom-${index}`}
+                    style={{
+                      ...exerciseItemStyle,
+                      borderLeft: `4px solid #008CFF`,
+                      backgroundColor: isDark ? "#1a2a2a" : "#f0f8ff"
+                    }}
+                    onClick={() => handleSelectExercise(exercise)}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = isDark ? "#1a3a3a" : "#e6f2ff";
+                      e.currentTarget.style.transform = "translateX(5px)";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = isDark ? "#1a2a2a" : "#f0f8ff";
+                      e.currentTarget.style.transform = "translateX(0)";
+                    }}
+                  >
+                    <div>
+                      <div style={exerciseNameStyle}>{exercise.name}</div>
+                      <div style={exerciseTypeStyle}>
+                        {exercise.type === "weight_reps" && "Peso + Reps"}
+                        {exercise.type === "reps" && "Solo Reps"}
+                        {exercise.type === "time" && "Tiempo"}
+                        {exercise.type === "weight_bodyweight" && "Peso corporal + lastre"}
+                        <span style={{ marginLeft: "8px", fontStyle: "italic" }}>✓ Personalizado</span>
                       </div>
                     </div>
                     <span style={{ fontSize: "1.2rem" }}>→</span>

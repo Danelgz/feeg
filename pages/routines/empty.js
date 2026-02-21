@@ -202,7 +202,7 @@ export default function EmptyRoutine() {
     return (
       <div style={{ 
         position: "fixed", 
-        bottom: isMobile ? "90px" : "30px", 
+        bottom: "30px", 
         left: "50%", 
         transform: "translateX(-50%)", 
         backgroundColor: restTimerActive ? mint : "#1a1a1a", 
@@ -634,7 +634,7 @@ export default function EmptyRoutine() {
   }
 
   return (
-    <Layout hideBottomNav={workoutState === "ongoing"}>
+    <Layout hideBottomNav={workoutState === "ongoing" || showExerciseSelector}>
       <div style={{ padding: 0, maxWidth: "900px", margin: "0 auto", backgroundColor: "#000", minHeight: "100vh", color: "#fff" }}>
         {/* Header */}
         <div style={{ padding: "15px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, backgroundColor: "#000", zIndex: 1002 }}>

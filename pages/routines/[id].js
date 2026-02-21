@@ -512,7 +512,7 @@ export default function RoutineDetail() {
     return (
       <div style={{ 
         position: "fixed", 
-        bottom: isMobile ? "90px" : "30px", 
+        bottom: "30px", 
         left: "50%", 
         transform: "translateX(-50%)", 
         backgroundColor: restTimerActive ? mint : "#1a1a1a", 
@@ -2264,7 +2264,7 @@ export default function RoutineDetail() {
 
   return (
     <>
-      <Layout hideBottomNav={workoutState === "ongoing"}>
+      <Layout hideBottomNav={workoutState === "ongoing" || showExerciseSelector}>
         {content}
       </Layout>
       <FloatingTimerUI />

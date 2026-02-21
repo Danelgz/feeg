@@ -1316,6 +1316,17 @@ export default function RoutineDetail() {
     );
   }
 
+  if (showExerciseSelector && workoutState === "ongoing") {
+    return (
+      <Layout>
+        <ExerciseSelector
+          onSelectExercise={handleSelectExercise}
+          onCancel={() => setShowExerciseSelector(false)}
+        />
+      </Layout>
+    );
+  }
+
   else if (workoutState === "ongoing") {
     // Calcular estadísticas en tiempo real
     const totalCompletedSeries = Object.keys(seriesCompleted).filter(key => seriesCompleted[key]).length;

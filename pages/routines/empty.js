@@ -297,6 +297,7 @@ export default function EmptyRoutine() {
   const handleSelectExercise = (exercise) => {
     const newExercise = {
       name: exercise.name,
+      type: exercise.type || "weight_reps",
       rest: 60,
       series: [{ reps: 10, weight: 0 }]
     };
@@ -620,6 +621,17 @@ export default function EmptyRoutine() {
     if (!seriesCompleted[key]) return sum;
     return sum + (parseFloat(currentWeight[key] || 0) * parseInt(currentReps[key] || 0));
   }, 0);
+
+  if (showExerciseSelector) {
+    return (
+      <Layout>
+        <ExerciseSelector
+          onSelectExercise={handleSelectExercise}
+          onCancel={() => setShowExerciseSelector(false)}
+        />
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

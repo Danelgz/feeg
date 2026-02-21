@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import Layout from "../../components/Layout";
 import { exercisesList } from "../../data/exercises";
 import { useUser } from "../../context/UserContext";
+import ExerciseSelector from "../../components/ExerciseSelector";
 
 export default function CreateRoutine() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function CreateRoutine() {
   const [substitutingExerciseIdx, setSubstitutingExerciseIdx] = useState(null);
   const [showTypeSelector, setShowTypeSelector] = useState(null); // { exIdx, serieIdx }
   const [exerciseSearchQuery, setExerciseSearchQuery] = useState("");
+  const [showExerciseSelector, setShowExerciseSelector] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -151,6 +153,29 @@ export default function CreateRoutine() {
     setExercises(newExercises);
   };
 
+  const handleSelectExercise = (exercise) => {
+    const newExercise = {
+      name: exercise.name,
+      type: exercise.type || "weight_reps",
+      rest: 60,
+      series: [{ reps: 10, weight: 0 }]
+    };
+    
+    let updatedExercises;
+
+    if (substitutingExerciseIdx !== null) {
+      updatedExercises = [...exercises];
+      updatedExercises[substitutingExerciseIdx] = newExercise;
+    } else {
+      updatedExercises = [...exercises, newExercise];
+    }
+
+    setExercises(updatedExercises);
+    
+    setShowExerciseSelector(false);
+    setSubstitutingExerciseIdx(null);
+  };
+
   const addExercise = (exercise) => {
     const newExercise = {
       name: exercise.name,
@@ -257,6 +282,17 @@ export default function CreateRoutine() {
             </div>
           </div>
         </div>
+      </Layout>
+    );
+  }
+
+  if (showExerciseSelector) {
+    return (
+      <Layout>
+        <ExerciseSelector
+          onSelectExercise={handleSelectExercise}
+          onCancel={() => setShowExerciseSelector(false)}
+        />
       </Layout>
     );
   }

@@ -84,6 +84,7 @@ export default function CreateCustomExerciseModal({ onSave, onCancel }) {
     fontWeight: "bold",
     marginBottom: "20px",
     color: isDark ? "#fff" : "#333",
+    fontFamily: "Arial",
   };
 
   const labelStyle = {
@@ -92,6 +93,7 @@ export default function CreateCustomExerciseModal({ onSave, onCancel }) {
     fontWeight: "600",
     color: isDark ? "#fff" : "#333",
     fontSize: "0.95rem",
+    fontFamily: "Arial",
   };
 
   const inputStyle = {
@@ -104,6 +106,7 @@ export default function CreateCustomExerciseModal({ onSave, onCancel }) {
     color: isDark ? "#fff" : "#333",
     fontSize: "1rem",
     boxSizing: "border-box",
+    fontFamily: "Arial",
   };
 
   const selectStyle = {
@@ -126,6 +129,7 @@ export default function CreateCustomExerciseModal({ onSave, onCancel }) {
     cursor: "pointer",
     transition: "all 0.3s ease",
     textAlign: "center",
+    fontFamily: "Arial",
   });
 
   const typeTextStyle = {
@@ -133,11 +137,13 @@ export default function CreateCustomExerciseModal({ onSave, onCancel }) {
     fontSize: "0.9rem",
     marginBottom: "5px",
     color: isDark ? "#fff" : "#333",
+    fontFamily: "Arial",
   };
 
   const typeDescStyle = {
     fontSize: "0.75rem",
     color: isDark ? "#999" : "#666",
+    fontFamily: "Arial",
   };
 
   const buttonContainerStyle = {
@@ -157,6 +163,7 @@ export default function CreateCustomExerciseModal({ onSave, onCancel }) {
     transition: "all 0.3s ease",
     backgroundColor: isCancel ? (isDark ? "#444" : "#e0e0e0") : "#1dd1a1",
     color: isCancel ? (isDark ? "#fff" : "#333") : "#000",
+    fontFamily: "Arial",
   });
 
   return (

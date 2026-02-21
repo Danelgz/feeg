@@ -64,6 +64,7 @@ export default function ExerciseSelector({ onSelectExercise, onCancel }) {
     fontSize: "1.3rem",
     fontWeight: "bold",
     color: isDark ? "#fff" : "#333",
+    fontFamily: "Arial",
   };
 
   const contentStyle = {
@@ -100,6 +101,7 @@ export default function ExerciseSelector({ onSelectExercise, onCancel }) {
     fontSize: "1rem",
     transition: "all 0.3s ease",
     width: "100%",
+    fontFamily: "Arial",
   };
 
   const groupsContainerStyle = {
@@ -120,6 +122,7 @@ export default function ExerciseSelector({ onSelectExercise, onCancel }) {
     transition: "all 0.3s ease",
     color: isSelected ? "#000" : isDark ? "#fff" : "#333",
     textAlign: "center",
+    fontFamily: "Arial",
   });
 
   const exercisesContainerStyle = {
@@ -143,12 +146,14 @@ export default function ExerciseSelector({ onSelectExercise, onCancel }) {
   const exerciseNameStyle = {
     color: isDark ? "#fff" : "#333",
     fontWeight: "500",
+    fontFamily: "Arial",
   };
 
   const exerciseTypeStyle = {
     fontSize: "0.8rem",
     color: isDark ? "#999" : "#666",
     marginTop: "5px",
+    fontFamily: "Arial",
   };
 
   const backButtonStyle = {
@@ -162,6 +167,7 @@ export default function ExerciseSelector({ onSelectExercise, onCancel }) {
     fontWeight: "600",
     fontSize: "0.95rem",
     transition: "all 0.3s ease",
+    fontFamily: "Arial",
   };
 
   const searchInputStyle = {
@@ -174,6 +180,7 @@ export default function ExerciseSelector({ onSelectExercise, onCancel }) {
     color: isDark ? "#fff" : "#333",
     fontSize: "1rem",
     boxSizing: "border-box",
+    fontFamily: "Arial",
   };
 
   return (

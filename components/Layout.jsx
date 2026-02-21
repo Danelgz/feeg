@@ -272,7 +272,7 @@ export default function Layout({ children, hideBottomNav = false }) {
               {currentIsMobile && !hideBottomNav && <BottomNavigation />}
 
               {/* Pestaña de Rutina Activa */}
-              {activeRoutine && router.asPath !== (activeRoutine?.id ? `/routines/${activeRoutine.id}` : activeRoutine.path) && (
+              {activeRoutine && router.asPath !== (activeRoutine?.id ? `/routines/${activeRoutine.id}` : activeRoutine.path) && !router.pathname.startsWith('/exercise-history') && (
                 <div style={{
                   position: "fixed",
                   bottom: currentIsMobile ? "80px" : "20px",

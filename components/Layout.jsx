@@ -11,7 +11,6 @@ export default function Layout({ children, hideBottomNav = false }) {
   const [isMounted, setIsMounted] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
   const [isIntroExiting, setIsIntroExiting] = useState(false);
-  const [isPageTransitioning, setIsPageTransitioning] = useState(false);
   const router = useRouter();
 
   // Usar useEffect para evitar problemas de SSR con sessionStorage

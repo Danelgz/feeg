@@ -185,13 +185,14 @@ export default function BottomNavigation() {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: isDark ? "rgba(15, 15, 15, 0.95)" : "rgba(0, 0, 0, 0.5)",
+          backgroundColor: isDark ? "rgba(15, 15, 15, 0.98)" : "rgba(255, 255, 255, 0.98)",
           zIndex: 999,
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
-          padding: "40px 20px"
+          padding: "40px 20px",
+          backdropFilter: "blur(5px)"
         }}>
           <button
             onClick={() => setShowMenu(false)}
@@ -211,55 +212,105 @@ export default function BottomNavigation() {
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
-              zIndex: 1001
+              zIndex: 1001,
+              transition: "all 0.2s ease",
+              boxShadow: "0 4px 12px rgba(29, 209, 161, 0.3)"
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = "scale(1.1)";
+              e.currentTarget.style.boxShadow = "0 6px 16px rgba(29, 209, 161, 0.5)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = "scale(1)";
+              e.currentTarget.style.boxShadow = "0 4px 12px rgba(29, 209, 161, 0.3)";
             }}
           >
             ×
           </button>
 
           <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(2, 1fr)",
-            gap: "15px",
-            maxWidth: "400px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "30px",
+            maxWidth: "450px",
             width: "100%"
           }}>
-            {allCategories.map(category => (
-              <Link
-                key={category.name}
-                href={category.href}
-                onClick={() => setShowMenu(false)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "20px",
-                  backgroundColor: isDark ? "#2a2a2a" : "#ffffff",
-                  color: isDark ? "#fff" : "#333",
-                  textDecoration: "none",
-                  borderRadius: "10px",
-                  border: "2px solid #1dd1a1",
-                  fontWeight: "600",
-                  fontSize: "0.95rem",
-                  transition: "all 0.2s ease",
-                  cursor: "pointer",
-                  textAlign: "center",
-                  minHeight: "80px"
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = "#1dd1a1";
-                  e.currentTarget.style.color = "#000";
-                  e.currentTarget.style.transform = "scale(1.05)";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = isDark ? "#2a2a2a" : "#ffffff";
-                  e.currentTarget.style.color = isDark ? "#fff" : "#333";
-                  e.currentTarget.style.transform = "scale(1)";
-                }}
-              >
-                {category.name}
-              </Link>
-            ))}
+            <div style={{
+              textAlign: "center"
+            }}>
+              <img 
+                src={isDark ? "/logo.png" : "/logo2.png"} 
+                alt="FEEG Logo" 
+                style={{ 
+                  width: "120px", 
+                  height: "auto",
+                  marginBottom: "15px"
+                }} 
+              />
+              <h2 style={{
+                color: isDark ? "#fff" : "#333",
+                fontSize: "1.5rem",
+                fontWeight: "700",
+                margin: "0",
+                letterSpacing: "1px"
+              }}>
+                {t("menu")}
+              </h2>
+            </div>
+
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, 1fr)",
+              gap: "15px",
+              width: "100%"
+            }}>
+              {allCategories.map(category => (
+                <Link
+                  key={category.name}
+                  href={category.href}
+                  onClick={() => setShowMenu(false)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "20px 15px",
+                    backgroundColor: isDark ? "#2a2a2a" : "#ffffff",
+                    color: isDark ? "#fff" : "#333",
+                    textDecoration: "none",
+                    borderRadius: "12px",
+                    border: "2px solid #1dd1a1",
+                    fontWeight: "600",
+                    fontSize: "0.9rem",
+                    transition: "all 0.3s ease",
+                    cursor: "pointer",
+                    textAlign: "center",
+                    minHeight: "80px",
+                    boxShadow: isDark 
+                      ? "0 4px 12px rgba(0, 0, 0, 0.2)" 
+                      : "0 4px 12px rgba(0, 0, 0, 0.1)"
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = "#1dd1a1";
+                    e.currentTarget.style.color = "#000";
+                    e.currentTarget.style.transform = "translateY(-5px)";
+                    e.currentTarget.style.boxShadow = "0 8px 20px rgba(29, 209, 161, 0.4)";
+                    e.currentTarget.style.fontWeight = "700";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = isDark ? "#2a2a2a" : "#ffffff";
+                    e.currentTarget.style.color = isDark ? "#fff" : "#333";
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = isDark 
+                      ? "0 4px 12px rgba(0, 0, 0, 0.2)" 
+                      : "0 4px 12px rgba(0, 0, 0, 0.1)";
+                    e.currentTarget.style.fontWeight = "600";
+                  }}
+                >
+                  {category.name}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       )}

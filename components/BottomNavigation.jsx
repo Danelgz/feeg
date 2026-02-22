@@ -189,17 +189,17 @@ export default function BottomNavigation() {
           zIndex: 999,
           display: "flex",
           flexDirection: "column",
-          justifyContent: "center",
           alignItems: "center",
-          padding: "40px 20px",
-          backdropFilter: "blur(5px)"
+          padding: "20px",
+          backdropFilter: "blur(5px)",
+          overflow: "hidden"
         }}>
           <button
             onClick={() => setShowMenu(false)}
             style={{
-              position: "absolute",
+              position: "sticky",
               top: "20px",
-              right: "20px",
+              right: 0,
               width: "40px",
               height: "40px",
               backgroundColor: "#1dd1a1",
@@ -214,7 +214,9 @@ export default function BottomNavigation() {
               alignItems: "center",
               zIndex: 1001,
               transition: "all 0.2s ease",
-              boxShadow: "0 4px 12px rgba(29, 209, 161, 0.3)"
+              boxShadow: "0 4px 12px rgba(29, 209, 161, 0.3)",
+              alignSelf: "flex-end",
+              marginBottom: "10px"
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.transform = "scale(1.1)";
@@ -232,18 +234,18 @@ export default function BottomNavigation() {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            gap: "30px",
-            maxWidth: "450px",
-            width: "100%"
+            width: "100%",
+            maxWidth: "400px"
           }}>
             <div style={{
-              textAlign: "center"
+              textAlign: "center",
+              marginBottom: "30px"
             }}>
               <img 
                 src={isDark ? "/logo.png" : "/logo2.png"} 
                 alt="FEEG Logo" 
                 style={{ 
-                  width: "120px", 
+                  width: "100px", 
                   height: "auto",
                   marginBottom: "15px"
                 }} 
@@ -260,10 +262,13 @@ export default function BottomNavigation() {
             </div>
 
             <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, 1fr)",
-              gap: "15px",
-              width: "100%"
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+              width: "100%",
+              maxHeight: "calc(100vh - 250px)",
+              overflowY: "auto",
+              paddingRight: "8px"
             }}>
               {allCategories.map(category => (
                 <Link
@@ -273,37 +278,35 @@ export default function BottomNavigation() {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    padding: "20px 15px",
+                    justifyContent: "flex-start",
+                    padding: "16px 20px",
                     backgroundColor: isDark ? "#2a2a2a" : "#ffffff",
                     color: isDark ? "#fff" : "#333",
                     textDecoration: "none",
-                    borderRadius: "12px",
+                    borderRadius: "10px",
                     border: "2px solid #1dd1a1",
                     fontWeight: "600",
-                    fontSize: "0.9rem",
+                    fontSize: "1rem",
                     transition: "all 0.3s ease",
                     cursor: "pointer",
-                    textAlign: "center",
-                    minHeight: "80px",
                     boxShadow: isDark 
-                      ? "0 4px 12px rgba(0, 0, 0, 0.2)" 
-                      : "0 4px 12px rgba(0, 0, 0, 0.1)"
+                      ? "0 2px 8px rgba(0, 0, 0, 0.2)" 
+                      : "0 2px 8px rgba(0, 0, 0, 0.1)"
                   }}
                   onMouseOver={(e) => {
                     e.currentTarget.style.backgroundColor = "#1dd1a1";
                     e.currentTarget.style.color = "#000";
-                    e.currentTarget.style.transform = "translateY(-5px)";
-                    e.currentTarget.style.boxShadow = "0 8px 20px rgba(29, 209, 161, 0.4)";
+                    e.currentTarget.style.transform = "translateX(8px)";
+                    e.currentTarget.style.boxShadow = "0 4px 16px rgba(29, 209, 161, 0.4)";
                     e.currentTarget.style.fontWeight = "700";
                   }}
                   onMouseOut={(e) => {
                     e.currentTarget.style.backgroundColor = isDark ? "#2a2a2a" : "#ffffff";
                     e.currentTarget.style.color = isDark ? "#fff" : "#333";
-                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.transform = "translateX(0)";
                     e.currentTarget.style.boxShadow = isDark 
-                      ? "0 4px 12px rgba(0, 0, 0, 0.2)" 
-                      : "0 4px 12px rgba(0, 0, 0, 0.1)";
+                      ? "0 2px 8px rgba(0, 0, 0, 0.2)" 
+                      : "0 2px 8px rgba(0, 0, 0, 0.1)";
                     e.currentTarget.style.fontWeight = "600";
                   }}
                 >

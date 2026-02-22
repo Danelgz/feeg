@@ -31,7 +31,6 @@ export function UserProvider({ children }) {
   const [followers, setFollowers] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
   const [notification, setNotification] = useState(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Función para mostrar notificaciones personalizadas
   const showNotification = (message, type = 'info', duration = 4000) => {
@@ -501,8 +500,6 @@ export function UserProvider({ children }) {
       handleUnfollow,
       notification,
       showNotification,
-      isMenuOpen,
-      setIsMenuOpen,
       t
     }}>
       {children}

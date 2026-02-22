@@ -1,38 +1,25 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useUser } from "../context/UserContext";
+import { useState } from "react";
 
 export default function BottomNavigation() {
-  const { theme, t, isMenuOpen, setIsMenuOpen } = useUser();
+  const { theme, t } = useUser();
   const router = useRouter();
   const isDark = theme === 'dark';
+  const [showMenu, setShowMenu] = useState(false);
 
-  const topLevelPages = ["/", "/routines", "/exercises", "/statistics", "/profile", "/settings", "/statistics/[view]", "/routines/create", "/routines/[id]", "/routines/empty", "/user/[uid]", "/exercise-history"];
-  const isTopLevel = topLevelPages.includes(router.pathname) || topLevelPages.includes(router.asPath);
-
-  const smartBack = () => {
-    try {
-      if (typeof window !== 'undefined') {
-        const canGoBack = window.history.length > 1;
-        const ref = document.referrer || '';
-        const sameOrigin = ref && ref.startsWith(window.location.origin);
-        if (canGoBack && sameOrigin) {
-          router.back();
-          return;
-        }
-      }
-    } catch (_) {}
-
-    const p = router.asPath || '';
-    let fallback = '/';
-    if (p.startsWith('/statistics')) fallback = '/statistics';
-    else if (p.startsWith('/routines')) fallback = '/routines';
-    else if (p.startsWith('/exercises')) fallback = '/exercises';
-    else if (p.startsWith('/profile')) fallback = '/profile';
-    else if (p.startsWith('/settings')) fallback = '/settings';
-
-    router.push(fallback);
-  };
+  const allCategories = [
+    { name: t("feed"), href: "/" },
+    { name: t("routines"), href: "/routines" },
+    { name: t("exercises"), href: "/exercises" },
+    { name: t("ia"), href: "/ia" },
+    { name: t("food"), href: "/food" },
+    { name: t("statistics"), href: "/statistics" },
+    { name: t("profile"), href: "/profile" },
+    { name: t("exportar_datos"), href: "/export-data" },
+    { name: t("settings"), href: "/settings" }
+  ];
 
   const navItems = [
     { 
@@ -70,7 +57,9 @@ export default function BottomNavigation() {
       action: true,
       icon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <polyline points="15 18 9 12 15 6"></polyline>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
         </svg>
       )
     }
@@ -96,31 +85,29 @@ export default function BottomNavigation() {
           return (
             <button
               key={item.name}
-              onClick={smartBack}
-              disabled={isTopLevel}
+              onClick={() => setShowMenu(!showMenu)}
               style={{
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 textDecoration: "none",
-                color: isTopLevel ? (isDark ? "#444" : "#ccc") : (isDark ? "#999" : "#666"),
+                color: showMenu ? "#1dd1a1" : (isDark ? "#999" : "#666"),
                 transition: "all 0.2s ease",
                 padding: "5px 10px",
                 borderRadius: "8px",
                 minWidth: "60px",
                 border: "none",
                 background: "transparent",
-                cursor: isTopLevel ? "default" : "pointer",
-                opacity: isTopLevel ? 0.5 : 1
+                cursor: "pointer"
               }}
               onMouseOver={(e) => {
-                if (!isTopLevel) {
+                if (!showMenu) {
                   e.currentTarget.style.color = "#1dd1a1";
                   e.currentTarget.style.backgroundColor = isDark ? "#2a2a2a" : "#f5f5f5";
                 }
               }}
               onMouseOut={(e) => {
-                if (!isTopLevel) {
+                if (!showMenu) {
                   e.currentTarget.style.color = isDark ? "#999" : "#666";
                   e.currentTarget.style.backgroundColor = "transparent";
                 }
@@ -135,7 +122,7 @@ export default function BottomNavigation() {
               </span>
               <span style={{
                 fontSize: "0.75rem",
-                fontWeight: "normal",
+                fontWeight: showMenu ? "bold" : "normal",
                 textAlign: "center"
               }}>
                 {item.name}
@@ -190,6 +177,92 @@ export default function BottomNavigation() {
           </Link>
         );
       })}
+
+      {showMenu && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: isDark ? "rgba(15, 15, 15, 0.95)" : "rgba(0, 0, 0, 0.5)",
+          zIndex: 999,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: "40px 20px"
+        }}>
+          <button
+            onClick={() => setShowMenu(false)}
+            style={{
+              position: "absolute",
+              top: "20px",
+              right: "20px",
+              width: "40px",
+              height: "40px",
+              backgroundColor: "#1dd1a1",
+              border: "none",
+              borderRadius: "50%",
+              cursor: "pointer",
+              color: "#000",
+              fontSize: "24px",
+              fontWeight: "bold",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 1001
+            }}
+          >
+            ×
+          </button>
+
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gap: "15px",
+            maxWidth: "400px",
+            width: "100%"
+          }}>
+            {allCategories.map(category => (
+              <Link
+                key={category.name}
+                href={category.href}
+                onClick={() => setShowMenu(false)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "20px",
+                  backgroundColor: isDark ? "#2a2a2a" : "#ffffff",
+                  color: isDark ? "#fff" : "#333",
+                  textDecoration: "none",
+                  borderRadius: "10px",
+                  border: "2px solid #1dd1a1",
+                  fontWeight: "600",
+                  fontSize: "0.95rem",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                  textAlign: "center",
+                  minHeight: "80px"
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = "#1dd1a1";
+                  e.currentTarget.style.color = "#000";
+                  e.currentTarget.style.transform = "scale(1.05)";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = isDark ? "#2a2a2a" : "#ffffff";
+                  e.currentTarget.style.color = isDark ? "#fff" : "#333";
+                  e.currentTarget.style.transform = "scale(1)";
+                }}
+              >
+                {category.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

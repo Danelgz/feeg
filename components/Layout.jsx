@@ -22,6 +22,34 @@ export default function Layout({ children, hideBottomNav = false }) {
     }
   }, [isMobile]);
 
+  const topLevelPages = ["/", "/routines", "/exercises", "/statistics", "/profile", "/settings", "/statistics/[view]", "/routines/create", "/routines/[id]", "/routines/empty", "/user/[uid]", "/exercise-history"];
+  const isTopLevel = topLevelPages.includes(router.pathname) || topLevelPages.includes(router.asPath);
+
+  // Botón de retroceso inteligente: si no hay historial o la entrada es directa, ir a una ruta de respaldo
+  const smartBack = () => {
+    try {
+      if (typeof window !== 'undefined') {
+        const canGoBack = window.history.length > 1;
+        const ref = document.referrer || '';
+        const sameOrigin = ref && ref.startsWith(window.location.origin);
+        if (canGoBack && sameOrigin) {
+          router.back();
+          return;
+        }
+      }
+    } catch (_) {}
+
+    const p = router.asPath || '';
+    let fallback = '/';
+    if (p.startsWith('/statistics')) fallback = '/statistics';
+    else if (p.startsWith('/routines')) fallback = '/routines';
+    else if (p.startsWith('/exercises')) fallback = '/exercises';
+    else if (p.startsWith('/profile')) fallback = '/profile';
+    else if (p.startsWith('/settings')) fallback = '/settings';
+
+    router.push(fallback);
+  };
+
   const currentIsMobile = isMobile;
 
   useEffect(() => {
@@ -184,6 +212,45 @@ export default function Layout({ children, hideBottomNav = false }) {
             <>
               <Sidebar />
               
+              {/* Botón de Retroceder */}
+              {!isTopLevel && (
+                <button
+                  onClick={smartBack}
+                  title="Atrás"
+                  aria-label="Atrás"
+                  style={{
+                    position: "fixed",
+                    top: "15px",
+                    left: currentIsMobile ? "15px" : "235px", 
+                    zIndex: 2000,
+                    width: currentIsMobile ? "36px" : "45px",
+                    height: currentIsMobile ? "36px" : "45px",
+                    borderRadius: "50%",
+                    backgroundColor: isDark ? "#1a1a1a" : "#ffffff",
+                    border: `2px solid #1dd1a1`,
+                    color: "#1dd1a1",
+                    cursor: "pointer",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    fontSize: currentIsMobile ? "1rem" : "1.2rem",
+                    fontWeight: "bold",
+                    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+                    transition: "all 0.2s ease"
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = "#1dd1a1";
+                    e.currentTarget.style.color = "#000";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = isDark ? "#1a1a1a" : "#ffffff";
+                    e.currentTarget.style.color = "#1dd1a1";
+                  }}
+                >
+                  ←
+                </button>
+              )}
+
               <main 
                 key={router.asPath}
                 className="page-transition"

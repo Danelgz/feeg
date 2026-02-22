@@ -1,13 +1,24 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useUser } from "../context/UserContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function BottomNavigation() {
   const { theme, t } = useUser();
   const router = useRouter();
   const isDark = theme === 'dark';
   const [showMenu, setShowMenu] = useState(false);
+
+  useEffect(() => {
+    if (showMenu) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showMenu]);
 
   const allCategories = [
     { name: t("feed"), href: "/" },

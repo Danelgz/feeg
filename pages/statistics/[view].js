@@ -93,7 +93,7 @@ export default function StatisticsView() {
     };
 
     const getColor = (intensity) => {
-      if (intensity === 0) return isDark ? '#2a2a2a' : '#eeeeee';
+      if (intensity === 0) return 'rgba(0, 0, 0, 0)';
       if (intensity === 1) return 'rgba(47, 214, 162, 0.2)';
       if (intensity === 2) return 'rgba(47, 214, 162, 0.45)';
       if (intensity === 3) return 'rgba(47, 214, 162, 0.7)';
@@ -230,9 +230,8 @@ export default function StatisticsView() {
                     <div key={lvl} style={{ textAlign: 'center' }}>
                       <div style={{ 
                         height: '10px', 
-                        backgroundColor: muscleStats.getColor(lvl), 
-                        borderRadius: '2px',
-                        border: lvl === 0 && !isDark ? '1px solid #ddd' : 'none'
+                        backgroundColor: lvl === 0 ? (isDark ? '#444' : '#bbb') : muscleStats.getColor(lvl), 
+                        borderRadius: '2px'
                       }} />
                       <div style={{ fontSize: '0.65rem', color: isDark ? '#888' : '#999', marginTop: '2px' }}>
                         Lvl {lvl}

@@ -16,7 +16,7 @@ const InteractiveBodyMap = ({ counts = {}, isDark = false, getIntensity, getColo
   });
 
   const effectiveGetColor = getColor || ((intensity) => {
-    if (intensity === 0) return 'rgba(255, 0, 0, 0)';
+    if (intensity === 0) return 'rgba(0, 0, 0, 0)';
     if (intensity === 1) return 'rgba(47, 214, 162, 0.2)';
     if (intensity === 2) return 'rgba(47, 214, 162, 0.45)';
     if (intensity === 3) return 'rgba(47, 214, 162, 0.7)';
@@ -67,7 +67,7 @@ const InteractiveBodyMap = ({ counts = {}, isDark = false, getIntensity, getColo
 
   const getMuscleColor = (muscleId) => {
     const group = muscleIdToGroupMapping[muscleId];
-    if (!group) return 'rgba(255, 0, 0, 0)';
+    if (!group) return 'rgba(0, 0, 0, 0)';
     
     const intensity = typeof effectiveGetIntensity === 'function' && getIntensity 
       ? effectiveGetIntensity(counts[group] || 0) 
@@ -76,7 +76,7 @@ const InteractiveBodyMap = ({ counts = {}, isDark = false, getIntensity, getColo
     return effectiveGetColor(intensity);
   };
 
-  const strokeColor = isDark ? 'rgba(255, 102, 102, 0.3)' : 'rgba(255, 102, 102, 0.5)';
+  const strokeColor = isDark ? 'rgba(180, 180, 180, 0.25)' : 'rgba(80, 80, 80, 0.3)';
 
   return (
     <div style={{ 
@@ -127,7 +127,7 @@ const InteractiveBodyMap = ({ counts = {}, isDark = false, getIntensity, getColo
 
       <div style={{ width: '100%', maxWidth: '300px', display: showBack ? 'none' : 'block' }}>
         <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" viewBox="0 0 600 980" xmlSpace="preserve" style={{ width: '100%', height: 'auto' }}>
-          <image overflow="visible" width="600" height="980" xlinkHref="https://bodybuilding-wizard.com/wp-content/plugins/hms-anatomy/public/images/modela.png" />
+          <image overflow="visible" width="600" height="980" xlinkHref="https://bodybuilding-wizard.com/wp-content/plugins/hms-anatomy/public/images/modela.png" style={{ filter: 'grayscale(1)' }} />
           <path id="hms_1" fill={getMuscleColor('hms_1')} stroke={strokeColor} vectorEffect="non-scaling-stroke" d="M287.229,173.333c3.667,6.833,6.333,1,3.333-5.667s-5.666-22-7-32.167c-1.333-10.167-12-14.5-16.833-24.5c1.667,20.167,7,24.834,8.5,32.453S283.562,166.5,287.229,173.333z" cursor="pointer" />
           <path id="hms_2" fill={getMuscleColor('hms_2')} stroke={strokeColor} vectorEffect="non-scaling-stroke" d="M310.666,173.333c3.668-6.833,10.5-22.262,12-29.881s6.834-12.286,8.5-32.453c-4.832,10-15.499,14.333-16.832,24.5c-1.334,10.167-4,25.5-7,32.167S306.999,180.167,310.666,173.333z" cursor="pointer" />
           <path id="hms_3" fill={getMuscleColor('hms_3')} stroke={strokeColor} vectorEffect="non-scaling-stroke" d="M268.396,175.667c10.833-1,1.5-21.667,0-27.167c-2.334,5.667-21.5,23.667-30.334,27.167C249.192,177.667,257.562,176.667,268.396,175.667z" cursor="pointer" />
@@ -146,7 +146,7 @@ const InteractiveBodyMap = ({ counts = {}, isDark = false, getIntensity, getColo
 
       <div style={{ width: '100%', maxWidth: '300px', display: showBack ? 'block' : 'none' }}>
         <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" viewBox="0 0 600 980" xmlSpace="preserve" style={{ width: '100%', height: 'auto' }}>
-          <image overflow="visible" width="600" height="980" xlinkHref="https://bodybuilding-wizard.com/wp-content/plugins/hms-anatomy/public/images/modelb.png" />
+          <image overflow="visible" width="600" height="980" xlinkHref="https://bodybuilding-wizard.com/wp-content/plugins/hms-anatomy/public/images/modelb.png" style={{ filter: 'grayscale(1)' }} />
           <path id="hms_46" fill={getMuscleColor('hms_46')} stroke={strokeColor} vectorEffect="non-scaling-stroke" d="M345.16,258.599c1.212-4.367,1.998-9.232,2.173-14.766c0.333-10.516,4.585-20.167,5.751-30s4.25-14.333,5.417-22.417c-3,1.667-6.5,0.25-4.583-4s22.416-1.75,22.416-1.75s0,0,6.5,0.417s9.5,0,10.667-3.583c-5.084-3.417-10.969-4.728-16.251-7.25S360,163.5,351.75,158.5s-20.302-10.94-23.25-17.75c-3.499-8.083-12.613-11.661-13.25-27c-0.083-2,2.001-10.25,0.584-11.75s-8.917-2.667-9.5,0s-1.894,18.099-0.084,23.25c2.289,6.516-3.111,7.944-7.291,8.22c1.754,0.116,3.294,0.03,3.959,0.03c-0.665,0-2.205,0.085-3.959-0.03c-1.754,0.116-3.294,0.03-3.959,0.03c0.665,0,2.205,0.085,3.959-0.03c-4.18-0.276-9.58-1.704-7.291-8.22c1.81-5.151,0.499-20.583-0.084-23.25s-8.083-1.5-9.5,0s0.667,9.75,0.584,11.75c-0.637,15.339-9.751,18.917-13.25,27c-2.948,6.81-15,12.75-23.25,17.75s-20.218,14.228-25.5,16.75s-11.167,3.833-16.251,7.25c1.167,3.583,4.167,4,10.667,3.583s6.5-0.417,6.5-0.417s20.499-2.5,22.416,1.75s-1.583,5.667-4.583,4c1.167,8.083,4.251,12.583,5.417,22.417s5.418,19.484,5.751,30c0.175,5.534,0.961,10.398,2.173,14.766c4.556,16.415,15.122,25.798,21.826,37.234c8.5,14.5,10.334,29.167,17.334,39.333c1.699,2.468,4.407,5.147,7.041,7.53c2.634-2.383,5.342-5.062,7.041-7.53c7-10.167,8.834-24.833,17.334-39.333C330.038,284.397,340.604,275.014,345.16,258.599z" cursor="pointer" />
           <path id="hms_51" fill={getMuscleColor('hms_51')} stroke={strokeColor} vectorEffect="non-scaling-stroke" d="M377.5,262.167c-5.333,1.333-16.5-0.5-22.233-1.37c-2.642,0.238-5.728-0.339-10.106-2.198c-4.556,16.415-15.122,25.798-21.826,37.234C314.834,310.333,313,325,306,335.167c11.166,7.167,10.834,10.167,19.5,17.333c9.122,7.544,14.333,18.333,14.833,30.667s2.167,22.667,13.667,27.5c-1.333-10,1.166-15,4.5-23.333s4.5-20.333,6.833-29.5S369.58,328.5,378,313c4.803-8.842,12.5-30.833,15.501-47.125c-0.499-1.125-1.876-3.875-3.251-6.375C387.5,259,382.833,260.833,377.5,262.167z" cursor="pointer" />
           <path id="hms_52" fill={getMuscleColor('hms_52')} stroke={strokeColor} vectorEffect="non-scaling-stroke" d="M252.758,258.599c-4.379,1.859-7.465,2.437-10.106,2.198c-5.733,0.87-16.9,2.703-22.233,1.37s-10-3.167-12.75-2.667c-1.375,2.5-2.752,5.25-3.251,6.375c3.001,16.292,10.698,38.283,15.501,47.125c8.42,15.5,10.334,35.667,12.667,44.833s3.499,21.167,6.833,29.5s5.833,13.333,4.5,23.333c11.5-4.833,13.167-15.167,13.667-27.5s5.711-23.123,14.833-30.667c8.666-7.167,8.334-10.167,19.5-17.333c-7-10.167-8.834-24.833-17.334-39.333C267.88,284.397,257.313,275.014,252.758,258.599z" cursor="pointer" />

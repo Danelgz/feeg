@@ -18,9 +18,9 @@ const InteractiveBodyMap = ({ counts = {}, isDark = false, getIntensity, getColo
   const effectiveGetColor = getColor || ((intensity) => {
     if (intensity === 0) return 'rgba(0, 0, 0, 0)';
     if (intensity === 1) return 'rgba(47, 214, 162, 0.2)';
-    if (intensity === 2) return 'rgba(47, 214, 162, 0.45)';
-    if (intensity === 3) return 'rgba(47, 214, 162, 0.7)';
-    return 'rgba(47, 214, 162, 1)';
+    if (intensity === 2) return 'rgba(47, 214, 162, 0.42)';
+    if (intensity === 3) return 'rgba(47, 214, 162, 0.62)';
+    return 'rgba(47, 214, 162, 0.8)';
   });
 
   const muscleIdToGroupMapping = {

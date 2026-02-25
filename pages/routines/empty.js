@@ -11,7 +11,7 @@ export default function EmptyRoutine() {
   const { theme, activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, t } = useUser();
   const isDark = theme === 'dark';
   const mint = "#2EE6C5";
-  
+
   const [routine, setRoutine] = useState({
     name: "Entrenamiento Vacío",
     exercises: []
@@ -50,9 +50,9 @@ export default function EmptyRoutine() {
     if (savedState) {
       try {
         const parsed = JSON.parse(savedState);
-        const { 
-          elapsedTime: saved, 
-          isActive, 
+        const {
+          elapsedTime: saved,
+          isActive,
           routineId: savedRoutineId,
           seriesCompleted: savedSeries,
           seriesTypes: savedTypes,
@@ -62,12 +62,12 @@ export default function EmptyRoutine() {
           restTimerActive: savedRestActive,
           restCountdown: savedRestCountdown
         } = parsed;
-        
+
         if (savedRoutineId === "empty") {
           const lastSaveTime = localStorage.getItem('workoutTimerLastSave');
           let currentElapsed = saved;
           let currentRest = savedRestCountdown || 0;
-          
+
           if (lastSaveTime) {
             const timePassed = Math.floor((Date.now() - parseInt(lastSaveTime)) / 1000);
             if (isActive) {
@@ -77,7 +77,7 @@ export default function EmptyRoutine() {
               currentRest = Math.max(0, currentRest - timePassed);
             }
           }
-          
+
           setElapsedTime(currentElapsed);
           if (savedSeries) setSeriesCompleted(savedSeries);
           if (savedTypes) setSeriesTypes(savedTypes);
@@ -99,7 +99,7 @@ export default function EmptyRoutine() {
       }
     }
     setIsTimerLoaded(true);
-    
+
     const checkMobile = () => setIsMobile(window.innerWidth <= 768);
     checkMobile();
     window.addEventListener("resize", checkMobile);
@@ -129,12 +129,12 @@ export default function EmptyRoutine() {
 
     saveWorkoutState();
     const interval = setInterval(saveWorkoutState, 1000);
-    
+
     const handleBeforeUnload = () => {
       saveWorkoutState();
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
-    
+
     return () => {
       clearInterval(interval);
       window.removeEventListener('beforeunload', handleBeforeUnload);
@@ -200,16 +200,16 @@ export default function EmptyRoutine() {
     if ((workoutState !== "ongoing" && !restTimerActive) || workoutState === "completed") return null;
 
     return (
-      <div style={{ 
-        position: "fixed", 
-        bottom: "30px", 
-        left: "50%", 
-        transform: "translateX(-50%)", 
-        backgroundColor: restTimerActive ? mint : "#1a1a1a", 
-        color: restTimerActive ? "#000" : "#fff", 
-        padding: "10px 20px", 
-        borderRadius: "30px", 
-        boxShadow: "0 4px 20px rgba(0,0,0,0.4)", 
+      <div style={{
+        position: "fixed",
+        bottom: "30px",
+        left: "50%",
+        transform: "translateX(-50%)",
+        backgroundColor: restTimerActive ? mint : "#1a1a1a",
+        color: restTimerActive ? "#000" : "#fff",
+        padding: "10px 20px",
+        borderRadius: "30px",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
         display: "flex",
         alignItems: "center",
         gap: "15px",
@@ -221,7 +221,7 @@ export default function EmptyRoutine() {
       }}>
         {restTimerActive ? (
           <>
-            <button 
+            <button
               onClick={(e) => { e.stopPropagation(); subtractRestTime(); }}
               style={{ background: "rgba(0,0,0,0.1)", border: "none", borderRadius: "50%", width: "30px", height: "30px", cursor: "pointer", fontWeight: "bold", fontSize: "1.2rem", display: "flex", alignItems: "center", justifyContent: "center" }}
             >-</button>
@@ -229,11 +229,11 @@ export default function EmptyRoutine() {
               <span style={{ fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'uppercase', opacity: 0.7 }}>Descanso</span>
               <span style={{ fontWeight: "bold", minWidth: "80px", textAlign: "center", fontSize: '1.1rem' }}>{formatRestTime(restCountdown)}</span>
             </div>
-            <button 
+            <button
               onClick={(e) => { e.stopPropagation(); addRestTime(); }}
               style={{ background: "rgba(0,0,0,0.1)", border: "none", borderRadius: "50%", width: "30px", height: "30px", cursor: "pointer", fontWeight: "bold", fontSize: "1.2rem", display: "flex", alignItems: "center", justifyContent: "center" }}
             >+</button>
-            <button 
+            <button
               onClick={(e) => { e.stopPropagation(); stopRestTimer(); }}
               style={{ background: "#000", color: "#fff", border: "none", borderRadius: "50%", width: "24px", height: "24px", cursor: "pointer", marginLeft: "5px" }}
             >×</button>
@@ -276,7 +276,7 @@ export default function EmptyRoutine() {
     const updatedExercises = [...routine.exercises];
     updatedExercises[exIdx].series.push({ reps: "", weight: "" });
     setRoutine({ ...routine, exercises: updatedExercises });
-    
+
     const newKey = `${exIdx}-${updatedExercises[exIdx].series.length - 1}`;
     setSeriesCompleted({ ...seriesCompleted, [newKey]: false });
     setSeriesTypes({ ...seriesTypes, [newKey]: "N" });
@@ -286,7 +286,7 @@ export default function EmptyRoutine() {
     const updatedExercises = [...routine.exercises];
     updatedExercises[exIdx].series = updatedExercises[exIdx].series.filter((_, i) => i !== serieIdx);
     setRoutine({ ...routine, exercises: updatedExercises });
-    
+
     // Simplificado: En producción se debería re-indexar como en [id].js
   };
 
@@ -301,7 +301,7 @@ export default function EmptyRoutine() {
       rest: 60,
       series: [{ reps: 10, weight: 0 }]
     };
-    
+
     let updatedExercises;
     let targetIdx;
 
@@ -320,7 +320,7 @@ export default function EmptyRoutine() {
     setSeriesTypes({ ...seriesTypes, [newKey]: "N" });
     setCurrentReps({ ...currentReps, [newKey]: 10 });
     setCurrentWeight({ ...currentWeight, [newKey]: 0 });
-    
+
     setShowExerciseSelector(false);
     setSubstitutingExerciseIdx(null);
   };
@@ -364,7 +364,7 @@ export default function EmptyRoutine() {
 
   const handleSaveFinishedRoutine = () => {
     clearPersistentTimer();
-    
+
     const totalSeries = routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0);
     const totalVolume = Object.keys(seriesCompleted).reduce((sum, key) => {
       if (!seriesCompleted[key]) return sum;
@@ -432,14 +432,14 @@ export default function EmptyRoutine() {
               Se perderán todos los datos registrados en esta sesión.
             </p>
             <div style={{ display: "flex", gap: "10px" }}>
-              <button 
-                onClick={() => setShowDiscardConfirm(false)} 
+              <button
+                onClick={() => setShowDiscardConfirm(false)}
                 style={{ flex: 1, padding: "12px", backgroundColor: "#333", color: "#fff", border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}
               >
                 No, continuar
               </button>
-              <button 
-                onClick={handleDiscardWorkout} 
+              <button
+                onClick={handleDiscardWorkout}
                 style={{ flex: 1, padding: "12px", backgroundColor: "#ff4d4d", color: "#fff", border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}
               >
                 Sí, cancelar
@@ -548,12 +548,15 @@ export default function EmptyRoutine() {
           </button>
 
           {showRoutineActiveAlert && (
-            <div style={{
-              position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-              backgroundColor: "rgba(0,0,0,0.8)", display: "flex",
-              justifyContent: "center", alignItems: "center", zIndex: 3000
-            }}>
-              <div style={{
+            <div
+              onClick={() => setShowRoutineActiveAlert(false)}
+              style={{
+                position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+                backgroundColor: "rgba(0,0,0,0.8)", display: "flex",
+                justifyContent: "center", alignItems: "center", zIndex: 3000
+              }}
+            >
+              <div onClick={(e) => e.stopPropagation()} style={{
                 backgroundColor: "#1a1a1a", borderRadius: "15px", padding: "30px", width: "320px",
                 textAlign: "center", border: "2px solid #ff4d4d"
               }}>
@@ -598,11 +601,11 @@ export default function EmptyRoutine() {
             <h2 style={{ color: mint, textAlign: "center", marginBottom: "30px" }}>Finalizar Entrenamiento</h2>
             <div style={{ marginBottom: "20px" }}>
               <label style={{ color: "#aaa", fontSize: "0.9rem", display: "block", marginBottom: "8px" }}>Nombre del entreno</label>
-              <input type="text" value={finishFormData.name} onChange={(e) => setFinishFormData({...finishFormData, name: e.target.value})} style={{ width: "100%", padding: "12px", background: "#000", border: "1px solid #333", borderRadius: "6px", color: "#fff" }} />
+              <input type="text" value={finishFormData.name} onChange={(e) => setFinishFormData({ ...finishFormData, name: e.target.value })} style={{ width: "100%", padding: "12px", background: "#000", border: "1px solid #333", borderRadius: "6px", color: "#fff" }} />
             </div>
             <div style={{ marginBottom: "20px" }}>
               <label style={{ color: "#aaa", fontSize: "0.9rem", display: "block", marginBottom: "8px" }}>Comentarios</label>
-              <textarea value={finishFormData.comments} onChange={(e) => setFinishFormData({...finishFormData, comments: e.target.value})} style={{ width: "100%", padding: "12px", background: "#000", border: "1px solid #333", borderRadius: "6px", color: "#fff", minHeight: "80px" }} />
+              <textarea value={finishFormData.comments} onChange={(e) => setFinishFormData({ ...finishFormData, comments: e.target.value })} style={{ width: "100%", padding: "12px", background: "#000", border: "1px solid #333", borderRadius: "6px", color: "#fff", minHeight: "80px" }} />
             </div>
             <div style={{ display: "flex", gap: "15px", marginTop: "30px" }}>
               <button onClick={() => setShowFinishForm(false)} style={{ flex: 1, padding: "12px", background: "#333", color: "#fff", border: "none", borderRadius: "8px" }}>Cancelar</button>
@@ -636,7 +639,7 @@ export default function EmptyRoutine() {
       <div style={{ padding: 0, maxWidth: "900px", margin: "0 auto", backgroundColor: "#000", minHeight: "100vh", color: "#fff" }}>
         {/* Header */}
         <div style={{ padding: "15px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, backgroundColor: "#000", zIndex: 1002 }}>
-          <div 
+          <div
             onClick={() => setShowDiscardConfirm(true)}
             style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
           >
@@ -648,12 +651,15 @@ export default function EmptyRoutine() {
 
         {/* Modal de Confirmación para Descartar/Cancelar */}
         {showDiscardConfirm && (
-          <div style={{
-            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.8)", display: "flex",
-            justifyContent: "center", alignItems: "center", zIndex: 3000
-          }}>
-            <div style={{
+          <div
+            onClick={() => setShowDiscardConfirm(false)}
+            style={{
+              position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.8)", display: "flex",
+              justifyContent: "center", alignItems: "center", zIndex: 3000
+            }}
+          >
+            <div onClick={(e) => e.stopPropagation()} style={{
               backgroundColor: "#1a1a1a", borderRadius: "15px", padding: "30px", width: "320px",
               textAlign: "center", border: "2px solid #ff4d4d"
             }}>
@@ -662,14 +668,14 @@ export default function EmptyRoutine() {
                 Se perderán todos los datos registrados en esta sesión.
               </p>
               <div style={{ display: "flex", gap: "10px" }}>
-                <button 
-                  onClick={() => setShowDiscardConfirm(false)} 
+                <button
+                  onClick={() => setShowDiscardConfirm(false)}
                   style={{ flex: 1, padding: "12px", backgroundColor: "#333", color: "#fff", border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}
                 >
                   No, continuar
                 </button>
-                <button 
-                  onClick={handleDiscardWorkout} 
+                <button
+                  onClick={handleDiscardWorkout}
                   style={{ flex: 1, padding: "12px", backgroundColor: "#ff4d4d", color: "#fff", border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}
                 >
                   Sí, cancelar
@@ -700,45 +706,46 @@ export default function EmptyRoutine() {
             const exerciseInfo = getExerciseInfo(exercise.name);
             const isTimeBased = exerciseInfo?.type === 'time';
             const isLastre = exerciseInfo?.unit === 'lastre';
-            
+
             return (
-            <div key={exIdx} style={{ marginBottom: "40px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-                <h2 style={{ margin: 0, color: mint, fontSize: "1.15rem", fontWeight: "500" }}>{t(exercise.name)}</h2>
-                <button onClick={() => handleDeleteExercise(exIdx)} style={{ background: "none", border: "none", color: "#ff4d4d", fontSize: "1.2rem" }}>×</button>
-              </div>
+              <div key={exIdx} style={{ marginBottom: "40px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+                  <h2 style={{ margin: 0, color: mint, fontSize: "1.15rem", fontWeight: "500" }}>{t(exercise.name)}</h2>
+                  <button onClick={() => handleDeleteExercise(exIdx)} style={{ background: "none", border: "none", color: "#ff4d4d", fontSize: "1.2rem" }}>×</button>
+                </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "50px 1fr 70px 70px 45px", gap: "10px", marginBottom: "10px", color: "#666", fontSize: "0.75rem", fontWeight: "600" }}>
-                <div>SERIE</div>
-                <div>ANTERIOR</div>
-                <div style={{ textAlign: "center" }}>{isTimeBased ? "TIEMPO" : isLastre ? "LASTRE" : "KG"}</div>
-                <div style={{ textAlign: "center" }}>{isTimeBased ? "KM/H" : "REPS"}</div>
-                <div style={{ textAlign: "right" }}>✓</div>
-              </div>
+                <div style={{ display: "grid", gridTemplateColumns: "50px 1fr 70px 70px 45px", gap: "10px", marginBottom: "10px", color: "#666", fontSize: "0.75rem", fontWeight: "600" }}>
+                  <div>SERIE</div>
+                  <div>ANTERIOR</div>
+                  <div style={{ textAlign: "center" }}>{isTimeBased ? "TIEMPO" : isLastre ? "LASTRE" : "KG"}</div>
+                  <div style={{ textAlign: "center" }}>{isTimeBased ? "KM/H" : "REPS"}</div>
+                  <div style={{ textAlign: "right" }}>✓</div>
+                </div>
 
-              {exercise.series.map((serie, sIdx) => {
-                const key = `${exIdx}-${sIdx}`;
-                const isCompleted = seriesCompleted[key];
-                return (
-                  <div key={sIdx} style={{ display: "grid", gridTemplateColumns: "50px 1fr 70px 70px 45px", gap: "10px", alignItems: "center", marginBottom: "5px" }}>
-                    <div style={{ color: "#fff", textAlign: "center", backgroundColor: "#1a1a1a", borderRadius: "4px", padding: "4px 0" }}>{sIdx + 1}</div>
-                    <div style={{ color: "#666", fontSize: "0.9rem" }}>—</div>
-                    <input type="number" value={currentWeight[key] || ""} onChange={(e) => handleUpdateWeight(exIdx, sIdx, e.target.value)} style={{ width: "100%", background: isCompleted ? "rgba(46, 230, 197, 0.1)" : "#1a1a1a", border: "none", borderRadius: "4px", color: "#fff", textAlign: "center", padding: "6px 0" }} />
-                    <input type="number" value={currentReps[key] || ""} onChange={(e) => handleUpdateReps(exIdx, sIdx, e.target.value)} style={{ width: "100%", background: isCompleted ? "rgba(46, 230, 197, 0.1)" : "#1a1a1a", border: "none", borderRadius: "4px", color: "#fff", textAlign: "center", padding: "6px 0" }} />
-                    <button 
-                      onClick={() => {
-                        const isNowCompleted = !isCompleted;
-                        setSeriesCompleted({...seriesCompleted, [key]: isNowCompleted});
-                        if (isNowCompleted && exercise.rest) startRestTimer(exercise.rest);
-                      }} 
-                      style={{ width: "100%", height: "32px", borderRadius: "6px", backgroundColor: isCompleted ? mint : "#333", color: isCompleted ? "#000" : "#666", border: "none" }}
-                    >✓</button>
-                  </div>
-                );
-              })}
-              <button onClick={() => handleAddSeries(exIdx)} style={{ width: "100%", padding: "10px", backgroundColor: "#1a1a1a", color: "#fff", border: "none", borderRadius: "8px", marginTop: "10px" }}>+ Agregar Serie</button>
-            </div>
-          );})}
+                {exercise.series.map((serie, sIdx) => {
+                  const key = `${exIdx}-${sIdx}`;
+                  const isCompleted = seriesCompleted[key];
+                  return (
+                    <div key={sIdx} style={{ display: "grid", gridTemplateColumns: "50px 1fr 70px 70px 45px", gap: "10px", alignItems: "center", marginBottom: "5px" }}>
+                      <div style={{ color: "#fff", textAlign: "center", backgroundColor: "#1a1a1a", borderRadius: "4px", padding: "4px 0" }}>{sIdx + 1}</div>
+                      <div style={{ color: "#666", fontSize: "0.9rem" }}>—</div>
+                      <input type="number" value={currentWeight[key] || ""} onChange={(e) => handleUpdateWeight(exIdx, sIdx, e.target.value)} style={{ width: "100%", background: isCompleted ? "rgba(46, 230, 197, 0.1)" : "#1a1a1a", border: "none", borderRadius: "4px", color: "#fff", textAlign: "center", padding: "6px 0" }} />
+                      <input type="number" value={currentReps[key] || ""} onChange={(e) => handleUpdateReps(exIdx, sIdx, e.target.value)} style={{ width: "100%", background: isCompleted ? "rgba(46, 230, 197, 0.1)" : "#1a1a1a", border: "none", borderRadius: "4px", color: "#fff", textAlign: "center", padding: "6px 0" }} />
+                      <button
+                        onClick={() => {
+                          const isNowCompleted = !isCompleted;
+                          setSeriesCompleted({ ...seriesCompleted, [key]: isNowCompleted });
+                          if (isNowCompleted && exercise.rest) startRestTimer(exercise.rest);
+                        }}
+                        style={{ width: "100%", height: "32px", borderRadius: "6px", backgroundColor: isCompleted ? mint : "#333", color: isCompleted ? "#000" : "#666", border: "none" }}
+                      >✓</button>
+                    </div>
+                  );
+                })}
+                <button onClick={() => handleAddSeries(exIdx)} style={{ width: "100%", padding: "10px", backgroundColor: "#1a1a1a", color: "#fff", border: "none", borderRadius: "8px", marginTop: "10px" }}>+ Agregar Serie</button>
+              </div>
+            );
+          })}
 
           <button onClick={handleAddExercise} style={{ width: "100%", padding: "15px", backgroundColor: "#1a1a1a", color: mint, border: `1px dashed ${mint}`, borderRadius: "10px", fontWeight: "600" }}>+ Agregar Ejercicio</button>
         </div>

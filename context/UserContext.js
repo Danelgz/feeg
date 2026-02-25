@@ -329,10 +329,8 @@ export function UserProvider({ children }) {
     if (authUser) {
       await saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList });
       
-      // Save only the most recent workouts to global feed to avoid spamming/limits
-      // Let's say last 10
-      const recentWorkouts = workouts.slice(0, 10);
-      const feedPromises = recentWorkouts.map(workout => 
+      // Save imported workouts to global feed (no limit to ensure visibility)
+      const feedPromises = workouts.map(workout => 
         saveToCloud(`workouts/${workout.id}`, { 
           ...workout, 
           userId: authUser.uid,

@@ -63,9 +63,9 @@ export default function RoutineDetail() {
     if (savedState) {
       try {
         const parsed = JSON.parse(savedState);
-        const { 
-          elapsedTime: saved, 
-          isActive, 
+        const {
+          elapsedTime: saved,
+          isActive,
           routineId: savedRoutineId,
           seriesCompleted: savedSeries,
           seriesTypes: savedTypes,
@@ -75,12 +75,12 @@ export default function RoutineDetail() {
           restTimerActive: savedRestActive,
           restCountdown: savedRestCountdown
         } = parsed;
-        
+
         if (savedRoutineId === id?.toString()) {
           const lastSaveTime = localStorage.getItem('workoutTimerLastSave');
           let currentElapsed = saved;
           let currentRest = savedRestCountdown || 0;
-          
+
           if (lastSaveTime) {
             const timePassed = Math.floor((Date.now() - parseInt(lastSaveTime)) / 1000);
             if (isActive) {
@@ -90,7 +90,7 @@ export default function RoutineDetail() {
               currentRest = Math.max(0, currentRest - timePassed);
             }
           }
-          
+
           setElapsedTime(currentElapsed);
           if (savedSeries) setSeriesCompleted(savedSeries);
           if (savedTypes) setSeriesTypes(savedTypes);
@@ -137,13 +137,13 @@ export default function RoutineDetail() {
 
     saveWorkoutState();
     const interval = setInterval(saveWorkoutState, 1000);
-    
+
     // Add beforeunload listener for extra safety
     const handleBeforeUnload = () => {
       saveWorkoutState();
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
-    
+
     return () => {
       clearInterval(interval);
       window.removeEventListener('beforeunload', handleBeforeUnload);
@@ -157,10 +157,10 @@ export default function RoutineDetail() {
       const prevData = {};
       routine.exercises.forEach(ex => {
         // Find last workout that contained this exercise
-        const lastWorkout = completedWorkouts.find(w => 
+        const lastWorkout = completedWorkouts.find(w =>
           w.exerciseDetails && w.exerciseDetails.some(ed => ed.name === ex.name)
         );
-        
+
         if (lastWorkout) {
           const exDetail = lastWorkout.exerciseDetails.find(ed => ed.name === ex.name);
           // Store all series for this exercise
@@ -209,9 +209,9 @@ export default function RoutineDetail() {
     const updatedExercise = { ...updatedExercises[exIdx] };
     updatedExercise.series = [...updatedExercise.series, { reps: "", weight: "" }];
     updatedExercises[exIdx] = updatedExercise;
-    
+
     setRoutine({ ...routine, exercises: updatedExercises });
-    
+
     // Initialize tracking for new series
     const newKey = `${exIdx}-${updatedExercise.series.length - 1}`;
     setSeriesCompleted({ ...seriesCompleted, [newKey]: false });
@@ -225,15 +225,15 @@ export default function RoutineDetail() {
     const updatedExercise = { ...updatedExercises[exIdx] };
     updatedExercise.series = updatedExercise.series.filter((_, i) => i !== serieIdx);
     updatedExercises[exIdx] = updatedExercise;
-    
+
     setRoutine({ ...routine, exercises: updatedExercises });
-    
+
     // Clean up tracking objects for deleted series
     const newSeriesCompleted = {};
     const newSeriesTypes = {};
     const newCurrentReps = {};
     const newCurrentWeight = {};
-    
+
     Object.keys(seriesCompleted).forEach((key) => {
       const [eIdx, sIdx] = key.split("-").map(Number);
       if (eIdx === exIdx) {
@@ -256,7 +256,7 @@ export default function RoutineDetail() {
         newCurrentWeight[key] = currentWeight[key];
       }
     });
-    
+
     setSeriesCompleted(newSeriesCompleted);
     setSeriesTypes(newSeriesTypes);
     setCurrentReps(newCurrentReps);
@@ -274,10 +274,10 @@ export default function RoutineDetail() {
         const typeTracker = {};
         const repsTracker = {};
         const weightTracker = {};
-        
+
         foundRoutine.exercises.forEach((ex, exIdx) => {
           // Find previous data for this specific exercise
-          const lastWorkout = completedWorkouts?.find(w => 
+          const lastWorkout = completedWorkouts?.find(w =>
             w.exerciseDetails && w.exerciseDetails.some(ed => ed.name === ex.name)
           );
           const lastExDetail = lastWorkout?.exerciseDetails.find(ed => ed.name === ex.name);
@@ -285,15 +285,15 @@ export default function RoutineDetail() {
           ex.series.forEach((serie, serieIdx) => {
             const key = `${exIdx}-${serieIdx}`;
             seriesTracker[key] = false;
-            typeTracker[key] = serieIdx < 2 ? "W" : "N"; 
-            
+            typeTracker[key] = serie.type || "N"; // Respetar el tipo guardado en la rutina
+
             // Use previous data if available, otherwise fallback to routine defaults
             const prevSerie = lastExDetail?.series[serieIdx];
             repsTracker[key] = prevSerie?.reps || serie.reps || "";
             weightTracker[key] = prevSerie?.weight || serie.weight || "";
           });
         });
-        
+
         setSeriesCompleted(seriesTracker);
         setSeriesTypes(typeTracker);
         setCurrentReps(repsTracker);
@@ -475,16 +475,16 @@ export default function RoutineDetail() {
     if (workoutState !== "ongoing" || showFinishConfirmation || showFinishForm || workoutState === "completed") return null;
 
     return (
-      <div style={{ 
-        position: "fixed", 
-        bottom: "30px", 
-        left: "50%", 
-        transform: "translateX(-50%)", 
-        backgroundColor: restTimerActive ? mint : "#1a1a1a", 
-        color: restTimerActive ? "#000" : "#fff", 
-        padding: "10px 20px", 
-        borderRadius: "30px", 
-        boxShadow: "0 4px 20px rgba(0,0,0,0.4)", 
+      <div style={{
+        position: "fixed",
+        bottom: "30px",
+        left: "50%",
+        transform: "translateX(-50%)",
+        backgroundColor: restTimerActive ? mint : "#1a1a1a",
+        color: restTimerActive ? "#000" : "#fff",
+        padding: "10px 20px",
+        borderRadius: "30px",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
         display: "flex",
         alignItems: "center",
         gap: "15px",
@@ -496,7 +496,7 @@ export default function RoutineDetail() {
       }}>
         {restTimerActive ? (
           <>
-            <button 
+            <button
               onClick={(e) => { e.stopPropagation(); subtractRestTime(); }}
               style={{ background: "rgba(0,0,0,0.1)", border: "none", borderRadius: "50%", width: "30px", height: "30px", cursor: "pointer", fontWeight: "bold", fontSize: "1.2rem", display: "flex", alignItems: "center", justifyContent: "center" }}
             >-</button>
@@ -504,11 +504,11 @@ export default function RoutineDetail() {
               <span style={{ fontSize: '0.65rem', fontWeight: 'bold', textTransform: 'uppercase', opacity: 0.7 }}>Descanso</span>
               <span style={{ fontWeight: "bold", minWidth: "80px", textAlign: "center", fontSize: '1.1rem' }}>{formatRestTime(restCountdown)}</span>
             </div>
-            <button 
+            <button
               onClick={(e) => { e.stopPropagation(); addRestTime(); }}
               style={{ background: "rgba(0,0,0,0.1)", border: "none", borderRadius: "50%", width: "30px", height: "30px", cursor: "pointer", fontWeight: "bold", fontSize: "1.2rem", display: "flex", alignItems: "center", justifyContent: "center" }}
             >+</button>
-            <button 
+            <button
               onClick={(e) => { e.stopPropagation(); stopRestTimer(); }}
               style={{ background: "#000", color: "#fff", border: "none", borderRadius: "50%", width: "24px", height: "24px", cursor: "pointer", marginLeft: "5px" }}
             >×</button>
@@ -539,7 +539,7 @@ export default function RoutineDetail() {
       rest: 60,
       series: [{ reps: 10, weight: 0 }]
     };
-    
+
     let updatedExercises;
     let targetIdx;
 
@@ -553,13 +553,13 @@ export default function RoutineDetail() {
     }
 
     setRoutine({ ...routine, exercises: updatedExercises });
-    
+
     // Initialize tracking for exercise
     const newKey = `${targetIdx}-0`;
     setSeriesCompleted({ ...seriesCompleted, [newKey]: false });
     setCurrentReps({ ...currentReps, [newKey]: 10 });
     setCurrentWeight({ ...currentWeight, [newKey]: 0 });
-    
+
     // Close modal and reset substitution state
     setShowExerciseSelector(false);
     setSubstitutingExerciseIdx(null);
@@ -569,21 +569,21 @@ export default function RoutineDetail() {
     if (routine.exercises.length > 1) {
       const updatedExercises = routine.exercises.filter((_, i) => i !== exIdx);
       setRoutine({ ...routine, exercises: updatedExercises });
-      
+
       if (currentExerciseIndex >= updatedExercises.length) {
         setCurrentExerciseIndex(updatedExercises.length - 1);
       }
-      
+
       // Clean up and RE-INDEX tracking objects
       const newSeriesCompleted = {};
       const newCurrentReps = {};
       const newCurrentWeight = {};
-      
+
       Object.keys(seriesCompleted).forEach((key) => {
         const parts = key.split("-");
         const exIdxKey = parseInt(parts[0]);
         const serIdxKey = parseInt(parts[1]);
-        
+
         if (exIdxKey < exIdx) {
           // Keep same key
           newSeriesCompleted[key] = seriesCompleted[key];
@@ -598,7 +598,7 @@ export default function RoutineDetail() {
         }
         // If exIdxKey === exIdx, it is deleted (not added to new objects)
       });
-      
+
       setSeriesCompleted(newSeriesCompleted);
       setCurrentReps(newCurrentReps);
       setCurrentWeight(newCurrentWeight);
@@ -631,11 +631,11 @@ export default function RoutineDetail() {
 
   const handleConfirmFinish = () => {
     setShowFinishConfirmation(false);
-    
+
     // Calcular cambios realizados respecto a la rutina original
     let addedExercises = 0;
     let addedSeries = 0;
-    
+
     if (initialRoutine) {
       // Contar ejercicios nuevos (que no estaban en la rutina inicial por nombre)
       routine.exercises.forEach(ex => {
@@ -644,7 +644,7 @@ export default function RoutineDetail() {
           addedExercises++;
         }
       });
-      
+
       // Contar series adicionales en los ejercicios que ya existían
       routine.exercises.forEach(ex => {
         const initialEx = initialRoutine.exercises.find(iEx => iEx.name === ex.name);
@@ -653,9 +653,9 @@ export default function RoutineDetail() {
         }
       });
     }
-    
+
     setRoutineChanges({ exercises: addedExercises, series: addedSeries });
-    
+
     setFinishFormData({
       name: routine.name,
       comments: '',
@@ -667,7 +667,7 @@ export default function RoutineDetail() {
   const handleSaveFinishedRoutine = () => {
     // Clear persistent timer when workout is completed
     clearPersistentTimer();
-    
+
     // Filtrar detalles de ejercicios para guardar solo series completadas
     const exerciseDetails = routine.exercises.map((ex, exIdx) => {
       // Encontrar grupo muscular
@@ -703,12 +703,12 @@ export default function RoutineDetail() {
     }).filter(ex => ex !== null);
 
     // Calcular estadísticas basadas solo en series completadas
-    const totalReps = exerciseDetails.reduce((sum, ex) => 
+    const totalReps = exerciseDetails.reduce((sum, ex) =>
       sum + ex.series.reduce((sSum, s) => sSum + (parseInt(s.reps) || 0), 0)
-    , 0);
-    const totalVolume = exerciseDetails.reduce((sum, ex) => 
+      , 0);
+    const totalVolume = exerciseDetails.reduce((sum, ex) =>
       sum + ex.series.reduce((sSum, s) => sSum + ((parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0)), 0)
-    , 0);
+      , 0);
     const totalSeries = exerciseDetails.reduce((sum, ex) => sum + ex.series.length, 0);
 
     // Guardar rutina completada
@@ -770,23 +770,23 @@ export default function RoutineDetail() {
   if (workoutState === "preview") {
     content = (
       <div style={{ padding: "20px", maxWidth: "900px", margin: "0 auto" }}>
-          <h1 style={{ color: isDark ? "#fff" : "#333" }}>{routine.name}</h1>
-          <p style={{ color: isDark ? "#aaa" : "#666", marginBottom: "20px" }}>
-            {routine.exercises.length} {t("exercises_count")} · {routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0)} {t("total_series")}
-          </p>
+        <h1 style={{ color: isDark ? "#fff" : "#333" }}>{routine.name}</h1>
+        <p style={{ color: isDark ? "#aaa" : "#666", marginBottom: "20px" }}>
+          {routine.exercises.length} {t("exercises_count")} · {routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0)} {t("total_series")}
+        </p>
 
-          <div style={{
-            backgroundColor: isDark ? "#1a1a1a" : "#fff",
-            border: `1px solid ${isDark ? "#333" : "#eee"}`,
-            borderRadius: "8px",
-            padding: "20px",
-            marginBottom: "20px",
-            boxShadow: isDark ? "none" : "0 2px 8px rgba(0,0,0,0.05)"
-          }}>
-            <h2 style={{ marginTop: 0, color: isDark ? "#fff" : "#333" }}>{t("workout_summary")}</h2>
-            {routine.exercises.map((exercise, idx) => {
-              const info = getExerciseInfo(exercise.name);
-              return (
+        <div style={{
+          backgroundColor: isDark ? "#1a1a1a" : "#fff",
+          border: `1px solid ${isDark ? "#333" : "#eee"}`,
+          borderRadius: "8px",
+          padding: "20px",
+          marginBottom: "20px",
+          boxShadow: isDark ? "none" : "0 2px 8px rgba(0,0,0,0.05)"
+        }}>
+          <h2 style={{ marginTop: 0, color: isDark ? "#fff" : "#333" }}>{t("workout_summary")}</h2>
+          {routine.exercises.map((exercise, idx) => {
+            const info = getExerciseInfo(exercise.name);
+            return (
               <div key={idx} style={{
                 backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
                 padding: "12px",
@@ -806,138 +806,139 @@ export default function RoutineDetail() {
                   </div>
                 ))}
               </div>
-            );})}
-          </div>
-
-          <button
-            onClick={() => {
-              if (activeRoutine && activeRoutine.id?.toString() !== id?.toString()) {
-                setShowRoutineActiveAlert(true);
-              } else {
-                setWorkoutState("ongoing");
-                startRoutine({ id: id?.toString?.() || id, name: routine.name, path: `/routines/${id}` });
-              }
-            }}
-            style={{
-              ...buttonStyle,
-              fontSize: "1.1rem",
-              padding: "12px 30px",
-              backgroundColor: "#1dd1a1"
-            }}
-            {...buttonHoverStyle}
-          >
-            {t("start_routine")}
-          </button>
-
-          {showRoutineActiveAlert && (
-            <div style={{
-              position: "fixed",
-              top: 0, left: 0, right: 0, bottom: 0,
-              backgroundColor: "rgba(0,0,0,0.8)",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              zIndex: 3000
-            }}>
-              <div style={{
-                backgroundColor: "#1a1a1a",
-                borderRadius: "15px",
-                padding: "30px",
-                width: "320px",
-                textAlign: "center",
-                border: "2px solid #ff4d4d"
-              }}>
-                <h3 style={{ color: "#fff", margin: "0 0 15px 0" }}>Ya tienes una rutina iniciada</h3>
-                <p style={{ color: "#aaa", fontSize: "0.95rem", marginBottom: "25px", lineHeight: "1.4" }}>
-                  Debes terminar o cancelar la rutina de <strong>{activeRoutine?.name}</strong> antes de empezar una nueva.
-                </p>
-                <button
-                  onClick={() => setShowRoutineActiveAlert(false)}
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    backgroundColor: mint,
-                    color: "#000",
-                    border: "none",
-                    borderRadius: "10px",
-                    fontWeight: "bold",
-                    cursor: "pointer"
-                  }}
-                >
-                  Entendido
-                </button>
-              </div>
-            </div>
-          )}
+            );
+          })}
         </div>
+
+        <button
+          onClick={() => {
+            if (activeRoutine && activeRoutine.id?.toString() !== id?.toString()) {
+              setShowRoutineActiveAlert(true);
+            } else {
+              setWorkoutState("ongoing");
+              startRoutine({ id: id?.toString?.() || id, name: routine.name, path: `/routines/${id}` });
+            }
+          }}
+          style={{
+            ...buttonStyle,
+            fontSize: "1.1rem",
+            padding: "12px 30px",
+            backgroundColor: "#1dd1a1"
+          }}
+          {...buttonHoverStyle}
+        >
+          {t("start_routine")}
+        </button>
+
+        {showRoutineActiveAlert && (
+          <div style={{
+            position: "fixed",
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.8)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 3000
+          }}>
+            <div style={{
+              backgroundColor: "#1a1a1a",
+              borderRadius: "15px",
+              padding: "30px",
+              width: "320px",
+              textAlign: "center",
+              border: "2px solid #ff4d4d"
+            }}>
+              <h3 style={{ color: "#fff", margin: "0 0 15px 0" }}>Ya tienes una rutina iniciada</h3>
+              <p style={{ color: "#aaa", fontSize: "0.95rem", marginBottom: "25px", lineHeight: "1.4" }}>
+                Debes terminar o cancelar la rutina de <strong>{activeRoutine?.name}</strong> antes de empezar una nueva.
+              </p>
+              <button
+                onClick={() => setShowRoutineActiveAlert(false)}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  backgroundColor: mint,
+                  color: "#000",
+                  border: "none",
+                  borderRadius: "10px",
+                  fontWeight: "bold",
+                  cursor: "pointer"
+                }}
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     );
   }
 
   // Modal de confirmación para terminar rutina - DEBE ESTAR ANTES DEL ESTADO ONGOING
   else if (showFinishConfirmation) {
     content = (
+      <div style={{
+        padding: "20px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "calc(100vh - 100px)"
+      }}>
         <div style={{
-          padding: "20px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: "calc(100vh - 100px)"
+          backgroundColor: isDark ? "#1a1a1a" : "#fff",
+          border: "2px solid #1dd1a1",
+          borderRadius: "12px",
+          padding: "40px",
+          maxWidth: "500px",
+          textAlign: "center",
+          boxShadow: isDark ? "0 4px 20px rgba(0,0,0,0.5)" : "0 4px 20px rgba(0,0,0,0.1)"
         }}>
-          <div style={{
-            backgroundColor: isDark ? "#1a1a1a" : "#fff",
-            border: "2px solid #1dd1a1",
-            borderRadius: "12px",
-            padding: "40px",
-            maxWidth: "500px",
-            textAlign: "center",
-            boxShadow: isDark ? "0 4px 20px rgba(0,0,0,0.5)" : "0 4px 20px rgba(0,0,0,0.1)"
-          }}>
-            <h2 style={{ color: isDark ? "#1dd1a1" : "#333", marginBottom: "20px", fontSize: "1.5rem" }}>
-              {t("confirm_finish_title")}
-            </h2>
-            <p style={{ color: isDark ? "#ccc" : "#666", marginBottom: "30px" }}>
-              {t("confirm_finish_subtitle")}
-            </p>
-            <div style={{ display: "flex", gap: "15px" }}>
-              <button
-                onClick={() => setShowFinishConfirmation(false)}
-                style={{
-                  flex: 1,
-                  padding: "12px",
-                  backgroundColor: isDark ? "#444" : "#ddd",
-                  color: isDark ? "#fff" : "#333",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  fontWeight: "600",
-                  transition: "all 0.3s ease"
-                }}
-                onMouseOver={(e) => e.target.style.backgroundColor = isDark ? "#555" : "#ccc"}
-                onMouseOut={(e) => e.target.style.backgroundColor = isDark ? "#444" : "#ddd"}
-              >
-                {t("no_continue")}
-              </button>
-              <button
-                onClick={handleConfirmFinish}
-                style={{
-                  flex: 1,
-                  padding: "12px",
-                  backgroundColor: "#1dd1a1",
-                  color: "#000",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  fontWeight: "600",
-                  transition: "all 0.3s ease"
-                }}
-                onMouseOver={(e) => e.target.style.backgroundColor = "#16a853"}
-                onMouseOut={(e) => e.target.style.backgroundColor = "#1dd1a1"}
-              >
-                {t("yes_finish")}
-              </button>
-            </div>
+          <h2 style={{ color: isDark ? "#1dd1a1" : "#333", marginBottom: "20px", fontSize: "1.5rem" }}>
+            {t("confirm_finish_title")}
+          </h2>
+          <p style={{ color: isDark ? "#ccc" : "#666", marginBottom: "30px" }}>
+            {t("confirm_finish_subtitle")}
+          </p>
+          <div style={{ display: "flex", gap: "15px" }}>
+            <button
+              onClick={() => setShowFinishConfirmation(false)}
+              style={{
+                flex: 1,
+                padding: "12px",
+                backgroundColor: isDark ? "#444" : "#ddd",
+                color: isDark ? "#fff" : "#333",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontWeight: "600",
+                transition: "all 0.3s ease"
+              }}
+              onMouseOver={(e) => e.target.style.backgroundColor = isDark ? "#555" : "#ccc"}
+              onMouseOut={(e) => e.target.style.backgroundColor = isDark ? "#444" : "#ddd"}
+            >
+              {t("no_continue")}
+            </button>
+            <button
+              onClick={handleConfirmFinish}
+              style={{
+                flex: 1,
+                padding: "12px",
+                backgroundColor: "#1dd1a1",
+                color: "#000",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontWeight: "600",
+                transition: "all 0.3s ease"
+              }}
+              onMouseOver={(e) => e.target.style.backgroundColor = "#16a853"}
+              onMouseOut={(e) => e.target.style.backgroundColor = "#1dd1a1"}
+            >
+              {t("yes_finish")}
+            </button>
           </div>
         </div>
+      </div>
     );
   }
 
@@ -949,226 +950,226 @@ export default function RoutineDetail() {
     const totalExercises = routine.exercises.length;
 
     content = (
+      <div style={{
+        padding: "20px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "calc(100vh - 100px)"
+      }}>
         <div style={{
-          padding: "20px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: "calc(100vh - 100px)"
+          backgroundColor: isDark ? "#1a1a1a" : "#fff",
+          border: `2px solid ${isDark ? "#1dd1a1" : "#eee"}`,
+          borderRadius: "12px",
+          padding: "40px",
+          maxWidth: "600px",
+          width: "100%",
+          boxShadow: isDark ? "0 4px 20px rgba(0,0,0,0.5)" : "0 4px 20px rgba(0,0,0,0.1)"
         }}>
-          <div style={{
-            backgroundColor: isDark ? "#1a1a1a" : "#fff",
-            border: `2px solid ${isDark ? "#1dd1a1" : "#eee"}`,
-            borderRadius: "12px",
-            padding: "40px",
-            maxWidth: "600px",
-            width: "100%",
-            boxShadow: isDark ? "0 4px 20px rgba(0,0,0,0.5)" : "0 4px 20px rgba(0,0,0,0.1)"
-          }}>
-            <h2 style={{ color: isDark ? "#1dd1a1" : "#333", marginBottom: "30px", fontSize: "1.5rem", textAlign: "center" }}>
-              {t("finish_workout")}
-            </h2>
+          <h2 style={{ color: isDark ? "#1dd1a1" : "#333", marginBottom: "30px", fontSize: "1.5rem", textAlign: "center" }}>
+            {t("finish_workout")}
+          </h2>
 
-            <div style={{ marginBottom: "25px" }}>
-              <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", marginBottom: "8px" }}>
-                {t("workout_name")}
-              </label>
-              <input
-                type="text"
-                value={finishFormData.name}
-                onChange={(e) => setFinishFormData({ ...finishFormData, name: e.target.value })}
-                placeholder={t("placeholder_workout_name")}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
-                  border: `1px solid ${isDark ? "#333" : "#ddd"}`,
-                  borderRadius: "6px",
-                  color: isDark ? "#fff" : "#333",
-                  fontSize: "1rem",
-                  boxSizing: "border-box"
-                }}
-              />
-            </div>
+          <div style={{ marginBottom: "25px" }}>
+            <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", marginBottom: "8px" }}>
+              {t("workout_name")}
+            </label>
+            <input
+              type="text"
+              value={finishFormData.name}
+              onChange={(e) => setFinishFormData({ ...finishFormData, name: e.target.value })}
+              placeholder={t("placeholder_workout_name")}
+              style={{
+                width: "100%",
+                padding: "12px",
+                backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
+                border: `1px solid ${isDark ? "#333" : "#ddd"}`,
+                borderRadius: "6px",
+                color: isDark ? "#fff" : "#333",
+                fontSize: "1rem",
+                boxSizing: "border-box"
+              }}
+            />
+          </div>
 
-            <div style={{ marginBottom: "25px" }}>
-              <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", marginBottom: "8px" }}>
-                {t("comments")}
-              </label>
-              <textarea
-                value={finishFormData.comments}
-                onChange={(e) => setFinishFormData({ ...finishFormData, comments: e.target.value })}
-                placeholder={t("placeholder_comments")}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
-                  border: `1px solid ${isDark ? "#333" : "#ddd"}`,
-                  borderRadius: "6px",
-                  color: isDark ? "#fff" : "#333",
-                  fontSize: "1rem",
-                  minHeight: "80px",
-                  fontFamily: "inherit",
-                  boxSizing: "border-box",
-                  resize: "vertical"
-                }}
-              />
-            </div>
+          <div style={{ marginBottom: "25px" }}>
+            <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", marginBottom: "8px" }}>
+              {t("comments")}
+            </label>
+            <textarea
+              value={finishFormData.comments}
+              onChange={(e) => setFinishFormData({ ...finishFormData, comments: e.target.value })}
+              placeholder={t("placeholder_comments")}
+              style={{
+                width: "100%",
+                padding: "12px",
+                backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
+                border: `1px solid ${isDark ? "#333" : "#ddd"}`,
+                borderRadius: "6px",
+                color: isDark ? "#fff" : "#333",
+                fontSize: "1rem",
+                minHeight: "80px",
+                fontFamily: "inherit",
+                boxSizing: "border-box",
+                resize: "vertical"
+              }}
+            />
+          </div>
 
-            <div style={{ marginBottom: "25px" }}>
-              <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", marginBottom: "8px" }}>
-                {t("total_time_min")}
-              </label>
-              <input
-                type="number"
-                value={finishFormData.totalTime}
-                onChange={(e) => setFinishFormData({ ...finishFormData, totalTime: e.target.value })}
-                placeholder={t("placeholder_time")}
-                min="1"
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
-                  border: `1px solid ${isDark ? "#333" : "#ddd"}`,
-                  borderRadius: "6px",
-                  color: isDark ? "#fff" : "#333",
-                  fontSize: "1rem",
-                  boxSizing: "border-box"
-                }}
-              />
-              <p style={{ margin: "5px 0 0 0", fontSize: "0.85rem", color: "#1dd1a1" }}>
-                {t("real_time")} {formatElapsedTime(elapsedTime)}
+          <div style={{ marginBottom: "25px" }}>
+            <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", marginBottom: "8px" }}>
+              {t("total_time_min")}
+            </label>
+            <input
+              type="number"
+              value={finishFormData.totalTime}
+              onChange={(e) => setFinishFormData({ ...finishFormData, totalTime: e.target.value })}
+              placeholder={t("placeholder_time")}
+              min="1"
+              style={{
+                width: "100%",
+                padding: "12px",
+                backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9",
+                border: `1px solid ${isDark ? "#333" : "#ddd"}`,
+                borderRadius: "6px",
+                color: isDark ? "#fff" : "#333",
+                fontSize: "1rem",
+                boxSizing: "border-box"
+              }}
+            />
+            <p style={{ margin: "5px 0 0 0", fontSize: "0.85rem", color: "#1dd1a1" }}>
+              {t("real_time")} {formatElapsedTime(elapsedTime)}
+            </p>
+          </div>
+
+          {(routineChanges.exercises > 0 || routineChanges.series > 0) && (
+            <div style={{
+              backgroundColor: isDark ? "rgba(46, 230, 197, 0.1)" : "#f0fff4",
+              padding: "15px",
+              borderRadius: "8px",
+              marginBottom: "25px",
+              border: `1px solid ${mint}`
+            }}>
+              <p style={{ color: mint, fontWeight: "bold", margin: "0 0 10px 0", display: "flex", alignItems: "center", gap: "8px" }}>
+                <span>✨</span> ¡Has mejorado la rutina!
               </p>
-            </div>
-
-            { (routineChanges.exercises > 0 || routineChanges.series > 0) && (
-              <div style={{ 
-                backgroundColor: isDark ? "rgba(46, 230, 197, 0.1)" : "#f0fff4", 
-                padding: "15px", 
-                borderRadius: "8px", 
-                marginBottom: "25px",
-                border: `1px solid ${mint}`
-              }}>
-                <p style={{ color: mint, fontWeight: "bold", margin: "0 0 10px 0", display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span>✨</span> ¡Has mejorado la rutina!
-                </p>
-                <p style={{ color: isDark ? "#ccc" : "#666", fontSize: "0.9rem", margin: "0 0 15px 0", lineHeight: "1.4" }}>
-                  Has realizado cambios: 
-                  <strong> {routineChanges.exercises > 0 && `${routineChanges.exercises} ejercicios nuevos`}
+              <p style={{ color: isDark ? "#ccc" : "#666", fontSize: "0.9rem", margin: "0 0 15px 0", lineHeight: "1.4" }}>
+                Has realizado cambios:
+                <strong> {routineChanges.exercises > 0 && `${routineChanges.exercises} ejercicios nuevos`}
                   {routineChanges.exercises > 0 && routineChanges.series > 0 && " y "}
                   {routineChanges.series > 0 && `${routineChanges.series} series adicionales`}</strong>.
-                </p>
-                <label style={{ 
-                  display: "flex", 
-                  alignItems: "center", 
-                  gap: "12px", 
-                  cursor: "pointer", 
-                  color: isDark ? "#fff" : "#333",
-                  backgroundColor: isDark ? "#121212" : "#fff",
-                  padding: "10px",
-                  borderRadius: "6px",
-                  border: `1px solid ${isDark ? "#333" : "#eee"}`
-                }}>
-                  <input 
-                    type="checkbox" 
-                    checked={showUpdateRoutinePrompt} 
-                    onChange={(e) => setShowUpdateRoutinePrompt(e.target.checked)}
-                    style={{ width: "20px", height: "20px", accentColor: mint, cursor: "pointer" }}
-                  />
-                  <span style={{ fontSize: "0.95rem" }}>Actualizar rutina original con estos cambios</span>
-                </label>
-              </div>
-            )}
-
-            <div style={{
-              backgroundColor: isDark ? "#0f0f0f" : "#f1f1f1",
-              borderRadius: "8px",
-              padding: "20px",
-              marginBottom: "25px"
-            }}>
-              <h3 style={{ color: isDark ? "#1dd1a1" : "#333", marginBottom: "15px", fontSize: "1.1rem" }}>
-                {t("workout_summary")}
-              </h3>
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "15px"
+              </p>
+              <label style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                cursor: "pointer",
+                color: isDark ? "#fff" : "#333",
+                backgroundColor: isDark ? "#121212" : "#fff",
+                padding: "10px",
+                borderRadius: "6px",
+                border: `1px solid ${isDark ? "#333" : "#eee"}`
               }}>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ color: "#1dd1a1", fontSize: "1.8rem", fontWeight: "700" }}>
-                    {totalExercises}
-                  </div>
-                  <div style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem" }}>
-                    {t("exercises_count")}
-                  </div>
+                <input
+                  type="checkbox"
+                  checked={showUpdateRoutinePrompt}
+                  onChange={(e) => setShowUpdateRoutinePrompt(e.target.checked)}
+                  style={{ width: "20px", height: "20px", accentColor: mint, cursor: "pointer" }}
+                />
+                <span style={{ fontSize: "0.95rem" }}>Actualizar rutina original con estos cambios</span>
+              </label>
+            </div>
+          )}
+
+          <div style={{
+            backgroundColor: isDark ? "#0f0f0f" : "#f1f1f1",
+            borderRadius: "8px",
+            padding: "20px",
+            marginBottom: "25px"
+          }}>
+            <h3 style={{ color: isDark ? "#1dd1a1" : "#333", marginBottom: "15px", fontSize: "1.1rem" }}>
+              {t("workout_summary")}
+            </h3>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "15px"
+            }}>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ color: "#1dd1a1", fontSize: "1.8rem", fontWeight: "700" }}>
+                  {totalExercises}
                 </div>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ color: "#1dd1a1", fontSize: "1.8rem", fontWeight: "700" }}>
-                    {totalSeries}
-                  </div>
-                  <div style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem" }}>
-                    {t("series_label")}
-                  </div>
-                </div>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ color: "#1dd1a1", fontSize: "1.8rem", fontWeight: "700" }}>
-                    {totalReps}
-                  </div>
-                  <div style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem" }}>
-                    {t("reps_label")}
-                  </div>
-                </div>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ color: "#1dd1a1", fontSize: "1.8rem", fontWeight: "700" }}>
-                    {totalWeight.toFixed(1)}kg
-                  </div>
-                  <div style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem" }}>
-                    {t("total_volume")}
-                  </div>
+                <div style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem" }}>
+                  {t("exercises_count")}
                 </div>
               </div>
-            </div>
-
-            <div style={{ display: "flex", gap: "15px" }}>
-              <button
-                onClick={() => setShowFinishForm(false)}
-                disabled={savingWorkout}
-                style={{
-                  flex: 1,
-                  padding: "12px",
-                  backgroundColor: isDark ? (savingWorkout ? "#333" : "#444") : (savingWorkout ? "#ddd" : "#ccc"),
-                  color: isDark ? "#fff" : "#333",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: savingWorkout ? "not-allowed" : "pointer",
-                  fontWeight: "600",
-                  transition: "all 0.3s ease",
-                  opacity: savingWorkout ? 0.6 : 1
-                }}
-              >
-                {t("cancel")}
-              </button>
-              <button
-                onClick={handleSaveFinishedRoutine}
-                disabled={savingWorkout}
-                style={{
-                  flex: 1,
-                  padding: "12px",
-                  backgroundColor: savingWorkout ? "#16a853" : "#1dd1a1",
-                  color: savingWorkout ? "#fff" : "#000",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: savingWorkout ? "not-allowed" : "pointer",
-                  fontWeight: "600",
-                  transition: "all 0.3s ease",
-                  opacity: savingWorkout ? 0.8 : 1
-                }}
-              >
-                {savingWorkout ? t("saving") : t("save_workout")}
-              </button>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ color: "#1dd1a1", fontSize: "1.8rem", fontWeight: "700" }}>
+                  {totalSeries}
+                </div>
+                <div style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem" }}>
+                  {t("series_label")}
+                </div>
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ color: "#1dd1a1", fontSize: "1.8rem", fontWeight: "700" }}>
+                  {totalReps}
+                </div>
+                <div style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem" }}>
+                  {t("reps_label")}
+                </div>
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ color: "#1dd1a1", fontSize: "1.8rem", fontWeight: "700" }}>
+                  {totalWeight.toFixed(1)}kg
+                </div>
+                <div style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem" }}>
+                  {t("total_volume")}
+                </div>
+              </div>
             </div>
           </div>
+
+          <div style={{ display: "flex", gap: "15px" }}>
+            <button
+              onClick={() => setShowFinishForm(false)}
+              disabled={savingWorkout}
+              style={{
+                flex: 1,
+                padding: "12px",
+                backgroundColor: isDark ? (savingWorkout ? "#333" : "#444") : (savingWorkout ? "#ddd" : "#ccc"),
+                color: isDark ? "#fff" : "#333",
+                border: "none",
+                borderRadius: "8px",
+                cursor: savingWorkout ? "not-allowed" : "pointer",
+                fontWeight: "600",
+                transition: "all 0.3s ease",
+                opacity: savingWorkout ? 0.6 : 1
+              }}
+            >
+              {t("cancel")}
+            </button>
+            <button
+              onClick={handleSaveFinishedRoutine}
+              disabled={savingWorkout}
+              style={{
+                flex: 1,
+                padding: "12px",
+                backgroundColor: savingWorkout ? "#16a853" : "#1dd1a1",
+                color: savingWorkout ? "#fff" : "#000",
+                border: "none",
+                borderRadius: "8px",
+                cursor: savingWorkout ? "not-allowed" : "pointer",
+                fontWeight: "600",
+                transition: "all 0.3s ease",
+                opacity: savingWorkout ? 0.8 : 1
+              }}
+            >
+              {savingWorkout ? t("saving") : t("save_workout")}
+            </button>
+          </div>
         </div>
+      </div>
     );
   }
 
@@ -1197,14 +1198,14 @@ export default function RoutineDetail() {
               Se perderán todos los datos registrados en esta sesión.
             </p>
             <div style={{ display: "flex", gap: "10px" }}>
-              <button 
-                onClick={() => setShowDiscardConfirm(false)} 
+              <button
+                onClick={() => setShowDiscardConfirm(false)}
                 style={{ flex: 1, padding: "12px", backgroundColor: "#333", color: "#fff", border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}
               >
                 No, continuar
               </button>
-              <button 
-                onClick={handleDiscardWorkout} 
+              <button
+                onClick={handleDiscardWorkout}
                 style={{ flex: 1, padding: "12px", backgroundColor: "#ff4d4d", color: "#fff", border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}
               >
                 Sí, cancelar
@@ -1305,82 +1306,82 @@ export default function RoutineDetail() {
     const volUnit = anyCardio ? "vol" : anyLastre ? "vol" : "kg";
 
     content = (
-        <div style={{ 
-          padding: 0, 
-          maxWidth: "900px", 
-          margin: "0 auto", 
-          backgroundColor: "#000", 
-          minHeight: "100vh",
-          color: "#fff"
+      <div style={{
+        padding: 0,
+        maxWidth: "900px",
+        margin: "0 auto",
+        backgroundColor: "#000",
+        minHeight: "100vh",
+        color: "#fff"
+      }}>
+        {/* Header Superior Estilo Captura */}
+        <div style={{
+          padding: "15px 20px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          backgroundColor: "#000",
+          position: "sticky",
+          top: 0,
+          zIndex: 1002
         }}>
-          {/* Header Superior Estilo Captura */}
-          <div style={{
-            padding: "15px 20px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            backgroundColor: "#000",
-            position: "sticky",
-            top: 0,
-            zIndex: 1002
-          }}>
-            <div 
-              onClick={() => setShowDiscardConfirm(true)}
-              style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
+          <div
+            onClick={() => setShowDiscardConfirm(true)}
+            style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
+          >
+            <span style={{ fontSize: "1.2rem", color: "#fff" }}>∨</span>
+            <span style={{ fontSize: "1.1rem", fontWeight: "500", color: "#fff" }}>Entreno</span>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+            <button
+              onClick={handleCompleteWorkout}
+              style={{
+                backgroundColor: mint,
+                color: "#000",
+                border: "none",
+                borderRadius: "8px",
+                padding: "8px 16px",
+                fontSize: "1rem",
+                fontWeight: "600",
+                cursor: "pointer"
+              }}
             >
-              <span style={{ fontSize: "1.2rem", color: "#fff" }}>∨</span>
-              <span style={{ fontSize: "1.1rem", fontWeight: "500", color: "#fff" }}>Entreno</span>
-            </div>
-            
-            <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-              <button
-                onClick={handleCompleteWorkout}
-                style={{
-                  backgroundColor: mint,
-                  color: "#000",
-                  border: "none",
-                  borderRadius: "8px",
-                  padding: "8px 16px",
-                  fontSize: "1rem",
-                  fontWeight: "600",
-                  cursor: "pointer"
-                }}
-              >
-                Terminar
-              </button>
-            </div>
+              Terminar
+            </button>
           </div>
+        </div>
 
-          {/* Fila de Estadísticas */}
-          <div style={{
-            display: "flex",
-            justifyContent: "space-between",
-            padding: "0 20px 20px 20px",
-            backgroundColor: "#000",
-            borderBottom: "1px solid #1a1a1a"
-          }}>
-            <div>
-              <div style={{ color: "#666", fontSize: "0.75rem", marginBottom: "4px" }}>Duración</div>
-              <div style={{ color: mint, fontSize: "1.1rem", fontWeight: "500" }}>{formatElapsedTime(elapsedTime)}</div>
-            </div>
-            <div>
-              <div style={{ color: "#666", fontSize: "0.75rem", marginBottom: "4px" }}>Volumen</div>
-              <div style={{ color: "#fff", fontSize: "1.1rem", fontWeight: "500" }}>{totalVolume.toLocaleString()} {volUnit}</div>
-            </div>
-            <div>
-              <div style={{ color: "#666", fontSize: "0.75rem", marginBottom: "4px" }}>Series</div>
-              <div style={{ color: "#fff", fontSize: "1.1rem", fontWeight: "500" }}>{totalCompletedSeries}</div>
-            </div>
+        {/* Fila de Estadísticas */}
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          padding: "0 20px 20px 20px",
+          backgroundColor: "#000",
+          borderBottom: "1px solid #1a1a1a"
+        }}>
+          <div>
+            <div style={{ color: "#666", fontSize: "0.75rem", marginBottom: "4px" }}>Duración</div>
+            <div style={{ color: mint, fontSize: "1.1rem", fontWeight: "500" }}>{formatElapsedTime(elapsedTime)}</div>
           </div>
+          <div>
+            <div style={{ color: "#666", fontSize: "0.75rem", marginBottom: "4px" }}>Volumen</div>
+            <div style={{ color: "#fff", fontSize: "1.1rem", fontWeight: "500" }}>{totalVolume.toLocaleString()} {volUnit}</div>
+          </div>
+          <div>
+            <div style={{ color: "#666", fontSize: "0.75rem", marginBottom: "4px" }}>Series</div>
+            <div style={{ color: "#fff", fontSize: "1.1rem", fontWeight: "500" }}>{totalCompletedSeries}</div>
+          </div>
+        </div>
 
-          <div style={{ padding: "20px 15px" }}>
-            {routine.exercises.map((exercise, exIdx) => {
-              const exerciseInfo = getExerciseInfo(exercise.name);
-              const isTimeBased = exerciseInfo?.type === 'time';
-              const isLastre = exerciseInfo?.unit === 'lastre';
-              const isCardio = exerciseInfo?.group === 'Cardio';
-              
-              return (
+        <div style={{ padding: "20px 15px" }}>
+          {routine.exercises.map((exercise, exIdx) => {
+            const exerciseInfo = getExerciseInfo(exercise.name);
+            const isTimeBased = exerciseInfo?.type === 'time';
+            const isLastre = exerciseInfo?.unit === 'lastre';
+            const isCardio = exerciseInfo?.group === 'Cardio';
+
+            return (
               <div
                 key={exIdx}
                 style={{
@@ -1400,19 +1401,19 @@ export default function RoutineDetail() {
                       alignItems: "center",
                       overflow: "hidden"
                     }}>
-                      <img 
-                        src={`/exercises/${(exercise?.name || "").toLowerCase().replace(/ /g, "_")}.png`} 
+                      <img
+                        src={`/exercises/${(exercise?.name || "").toLowerCase().replace(/ /g, "_")}.png`}
                         onError={(e) => { e.target.src = "/logo3.png"; }}
-                        alt="" 
-                        style={{ width: "80%", height: "auto" }} 
+                        alt=""
+                        style={{ width: "80%", height: "auto" }}
                       />
                     </div>
-                    <h2 
+                    <h2
                       onClick={() => router.push(`/exercise-history?exercise=${encodeURIComponent(exercise.name)}`)}
-                      style={{ 
-                        margin: 0, 
-                        color: mint, 
-                        fontSize: "1.15rem", 
+                      style={{
+                        margin: 0,
+                        color: mint,
+                        fontSize: "1.15rem",
                         fontWeight: "500",
                         lineHeight: "1.2",
                         cursor: "pointer"
@@ -1422,13 +1423,13 @@ export default function RoutineDetail() {
                     </h2>
                   </div>
                   <div style={{ position: "relative" }}>
-                    <button 
+                    <button
                       onClick={() => setActiveExerciseMenu(activeExerciseMenu === exIdx ? null : exIdx)}
                       style={{ background: "none", border: "none", color: "#fff", fontSize: "1.5rem", cursor: "pointer" }}
                     >
                       ⋮
                     </button>
-                    
+
                     {activeExerciseMenu === exIdx && (
                       <div style={{
                         position: "absolute",
@@ -1488,30 +1489,30 @@ export default function RoutineDetail() {
 
                 {/* Notas */}
                 <div style={{ marginBottom: "15px" }}>
-                  <input 
-                    type="text" 
-                    placeholder="Agregar notas aquí..." 
-                    style={{ 
-                      width: "100%", 
-                      background: "none", 
-                      border: "none", 
-                      color: "#666", 
+                  <input
+                    type="text"
+                    placeholder="Agregar notas aquí..."
+                    style={{
+                      width: "100%",
+                      background: "none",
+                      border: "none",
+                      color: "#666",
                       fontSize: "0.95rem",
                       padding: "5px 0"
-                    }} 
+                    }}
                   />
                 </div>
 
                 {/* Temporizador de Descanso Estilo Captura */}
-                <div style={{ 
-                  display: "flex", 
-                  alignItems: "center", 
-                  gap: "10px", 
-                  color: mint, 
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  color: mint,
                   marginBottom: "20px",
                   fontSize: "0.95rem"
                 }}>
-                  <span 
+                  <span
                     onClick={() => {
                       setOpenTimePickerId(openTimePickerId === exIdx ? null : exIdx);
                       // Pre-fill tempRestTime with current value
@@ -1519,11 +1520,11 @@ export default function RoutineDetail() {
                     }}
                     style={{ cursor: "pointer", fontWeight: "500" }}
                   >
-                    Descanso: {exercise.rest < 60 ? `${exercise.rest}s` : `${Math.floor(exercise.rest/60)}min ${exercise.rest%60}s`}
+                    Descanso: {exercise.rest < 60 ? `${exercise.rest}s` : `${Math.floor(exercise.rest / 60)}min ${exercise.rest % 60}s`}
                   </span>
-                  
+
                   {openTimePickerId === exIdx && (
-                    <div style={{ 
+                    <div style={{
                       position: "fixed",
                       top: 0, left: 0, right: 0, bottom: 0,
                       backgroundColor: "rgba(0,0,0,0.8)",
@@ -1541,17 +1542,17 @@ export default function RoutineDetail() {
                         textAlign: "center"
                       }}>
                         <h3 style={{ color: "#fff", margin: "0 0 20px 0" }}>Editar Descanso</h3>
-                        
-                        <div style={{ 
-                          height: "150px", 
-                          overflowY: "scroll", 
+
+                        <div style={{
+                          height: "150px",
+                          overflowY: "scroll",
                           position: "relative",
                           scrollbarWidth: "none",
                           msOverflowStyle: "none",
                           padding: "60px 0"
                         }}>
                           {baseTimeOptions.map((opt) => (
-                            <div 
+                            <div
                               key={opt.value}
                               onClick={() => {
                                 handleUpdateRestTime(exIdx, opt.value);
@@ -1573,9 +1574,9 @@ export default function RoutineDetail() {
                             </div>
                           ))}
                         </div>
-                        
+
                         <div style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
-                          <button 
+                          <button
                             onClick={() => setOpenTimePickerId(null)}
                             style={{
                               flex: 1,
@@ -1598,10 +1599,10 @@ export default function RoutineDetail() {
 
                 {/* Tabla de Series */}
                 <div style={{ marginBottom: "15px" }}>
-                  <div style={{ 
-                    display: "grid", 
-                    gridTemplateColumns: "50px 1fr 70px 70px 45px", 
-                    gap: "10px", 
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "50px 1fr 70px 70px 45px",
+                    gap: "10px",
                     marginBottom: "10px",
                     color: "#666",
                     fontSize: "0.75rem",
@@ -1622,7 +1623,7 @@ export default function RoutineDetail() {
                     const isCompleted = seriesCompleted[key];
                     const type = seriesTypes[key] || "N";
                     const prev = previousData[exercise.name];
-                    
+
                     // Calcular el número de serie efectiva (N)
                     let effectiveIndex = 0;
                     for (let i = 0; i < serieIdx; i++) {
@@ -1633,8 +1634,8 @@ export default function RoutineDetail() {
                       <div
                         key={serieIdx}
                         style={{
-                          display: "grid", 
-                          gridTemplateColumns: "50px 1fr 70px 70px 45px", 
+                          display: "grid",
+                          gridTemplateColumns: "50px 1fr 70px 70px 45px",
                           gap: "10px",
                           alignItems: "center",
                           height: "45px",
@@ -1642,10 +1643,10 @@ export default function RoutineDetail() {
                           transition: "background 0.2s"
                         }}
                       >
-                        <div 
+                        <div
                           onClick={() => setShowTypeSelector({ exIdx, serieIdx })}
-                          style={{ 
-                            color: type === "N" ? "#fff" : mint, 
+                          style={{
+                            color: type === "N" ? "#fff" : mint,
                             fontWeight: "bold",
                             fontSize: "1rem",
                             cursor: "pointer",
@@ -1657,17 +1658,17 @@ export default function RoutineDetail() {
                         >
                           {type === "W" ? "W" : type === "D" ? "D" : effectiveIndex + 1}
                         </div>
-                        
+
                         <div style={{ color: "#666", fontSize: "0.9rem" }}>
                           {prev && prev[serieIdx] ? (
-                            isTimeBased 
+                            isTimeBased
                               ? `${prev[serieIdx].weight}m x ${prev[serieIdx].reps}${exerciseInfo?.unit ? exerciseInfo.unit : (isCardio ? 'kmh' : '')}`
                               : isLastre
                                 ? `${prev[serieIdx].weight}L x ${prev[serieIdx].reps}`
                                 : `${prev[serieIdx].weight}kg x ${prev[serieIdx].reps}`
                           ) : "—"}
                         </div>
-                        
+
                         <div>
                           <input
                             type="number"
@@ -1758,146 +1759,164 @@ export default function RoutineDetail() {
                   <span style={{ fontSize: "1.2rem" }}>+</span> Agregar Serie
                 </button>
               </div>
-            );})}
+            );
+          })}
 
-            {/* Selector de Tipo de Serie */}
-            {showTypeSelector && (
-              <div style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: "rgba(0,0,0,0.8)",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                zIndex: 2100
-              }}>
-                <div style={{
-                  backgroundColor: "#1a1a1a",
-                  borderRadius: "12px",
-                  padding: "20px",
-                  width: "250px",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.5)"
-                }}>
-                  <h3 style={{ margin: "0 0 15px 0", color: "#fff", textAlign: "center", fontSize: "1rem" }}>Tipo de Serie</h3>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                    {[
-                      { label: "Calentamiento (W)", value: "W" },
-                      { label: "Serie Efectiva", value: "N" },
-                      { label: "Drop Set (D)", value: "D" }
-                    ].map((opt) => (
-                      <button
-                        key={opt.value}
-                        onClick={() => {
-                          const key = `${showTypeSelector.exIdx}-${showTypeSelector.serieIdx}`;
-                          setSeriesTypes({ ...seriesTypes, [key]: opt.value });
-                          setShowTypeSelector(null);
-                        }}
-                        style={{
-                          padding: "12px",
-                          backgroundColor: "#333",
-                          color: opt.value === "N" ? "#fff" : mint,
-                          border: "none",
-                          borderRadius: "8px",
-                          fontWeight: "bold",
-                          cursor: "pointer",
-                          textAlign: "left"
-                        }}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                    
+          {/* Selector de Tipo de Serie — mismo diseño que en crear/editar rutina */}
+          {showTypeSelector && (
+            <div
+              style={{
+                position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+                backgroundColor: "rgba(0,0,0,0.85)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                zIndex: 3000
+              }}
+              onClick={() => setShowTypeSelector(null)}
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  backgroundColor: "#111",
+                  borderRadius: "16px",
+                  padding: "24px",
+                  width: "300px",
+                  maxWidth: "90vw",
+                  border: "1px solid #2a2a2a",
+                  boxShadow: "0 20px 60px rgba(0,0,0,0.7)"
+                }}
+              >
+                <h3 style={{ color: "#fff", margin: "0 0 6px 0", fontSize: "1.1rem" }}>Tipo de serie</h3>
+                <p style={{ color: "#666", fontSize: "0.8rem", marginBottom: "20px", marginTop: 0 }}>Selecciona el tipo para esta serie</p>
+                {[
+                  { key: "N", label: "Normal", desc: "Serie estándar de trabajo", color: "#fff" },
+                  { key: "W", label: "Calentamiento", desc: "No cuenta para el volumen total", color: mint },
+                  { key: "D", label: "Drop Set", desc: "Reducción de peso sin descanso", color: "#ff9f43" },
+                ].map(({ key, label, desc, color }) => {
+                  const currentType = seriesTypes[`${showTypeSelector.exIdx}-${showTypeSelector.serieIdx}`] || "N";
+                  const isSelected = currentType === key;
+                  return (
                     <button
+                      key={key}
                       onClick={() => {
-                        handleDeleteSeries(showTypeSelector.exIdx, showTypeSelector.serieIdx);
+                        const sKey = `${showTypeSelector.exIdx}-${showTypeSelector.serieIdx}`;
+                        setSeriesTypes({ ...seriesTypes, [sKey]: key });
                         setShowTypeSelector(null);
                       }}
                       style={{
-                        padding: "12px",
-                        backgroundColor: "#333",
-                        color: "#ff4d4d",
-                        border: "none",
-                        borderRadius: "8px",
-                        fontWeight: "bold",
+                        width: "100%",
+                        padding: "14px 16px",
+                        backgroundColor: isSelected ? "rgba(46,230,197,0.1)" : "#1a1a1a",
+                        border: isSelected ? `1px solid ${mint}` : "1px solid #2a2a2a",
+                        borderRadius: "10px",
+                        color: color,
                         cursor: "pointer",
+                        marginBottom: "10px",
                         textAlign: "left",
                         display: "flex",
                         justifyContent: "space-between",
-                        alignItems: "center"
+                        alignItems: "center",
+                        transition: "all 0.15s ease"
                       }}
                     >
-                      Eliminar Serie <span style={{ color: mint }}>×</span>
+                      <div>
+                        <div style={{ fontWeight: "700", fontSize: "1rem" }}>{key} — {label}</div>
+                        <div style={{ color: "#888", fontSize: "0.78rem", marginTop: "2px" }}>{desc}</div>
+                      </div>
+                      {isSelected && <div style={{ color: mint, fontSize: "1.2rem" }}>✓</div>}
                     </button>
+                  );
+                })}
 
-                    <button
-                      onClick={() => setShowTypeSelector(null)}
-                      style={{
-                        padding: "10px",
-                        backgroundColor: "transparent",
-                        color: "#666",
-                        border: "none",
-                        marginTop: "10px",
-                        cursor: "pointer"
-                      }}
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
+                <button
+                  onClick={() => {
+                    handleDeleteSeries(showTypeSelector.exIdx, showTypeSelector.serieIdx);
+                    setShowTypeSelector(null);
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "12px 16px",
+                    backgroundColor: "#1a1a1a",
+                    border: "1px solid #3a1a1a",
+                    borderRadius: "10px",
+                    color: "#ff4d4d",
+                    cursor: "pointer",
+                    marginBottom: "10px",
+                    textAlign: "left",
+                    fontWeight: "600",
+                    fontSize: "0.9rem"
+                  }}
+                >
+                  🗑 Eliminar esta serie
+                </button>
+
+                <button
+                  onClick={() => setShowTypeSelector(null)}
+                  style={{
+                    width: "100%",
+                    marginTop: "4px",
+                    padding: "12px",
+                    backgroundColor: "#222",
+                    color: "#aaa",
+                    border: "none",
+                    borderRadius: "10px",
+                    fontWeight: "600",
+                    cursor: "pointer"
+                  }}
+                >
+                  Cancelar
+                </button>
               </div>
-            )}
-
-
-            <button
-              onClick={handleAddExercise}
-              style={{
-                width: "100%",
-                padding: "15px",
-                backgroundColor: "#1a1a1a",
-                color: mint,
-                border: `1px dashed ${mint}`,
-                borderRadius: "10px",
-                fontSize: "1rem",
-                fontWeight: "600",
-                cursor: "pointer",
-                marginBottom: "20px"
-              }}
-            >
-              + Agregar Ejercicio
-            </button>
-          </div>
-
-
-          {/* Exercise Selector Modal */}
-          {showExerciseSelector && (
-            <ExerciseSelector
-              onSelectExercise={handleSelectExercise}
-              onCancel={() => setShowExerciseSelector(false)}
-            />
+            </div>
           )}
+
+
+          <button
+            onClick={handleAddExercise}
+            style={{
+              width: "100%",
+              padding: "15px",
+              backgroundColor: "#1a1a1a",
+              color: mint,
+              border: `1px dashed ${mint}`,
+              borderRadius: "10px",
+              fontSize: "1rem",
+              fontWeight: "600",
+              cursor: "pointer",
+              marginBottom: "20px"
+            }}
+          >
+            + Agregar Ejercicio
+          </button>
         </div>
+
+
+        {/* Exercise Selector Modal */}
+        {showExerciseSelector && (
+          <ExerciseSelector
+            onSelectExercise={handleSelectExercise}
+            onCancel={() => setShowExerciseSelector(false)}
+          />
+        )}
+      </div>
     );
   }
 
   else if (workoutState === "completed") {
     content = (
-        <div style={{ padding: "20px", maxWidth: "900px", margin: "0 auto" }}>
-          {!showFullSummary ? (
-            <>
-              {/* Resumen Pequeño */}
-              <div style={{
-                backgroundColor: "#1a1a1a",
-                border: "2px solid #1dd1a1",
-                borderRadius: "12px",
-                padding: "30px",
-                marginBottom: "20px",
-                cursor: "pointer",
-                transition: "all 0.3s ease",
-                transform: "scale(1)"
-              }}
+      <div style={{ padding: "20px", maxWidth: "900px", margin: "0 auto" }}>
+        {!showFullSummary ? (
+          <>
+            {/* Resumen Pequeño */}
+            <div style={{
+              backgroundColor: "#1a1a1a",
+              border: "2px solid #1dd1a1",
+              borderRadius: "12px",
+              padding: "30px",
+              marginBottom: "20px",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+              transform: "scale(1)"
+            }}
               onMouseOver={(e) => {
                 e.currentTarget.style.transform = "scale(1.02)";
                 e.currentTarget.style.boxShadow = "0 8px 16px rgba(29, 209, 161, 0.2)";
@@ -1907,86 +1926,59 @@ export default function RoutineDetail() {
                 e.currentTarget.style.boxShadow = "none";
               }}
               onClick={() => setShowFullSummary(true)}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "20px" }}>
-                  <div style={{ flex: 1 }}>
-                <h2 style={{ fontSize: "1.5rem", color: "#1dd1a1", margin: "0 0 10px 0" }}>
-                  {t('workout_completed')}
-                </h2>
-                    <p style={{ fontSize: "1rem", color: "#aaa", margin: "0 0 8px 0" }}>
-                      <strong>{routine.name}</strong>
-                    </p>
-                    <p style={{ color: "#999", fontSize: "0.9rem", margin: "0" }}>
-                      {routine.exercises.length} {t('exercises_count')} · {routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0)} {t('series_completed_label')}
-                    </p>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setWorkoutState("preview");
-                    }}
-                    style={{
-                      padding: "8px 16px",
-                      backgroundColor: "#1dd1a1",
-                      color: "#000",
-                      border: "none",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontWeight: "600",
-                      transition: "all 0.3s ease",
-                      whiteSpace: "nowrap"
-                    }}
-                    onMouseOver={(e) => {
-                      e.target.style.backgroundColor = "#19b088";
-                    }}
-                    onMouseOut={(e) => {
-                      e.target.style.backgroundColor = "#1dd1a1";
-                    }}
-                  >
-                    {t('edit')}
-                  </button>
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "20px" }}>
+                <div style={{ flex: 1 }}>
+                  <h2 style={{ fontSize: "1.5rem", color: "#1dd1a1", margin: "0 0 10px 0" }}>
+                    {t('workout_completed')}
+                  </h2>
+                  <p style={{ fontSize: "1rem", color: "#aaa", margin: "0 0 8px 0" }}>
+                    <strong>{routine.name}</strong>
+                  </p>
+                  <p style={{ color: "#999", fontSize: "0.9rem", margin: "0" }}>
+                    {routine.exercises.length} {t('exercises_count')} · {routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0)} {t('series_completed_label')}
+                  </p>
                 </div>
-              </div>
-
-              {/* Botón para volver */}
-              <Link href="/routines">
-                <button style={{
-                  padding: "10px 20px",
-                  backgroundColor: "#2a2a2a",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  fontWeight: "600",
-                  transition: "all 0.3s ease"
-                }}
-                onMouseOver={(e) => {
-                  e.target.style.backgroundColor = "#444";
-                }}
-                onMouseOut={(e) => {
-                  e.target.style.backgroundColor = "#2a2a2a";
-                }}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setWorkoutState("preview");
+                  }}
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: "#1dd1a1",
+                    color: "#000",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                    transition: "all 0.3s ease",
+                    whiteSpace: "nowrap"
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.backgroundColor = "#19b088";
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.backgroundColor = "#1dd1a1";
+                  }}
                 >
-                  ← {t("back_to_routines")}
+                  {t('edit')}
                 </button>
-              </Link>
-            </>
-          ) : (
-            <>
-              {/* Resumen Completo */}
-              <button
-                onClick={() => setShowFullSummary(false)}
-                style={{
-                  padding: "10px 20px",
-                  backgroundColor: "#2a2a2a",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  fontWeight: "600",
-                  marginBottom: "20px",
-                  transition: "all 0.3s ease"
-                }}
+              </div>
+            </div>
+
+            {/* Botón para volver */}
+            <Link href="/routines">
+              <button style={{
+                padding: "10px 20px",
+                backgroundColor: "#2a2a2a",
+                color: "#fff",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontWeight: "600",
+                transition: "all 0.3s ease"
+              }}
                 onMouseOver={(e) => {
                   e.target.style.backgroundColor = "#444";
                 }}
@@ -1994,22 +1986,49 @@ export default function RoutineDetail() {
                   e.target.style.backgroundColor = "#2a2a2a";
                 }}
               >
-                ← {t("back_to_summary")}
+                ← {t("back_to_routines")}
               </button>
+            </Link>
+          </>
+        ) : (
+          <>
+            {/* Resumen Completo */}
+            <button
+              onClick={() => setShowFullSummary(false)}
+              style={{
+                padding: "10px 20px",
+                backgroundColor: "#2a2a2a",
+                color: "#fff",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontWeight: "600",
+                marginBottom: "20px",
+                transition: "all 0.3s ease"
+              }}
+              onMouseOver={(e) => {
+                e.target.style.backgroundColor = "#444";
+              }}
+              onMouseOut={(e) => {
+                e.target.style.backgroundColor = "#2a2a2a";
+              }}
+            >
+              ← {t("back_to_summary")}
+            </button>
 
-              <div style={{
-                backgroundColor: "#1a1a1a",
-                border: "1px solid #333",
-                borderRadius: "12px",
-                padding: "30px"
-              }}>
-                <h1 style={{ fontSize: "2rem", color: "#1dd1a1", marginBottom: "20px" }}>
-                  {routine.name}
-                </h1>
+            <div style={{
+              backgroundColor: "#1a1a1a",
+              border: "1px solid #333",
+              borderRadius: "12px",
+              padding: "30px"
+            }}>
+              <h1 style={{ fontSize: "2rem", color: "#1dd1a1", marginBottom: "20px" }}>
+                {routine.name}
+              </h1>
 
-                {routine.exercises.map((exercise, exIdx) => {
-                  const info = getExerciseInfo(exercise.name);
-                  return (
+              {routine.exercises.map((exercise, exIdx) => {
+                const info = getExerciseInfo(exercise.name);
+                return (
                   <div key={exIdx} style={{
                     marginBottom: "25px",
                     paddingBottom: "20px",
@@ -2029,7 +2048,7 @@ export default function RoutineDetail() {
                         }
                       })()}
                     </p>
-                    
+
                     <div style={{ marginLeft: "15px" }}>
                       {exercise.series.map((serie, sIdx) => {
                         const key = `${exIdx}-${sIdx}`;
@@ -2051,47 +2070,48 @@ export default function RoutineDetail() {
                       })}
                     </div>
                   </div>
-                );})}
+                );
+              })}
 
-                <div style={{
-                  backgroundColor: "#0f0f0f",
-                  border: "1px solid #1dd1a1",
-                  borderRadius: "8px",
-                  padding: "15px",
-                  marginTop: "20px",
-                  textAlign: "center"
-                }}>
-                  <p style={{ color: "#1dd1a1", fontSize: "1.1rem", margin: "0" }}>
-                    {t("workout_completed_success")}
-                  </p>
-                </div>
+              <div style={{
+                backgroundColor: "#0f0f0f",
+                border: "1px solid #1dd1a1",
+                borderRadius: "8px",
+                padding: "15px",
+                marginTop: "20px",
+                textAlign: "center"
+              }}>
+                <p style={{ color: "#1dd1a1", fontSize: "1.1rem", margin: "0" }}>
+                  {t("workout_completed_success")}
+                </p>
               </div>
+            </div>
 
-              <Link href="/routines" style={{ display: "block", marginTop: "20px" }}>
-                <button style={{
-                  width: "100%",
-                  padding: "12px 20px",
-                  backgroundColor: "#2a2a2a",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  fontWeight: "600",
-                  transition: "all 0.3s ease"
-                }}
+            <Link href="/routines" style={{ display: "block", marginTop: "20px" }}>
+              <button style={{
+                width: "100%",
+                padding: "12px 20px",
+                backgroundColor: "#2a2a2a",
+                color: "#fff",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontWeight: "600",
+                transition: "all 0.3s ease"
+              }}
                 onMouseOver={(e) => {
                   e.target.style.backgroundColor = "#444";
                 }}
                 onMouseOut={(e) => {
                   e.target.style.backgroundColor = "#2a2a2a";
                 }}
-                >
-                  {t("back_to_routines")}
-                </button>
-              </Link>
-            </>
-          )}
-        </div>
+              >
+                {t("back_to_routines")}
+              </button>
+            </Link>
+          </>
+        )}
+      </div>
     );
   }
 

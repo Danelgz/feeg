@@ -4,7 +4,7 @@ import { bodyTypes } from "../data/bodyPaths";
 export default function BodyHeatmap({
   counts = {},
   manualLevels = {},
-  onMuscleClick = () => {},
+  onMuscleClick = () => { },
   isDark = false
 }) {
   const [side, setSide] = useState("front");
@@ -27,7 +27,7 @@ export default function BodyHeatmap({
       case 3: return "#ff7a2b";
       case 2: return "#ffd12b";
       case 1: return "#9cff2b";
-      default: return "#2fd6a2";
+      default: return isDark ? "#4a4a4a" : "#9e9e9e";
     }
   };
 
@@ -36,7 +36,7 @@ export default function BodyHeatmap({
   return (
     <div style={{ textAlign: "center", width: "100%" }}>
       <div style={{ marginBottom: 15, display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
-        <button 
+        <button
           onClick={() => setSide("front")}
           style={{
             padding: "8px 16px",
@@ -50,7 +50,7 @@ export default function BodyHeatmap({
         >
           Frontal
         </button>
-        <button 
+        <button
           onClick={() => setSide("back")}
           style={{
             padding: "8px 16px",
@@ -86,7 +86,7 @@ export default function BodyHeatmap({
         ))}
       </div>
 
-      <div style={{ display: "flex", justifyContent: "center" }}>
+      <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
         {!hasData ? (
           <div
             style={{
@@ -105,12 +105,15 @@ export default function BodyHeatmap({
         ) : (
           <svg
             viewBox="0 0 100 220"
-            width="100%"
-            style={{ 
-              maxWidth: 300, 
+            preserveAspectRatio="xMidYMid meet"
+            style={{
+              width: "100%",
+              maxWidth: "280px",
+              height: "auto",
               background: isDark ? "#111" : "#f9f9f9",
               borderRadius: "20px",
               padding: "20px",
+              boxSizing: "border-box",
               border: `1px solid ${isDark ? "#333" : "#eee"}`
             }}
           >
@@ -125,7 +128,7 @@ export default function BodyHeatmap({
                     key={muscle + i}
                     d={d}
                     fill={getColor(level)}
-                    stroke={isDark ? "#000" : "#fff"}
+                    stroke={isDark ? "#222" : "#fff"}
                     strokeWidth="0.5"
                     onClick={() => onMuscleClick(muscle)}
                     style={{ cursor: "pointer", transition: "fill 0.3s ease" }}

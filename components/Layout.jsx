@@ -6,7 +6,7 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 
 export default function Layout({ children, hideBottomNav = false }) {
-  const { theme, isMobile, activeRoutine, endRoutine, notification, t } = useUser();
+  const { theme, isMobile, activeRoutine, endRoutine, notification, isSyncing, t } = useUser();
   const isDark = theme === 'dark';
   const [isMounted, setIsMounted] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
@@ -37,7 +37,7 @@ export default function Layout({ children, hideBottomNav = false }) {
           return;
         }
       }
-    } catch (_) {}
+    } catch (_) { }
 
     const p = router.asPath || '';
     let fallback = '/';
@@ -72,7 +72,7 @@ export default function Layout({ children, hideBottomNav = false }) {
         if (router.pathname !== "/") {
           router.push("/");
         }
-      }, 2500); 
+      }, 2500);
       return () => {
         clearTimeout(timer);
         clearTimeout(exitTimer);
@@ -81,11 +81,11 @@ export default function Layout({ children, hideBottomNav = false }) {
   }, [showIntro, router]);
 
   return (
-    <div style={{ 
-      display: "flex", 
+    <div style={{
+      display: "flex",
       flexDirection: currentIsMobile ? "column" : "row",
-      minHeight: "100vh", 
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'", 
+      minHeight: "100vh",
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'",
       backgroundColor: isDark ? "#0f0f0f" : "#f0f2f5",
       color: isDark ? "#fff" : "#333",
       transition: "background-color 0.3s ease",
@@ -131,7 +131,65 @@ export default function Layout({ children, hideBottomNav = false }) {
 
       {isMounted && (
         <>
-          {/* Sistema de Notificaciones Web */}
+          {/* Pantalla de Carga / Sincronización */}
+          {isSyncing && (
+            <div style={{
+              position: "fixed",
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.75)",
+              backdropFilter: "blur(4px)",
+              WebkitBackdropFilter: "blur(4px)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 15000,
+              gap: "20px",
+              animation: "syncFadeIn 0.3s ease"
+            }}>
+              <style>{`
+                @keyframes syncFadeIn {
+                  from { opacity: 0; }
+                  to { opacity: 1; }
+                }
+                @keyframes syncSpin {
+                  from { transform: rotate(0deg); }
+                  to { transform: rotate(360deg); }
+                }
+                @keyframes syncPulse {
+                  0%, 100% { opacity: 0.6; }
+                  50% { opacity: 1; }
+                }
+              `}</style>
+              <div style={{
+                width: "56px",
+                height: "56px",
+                borderRadius: "50%",
+                border: "4px solid rgba(29, 209, 161, 0.2)",
+                borderTopColor: "#1dd1a1",
+                animation: "syncSpin 0.9s linear infinite"
+              }} />
+              <div style={{ textAlign: "center" }}>
+                <div style={{
+                  color: "#fff",
+                  fontSize: "1.05rem",
+                  fontWeight: "600",
+                  letterSpacing: "0.01em",
+                  animation: "syncPulse 1.8s ease-in-out infinite"
+                }}>
+                  Sincronizando tus datos…
+                </div>
+                <div style={{
+                  color: "rgba(255,255,255,0.45)",
+                  fontSize: "0.8rem",
+                  marginTop: "6px"
+                }}>
+                  Un momento, por favor
+                </div>
+              </div>
+            </div>
+          )}
+
           {notification && (
             <div style={{
               position: "fixed",
@@ -211,7 +269,7 @@ export default function Layout({ children, hideBottomNav = false }) {
           {(!showIntro || isIntroExiting) && (
             <>
               <Sidebar />
-              
+
               {/* Botón de Retroceder */}
               {!isTopLevel && (
                 <button
@@ -221,7 +279,7 @@ export default function Layout({ children, hideBottomNav = false }) {
                   style={{
                     position: "fixed",
                     top: "15px",
-                    left: currentIsMobile ? "15px" : "235px", 
+                    left: currentIsMobile ? "15px" : "235px",
                     zIndex: 2000,
                     width: currentIsMobile ? "36px" : "45px",
                     height: currentIsMobile ? "36px" : "45px",
@@ -251,14 +309,14 @@ export default function Layout({ children, hideBottomNav = false }) {
                 </button>
               )}
 
-              <main 
+              <main
                 key={router.asPath}
                 className="page-transition"
-                style={{ 
-                  flex: 1, 
-                  padding: currentIsMobile ? "0" : "20px", 
+                style={{
+                  flex: 1,
+                  padding: currentIsMobile ? "0" : "20px",
                   paddingBottom: currentIsMobile ? "80px" : "20px",
-                  backgroundColor: isDark ? "#0f0f0f" : "#f0f2f5", 
+                  backgroundColor: isDark ? "#0f0f0f" : "#f0f2f5",
                   color: isDark ? "#fff" : "#333",
                   transition: "background-color 0.3s ease",
                   width: "100%",
@@ -297,26 +355,26 @@ export default function Layout({ children, hideBottomNav = false }) {
                   `}</style>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <div style={{ display: "flex", flexDirection: "column" }}>
-                      <span style={{ 
-                        fontSize: "0.75rem", 
-                        color: isDark ? "#aaa" : "#666", 
+                      <span style={{
+                        fontSize: "0.75rem",
+                        color: isDark ? "#aaa" : "#666",
                         textTransform: "uppercase",
                         letterSpacing: "1px",
                         fontWeight: "bold"
                       }}>
                         {t("active_routine_in_progress")}
                       </span>
-                      <span style={{ 
-                        fontWeight: "bold", 
-                        color: isDark ? "#fff" : "#333", 
+                      <span style={{
+                        fontWeight: "bold",
+                        color: isDark ? "#fff" : "#333",
                         fontSize: "1.1rem",
                         marginTop: "2px"
                       }}>
                         {activeRoutine.name}
                       </span>
                     </div>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); if(confirm(t("delete_routine_confirmation"))) endRoutine(); }}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); if (confirm(t("delete_routine_confirmation"))) endRoutine(); }}
                       title={t("delete_routine_short")}
                       style={{
                         background: isDark ? "#333" : "#eee",
@@ -337,7 +395,7 @@ export default function Layout({ children, hideBottomNav = false }) {
                       onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
                     >×</button>
                   </div>
-                  <button 
+                  <button
                     onClick={() => router.push(activeRoutine?.id ? `/routines/${activeRoutine.id}` : activeRoutine.path)}
                     style={{
                       backgroundColor: "#1dd1a1",

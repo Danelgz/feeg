@@ -78,9 +78,9 @@ export default function Statistics() {
         });
       }
       if (!Array.isArray(w.details) && w.seriesByGroup) {
-        Object.entries(w.seriesByGroup).forEach(([k,v]) => {
+        Object.entries(w.seriesByGroup).forEach(([k, v]) => {
           const found = Object.keys(groupMap).find(key => groupMap[key].includes(k) || key === k);
-          if (found) counts[found] += Number(v||0);
+          if (found) counts[found] += Number(v || 0);
         });
       }
     });
@@ -121,8 +121,8 @@ export default function Statistics() {
               transition: 'all 0.2s ease',
               cursor: 'pointer'
             }}
-            onMouseOver={(e) => e.currentTarget.style.borderColor = '#1dd1a1'}
-            onMouseOut={(e) => e.currentTarget.style.borderColor = isDark ? '#333' : '#ddd'}
+              onMouseOver={(e) => e.currentTarget.style.borderColor = '#1dd1a1'}
+              onMouseOut={(e) => e.currentTarget.style.borderColor = isDark ? '#333' : '#ddd'}
             >
               {btn.label}
             </div>
@@ -219,7 +219,7 @@ function OverviewSection({ isDark, isMobile, workouts, t }) {
                   <MiniStat label={t('exercises_count')} value={w.exercises} isDark={isDark} />
                   <MiniStat label={t('series_label')} value={w.series} isDark={isDark} />
                   <MiniStat label={t('reps_label')} value={w.totalReps} isDark={isDark} />
-                  <MiniStat label={t('total_volume_kg')} value={(w.totalVolume||0).toLocaleString()} isDark={isDark} />
+                  <MiniStat label={t('total_volume_kg')} value={(w.totalVolume || 0).toLocaleString()} isDark={isDark} />
                 </div>
               </div>
             ))}
@@ -245,7 +245,10 @@ function OverviewSection({ isDark, isMobile, workouts, t }) {
 }
 
 function SeriesByGroupSection({ isDark, seriesByGroup, t }) {
-  const entries = Object.entries(seriesByGroup).sort((a,b) => b[1]-a[1]);
+  const entries = Object.entries(seriesByGroup).sort((a, b) => b[1] - a[1]);
+  const maxVal = entries[0]?.[1] || 1;
+  const [tooltip, setTooltip] = useState(null);
+
   return (
     <section style={{
       backgroundColor: isDark ? '#1a1a1a' : '#fff',
@@ -260,13 +263,48 @@ function SeriesByGroupSection({ isDark, seriesByGroup, t }) {
         <div>
           {entries.map(([g, n]) => (
             <div key={g} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-              <div style={{ width: '140px', color: isDark ? '#ddd' : '#444' }}>{t(g) || g}</div>
-              <div style={{ flex: 1, height: '10px', background: isDark ? '#0f0f0f' : '#eee', borderRadius: '999px', overflow: 'hidden' }}>
-                <div style={{ width: `${n === 0 ? 2 : Math.min(100, (n/Math.max(1, entries[0][1]))*100)}%`, height: '100%', background: '#1dd1a1' }} />
+              <div style={{ width: '140px', color: isDark ? '#ddd' : '#444', fontSize: '0.9rem' }}>{t(g) || g}</div>
+              <div
+                style={{ flex: 1, height: '18px', background: isDark ? '#0f0f0f' : '#eee', borderRadius: '999px', overflow: 'visible', position: 'relative', cursor: 'pointer' }}
+                onMouseEnter={(e) => setTooltip({ g, n, x: e.clientX, y: e.clientY })}
+                onMouseMove={(e) => setTooltip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : prev)}
+                onMouseLeave={() => setTooltip(null)}
+                onTouchStart={(e) => { const t2 = e.touches[0]; setTooltip({ g, n, x: t2.clientX, y: t2.clientY }); }}
+                onTouchEnd={() => setTimeout(() => setTooltip(null), 900)}
+              >
+                <div style={{
+                  width: `${n === 0 ? 2 : Math.min(100, (n / maxVal) * 100)}%`,
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #1dd1a1, #19b088)',
+                  borderRadius: '999px',
+                  transition: 'width 0.4s ease'
+                }} />
               </div>
-              <div style={{ width: '40px', textAlign: 'right', color: isDark ? '#aaa' : '#666' }}>{n}</div>
+              <div style={{ width: '40px', textAlign: 'right', color: isDark ? '#aaa' : '#666', fontWeight: '600' }}>{n}</div>
             </div>
           ))}
+
+          {/* Tooltip */}
+          {tooltip && (
+            <div style={{
+              position: 'fixed',
+              left: tooltip.x + 12,
+              top: tooltip.y - 36,
+              backgroundColor: isDark ? '#1a1a1a' : '#333',
+              color: '#fff',
+              padding: '5px 12px',
+              borderRadius: '8px',
+              fontSize: '0.82rem',
+              fontWeight: '600',
+              pointerEvents: 'none',
+              zIndex: 9999,
+              border: '1px solid #1dd1a1',
+              whiteSpace: 'nowrap',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+            }}>
+              {t(tooltip.g) || tooltip.g}: <span style={{ color: '#1dd1a1' }}>{tooltip.n} series</span>
+            </div>
+          )}
         </div>
       )}
     </section>
@@ -274,26 +312,64 @@ function SeriesByGroupSection({ isDark, seriesByGroup, t }) {
 }
 
 function DistributionChartSection({ isDark, seriesByGroup, t }) {
-  const total = Object.values(seriesByGroup).reduce((a,b)=>a+b,0) || 1;
+  const total = Object.values(seriesByGroup).reduce((a, b) => a + b, 0) || 1;
+  const [tooltip, setTooltip] = useState(null);
+
   return (
     <section style={{
       backgroundColor: isDark ? '#1a1a1a' : '#fff',
       border: isDark ? '1px solid #333' : '1px solid #e0e0e0',
       borderRadius: '10px',
-      padding: '16px'
+      padding: '16px',
+      position: 'relative'
     }}>
       <h2 style={{ margin: 0, marginBottom: '12px', color: isDark ? '#fff' : '#333', fontSize: '1.1rem' }}>Distribución de músculos (gráfico)</h2>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
-        {Object.entries(seriesByGroup).map(([g,n]) => (
+        {Object.entries(seriesByGroup).map(([g, n]) => (
           <div key={g} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '120px', color: isDark ? '#ddd' : '#444' }}>{t(g) || g}</div>
-            <div style={{ flex: 1, height: '10px', background: isDark ? '#0f0f0f' : '#eee', borderRadius: '999px', overflow: 'hidden' }}>
-              <div style={{ width: `${(n/total)*100}%`, height: '100%', background: '#1dd1a1' }} />
+            <div style={{ width: '120px', color: isDark ? '#ddd' : '#444', fontSize: '0.9rem' }}>{t(g) || g}</div>
+            <div
+              style={{ flex: 1, height: '18px', background: isDark ? '#0f0f0f' : '#eee', borderRadius: '999px', overflow: 'visible', position: 'relative', cursor: 'pointer' }}
+              onMouseEnter={(e) => setTooltip({ g, n, pct: Math.round((n / total) * 100), x: e.clientX, y: e.clientY })}
+              onMouseMove={(e) => setTooltip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : prev)}
+              onMouseLeave={() => setTooltip(null)}
+              onTouchStart={(e) => { const t2 = e.touches[0]; setTooltip({ g, n, pct: Math.round((n / total) * 100), x: t2.clientX, y: t2.clientY }); }}
+              onTouchEnd={() => setTimeout(() => setTooltip(null), 900)}
+            >
+              <div style={{
+                width: `${(n / total) * 100}%`,
+                height: '100%',
+                background: 'linear-gradient(90deg, #1dd1a1, #19b088)',
+                borderRadius: '999px',
+                transition: 'width 0.4s ease'
+              }} />
             </div>
-            <div style={{ width: '60px', textAlign: 'right', color: isDark ? '#aaa' : '#666' }}>{Math.round((n/total)*100)}%</div>
+            <div style={{ width: '50px', textAlign: 'right', color: isDark ? '#aaa' : '#666', fontWeight: '600', fontSize: '0.85rem' }}>{Math.round((n / total) * 100)}%</div>
           </div>
         ))}
       </div>
+
+      {/* Tooltip */}
+      {tooltip && (
+        <div style={{
+          position: 'fixed',
+          left: tooltip.x + 12,
+          top: tooltip.y - 36,
+          backgroundColor: isDark ? '#1a1a1a' : '#333',
+          color: '#fff',
+          padding: '5px 12px',
+          borderRadius: '8px',
+          fontSize: '0.82rem',
+          fontWeight: '600',
+          pointerEvents: 'none',
+          zIndex: 9999,
+          border: '1px solid #1dd1a1',
+          whiteSpace: 'nowrap',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+        }}>
+          {t(tooltip.g) || tooltip.g}: <span style={{ color: '#1dd1a1' }}>{tooltip.pct}% ({tooltip.n} series)</span>
+        </div>
+      )}
     </section>
   );
 }
@@ -319,7 +395,7 @@ function WeeklyBodyMapSection({ isDark, workouts, t }) {
 
   const muscleSeriesCount = {};
   Object.keys(groupMap).forEach(g => muscleSeriesCount[g] = 0);
-  
+
   workouts.forEach(w => {
     if (Array.isArray(w.details)) {
       w.details.forEach(d => {
@@ -329,9 +405,9 @@ function WeeklyBodyMapSection({ isDark, workouts, t }) {
       });
     }
     if (!Array.isArray(w.details) && w.seriesByGroup) {
-      Object.entries(w.seriesByGroup).forEach(([k,v]) => {
+      Object.entries(w.seriesByGroup).forEach(([k, v]) => {
         const found = Object.keys(groupMap).find(key => groupMap[key].includes(k) || key === k);
-        if (found) muscleSeriesCount[found] += Number(v||0);
+        if (found) muscleSeriesCount[found] += Number(v || 0);
       });
     }
   });
@@ -356,15 +432,15 @@ function MonthlyReportSection({ isDark, workouts, t }) {
   workouts.forEach(w => {
     if (!w.completedAt) return;
     const d = new Date(w.completedAt);
-    const key = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
+    const key = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
     if (!byMonth[key]) byMonth[key] = { sessions: 0, series: 0, reps: 0, volume: 0, timeMin: 0 };
     byMonth[key].sessions += 1;
-    byMonth[key].series += Number(w.series||0);
-    byMonth[key].reps += Number(w.totalReps||0);
-    byMonth[key].volume += Number(w.totalVolume||0);
-    byMonth[key].timeMin += w.elapsedTime !== undefined ? Math.round((Number(w.elapsedTime||0))/60) : Number(w.totalTime||0);
+    byMonth[key].series += Number(w.series || 0);
+    byMonth[key].reps += Number(w.totalReps || 0);
+    byMonth[key].volume += Number(w.totalVolume || 0);
+    byMonth[key].timeMin += w.elapsedTime !== undefined ? Math.round((Number(w.elapsedTime || 0)) / 60) : Number(w.totalTime || 0);
   });
-  const entries = Object.entries(byMonth).sort((a,b)=>b[0].localeCompare(a[0]));
+  const entries = Object.entries(byMonth).sort((a, b) => b[0].localeCompare(a[0]));
   return (
     <section style={{
       backgroundColor: isDark ? '#1a1a1a' : '#fff',
@@ -405,9 +481,9 @@ function ExerciseStatsSection({ isDark, workouts, t }) {
         if (!name) return;
         if (!index[name]) index[name] = { sessions: 0, series: 0, reps: 0, volume: 0 };
         index[name].sessions += 1;
-        index[name].series += Number(d.series||0);
-        index[name].reps += Number(d.reps||0);
-        index[name].volume += Number(d.weight||0) * Number(d.reps||0) * Number(d.series||1);
+        index[name].series += Number(d.series || 0);
+        index[name].reps += Number(d.reps || 0);
+        index[name].volume += Number(d.weight || 0) * Number(d.reps || 0) * Number(d.series || 1);
       });
     }
   });
@@ -422,7 +498,7 @@ function ExerciseStatsSection({ isDark, workouts, t }) {
       <h2 style={{ margin: 0, marginBottom: '12px', color: isDark ? '#fff' : '#333', fontSize: '1.1rem' }}>Estadísticas Ejercicios</h2>
       <input
         value={q}
-        onChange={(e)=>setQ(e.target.value)}
+        onChange={(e) => setQ(e.target.value)}
         placeholder={t('search_exercise')}
         style={{
           width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${isDark ? '#333' : '#ddd'}`,

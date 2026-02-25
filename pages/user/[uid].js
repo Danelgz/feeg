@@ -7,14 +7,14 @@ import { getFromCloud, getUserWorkouts, likeWorkout, addWorkoutComment, getFollo
 export default function UserProfile() {
   const router = useRouter();
   const { uid } = router.query;
-  const { 
-    authUser, 
+  const {
+    authUser,
     user: currentUser,
-    isLoaded, 
-    isMobile, 
-    following, 
-    handleFollow, 
-    handleUnfollow 
+    isLoaded,
+    isMobile,
+    following,
+    handleFollow,
+    handleUnfollow
   } = useUser();
 
   const [targetUser, setTargetUser] = useState(null);
@@ -27,6 +27,7 @@ export default function UserProfile() {
   const [followingList, setFollowingList] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [expandedWorkout, setExpandedWorkout] = useState(null);
+  const [hoveredWorkout, setHoveredWorkout] = useState(null);
 
   const { t } = useUser();
 
@@ -61,7 +62,7 @@ export default function UserProfile() {
         // Calcular seguidores en tiempo real
         const fCount = await getFollowersCount(uid);
         setTargetUser({ ...userData, followersCount: fCount });
-        
+
         const userWorkouts = await getUserWorkouts(uid);
         setWorkouts(userWorkouts);
       }
@@ -184,12 +185,26 @@ export default function UserProfile() {
             <div style={{ color: "#444", textAlign: "center" }}>Este usuario aún no ha publicado entrenamientos.</div>
           ) : (
             workouts.map(workout => (
-              <div key={workout.id} style={{ backgroundColor: "#1a1a1a", padding: "15px", borderRadius: "12px" }}>
+              <div
+                key={workout.id}
+                onMouseEnter={() => setHoveredWorkout(workout.id)}
+                onMouseLeave={() => setHoveredWorkout(null)}
+                style={{
+                  backgroundColor: "#1a1a1a",
+                  padding: "15px",
+                  borderRadius: "12px",
+                  border: hoveredWorkout === workout.id ? "1px solid #1dd1a1" : "1px solid transparent",
+                  transform: hoveredWorkout === workout.id ? "translateY(-2px)" : "translateY(0)",
+                  boxShadow: hoveredWorkout === workout.id ? "0 8px 24px rgba(29, 209, 161, 0.15)" : "0 2px 8px rgba(0,0,0,0.2)",
+                  transition: "all 0.2s ease",
+                  cursor: "default"
+                }}
+              >
                 <div style={{ marginBottom: "10px" }}>
                   <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#1dd1a1" }}>{workout.name}</div>
                   <div style={{ fontSize: "0.9rem", color: "#ccc", marginTop: "5px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span>{workout.series} series • {workout.totalVolume?.toLocaleString()} kg • {workout.totalReps} reps</span>
-                    <button 
+                    <button
                       onClick={() => setExpandedWorkout(expandedWorkout === workout.id ? null : workout.id)}
                       style={{
                         background: "none",
@@ -207,10 +222,10 @@ export default function UserProfile() {
                 </div>
 
                 {expandedWorkout === workout.id && workout.exerciseDetails && (
-                  <div style={{ 
-                    backgroundColor: "#000", 
-                    borderRadius: "12px", 
-                    padding: "15px", 
+                  <div style={{
+                    backgroundColor: "#000",
+                    borderRadius: "12px",
+                    padding: "15px",
                     marginBottom: "15px",
                     display: "flex",
                     flexDirection: "column",
@@ -230,16 +245,16 @@ export default function UserProfile() {
                             alignItems: "center",
                             overflow: "hidden"
                           }}>
-                            <img 
-                              src={`/exercises/${(ex?.name || "").toLowerCase().replace(/ /g, "_")}.png`} 
+                            <img
+                              src={`/exercises/${(ex?.name || "").toLowerCase().replace(/ /g, "_")}.png`}
                               onError={(e) => { e.target.src = "/logo3.png"; }}
-                              alt="" 
-                              style={{ width: "80%", height: "auto" }} 
+                              alt=""
+                              style={{ width: "80%", height: "auto" }}
                             />
                           </div>
                           <div style={{ fontWeight: "500", fontSize: "1rem", color: "#1dd1a1" }}>{t(ex.name)}</div>
                         </div>
-                        
+
                         <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                           <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr", padding: "5px 0", borderBottom: "1px solid #1a1a1a", color: "#666", fontSize: "0.75rem", fontWeight: "bold", textAlign: "center" }}>
                             <div>SERIE</div>
@@ -247,10 +262,10 @@ export default function UserProfile() {
                             <div>REPS</div>
                           </div>
                           {ex.series.map((s, sIdx) => (
-                            <div key={sIdx} style={{ 
-                              display: "grid", 
-                              gridTemplateColumns: "40px 1fr 1fr", 
-                              padding: "8px 0", 
+                            <div key={sIdx} style={{
+                              display: "grid",
+                              gridTemplateColumns: "40px 1fr 1fr",
+                              padding: "8px 0",
                               textAlign: "center",
                               fontSize: "0.9rem",
                               color: "#fff",
@@ -359,14 +374,14 @@ export default function UserProfile() {
               <h2 style={{ color: "#fff", margin: 0 }}>{showFollowers ? "Seguidores" : "Siguiendo"}</h2>
               <button onClick={() => { setShowFollowers(false); setShowFollowing(false); }} style={{ background: "none", border: "none", color: "#fff", fontSize: "1.5rem", cursor: "pointer" }}>&times;</button>
             </div>
-            
+
             <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
               {(showFollowers ? followersList : followingList).length === 0 ? (
                 <p style={{ color: "#888", textAlign: "center" }}>No hay nadie aquí todavía.</p>
               ) : (
                 (showFollowers ? followersList : followingList).map(u => (
-                  <div 
-                    key={u.id} 
+                  <div
+                    key={u.id}
                     onClick={() => {
                       if (u.id === authUser?.uid) {
                         router.push("/profile");

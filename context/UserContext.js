@@ -304,14 +304,15 @@ export function UserProvider({ children }) {
     localStorage.setItem('completedWorkouts', JSON.stringify(newList));
     if (authUser) {
       await saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList });
-      // Guardar también en colección global para el feed
+      // Guardar también en colección global para el feed (público por defecto)
       await saveToCloud(`workouts/${workout.id}`, { 
         ...workout, 
         userId: authUser.uid,
         userName: user?.username || authUser.displayName,
         userPhoto: user?.photoURL || authUser.photoURL,
         likes: [],
-        commentsList: []
+        commentsList: [],
+        isPublic: true
       });
     }
   };
@@ -338,7 +339,8 @@ export function UserProvider({ children }) {
           userName: user?.username || authUser.displayName,
           userPhoto: user?.photoURL || authUser.photoURL,
           likes: [],
-          commentsList: []
+          commentsList: [],
+          isPublic: true
         })
       );
       await Promise.all(feedPromises);

@@ -1,135 +1,197 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useUser } from '../context/UserContext';
 
 export default function NumberWheel({ value, onChange, min, max, label, step = 1 }) {
-  const [scrollPosition, setScrollPosition] = useState(0);
+  const scrollRef = useRef(null);
   const { theme } = useUser();
   const isDark = theme === 'dark';
+  const isScrolling = useRef(false);
+  const scrollTimer = useRef(null);
 
-  const baseOptions = Array.from({ length: (max - min) / step + 1 }, (_, i) => min + i * step);
-  // Crear array con repetición para efecto de bucle infinito
+  const baseOptions = Array.from({ length: Math.round((max - min) / step) + 1 }, (_, i) => min + i * step);
   const options = [...baseOptions, ...baseOptions, ...baseOptions];
+
+  const itemHeight = 36;
+  const visibleItems = 5;
+  const containerHeight = itemHeight * visibleItems;
+
+  const scrollToIndex = (idx, smooth = false) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const targetTop = (baseOptions.length + idx) * itemHeight - (containerHeight / 2) + (itemHeight / 2);
+    el.scrollTo({ top: targetTop, behavior: smooth ? 'smooth' : 'auto' });
+  };
 
   useEffect(() => {
     if (value !== undefined && baseOptions.includes(value)) {
       const idx = baseOptions.indexOf(value);
-      setTimeout(() => {
-        const wheelElement = document.querySelector(`[data-wheel="${label}"]`);
-        if (wheelElement) {
-          // Empezar en la segunda repetición para tener arriba y abajo
-          wheelElement.scrollTop = (baseOptions.length + idx) * 30 - 60;
-        }
-      }, 0);
+      // Use rAF to ensure DOM is ready
+      requestAnimationFrame(() => scrollToIndex(idx, false));
     }
   }, []);
 
+  const getSelectedIndex = (scrollTop) => {
+    const center = scrollTop + (containerHeight / 2) - (itemHeight / 2);
+    return Math.round(center / itemHeight);
+  };
+
+  const snapToNearest = (scrollTop) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const rawIdx = getSelectedIndex(scrollTop);
+    const baseLen = baseOptions.length;
+
+    // Infinite loop correction
+    let correctedTop = scrollTop;
+    if (rawIdx >= baseLen * 2.5) {
+      correctedTop = (rawIdx % baseLen) * itemHeight + baseLen * itemHeight - (containerHeight / 2) + (itemHeight / 2);
+      el.scrollTop = correctedTop;
+    } else if (rawIdx <= baseLen * 0.5) {
+      correctedTop = ((rawIdx % baseLen) + baseLen) * itemHeight - (containerHeight / 2) + (itemHeight / 2);
+      el.scrollTop = correctedTop;
+    }
+
+    const finalIdx = getSelectedIndex(el.scrollTop);
+    const actualIdx = ((finalIdx % baseLen) + baseLen) % baseLen;
+    if (actualIdx >= 0 && actualIdx < baseLen) {
+      onChange(baseOptions[actualIdx]);
+    }
+  };
+
   const handleScroll = (e) => {
-    const baseLength = baseOptions.length;
-    setScrollPosition(e.target.scrollTop);
-    const itemHeight = 30;
-    const centerPos = e.target.scrollTop + 60;
-    const selectedIdx = Math.round(centerPos / itemHeight);
-    
-    // Usar módulo para el bucle infinito
-    const actualIdx = selectedIdx % baseLength;
-    if (actualIdx >= 0 && actualIdx < baseLength) {
+    const scrollTop = e.target.scrollTop;
+
+    // Update value in real-time for responsiveness
+    const rawIdx = getSelectedIndex(scrollTop);
+    const baseLen = baseOptions.length;
+    const actualIdx = ((rawIdx % baseLen) + baseLen) % baseLen;
+    if (actualIdx >= 0 && actualIdx < baseLen) {
       onChange(baseOptions[actualIdx]);
     }
 
-    // Detectar si necesitamos hacer scroll infinito
-    if (selectedIdx >= baseLength * 2.5) {
-      setTimeout(() => {
-        e.target.scrollTop = selectedIdx % baseLength * 30 + baseLength * 30 - 60;
-      }, 0);
-    } else if (selectedIdx <= baseLength * 0.5) {
-      setTimeout(() => {
-        e.target.scrollTop = (selectedIdx % baseLength + baseLength) * 30 - 60;
-      }, 0);
-    }
+    // Debounce snap-to-nearest
+    if (scrollTimer.current) clearTimeout(scrollTimer.current);
+    scrollTimer.current = setTimeout(() => {
+      snapToNearest(e.target.scrollTop);
+    }, 80);
+  };
+
+  const handleWheel = (e) => {
+    e.preventDefault();
+    const el = scrollRef.current;
+    if (!el) return;
+    const direction = e.deltaY > 0 ? 1 : -1;
+    el.scrollTop += direction * itemHeight;
+  };
+
+  const handleItemClick = (idx) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const baseLen = baseOptions.length;
+    const targetTop = idx * itemHeight - (containerHeight / 2) + (itemHeight / 2);
+    el.scrollTo({ top: targetTop, behavior: 'smooth' });
+    const actualIdx = idx % baseLen;
+    onChange(baseOptions[actualIdx]);
   };
 
   return (
     <div style={{ marginBottom: "20px" }}>
-      <label style={{ 
-        color: isDark ? "#fff" : "#333", 
-        display: "block", 
+      <label style={{
+        color: isDark ? "#fff" : "#333",
+        display: "block",
         marginBottom: "8px",
         fontWeight: "600"
       }}>
         {label}
       </label>
       <div style={{
-        height: "150px",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        position: "relative"
+        height: `${containerHeight}px`,
+        position: "relative",
+        userSelect: "none"
       }}>
-        {/* Área scrollable tipo rueda */}
+        {/* Selection highlight */}
+        <div style={{
+          position: "absolute",
+          top: "50%",
+          left: 0,
+          right: 0,
+          height: `${itemHeight}px`,
+          transform: "translateY(-50%)",
+          backgroundColor: isDark ? "rgba(29, 209, 161, 0.12)" : "rgba(29, 209, 161, 0.1)",
+          borderTop: "1px solid rgba(29, 209, 161, 0.4)",
+          borderBottom: "1px solid rgba(29, 209, 161, 0.4)",
+          pointerEvents: "none",
+          zIndex: 2
+        }} />
+
+        {/* Top fade */}
+        <div style={{
+          position: "absolute",
+          top: 0, left: 0, right: 0,
+          height: "40%",
+          background: `linear-gradient(to bottom, ${isDark ? "#0f0f0f" : "#f0f0f0"}, transparent)`,
+          pointerEvents: "none",
+          zIndex: 3
+        }} />
+        {/* Bottom fade */}
+        <div style={{
+          position: "absolute",
+          bottom: 0, left: 0, right: 0,
+          height: "40%",
+          background: `linear-gradient(to top, ${isDark ? "#0f0f0f" : "#f0f0f0"}, transparent)`,
+          pointerEvents: "none",
+          zIndex: 3
+        }} />
+
+        {/* Scrollable wheel */}
         <div
-          data-wheel={label}
-          onWheel={(e) => {
-            e.preventDefault();
-            const wheelElement = e.currentTarget;
-            const scrollSpeed = 30;
-            const direction = e.deltaY > 0 ? 1 : -1;
-            wheelElement.scrollTop += direction * scrollSpeed;
-          }}
+          ref={scrollRef}
+          onWheel={handleWheel}
           onScroll={handleScroll}
           style={{
             width: "100%",
             height: "100%",
             overflowY: "scroll",
             overflowX: "hidden",
-            scrollBehavior: "auto",
-            scrollSnapType: "y mandatory",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            WebkitOverflowScrolling: "touch",
+            touchAction: "pan-y",
             backgroundColor: isDark ? "#0f0f0f" : "#f0f0f0",
-            borderRadius: "8px",
+            borderRadius: "10px",
             border: `1px solid ${isDark ? "#2a2a2a" : "#ddd"}`
           }}
         >
-          {/* Espaciador arriba */}
-          <div style={{ height: "60px", flexShrink: 0 }} />
-          
-          {/* Opciones */}
+          <style>{`
+            div[data-scrollwheel]::-webkit-scrollbar { display: none; }
+          `}</style>
+
+          {/* Top spacer */}
+          <div style={{ height: `${(containerHeight - itemHeight) / 2}px`, flexShrink: 0 }} />
+
           {options.map((option, idx) => {
-            const baseLength = baseOptions.length;
-            const itemTop = idx * 30;
-            const distanceFromCenter = Math.abs(itemTop - (scrollPosition + 60));
-            const isCenter = distanceFromCenter < 20;
-            const opacity = 1 - (distanceFromCenter / 160);
-            
+            const baseLen = baseOptions.length;
+            const isCenter = option === value;
+
             return (
               <div
                 key={`${option}-${idx}`}
-                onClick={() => {
-                  const wheelElement = document.querySelector(`[data-wheel="${label}"]`);
-                  if (wheelElement) {
-                    wheelElement.scrollTop = idx * 30 - 60;
-                    // Actualizar valor inmediatamente
-                    const actualIdx = idx % baseLength;
-                    onChange(baseOptions[actualIdx]);
-                  }
-                }}
+                onClick={() => handleItemClick(idx)}
                 style={{
-                  height: "30px",
-                  width: "100%",
+                  height: `${itemHeight}px`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
                   cursor: "pointer",
-                  scrollSnapAlign: "center",
-                  scrollSnapStop: "always",
-                  fontSize: isCenter ? "0.95rem" : "0.75rem",
+                  fontSize: "1rem",
                   fontWeight: isCenter ? "700" : "400",
-                  color: isCenter ? "#1dd1a1" : (isDark ? `rgba(170, 170, 170, ${Math.max(0.3, opacity)})` : `rgba(102, 102, 102, ${Math.max(0.3, opacity)})`),
-                  transition: "all 0.15s ease",
-                  textShadow: isCenter ? "0 0 10px rgba(29, 209, 161, 0.4)" : "none",
-                  transform: isCenter ? "scale(1.1)" : "scale(1)"
+                  color: isCenter
+                    ? "#1dd1a1"
+                    : isDark ? "rgba(180, 180, 180, 0.5)" : "rgba(80, 80, 80, 0.5)",
+                  transition: "color 0.15s ease, transform 0.15s ease",
+                  transform: isCenter ? "scale(1.15)" : "scale(1)",
+                  textShadow: isCenter ? "0 0 12px rgba(29, 209, 161, 0.5)" : "none"
                 }}
               >
                 {option}
@@ -137,8 +199,8 @@ export default function NumberWheel({ value, onChange, min, max, label, step = 1
             );
           })}
 
-          {/* Espaciador abajo */}
-          <div style={{ height: "60px", flexShrink: 0 }} />
+          {/* Bottom spacer */}
+          <div style={{ height: `${(containerHeight - itemHeight) / 2}px`, flexShrink: 0 }} />
         </div>
       </div>
     </div>

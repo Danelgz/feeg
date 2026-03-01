@@ -1291,7 +1291,7 @@ export default function RoutineDetail() {
     );
   }
 
-  else if (workoutState === "ongoing") {
+  else if (workoutState === "ongoing" && !showFinishConfirmation && !showFinishForm) {
     // Calcular estadísticas en tiempo real
     const totalCompletedSeries = Object.keys(seriesCompleted).filter(key => seriesCompleted[key]).length;
     const totalVolume = Object.keys(seriesCompleted).reduce((sum, key) => {

@@ -38,7 +38,7 @@ export default function StatisticsView() {
   const muscleStats = useMemo(() => {
     const counts = {};
     Object.keys(groupMap).forEach(g => counts[g] = 0);
-    
+
     const now = new Date();
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(now.getDate() - 7);
@@ -52,10 +52,10 @@ export default function StatisticsView() {
       if (Array.isArray(details)) {
         details.forEach(d => {
           const grp = d.muscleGroup || d.group || d.category;
-          let found = Object.keys(groupMap).find(key => 
+          let found = Object.keys(groupMap).find(key =>
             key === grp || groupMap[key].includes(grp)
           );
-          
+
           // Fallback: search by exercise name in exercisesList if group is missing
           if (!found && d.name) {
             const exerciseName = d.name;
@@ -74,15 +74,15 @@ export default function StatisticsView() {
         });
       }
       if (!Array.isArray(details) && w.seriesByGroup) {
-        Object.entries(w.seriesByGroup).forEach(([k,v]) => {
+        Object.entries(w.seriesByGroup).forEach(([k, v]) => {
           const found = Object.keys(groupMap).find(key => groupMap[key].includes(k) || key === k);
-          if (found) counts[found] += Number(v||0);
+          if (found) counts[found] += Number(v || 0);
         });
       }
     });
 
     const max = Math.max(1, ...Object.values(counts));
-    
+
     const getIntensity = (val) => {
       if (val === 0) return 0;
       const ratio = val / max;
@@ -94,10 +94,10 @@ export default function StatisticsView() {
 
     const getColor = (intensity) => {
       if (intensity === 0) return 'rgba(0, 0, 0, 0)';
-      if (intensity === 1) return 'rgba(47, 214, 162, 0.2)';
-      if (intensity === 2) return 'rgba(47, 214, 162, 0.45)';
-      if (intensity === 3) return 'rgba(47, 214, 162, 0.7)';
-      return '#2fd6a2';
+      if (intensity === 1) return '#c4f5e7';
+      if (intensity === 2) return '#8dedce';
+      if (intensity === 3) return '#57e5b6';
+      return '#1dd1a1';
     };
 
     return { counts, max, getIntensity, getColor };
@@ -115,9 +115,9 @@ export default function StatisticsView() {
         });
       }
       if (!Array.isArray(w.details) && w.seriesByGroup) {
-        Object.entries(w.seriesByGroup).forEach(([k,v]) => {
+        Object.entries(w.seriesByGroup).forEach(([k, v]) => {
           const found = Object.keys(groupMap).find(key => groupMap[key].includes(k) || key === k);
-          if (found) counts[found] += Number(v||0);
+          if (found) counts[found] += Number(v || 0);
         });
       }
     });
@@ -172,11 +172,11 @@ export default function StatisticsView() {
             <p style={{ color: isDark ? '#aaa' : '#666' }}>{t('stats_no_data')}</p>
           ) : (
             <div>
-              {Object.entries(seriesByGroup).sort((a,b)=>b[1]-a[1]).map(([g,n], i, arr) => (
+              {Object.entries(seriesByGroup).sort((a, b) => b[1] - a[1]).map(([g, n], i, arr) => (
                 <div key={g} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', fontSize: isNarrow ? '0.8rem' : '1rem' }}>
                   <div style={{ width: isNarrow ? '110px' : '140px', color: isDark ? '#ddd' : '#444' }}>{t(g) || g}</div>
                   <div style={{ flex: 1, height: '10px', background: isDark ? '#0f0f0f' : '#eee', borderRadius: '999px', overflow: 'hidden' }}>
-                    <div style={{ width: `${n === 0 ? 2 : Math.min(100, (n/Math.max(1, arr[0][1]))*100)}%`, height: '100%', background: '#1dd1a1' }} />
+                    <div style={{ width: `${n === 0 ? 2 : Math.min(100, (n / Math.max(1, arr[0][1])) * 100)}%`, height: '100%', background: '#1dd1a1' }} />
                   </div>
                   <div style={{ width: '30px', textAlign: 'right', color: isDark ? '#aaa' : '#666' }}>{n}</div>
                 </div>
@@ -189,13 +189,13 @@ export default function StatisticsView() {
       {view === 'distribution' && (
         <Section title="Distribución de músculos (gráfico)" isDark={isDark} isNarrow={isNarrow}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
-            {Object.entries(seriesByGroup).map(([g,n]) => (
+            {Object.entries(seriesByGroup).map(([g, n]) => (
               <div key={g} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: isNarrow ? '0.8rem' : '1rem' }}>
                 <div style={{ width: isNarrow ? '110px' : '140px', color: isDark ? '#ddd' : '#444' }}>{t(g) || g}</div>
                 <div style={{ flex: 1, height: '10px', background: isDark ? '#0f0f0f' : '#eee', borderRadius: '999px', overflow: 'hidden' }}>
-                  <div style={{ width: `${(n/total)*100}%`, height: '100%', background: '#1dd1a1' }} />
+                  <div style={{ width: `${(n / total) * 100}%`, height: '100%', background: '#1dd1a1' }} />
                 </div>
-                <div style={{ width: '40px', textAlign: 'right', color: isDark ? '#aaa' : '#666' }}>{Math.round((n/total)*100)}%</div>
+                <div style={{ width: '40px', textAlign: 'right', color: isDark ? '#aaa' : '#666' }}>{Math.round((n / total) * 100)}%</div>
               </div>
             ))}
           </div>
@@ -206,18 +206,18 @@ export default function StatisticsView() {
         <Section title="Distribución de músculos (cuerpo)" isDark={isDark} isNarrow={isNarrow}>
           <div style={{ display: 'flex', flexDirection: isNarrow ? 'column' : 'row', gap: '20px' }}>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <InteractiveBodyMap 
-                counts={muscleStats.counts} 
-                isDark={isDark} 
+              <InteractiveBodyMap
+                counts={muscleStats.counts}
+                isDark={isDark}
                 getIntensity={muscleStats.getIntensity}
                 getColor={muscleStats.getColor}
               />
-              
+
               {/* Legend */}
-              <div style={{ 
-                marginTop: '20px', 
-                display: 'flex', 
-                flexDirection: 'column', 
+              <div style={{
+                marginTop: '20px',
+                display: 'flex',
+                flexDirection: 'column',
                 gap: '8px',
                 width: '100%',
                 maxWidth: '250px'
@@ -228,9 +228,9 @@ export default function StatisticsView() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px' }}>
                   {[0, 1, 2, 3, 4].map(lvl => (
                     <div key={lvl} style={{ textAlign: 'center' }}>
-                      <div style={{ 
-                        height: '10px', 
-                        backgroundColor: lvl === 0 ? (isDark ? '#444' : '#bbb') : muscleStats.getColor(lvl), 
+                      <div style={{
+                        height: '10px',
+                        backgroundColor: lvl === 0 ? (isDark ? '#444' : '#bbb') : muscleStats.getColor(lvl),
                         borderRadius: '2px'
                       }} />
                       <div style={{ fontSize: '0.65rem', color: isDark ? '#888' : '#999', marginTop: '2px' }}>
@@ -246,21 +246,21 @@ export default function StatisticsView() {
               <h3 style={{ fontSize: '0.9rem', marginBottom: '10px', color: isDark ? '#ddd' : '#555' }}>
                 Series completadas (Últimos 7 días)
               </h3>
-              <div style={{ 
-                display: 'grid', 
+              <div style={{
+                display: 'grid',
                 gridTemplateColumns: isNarrow ? '1fr 1fr' : '1fr',
-                gap: '8px' 
+                gap: '8px'
               }}>
                 {Object.entries(muscleStats.counts)
                   .sort((a, b) => b[1] - a[1])
                   .map(([muscle, count]) => {
                     const intensity = muscleStats.getIntensity(count);
                     return (
-                      <div 
-                        key={muscle} 
-                        style={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
+                      <div
+                        key={muscle}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
                           alignItems: 'center',
                           padding: isNarrow ? '8px' : '10px',
                           backgroundColor: isDark ? '#222' : '#f8f9fa',
@@ -270,8 +270,8 @@ export default function StatisticsView() {
                         }}
                       >
                         <div style={{ overflow: 'hidden' }}>
-                          <div style={{ 
-                            fontWeight: 'bold', 
+                          <div style={{
+                            fontWeight: 'bold',
                             color: isDark ? '#eee' : '#333',
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
@@ -334,15 +334,15 @@ function Monthly({ isDark, workouts, t, isMobile }) {
   workouts.forEach(w => {
     if (!w.completedAt) return;
     const d = new Date(w.completedAt);
-    const key = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
+    const key = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
     if (!byMonth[key]) byMonth[key] = { sessions: 0, series: 0, reps: 0, volume: 0, timeMin: 0 };
     byMonth[key].sessions += 1;
-    byMonth[key].series += Number(w.series||0);
-    byMonth[key].reps += Number(w.totalReps||0);
-    byMonth[key].volume += Number(w.totalVolume||0);
-    byMonth[key].timeMin += w.elapsedTime !== undefined ? Math.round((Number(w.elapsedTime||0))/60) : Number(w.totalTime||0);
+    byMonth[key].series += Number(w.series || 0);
+    byMonth[key].reps += Number(w.totalReps || 0);
+    byMonth[key].volume += Number(w.totalVolume || 0);
+    byMonth[key].timeMin += w.elapsedTime !== undefined ? Math.round((Number(w.elapsedTime || 0)) / 60) : Number(w.totalTime || 0);
   });
-  const entries = Object.entries(byMonth).sort((a,b)=>b[0].localeCompare(a[0]));
+  const entries = Object.entries(byMonth).sort((a, b) => b[0].localeCompare(a[0]));
   return (
     <Section title="Informe mensual" isDark={isDark}>
       {entries.length === 0 ? (
@@ -386,22 +386,22 @@ function ExerciseStats({ isDark, workouts, t, isMobile }) {
         if (!name) return;
         if (!index[name]) index[name] = { sessions: 0, series: 0, reps: 0, volume: 0 };
         index[name].sessions += 1;
-        index[name].series += Number(d.series||0);
-        index[name].reps += Number(d.reps||0);
-        index[name].volume += Number(d.weight||0) * Number(d.reps||0) * Number(d.series||1);
+        index[name].series += Number(d.series || 0);
+        index[name].reps += Number(d.reps || 0);
+        index[name].volume += Number(d.weight || 0) * Number(d.reps || 0) * Number(d.series || 1);
       });
     }
   });
   const results = Object.entries(index)
     .filter(([name]) => name.toLowerCase().includes(q.toLowerCase()))
-    .sort((a,b) => b[1].sessions - a[1].sessions);
+    .sort((a, b) => b[1].sessions - a[1].sessions);
 
   return (
     <Section title="Estadísticas por Ejercicio" isDark={isDark}>
-      <input 
-        type="text" 
-        placeholder="Buscar ejercicio..." 
-        value={q} 
+      <input
+        type="text"
+        placeholder="Buscar ejercicio..."
+        value={q}
         onChange={e => setQ(e.target.value)}
         style={{ width: '100%', padding: '10px', marginBottom: '15px', borderRadius: '8px', border: isDark ? '1px solid #333' : '1px solid #ddd', background: isDark ? '#0f0f0f' : '#fff', color: isDark ? '#fff' : '#000' }}
       />

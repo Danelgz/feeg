@@ -34,22 +34,31 @@ export default async function handler(req, res) {
             return res.status(401).json({ error: 'Invalid or expired firebase token' });
         }
 
-        const { messages, routine } = req.body;
+        const { messages, routine, userProfile } = req.body;
 
         if (!messages || !Array.isArray(messages)) {
             return res.status(400).json({ error: 'Invalid messages array' });
         }
 
         // 2. PROMPT DEL SISTEMA: El rol fundamental del asistente
-        let systemPrompt = `Eres un entrenador personal virtual experto, amable y motivador. 
-Tu objetivo es ayudar al usuario a mejorar su entrenamiento militar o deportivo, estado físico y responder dudas concretas biomecánicas (ej. cómo hacer una sentadilla). 
-Sé conciso, nunca devuelvas la información desordenada, usa un tono cercano pero profesional. 
-Si el usuario te pregunta cosas que no sean de fitness o salud, recuérdale amablemente que tú eres un entrenador personal virtual y solo puedes ayudar en esa materia.`;
+        let systemPrompt = `Eres Coach FEEG, un entrenador personal virtual experto, motivador y 100% centrado en el usuario. 
+Tu objetivo es ayudar al usuario a mejorar su entrenamiento, estado físico y responder dudas biomecánicas (ej. cómo hacer una sentadilla). 
+Sé conciso, nunca devuelvas la información desordenada, usa un tono cercano, profesional y motivador. 
+Si el usuario te pregunta cosas que no sean de fitness, salud o bienestar, recuérdale amablemente que tú eres su entrenador personal virtual y solo puedes ayudar en esa materia.`;
 
-        // 3. CONTEXTO DE LA RUTINA
+        // 3. CONTEXTO DINÁMICO DEL USUARIO (Perfil)
+        if (userProfile) {
+            systemPrompt += `\n\n[DATOS DEL USUARIO]:
+- Experiencia/Nivel: ${userProfile.level || 'No definido'}
+- Altura: ${userProfile.height ? userProfile.height + ' cm' : 'No definida'}
+- Peso: ${userProfile.weight ? userProfile.weight + ' kg' : 'No definido'}
+Utiliza estos datos para personalizar tus respuestas. Por ejemplo, si el usuario es principiante, sé más cuidadoso con la técnica; si tiene poco peso, sugiere ejercicios acordes, etc.`;
+        }
+
+        // 4. CONTEXTO DE LA RUTINA SELECCIONADA
         if (routine) {
-            systemPrompt += `\n\n[CONTEXTO IMPORTANTE PARA ESTA PREGUNTA]: ACTUALMENTE EL USUARIO ESTÁ CONCENTRADO EN UNA RUTINA DE: "${routine}". 
-Ten esto en cuenta al recomendarle ejercicios si no te especifica ningún otro grupo muscular hoy.`;
+            systemPrompt += `\n\n[CONTEXTO DE ENTRENAMIENTO ACTUAL]: El usuario está consultado específicamente sobre una rutina de: "${routine}". 
+Ten esto en cuenta al recomendar ejercicios, volumen o descansos hoy.`;
         }
 
         // 4. Llama de forma segura a OpenAI usando la clave de variables de entorno de Backend
@@ -60,7 +69,7 @@ Ten esto en cuenta al recomendarle ejercicios si no te especifica ningún otro g
                 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
             },
             body: JSON.stringify({
-                model: 'gpt-3.5-turbo', // Se usa gpt-3.5-turbo o el que el usuario prefiera configurar
+                model: 'gpt-4o-mini', // Cambiado a un modelo más rápido y capaz
                 messages: [
                     { role: 'system', content: systemPrompt }, // Inyectamos Reglas base + la Rutina seleccionada
                     ...messages // Inyectamos historial del chat

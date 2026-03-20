@@ -6,7 +6,7 @@ import { useUser } from "../context/UserContext";
 import { exercisesList } from "../data/exercises";
 
 export default function IA() {
-  const { theme, isMobile, t, user, authUser } = useUser();
+  const { theme, isMobile, t, user, authUser, saveRoutine } = useUser();
   const isDark = theme === 'dark';
   const [activeTab, setActiveTab] = useState("training"); // training, chat, technique
 
@@ -54,37 +54,36 @@ export default function IA() {
     }
   }, [messages]);
 
-  const handleGenerateTraining = () => {
+  const handleGenerateTraining = async () => {
     setIsGenerating(true);
-    // Simulation of AI generation
-    setTimeout(() => {
-      setGeneratedRoutine({
-        title: `Plan Personalizado: ${trainingData.goal}`,
-        summary: `Basado en tu nivel ${trainingData.level} y disponibilidad de ${trainingData.days} días, he diseñado un plan enfocado en ${trainingData.goal}.`,
-        days: [
-          {
-            name: "Día 1: Empuje (Pecho/Hombro/Tríceps)",
-            exercises: [
-              { name: "Press de banca", sets: "3", reps: "8-10", rest: "90s", note: "Baja controlado hasta el pecho." },
-              { name: "Press militar", sets: "3", reps: "10-12", rest: "90s", note: "Mantén el core fuerte." },
-              { name: "Extensiones tríceps", sets: "3", reps: "12-15", rest: "60s", note: "Codos pegados al cuerpo." }
-            ]
-          },
-          {
-            name: "Día 2: Tracción (Espalda/Bíceps)",
-            exercises: [
-              { name: "Dominadas o Jalón", sets: "3", reps: "Fallo-2", rest: "120s", note: "Tracciona con los codos." },
-              { name: "Remo con barra", sets: "3", reps: "10", rest: "90s", note: "Espalda recta, saca pecho." },
-              { name: "Curl de bíceps", sets: "3", reps: "12", rest: "60s", note: "Sin balanceo." }
-            ]
-          }
-        ],
-        advice: "Recuerda hidratarte bien y dormir al menos 7-8 horas para recuperar."
+
+    try {
+      const idToken = authUser ? await authUser.getIdToken() : "";
+
+      const response = await fetch('/api/generate-routine', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ trainingData })
       });
-      setIsGenerating(false);
+
+      if (!response.ok) {
+        throw new Error('Error generando la rutina');
+      }
+
+      const data = await response.json();
+      setGeneratedRoutine(data);
       setShowTrainingForm(false);
-    }, 2000);
+    } catch (error) {
+      console.error("Error al generar rutina:", error);
+      alert("Hubo un error al generar tu rutina. Inténtalo de nuevo.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
+  // Replaced setTimeout with API call above
 
   const handleSendMessage = async () => {
     if (!chatInput.trim() || !authUser || !authUser.uid) return;
@@ -102,7 +101,7 @@ export default function IA() {
       });
 
       // 2. Obtener el token de validación del usuario para seguridad
-      const idToken = auth?.currentUser ? await auth.currentUser.getIdToken() : "";
+      const idToken = authUser ? await authUser.getIdToken() : "";
 
       // 3. Preparar el historial (últimos 10 mensajes)
       const history = messages.slice(-10).map(m => ({ role: m.role, content: m.content }));
@@ -116,7 +115,8 @@ export default function IA() {
         },
         body: JSON.stringify({
           messages: [...history, { role: 'user', content: userMessage }],
-          routine: selectedRoutine
+          routine: selectedRoutine,
+          userProfile: user // Pasamos el perfil del usuario para contexto dinámico
         })
       });
 
@@ -280,7 +280,34 @@ export default function IA() {
               <div style={cardStyle}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
                   <h2 style={{ color: accentColor, margin: 0 }}>{generatedRoutine.title}</h2>
-                  <button onClick={() => setGeneratedRoutine(null)} style={{ background: "none", border: "none", color: "#888", cursor: "pointer" }}>Volver a empezar</button>
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await saveRoutine({
+                            id: Date.now(),
+                            name: generatedRoutine.title,
+                            exercises: generatedRoutine.days.flatMap(day =>
+                              day.exercises.map(ex => ({
+                                name: ex.name,
+                                group: "Generado por IA",
+                                type: "weight_reps",
+                                rest: parseInt(ex.rest) || 90,
+                                series: Array.from({ length: parseInt(ex.sets) || 3 }).map(() => ({ reps: parseInt(ex.reps) || 10, weight: 0, type: "N" }))
+                              }))
+                            )
+                          });
+                          alert("¡Rutina guardada correctamente!");
+                        } catch (err) {
+                          console.error("Error guardando rutina", err);
+                          alert("Error al guardar rutina");
+                        }
+                      }}
+                      style={{ background: accentColor, border: "none", color: "#000", padding: "6px 12px", borderRadius: "15px", cursor: "pointer", fontWeight: "bold" }}>
+                      Guardar
+                    </button>
+                    <button onClick={() => setGeneratedRoutine(null)} style={{ background: "none", border: "none", color: "#888", cursor: "pointer" }}>Volver</button>
+                  </div>
                 </div>
                 <p>{generatedRoutine.summary}</p>
 

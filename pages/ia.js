@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { db } from "../lib/firebase";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
@@ -66,7 +67,8 @@ export default function IA() {
     setIsGenerating(true);
 
     try {
-      const idToken = authUser ? await authUser.getIdToken() : "";
+      const auth = getAuth();
+      const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : "";
 
       const response = await fetch('/api/generate-routine', {
         method: 'POST',
@@ -109,7 +111,8 @@ export default function IA() {
       });
 
       // 2. Obtener el token de validación del usuario para seguridad
-      const idToken = authUser ? await authUser.getIdToken() : "";
+      const auth = getAuth();
+      const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : "";
 
       // 3. Preparar el historial (últimos 10 mensajes)
       const history = messages.slice(-10).map(m => ({ role: m.role, content: m.content }));
@@ -149,6 +152,7 @@ export default function IA() {
 
     } catch (error) {
       console.error('Error enviando mensaje:', error);
+      alert("Hubo un problema al enviar tu mensaje. Asegúrate de tener conexión y de estar logueado.");
     } finally {
       setIsLoadingChat(false);
     }

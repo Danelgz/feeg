@@ -1,16 +1,20 @@
 import { getAuth } from 'firebase-admin/auth';
 import admin from 'firebase-admin';
 
-// Inicializamos Firebase Admin una sola vez en el entorno de backend
-if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.cert({
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            // Reemplazamos saltos de línea codificados que Vercel/NextJS suelen causar
-            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-        }),
-    });
+// Evitamos inicializar fuera del handler para que no colapse todo Vercel si faltan las variables de entorno.
+function initAdmin() {
+    if (!admin.apps.length) {
+        if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+            throw new Error('Faltan variables de entorno de Firebase Admin en Vercel.');
+        }
+        admin.initializeApp({
+            credential: admin.credential.cert({
+                projectId: process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+            }),
+        });
+    }
 }
 
 export default async function handler(req, res) {
@@ -20,6 +24,9 @@ export default async function handler(req, res) {
     }
 
     try {
+        // Inicialización segura
+        initAdmin();
+
         // 1. VALIDACIÓN: Comprobar que el usuario que solicita está autenticado por Firebase Auth
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -91,7 +98,7 @@ Ten esto en cuenta al recomendar ejercicios, volumen o descansos hoy.`;
         res.status(200).json({ reply });
 
     } catch (error) {
-        console.error('API Error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        console.error('API Error:', error.message || error);
+        res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
 }

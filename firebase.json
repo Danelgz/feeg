@@ -2,7 +2,7 @@
   "firestore": {
     "database": "(default)",
     "location": "eur3",
-    "rules": "rules_version = '2';",
+    "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
   "auth": {

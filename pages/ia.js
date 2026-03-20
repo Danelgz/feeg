@@ -35,7 +35,15 @@ export default function IA() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const msgs = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          time: data.createdAt ? (typeof data.createdAt.toMillis === 'function' ? data.createdAt.toMillis() : 0) : Date.now()
+        };
+      });
+      msgs.sort((a, b) => a.time - b.time);
       setMessages(msgs);
     });
 
@@ -159,42 +167,52 @@ export default function IA() {
   };
 
   const cardStyle = {
-    backgroundColor: isDark ? "#1a1a1a" : "#fff",
-    borderRadius: "15px",
-    padding: "20px",
-    marginBottom: "20px",
+    background: isDark ? "linear-gradient(145deg, #1a1a1a 0%, #111111 100%)" : "linear-gradient(145deg, #ffffff 0%, #f9f9f9 100%)",
+    borderRadius: "20px",
+    padding: "25px",
+    marginBottom: "25px",
     border: `1px solid ${isDark ? "#333" : "#eee"}`,
-    boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
+    boxShadow: isDark ? "0 8px 30px rgba(0,0,0,0.5)" : "0 8px 30px rgba(0,0,0,0.05)",
+    transition: "transform 0.2s ease, box-shadow 0.2s ease"
   };
 
   const inputStyle = {
     width: "100%",
-    padding: "12px",
-    borderRadius: "8px",
+    padding: "15px",
+    borderRadius: "12px",
     border: `1px solid ${isDark ? "#444" : "#ccc"}`,
     backgroundColor: isDark ? "#000" : "#fff",
     color: isDark ? "#fff" : "#333",
-    marginBottom: "10px",
-    fontSize: "1rem"
+    marginBottom: "15px",
+    fontSize: "1rem",
+    boxShadow: "inset 0 2px 4px rgba(0,0,0,0.1)",
+    transition: "border-color 0.2s, box-shadow 0.2s"
   };
 
   const buttonStyle = {
-    backgroundColor: accentColor,
+    background: `linear-gradient(135deg, ${accentColor} 0%, #10ac84 100%)`,
     color: "#000",
     border: "none",
-    padding: "12px 20px",
-    borderRadius: "8px",
+    padding: "15px 25px",
+    borderRadius: "12px",
     fontWeight: "bold",
     cursor: "pointer",
-    fontSize: "1rem",
-    width: "100%"
+    fontSize: "1.05rem",
+    width: "100%",
+    boxShadow: "0 4px 15px rgba(29, 209, 161, 0.4)",
+    transition: "transform 0.1s, box-shadow 0.1s",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px"
   };
 
   return (
     <Layout>
       <div style={{ maxWidth: "800px", margin: "0 auto", padding: isMobile ? "10px" : "20px", color: isDark ? "#fff" : "#333" }}>
-        <h1 style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ fontSize: "2rem" }}>🤖</span> Apartado IA - Coach FEEG
+        <h1 style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "30px", fontSize: "2.2rem" }}>
+          <span style={{ fontSize: "2.5rem", filter: "drop-shadow(0 2px 4px rgba(29,209,161,0.5))" }}>🤖</span>
+          <span style={{ background: `linear-gradient(135deg, ${accentColor} 0%, #10ac84 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            Coach Inteligente
+          </span>
         </h1>
 
         {/* Tabs */}
@@ -367,12 +385,17 @@ export default function IA() {
               {messages.map((msg, i) => (
                 <div key={msg.id || i} style={{
                   alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
-                  backgroundColor: msg.role === "user" ? accentColor : (isDark ? "#333" : "#eee"),
+                  background: msg.role === "user"
+                    ? `linear-gradient(135deg, ${accentColor} 0%, #10ac84 100%)`
+                    : (isDark ? "linear-gradient(135deg, #333 0%, #222 100%)" : "linear-gradient(135deg, #fff 0%, #f0f0f0 100%)"),
                   color: msg.role === "user" ? "#000" : (isDark ? "#fff" : "#333"),
-                  padding: "10px 15px",
-                  borderRadius: msg.role === "user" ? "15px 15px 0 15px" : "15px 15px 15px 0",
-                  maxWidth: "80%",
-                  fontSize: "0.95rem"
+                  padding: "14px 18px",
+                  borderRadius: msg.role === "user" ? "20px 20px 4px 20px" : "20px 20px 20px 4px",
+                  maxWidth: "85%",
+                  fontSize: "1rem",
+                  boxShadow: msg.role === "user" ? "0 4px 15px rgba(29, 209, 161, 0.3)" : "0 4px 15px rgba(0,0,0,0.1)",
+                  border: msg.role === "user" ? "none" : `1px solid ${isDark ? "#444" : "#eee"}`,
+                  lineHeight: "1.5"
                 }}>
                   {msg.content}
                 </div>
@@ -396,10 +419,10 @@ export default function IA() {
               />
               <button
                 onClick={handleSendMessage}
-                style={{ ...buttonStyle, width: "auto", opacity: (isLoadingChat || !chatInput.trim()) ? 0.5 : 1 }}
+                style={{ ...buttonStyle, width: "auto", opacity: (isLoadingChat || !chatInput.trim()) ? 0.5 : 1, padding: "10px 30px", borderRadius: "12px" }}
                 disabled={isLoadingChat || !chatInput.trim()}
               >
-                Enviar
+                Enviar 🚀
               </button>
             </div>
           </div>

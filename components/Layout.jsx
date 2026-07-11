@@ -6,6 +6,7 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { getTokens } from "../lib/tokens";
 import { Icon, Button, Spinner, ConfirmModal } from "./ui";
+import { readLiveElapsedFromSnapshot } from "../lib/workoutStorage";
 
 export default function Layout({ children, hideBottomNav = false }) {
   const { theme, isMobile, activeRoutine, endRoutine, notification, isSyncing, t } = useUser();
@@ -27,30 +28,15 @@ export default function Layout({ children, hideBottomNav = false }) {
     }
   }, [isMobile]);
 
-  // Lee el timer persistido por routines/[id].js (solo lectura, no se modifica su estado)
-  // para mostrar el tiempo transcurrido en vivo en la pestaña flotante de rutina activa.
+  // Lee el snapshot persistido por el motor de sesión de entrenamiento (hooks/useWorkoutSession,
+  // solo lectura, no se modifica su estado) para mostrar el tiempo transcurrido en vivo en la
+  // pestaña flotante de rutina activa.
   useEffect(() => {
     if (!activeRoutine) {
       setLiveElapsed(null);
       return;
     }
-    const readTimer = () => {
-      try {
-        const saved = localStorage.getItem('workoutTimerState');
-        if (!saved) return setLiveElapsed(null);
-        const parsed = JSON.parse(saved);
-        let elapsed = parsed.elapsedTime || 0;
-        if (parsed.isActive) {
-          const lastSave = localStorage.getItem('workoutTimerLastSave');
-          if (lastSave) {
-            elapsed += Math.floor((Date.now() - parseInt(lastSave, 10)) / 1000);
-          }
-        }
-        setLiveElapsed(elapsed);
-      } catch (_) {
-        setLiveElapsed(null);
-      }
-    };
+    const readTimer = () => setLiveElapsed(readLiveElapsedFromSnapshot());
     readTimer();
     const interval = setInterval(readTimer, 1000);
     return () => clearInterval(interval);

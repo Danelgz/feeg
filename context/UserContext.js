@@ -12,6 +12,7 @@ import {
   getFollowersList,
   getFollowingList
 } from '../lib/firebase';
+import { clearSnapshot as clearWorkoutSessionSnapshot } from '../lib/workoutStorage';
 
 const UserContext = createContext();
 
@@ -465,6 +466,7 @@ export function UserProvider({ children }) {
     localStorage.removeItem('activeRoutine');
     localStorage.removeItem('workoutTimerState');
     localStorage.removeItem('workoutTimerLastSave');
+    clearWorkoutSessionSnapshot();
     if (authUser) {
       await saveToCloud(`users/${authUser.uid}`, { activeRoutine: null });
     }
@@ -473,6 +475,7 @@ export function UserProvider({ children }) {
   const clearWorkoutState = () => {
     localStorage.removeItem('workoutTimerState');
     localStorage.removeItem('workoutTimerLastSave');
+    clearWorkoutSessionSnapshot();
   };
 
   const handleFollow = async (targetId) => {

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useUser } from '../context/UserContext';
 
-export default function NumberWheel({ value, onChange, min, max, label, step = 1 }) {
+export default function NumberWheel({ value, onChange, min, max, label, step = 1, formatLabel, isDark: isDarkProp }) {
+  const formatOption = formatLabel || ((v) => v);
   const scrollRef = useRef(null);
   const { theme } = useUser();
-  const isDark = theme === 'dark';
+  const isDark = isDarkProp !== undefined ? isDarkProp : theme === 'dark';
   const isScrolling = useRef(false);
   const scrollTimer = useRef(null);
 
@@ -96,14 +97,16 @@ export default function NumberWheel({ value, onChange, min, max, label, step = 1
 
   return (
     <div style={{ marginBottom: "20px" }}>
-      <label style={{
-        color: isDark ? "#fff" : "#333",
-        display: "block",
-        marginBottom: "8px",
-        fontWeight: "600"
-      }}>
-        {label}
-      </label>
+      {label && (
+        <label style={{
+          color: isDark ? "#fff" : "#333",
+          display: "block",
+          marginBottom: "8px",
+          fontWeight: "600"
+        }}>
+          {label}
+        </label>
+      )}
       <div style={{
         height: `${containerHeight}px`,
         position: "relative",
@@ -194,7 +197,7 @@ export default function NumberWheel({ value, onChange, min, max, label, step = 1
                   textShadow: isCenter ? "0 0 12px rgba(29, 209, 161, 0.5)" : "none"
                 }}
               >
-                {option}
+                {formatOption(option)}
               </div>
             );
           })}

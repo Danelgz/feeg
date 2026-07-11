@@ -90,7 +90,6 @@ export default function Statistics() {
   const navButtons = [
     { key: 'seriesByGroup', label: 'Series por grupo muscular', href: '/statistics/series' },
     { key: 'distChart', label: 'Distribución de músculos (gráfico)', href: '/statistics/distribution' },
-    { key: 'distBody', label: 'Distribución de músculos (cuerpo)', href: '/statistics/body' },
     { key: 'monthly', label: 'Informe mensual', href: '/statistics/monthly' },
     { key: 'exerciseStats', label: 'Estadísticas Ejercicios', href: '/statistics/exercises' }
   ];
@@ -151,9 +150,6 @@ export default function Statistics() {
       )}
       {activeView === 'distChart' && (
         <DistributionChartSection isDark={isDark} seriesByGroup={seriesByGroup} t={t} />
-      )}
-      {activeView === 'distBody' && (
-        <WeeklyBodyMapSection isDark={isDark} workouts={workouts} t={t} />
       )}
       {activeView === 'monthly' && (
         <MonthlyReportSection isDark={isDark} workouts={workouts} t={t} />

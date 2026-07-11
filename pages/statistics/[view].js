@@ -128,7 +128,6 @@ export default function StatisticsView() {
   const nav = [
     { key: 'series', label: 'Series por grupo muscular', href: '/statistics/series' },
     { key: 'distribution', label: 'Distribución de músculos (gráfico)', href: '/statistics/distribution' },
-    { key: 'body', label: 'Distribución de músculos (cuerpo)', href: '/statistics/body' },
     { key: 'monthly', label: 'Informe mensual', href: '/statistics/monthly' },
     { key: 'exercises', label: 'Estadísticas Ejercicios', href: '/statistics/exercises' }
   ];
@@ -197,67 +196,6 @@ export default function StatisticsView() {
                 <div style={{ width: '40px', textAlign: 'right', color: isDark ? '#aaa' : '#666' }}>{Math.round((n / total) * 100)}%</div>
               </div>
             ))}
-          </div>
-        </Section>
-      )}
-
-      {view === 'body' && (
-        <Section title="Distribución de músculos (cuerpo)" isDark={isDark} isNarrow={isNarrow}>
-          <div style={{ display: 'flex', flexDirection: isNarrow ? 'column' : 'row', gap: '20px' }}>
-            <div style={{ flex: 1 }}>
-              <h3 style={{ fontSize: '0.9rem', marginBottom: '10px', color: isDark ? '#ddd' : '#555' }}>
-                Series completadas (Últimos 7 días)
-              </h3>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: isNarrow ? '1fr 1fr' : '1fr',
-                gap: '8px'
-              }}>
-                {Object.entries(muscleStats.counts)
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([muscle, count]) => {
-                    const intensity = muscleStats.getIntensity(count);
-                    return (
-                      <div
-                        key={muscle}
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          padding: isNarrow ? '8px' : '10px',
-                          backgroundColor: isDark ? '#222' : '#f8f9fa',
-                          borderRadius: '8px',
-                          borderLeft: `4px solid ${muscleStats.getColor(intensity)}`,
-                          fontSize: isNarrow ? '0.8rem' : '0.9rem'
-                        }}
-                      >
-                        <div style={{ overflow: 'hidden' }}>
-                          <div style={{
-                            fontWeight: 'bold',
-                            color: isDark ? '#eee' : '#333',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                          }}>
-                            {t(muscle) || muscle}
-                          </div>
-                          <div style={{ fontSize: '0.7rem', color: isDark ? '#aaa' : '#777' }}>
-                            {intensity === 0 ? 'Sin entrenar' : `Lvl ${intensity}`}
-                          </div>
-                        </div>
-                        <div style={{ textAlign: 'right', minWidth: '35px' }}>
-                          <div style={{ fontWeight: 'bold', color: '#1dd1a1', fontSize: isNarrow ? '1rem' : '1.1rem' }}>
-                            {count}
-                          </div>
-                          <div style={{ fontSize: '0.65rem', color: isDark ? '#888' : '#999' }}>
-                            {isNarrow ? 'Ser.' : t('total_series')}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
           </div>
         </Section>
       )}

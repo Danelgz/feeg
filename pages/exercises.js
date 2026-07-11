@@ -3,7 +3,6 @@ import { useState } from "react";
 import Layout from "../components/Layout";
 import { exercisesList } from "../data/exercises";
 import { useUser } from "../context/UserContext";
-import InteractiveBodyMap from "../components/InteractiveBodyMap";
 
 export default function Exercises() {
   const [search, setSearch] = useState("");
@@ -56,19 +55,6 @@ export default function Exercises() {
         onBlur={(e) => e.target.style.borderColor = isDark ? "#333" : "#ddd"}
       />
 
-      <div style={{ marginBottom: "2rem", display: "flex", justifyContent: "center" }}>
-        <InteractiveBodyMap 
-          isDark={isDark} 
-          onMuscleClick={(muscle) => {
-            toggleGroup(muscle);
-            // Hacer scroll suave hacia el grupo expandido
-            setTimeout(() => {
-              const element = document.getElementById(`group-${muscle}`);
-              if (element) element.scrollIntoView({ behavior: 'smooth' });
-            }, 100);
-          }} 
-        />
-      </div>
 
       <div style={{ padding: isMobile ? "0" : "0 20px", maxWidth: "900px", margin: "0 auto" }}>
         {hasResults ? (

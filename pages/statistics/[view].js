@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Layout from "../../components/Layout";
 import { useUser } from "../../context/UserContext";
-import InteractiveBodyMap from "../../components/InteractiveBodyMap";
 import { exercisesList } from "../../data/exercises";
 
 export default function StatisticsView() {
@@ -205,43 +204,6 @@ export default function StatisticsView() {
       {view === 'body' && (
         <Section title="Distribución de músculos (cuerpo)" isDark={isDark} isNarrow={isNarrow}>
           <div style={{ display: 'flex', flexDirection: isNarrow ? 'column' : 'row', gap: '20px' }}>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <InteractiveBodyMap
-                counts={muscleStats.counts}
-                isDark={isDark}
-                getIntensity={muscleStats.getIntensity}
-                getColor={muscleStats.getColor}
-              />
-
-              {/* Legend */}
-              <div style={{
-                marginTop: '20px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-                width: '100%',
-                maxWidth: '250px'
-              }}>
-                <div style={{ fontSize: '0.8rem', color: isDark ? '#aaa' : '#666', fontWeight: '600' }}>
-                  Niveles de intensidad (7 días):
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px' }}>
-                  {[0, 1, 2, 3, 4].map(lvl => (
-                    <div key={lvl} style={{ textAlign: 'center' }}>
-                      <div style={{
-                        height: '10px',
-                        backgroundColor: lvl === 0 ? (isDark ? '#444' : '#bbb') : muscleStats.getColor(lvl),
-                        borderRadius: '2px'
-                      }} />
-                      <div style={{ fontSize: '0.65rem', color: isDark ? '#888' : '#999', marginTop: '2px' }}>
-                        Lvl {lvl}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
             <div style={{ flex: 1 }}>
               <h3 style={{ fontSize: '0.9rem', marginBottom: '10px', color: isDark ? '#ddd' : '#555' }}>
                 Series completadas (Últimos 7 días)

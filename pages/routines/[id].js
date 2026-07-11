@@ -411,6 +411,7 @@ export default function RoutineDetail() {
               key={exercise.uid}
               exercise={exercise}
               mode="live"
+              translate={t}
               previousSeries={previousByName[exercise.name]}
               onUpdateField={(serieUid, field, value) => actions.updateSeriesField(exercise.uid, serieUid, field, value)}
               onToggleComplete={(serieUid) => actions.toggleSeriesComplete(exercise.uid, serieUid)}

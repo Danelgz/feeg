@@ -1,6 +1,6 @@
 // Hook del motor de sesión en modo "plantilla" (create.js): mismo reducer que useWorkoutSession,
 // sin timer, sin persistencia de sesión en localStorage, sin detección de PR.
-import { useCallback, useReducer } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 import {
   workoutSessionReducer,
   createEmptySession,
@@ -21,6 +21,19 @@ export function useRoutineEditor({ editorId, routine }: UseRoutineEditorOptions)
     undefined as unknown as WorkoutSessionState,
     () => (routine ? createSessionFromRoutine(editorId, routine) : createEmptySession(editorId))
   );
+
+  // `routine` (rutina a editar, o entrenamiento completado a editar) llega del contexto de forma
+  // asíncrona — puede no estar disponible en el primer render. Se hidrata como mucho una vez por
+  // `editorId`: si ya se hidrató, cambios posteriores de referencia en `routine` (p.ej. porque el
+  // array `routines` del contexto se recrea tras una sincronización de fondo) NO deben pisar los
+  // cambios que el usuario ya esté editando.
+  const hydratedForIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (hydratedForIdRef.current === editorId) return;
+    if (!routine) return;
+    hydratedForIdRef.current = editorId;
+    dispatch({ type: "RESTORE", state: createSessionFromRoutine(editorId, routine) });
+  }, [routine, editorId]);
 
   const setName = useCallback((name: string) => dispatch({ type: "SET_NAME", name }), []);
   const addExercise = useCallback(

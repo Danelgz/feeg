@@ -281,6 +281,7 @@ export default function EmptyRoutine() {
               key={exercise.uid}
               exercise={exercise}
               mode="live"
+              translate={t}
               previousSeries={undefined}
               onUpdateField={(serieUid, field, value) => actions.updateSeriesField(exercise.uid, serieUid, field, value)}
               onToggleComplete={(serieUid) => actions.toggleSeriesComplete(exercise.uid, serieUid)}

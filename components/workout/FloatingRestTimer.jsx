@@ -23,8 +23,9 @@ function formatElapsed(seconds) {
  * si no, muestra el tiempo total transcurrido (siempre visible aunque se haga scroll más allá
  * de WorkoutStatsBar). No se muestra en absoluto si el entreno no está en curso.
  */
-export default function FloatingRestTimer({ restActive, restRemainingSeconds, elapsedSeconds, onAdjust, onStop }) {
+export default function FloatingRestTimer({ restActive, restRemainingSeconds, elapsedSeconds, onAdjust, onStop, t }) {
   const tk = getWorkoutTokens();
+  const translate = t || ((s) => s);
 
   return (
     <div
@@ -50,7 +51,7 @@ export default function FloatingRestTimer({ restActive, restRemainingSeconds, el
       {restActive ? (
         <>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <span style={{ fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase", opacity: 0.75 }}>Descanso</span>
+            <span style={{ fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase", opacity: 0.75 }}>{translate("rest_prefix")}</span>
             <span style={{ fontWeight: 700, fontSize: "1.1rem", fontVariantNumeric: "tabular-nums" }}>
               {formatMinSec(restRemainingSeconds)}
             </span>
@@ -73,7 +74,7 @@ export default function FloatingRestTimer({ restActive, restRemainingSeconds, el
         </>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <span style={{ fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase", color: tk.accent }}>Tiempo Total</span>
+          <span style={{ fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase", color: tk.accent }}>{translate("total_time_label")}</span>
           <span style={{ fontWeight: 700, fontSize: "1.1rem" }}>{formatElapsed(elapsedSeconds || 0)}</span>
         </div>
       )}

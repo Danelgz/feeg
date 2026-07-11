@@ -28,6 +28,7 @@ function ExerciseCard({
   exercise,
   mode = "live",
   previousSeries,
+  translate,
   onUpdateField,
   onToggleComplete,
   onSetSeriesType,
@@ -39,6 +40,7 @@ function ExerciseCard({
   onDeleteExercise,
   onOpenHistory,
 }) {
+  const t = translate || ((s) => s);
   const tk = getWorkoutTokens();
   const [menuOpen, setMenuOpen] = useState(false);
   const [restPickerOpen, setRestPickerOpen] = useState(false);
@@ -68,9 +70,9 @@ function ExerciseCard({
           <ExerciseThumb name={exercise.name} />
           <div style={{ minWidth: 0 }}>
             <h2 style={{ margin: 0, color: tk.accent, fontSize: "1.15rem", fontWeight: 500, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {exercise.name}
+              {t(exercise.name)}
             </h2>
-            <span style={{ fontSize: "0.75rem", color: tk.textFaint, textTransform: "uppercase" }}>{exercise.muscleGroup}</span>
+            <span style={{ fontSize: "0.75rem", color: tk.textFaint, textTransform: "uppercase" }}>{t(exercise.muscleGroup)}</span>
           </div>
         </div>
 
@@ -85,12 +87,13 @@ function ExerciseCard({
             setMenuOpen(false);
             setConfirmDeleteExercise(true);
           }}
+          t={t}
         />
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "10px", color: tk.accent, marginBottom: "16px", fontSize: "0.95rem" }}>
         <span onClick={() => setRestPickerOpen(true)} style={{ cursor: "pointer", fontWeight: 500 }}>
-          Descanso: {formatRest(exercise.restSeconds)}
+          {t("rest_prefix")}: {formatRest(exercise.restSeconds)}
         </span>
       </div>
 
@@ -99,7 +102,7 @@ function ExerciseCard({
           type="text"
           value={exercise.notes}
           onChange={(e) => onSetNotes(e.target.value)}
-          placeholder="Añadir notas aquí..."
+          placeholder={t("notes_placeholder")}
           style={{
             width: "100%",
             background: tk.surfaceAlt,
@@ -169,7 +172,7 @@ function ExerciseCard({
           gap: "6px",
         }}
       >
-        <Icon name="plus" size={15} /> Agregar Serie
+        <Icon name="plus" size={15} /> {t("add_series")}
       </button>
 
       <RestTimePickerModal
@@ -177,6 +180,7 @@ function ExerciseCard({
         value={exercise.restSeconds}
         onChange={onSetRest}
         onClose={() => setRestPickerOpen(false)}
+        t={t}
       />
 
       <SeriesTypeModal
@@ -195,13 +199,14 @@ function ExerciseCard({
             : undefined
         }
         onClose={() => setTypeModalSerieUid(null)}
+        t={t}
       />
 
       <ConfirmModal
         isDark
         open={confirmDeleteExercise}
-        title="¿Eliminar ejercicio?"
-        description="Esta acción no se puede deshacer."
+        title={t("delete_exercise_title")}
+        description={t("action_irreversible")}
         danger
         onConfirm={() => {
           setConfirmDeleteExercise(false);
@@ -213,8 +218,8 @@ function ExerciseCard({
       <ConfirmModal
         isDark
         open={!!confirmDeleteSerieUid}
-        title="¿Eliminar esta serie?"
-        description="Esta acción no se puede deshacer."
+        title={t("delete_series_title")}
+        description={t("action_irreversible")}
         danger
         onConfirm={() => {
           onRemoveSeries(confirmDeleteSerieUid);

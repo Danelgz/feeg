@@ -12,8 +12,9 @@ function formatDuration(seconds) {
  * Pantalla de finalización real, dentro del propio flujo (antes de navegar a otro sitio).
  * Sustituye el redirect inmediato + el bloque JSX muerto que existía en [id].js.
  */
-export default function WorkoutSummaryScreen({ workout, prNames = [], onDone }) {
+export default function WorkoutSummaryScreen({ workout, prNames = [], onDone, t }) {
   const tk = getWorkoutTokens();
+  const translate = t || ((s) => s);
   const hasPRs = prNames.length > 0;
 
   return (
@@ -52,7 +53,7 @@ export default function WorkoutSummaryScreen({ workout, prNames = [], onDone }) 
       `}</style>
 
       <h1 style={{ color: tk.text, fontSize: "1.6rem", fontWeight: 800, margin: "0 0 6px" }}>
-        ¡Entrenamiento completado!
+        {translate("workout_completed_title")}
       </h1>
       <p style={{ color: tk.textMuted, margin: "0 0 32px", fontSize: "0.95rem" }}>{workout.name}</p>
 
@@ -67,11 +68,11 @@ export default function WorkoutSummaryScreen({ workout, prNames = [], onDone }) 
         }}
       >
         {[
-          { label: "Duración", value: formatDuration(workout.elapsedTime || 0) },
-          { label: "Volumen", value: `${(workout.totalVolume || 0).toLocaleString()} kg` },
-          { label: "Series", value: workout.series || 0 },
+          { key: "duration", label: translate("duration_label"), value: formatDuration(workout.elapsedTime || 0) },
+          { key: "volume", label: translate("volume"), value: `${(workout.totalVolume || 0).toLocaleString()} kg` },
+          { key: "series", label: translate("series_label"), value: workout.series || 0 },
         ].map((stat) => (
-          <div key={stat.label} style={{ backgroundColor: tk.surface, border: `1px solid ${tk.border}`, borderRadius: tk.radius.md, padding: "14px 8px" }}>
+          <div key={stat.key} style={{ backgroundColor: tk.surface, border: `1px solid ${tk.border}`, borderRadius: tk.radius.md, padding: "14px 8px" }}>
             <div style={{ color: tk.accent, fontSize: "1.2rem", fontWeight: 700 }}>{stat.value}</div>
             <div style={{ color: tk.textFaint, fontSize: "0.7rem", textTransform: "uppercase", marginTop: "4px" }}>{stat.label}</div>
           </div>
@@ -92,7 +93,7 @@ export default function WorkoutSummaryScreen({ workout, prNames = [], onDone }) 
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "8px", color: tk.accent, fontWeight: 700, marginBottom: "8px" }}>
-            <span style={{ fontSize: "1.1rem" }}>🏆</span> {prNames.length} récord{prNames.length > 1 ? "s" : ""} personal{prNames.length > 1 ? "es" : ""}
+            <span style={{ fontSize: "1.1rem" }}>🏆</span> {prNames.length} {translate(prNames.length > 1 ? "personal_records_label" : "personal_record_label")}
           </div>
           <div style={{ color: tk.text, fontSize: "0.85rem", lineHeight: 1.6 }}>
             {prNames.join(" · ")}
@@ -115,7 +116,7 @@ export default function WorkoutSummaryScreen({ workout, prNames = [], onDone }) 
           cursor: "pointer",
         }}
       >
-        Listo
+        {translate("done_label")}
       </button>
     </div>
   );

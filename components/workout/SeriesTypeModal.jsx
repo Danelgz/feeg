@@ -1,15 +1,16 @@
 import { getWorkoutTokens } from "../../lib/tokens";
 import { Icon } from "../ui";
 
-const TYPES = [
-  { key: "N", label: "Normal", desc: "Serie estándar de trabajo" },
-  { key: "W", label: "Calentamiento", desc: "No cuenta para el volumen total ni los récords" },
-  { key: "D", label: "Drop Set", desc: "Reducción de peso sin descanso" },
+const TYPE_KEYS = [
+  { key: "N", labelKey: "series_type_normal", descKey: "series_type_normal_desc" },
+  { key: "W", labelKey: "series_type_warmup", descKey: "series_type_warmup_desc" },
+  { key: "D", labelKey: "series_type_dropset", descKey: "series_type_dropset_desc" },
 ];
 
 /** Selector de tipo de serie (N/W/D) + eliminar esta serie (con confirmación en el padre). */
-export default function SeriesTypeModal({ open, currentType, onSelectType, onRequestDelete, onClose }) {
+export default function SeriesTypeModal({ open, currentType, onSelectType, onRequestDelete, onClose, t }) {
   const tk = getWorkoutTokens();
+  const translate = t || ((s) => s);
   if (!open) return null;
 
   return (
@@ -40,12 +41,12 @@ export default function SeriesTypeModal({ open, currentType, onSelectType, onReq
           boxShadow: tk.shadow.float,
         }}
       >
-        <h3 style={{ color: tk.text, margin: "0 0 6px 0", fontSize: "1.1rem" }}>Tipo de serie</h3>
+        <h3 style={{ color: tk.text, margin: "0 0 6px 0", fontSize: "1.1rem" }}>{translate("series_type_title")}</h3>
         <p style={{ color: tk.textFaint, fontSize: "0.8rem", marginBottom: "20px", marginTop: 0 }}>
-          Selecciona el tipo para esta serie
+          {translate("series_type_subtitle")}
         </p>
 
-        {TYPES.map(({ key, label, desc }) => {
+        {TYPE_KEYS.map(({ key, labelKey, descKey }) => {
           const isSelected = currentType === key;
           const color = key === "W" ? tk.accent : key === "D" ? tk.warning : tk.text;
           return (
@@ -69,8 +70,8 @@ export default function SeriesTypeModal({ open, currentType, onSelectType, onReq
               }}
             >
               <div>
-                <div style={{ fontWeight: 700, fontSize: "1rem" }}>{key} — {label}</div>
-                <div style={{ color: tk.textFaint, fontSize: "0.78rem", marginTop: "2px" }}>{desc}</div>
+                <div style={{ fontWeight: 700, fontSize: "1rem" }}>{key} — {translate(labelKey)}</div>
+                <div style={{ color: tk.textFaint, fontSize: "0.78rem", marginTop: "2px" }}>{translate(descKey)}</div>
               </div>
               {isSelected && <Icon name="check" size={18} color={tk.accent} />}
             </button>
@@ -97,7 +98,7 @@ export default function SeriesTypeModal({ open, currentType, onSelectType, onReq
             }}
           >
             <Icon name="trash" size={15} />
-            Eliminar esta serie
+            {translate("delete_series")}
           </button>
         )}
 
@@ -115,7 +116,7 @@ export default function SeriesTypeModal({ open, currentType, onSelectType, onReq
             cursor: "pointer",
           }}
         >
-          Cancelar
+          {translate("cancel")}
         </button>
       </div>
     </div>

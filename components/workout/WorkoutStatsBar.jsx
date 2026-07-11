@@ -9,20 +9,21 @@ function formatElapsed(seconds) {
 }
 
 /** Fila de estadísticas en vivo (modo "en vivo") o estimadas (modo "plantilla"). */
-export default function WorkoutStatsBar({ mode = "live", elapsedSeconds, totalVolume, totalSeries, exerciseCount }) {
+export default function WorkoutStatsBar({ mode = "live", elapsedSeconds, totalVolume, totalSeries, exerciseCount, t }) {
   const tk = getWorkoutTokens();
+  const translate = t || ((s) => s);
 
   const items =
     mode === "live"
       ? [
-          { label: "Duración", value: formatElapsed(elapsedSeconds || 0) },
-          { label: "Volumen", value: `${(totalVolume || 0).toLocaleString()} kg` },
-          { label: "Series", value: totalSeries || 0 },
+          { key: "duration", label: translate("duration_label"), value: formatElapsed(elapsedSeconds || 0), accent: true },
+          { key: "volume", label: translate("volume"), value: `${(totalVolume || 0).toLocaleString()} kg`, accent: false },
+          { key: "series", label: translate("series_label"), value: totalSeries || 0, accent: true },
         ]
       : [
-          { label: "Ejercicios", value: exerciseCount || 0 },
-          { label: "Volumen Est.", value: `${(totalVolume || 0).toLocaleString()} kg` },
-          { label: "Series", value: totalSeries || 0 },
+          { key: "exercises", label: translate("exercises_count"), value: exerciseCount || 0, accent: true },
+          { key: "volume", label: `${translate("volume")} Est.`, value: `${(totalVolume || 0).toLocaleString()} kg`, accent: false },
+          { key: "series", label: translate("series_label"), value: totalSeries || 0, accent: true },
         ];
 
   return (
@@ -36,9 +37,9 @@ export default function WorkoutStatsBar({ mode = "live", elapsedSeconds, totalVo
       }}
     >
       {items.map((item) => (
-        <div key={item.label}>
+        <div key={item.key}>
           <div style={{ color: tk.textFaint, fontSize: "0.75rem", marginBottom: "4px" }}>{item.label}</div>
-          <div style={{ color: item.label === "Volumen" || item.label === "Volumen Est." ? tk.text : tk.accent, fontSize: "1.1rem", fontWeight: 500 }}>
+          <div style={{ color: item.accent ? tk.accent : tk.text, fontSize: "1.1rem", fontWeight: 500 }}>
             {item.value}
           </div>
         </div>

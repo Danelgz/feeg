@@ -9,8 +9,9 @@ function formatRestLabel(totalSeconds) {
 }
 
 /** Editor de tiempo de descanso — reutiliza NumberWheel (antes existía sin usar en el flujo). */
-export default function RestTimePickerModal({ open, value, onChange, onClose }) {
+export default function RestTimePickerModal({ open, value, onChange, onClose, t }) {
   const tk = getWorkoutTokens();
+  const translate = t || ((s) => s);
   if (!open) return null;
 
   return (
@@ -39,7 +40,7 @@ export default function RestTimePickerModal({ open, value, onChange, onClose }) 
           border: `1px solid ${tk.border}`,
         }}
       >
-        <h3 style={{ color: tk.text, margin: "0 0 16px 0" }}>Editar Descanso</h3>
+        <h3 style={{ color: tk.text, margin: "0 0 16px 0" }}>{translate("edit_rest_title")}</h3>
 
         <NumberWheel value={value} onChange={onChange} min={5} max={600} step={5} label="" formatLabel={formatRestLabel} isDark />
 
@@ -57,7 +58,7 @@ export default function RestTimePickerModal({ open, value, onChange, onClose }) 
             cursor: "pointer",
           }}
         >
-          Cerrar
+          {translate("close")}
         </button>
       </div>
     </div>

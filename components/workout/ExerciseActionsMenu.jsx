@@ -6,8 +6,9 @@ import { Icon } from "../ui";
  * para que el bug de producción de [id].js (llamaba a setters que no existían) sea imposible
  * de reintroducir por diseño: no hay ningún otro sitio donde "inventarse" una acción nueva.
  */
-export default function ExerciseActionsMenu({ open, onToggle, onSubstitute, onDelete }) {
+export default function ExerciseActionsMenu({ open, onToggle, onSubstitute, onDelete, t }) {
   const tk = getWorkoutTokens();
+  const translate = t || ((s) => s);
 
   return (
     <div style={{ position: "relative" }}>
@@ -48,7 +49,7 @@ export default function ExerciseActionsMenu({ open, onToggle, onSubstitute, onDe
             }}
           >
             <Icon name="edit" size={15} />
-            Sustituir ejercicio
+            {translate("substitute_exercise_action")}
           </button>
           <button
             onClick={onDelete}
@@ -67,7 +68,7 @@ export default function ExerciseActionsMenu({ open, onToggle, onSubstitute, onDe
             }}
           >
             <Icon name="trash" size={15} />
-            Eliminar ejercicio
+            {translate("delete_exercise_action")}
           </button>
         </div>
       )}

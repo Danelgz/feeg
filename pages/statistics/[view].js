@@ -11,6 +11,7 @@ export default function StatisticsView() {
   const { t, theme, isMobile, completedWorkouts: contextWorkouts } = useUser();
   const isDark = theme === 'dark';
   const [isNarrow, setIsNarrow] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState('all'); // 7days, 30days, 90days, all
 
   const workouts = contextWorkouts || [];
 
@@ -34,6 +35,39 @@ export default function StatisticsView() {
     Abdomen: ['Abdomen', 'Abs', 'Core', 'Obliques']
   };
 
+  const muscleIcons = {
+    Pecho: '💪',
+    Espalda: '🔙',
+    Hombros: '🏋️',
+    Bíceps: '💪',
+    Tríceps: '💪',
+    Cuádriceps: '🦵',
+    Femoral: '🦵',
+    Glúteos: '🍑',
+    Gemelos: '🦵',
+    Abdomen: '🎯'
+  };
+
+  const filteredWorkouts = useMemo(() => {
+    if (!workouts) return [];
+    const now = new Date();
+    return workouts.filter(w => {
+      if (!w.completedAt) return false;
+      const workoutDate = new Date(w.completedAt);
+      if (selectedPeriod === '7days') {
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return workoutDate >= sevenDaysAgo;
+      } else if (selectedPeriod === '30days') {
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        return workoutDate >= thirtyDaysAgo;
+      } else if (selectedPeriod === '90days') {
+        const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        return workoutDate >= ninetyDaysAgo;
+      }
+      return true;
+    });
+  }, [workouts, selectedPeriod]);
+
   const muscleStats = useMemo(() => {
     const counts = {};
     Object.keys(groupMap).forEach(g => counts[g] = 0);
@@ -42,7 +76,7 @@ export default function StatisticsView() {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(now.getDate() - 7);
 
-    workouts.forEach(w => {
+    filteredWorkouts.forEach(w => {
       if (!w.completedAt) return;
       const workoutDate = new Date(w.completedAt);
       if (workoutDate < sevenDaysAgo) return;
@@ -100,12 +134,12 @@ export default function StatisticsView() {
     };
 
     return { counts, max, getIntensity, getColor };
-  }, [workouts, isDark]);
+  }, [filteredWorkouts, isDark]);
 
   const seriesByGroup = useMemo(() => {
     const counts = {};
     Object.keys(groupMap).forEach(g => counts[g] = 0);
-    workouts.forEach(w => {
+    filteredWorkouts.forEach(w => {
       if (Array.isArray(w.details)) {
         w.details.forEach(d => {
           const grp = d.muscleGroup || d.group || d.category;
@@ -121,62 +155,132 @@ export default function StatisticsView() {
       }
     });
     return counts;
-  }, [workouts]);
+  }, [filteredWorkouts]);
 
   const total = useMemo(() => Object.values(seriesByGroup).reduce((a, b) => a + b, 0) || 1, [seriesByGroup]);
 
   const nav = [
-    { key: 'series', label: 'Series por grupo muscular', href: '/statistics/series' },
-    { key: 'distribution', label: 'Distribución de músculos (gráfico)', href: '/statistics/distribution' },
-    { key: 'monthly', label: 'Informe mensual', href: '/statistics/monthly' },
-    { key: 'exercises', label: 'Estadísticas Ejercicios', href: '/statistics/exercises' }
+    { key: 'series', label: '💪 Series por grupo', icon: '💪', description: 'Distribución de series por músculo' },
+    { key: 'distribution', label: '📈 Distribución', icon: '📈', description: 'Gráfico de distribución muscular' },
+    { key: 'monthly', label: '📅 Mensual', icon: '📅', description: 'Informe detallado por mes' },
+    { key: 'exercises', label: '🏋️ Ejercicios', icon: '🏋️', description: 'Estadísticas por ejercicio' }
   ];
 
   return (
     <Layout>
-      <h1 style={{ fontSize: isNarrow ? "1.2rem" : "1.8rem", marginBottom: isNarrow ? "0.8rem" : "1rem", color: isDark ? "#fff" : "#333" }}>
-        {t('statistics')} <span style={{ color: isDark ? "#aaa" : "#777", fontSize: isNarrow ? "0.7rem" : "0.8rem" }}>{t('stats_in_development')}</span>
-      </h1>
+      <div style={{ marginBottom: "2rem" }}>
+        <h1 style={{ fontSize: isNarrow ? "1.8rem" : "2.5rem", marginBottom: "0.5rem", color: isDark ? "#fff" : "#333", fontWeight: "bold" }}>
+          📊 {t('statistics')}
+        </h1>
+        <p style={{ color: isDark ? "#888" : "#666", fontSize: isNarrow ? "0.9rem" : "1rem", marginBottom: "1rem" }}>
+          Analiza tu progreso y mejora tu entrenamiento con datos detallados
+        </p>
+      </div>
 
+      {/* Period Filter */}
       <div style={{
         display: 'flex',
-        gap: '10px',
+        gap: '8px',
         marginBottom: '20px',
-        overflowX: 'auto',
-        paddingBottom: '5px',
-        WebkitOverflowScrolling: 'touch'
+        flexWrap: 'wrap'
       }}>
-        {nav.map(item => (
-          <Link key={item.key} href={item.href} style={{ textDecoration: 'none', flexShrink: 0 }}>
-            <div style={{
+        {[
+          { key: '7days', label: '7 días' },
+          { key: '30days', label: '30 días' },
+          { key: '90days', label: '90 días' },
+          { key: 'all', label: 'Todo' }
+        ].map(period => (
+          <button
+            key={period.key}
+            onClick={() => setSelectedPeriod(period.key)}
+            style={{
               padding: '8px 16px',
-              backgroundColor: view === item.key ? '#1dd1a1' : (isDark ? '#1a1a1a' : '#fff'),
-              border: `1px solid ${view === item.key ? '#1dd1a1' : (isDark ? '#333' : '#ddd')}`,
+              backgroundColor: selectedPeriod === period.key ? '#1dd1a1' : (isDark ? '#1a1a1a' : '#fff'),
+              border: `1px solid ${selectedPeriod === period.key ? '#1dd1a1' : (isDark ? '#333' : '#ddd')}`,
               borderRadius: '20px',
-              color: view === item.key ? '#000' : (isDark ? '#fff' : '#333'),
+              color: selectedPeriod === period.key ? '#000' : (isDark ? '#fff' : '#333'),
               fontWeight: '600',
               fontSize: '0.85rem',
-              whiteSpace: 'nowrap'
-            }}>
-              {item.label}
-            </div>
-          </Link>
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            {period.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Navigation Tabs */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isNarrow ? '1fr' : 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: '12px',
+        marginBottom: '24px'
+      }}>
+        {nav.map(item => (
+          <Link key={item.key} href={item.href} style={{ textDecoration: 'none' }}>
+            <div style={{
+              padding: '16px',
+              backgroundColor: view === item.key ? 'rgba(29, 209, 161, 0.1)' : (isDark ? '#1a1a1a' : '#fff'),
+              border: `2px solid ${view === item.key ? '#1dd1a1' : (isDark ? '#333' : '#ddd')}`,
+              borderRadius: '16px',
+              color: isDark ? '#fff' : '#333',
+              textAlign: 'left',
+              transition: 'all 0.3s ease',
+              cursor: 'pointer'
+            }}
+            onMouseOver={(e) => {
+              if (view !== item.key) {
+                e.currentTarget.style.borderColor = '#1dd1a1';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (view !== item.key) {
+                e.currentTarget.style.borderColor = isDark ? '#333' : '#ddd';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }
+            }}
+          >
+            <div style={{ fontSize: '1.5rem', marginBottom: '8px' }}>{item.icon}</div>
+            <div style={{ fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '4px' }}>{item.label}</div>
+            <div style={{ fontSize: '0.75rem', color: isDark ? '#888' : '#666' }}>{item.description}</div>
+          </div>
+        </Link>
         ))}
       </div>
 
       {view === 'series' && (
-        <Section title="Series por grupo muscular" isDark={isDark} isNarrow={isNarrow}>
+        <Section title="💪 Series por Grupo Muscular" isDark={isDark} isNarrow={isNarrow}>
           {Object.entries(seriesByGroup).length === 0 ? (
-            <p style={{ color: isDark ? '#aaa' : '#666' }}>{t('stats_no_data')}</p>
+            <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '16px' }}>💪</div>
+              <p style={{ color: isDark ? '#aaa' : '#666', fontSize: '1rem' }}>{t('stats_no_data')}</p>
+            </div>
           ) : (
             <div>
               {Object.entries(seriesByGroup).sort((a, b) => b[1] - a[1]).map(([g, n], i, arr) => (
-                <div key={g} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', fontSize: isNarrow ? '0.8rem' : '1rem' }}>
-                  <div style={{ width: isNarrow ? '110px' : '140px', color: isDark ? '#ddd' : '#444' }}>{t(g) || g}</div>
-                  <div style={{ flex: 1, height: '10px', background: isDark ? '#0f0f0f' : '#eee', borderRadius: '999px', overflow: 'hidden' }}>
-                    <div style={{ width: `${n === 0 ? 2 : Math.min(100, (n / Math.max(1, arr[0][1])) * 100)}%`, height: '100%', background: '#1dd1a1' }} />
+                <div key={g} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+                  <div style={{ 
+                    width: '45px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    fontSize: '1.3rem'
+                  }}>
+                    {muscleIcons?.[g] || '💪'}
                   </div>
-                  <div style={{ width: '30px', textAlign: 'right', color: isDark ? '#aaa' : '#666' }}>{n}</div>
+                  <div style={{ width: '120px', color: isDark ? '#ddd' : '#444', fontSize: '0.9rem', fontWeight: '500' }}>{t(g) || g}</div>
+                  <div style={{ flex: 1, height: '20px', background: isDark ? '#0f0f0f' : '#eee', borderRadius: '999px', overflow: 'hidden' }}>
+                    <div style={{ 
+                      width: `${n === 0 ? 2 : Math.min(100, (n / Math.max(1, arr[0][1])) * 100)}%`, 
+                      height: '100%', 
+                      background: n > 0 ? 'linear-gradient(90deg, #1dd1a1, #19b088)' : (isDark ? '#333' : '#ddd'),
+                      borderRadius: '999px',
+                      transition: 'width 0.4s ease'
+                    }} />
+                  </div>
+                  <div style={{ width: '50px', textAlign: 'right', color: isDark ? '#fff' : '#333', fontWeight: 'bold', fontSize: '0.95rem' }}>{n}</div>
                 </div>
               ))}
             </div>
@@ -185,15 +289,30 @@ export default function StatisticsView() {
       )}
 
       {view === 'distribution' && (
-        <Section title="Distribución de músculos (gráfico)" isDark={isDark} isNarrow={isNarrow}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
+        <Section title="📈 Distribución Muscular" isDark={isDark} isNarrow={isNarrow}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
             {Object.entries(seriesByGroup).map(([g, n]) => (
-              <div key={g} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: isNarrow ? '0.8rem' : '1rem' }}>
-                <div style={{ width: isNarrow ? '110px' : '140px', color: isDark ? '#ddd' : '#444' }}>{t(g) || g}</div>
-                <div style={{ flex: 1, height: '10px', background: isDark ? '#0f0f0f' : '#eee', borderRadius: '999px', overflow: 'hidden' }}>
-                  <div style={{ width: `${(n / total) * 100}%`, height: '100%', background: '#1dd1a1' }} />
+              <div key={g} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ 
+                  width: '45px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  fontSize: '1.3rem'
+                }}>
+                  {muscleIcons?.[g] || '💪'}
                 </div>
-                <div style={{ width: '40px', textAlign: 'right', color: isDark ? '#aaa' : '#666' }}>{Math.round((n / total) * 100)}%</div>
+                <div style={{ width: '120px', color: isDark ? '#ddd' : '#444', fontSize: '0.9rem', fontWeight: '500' }}>{t(g) || g}</div>
+                <div style={{ flex: 1, height: '20px', background: isDark ? '#0f0f0f' : '#eee', borderRadius: '999px', overflow: 'hidden' }}>
+                  <div style={{ 
+                    width: `${(n / total) * 100}%`, 
+                    height: '100%', 
+                    background: n > 0 ? 'linear-gradient(90deg, #1dd1a1, #19b088)' : (isDark ? '#333' : '#ddd'),
+                    borderRadius: '999px',
+                    transition: 'width 0.4s ease'
+                  }} />
+                </div>
+                <div style={{ width: '60px', textAlign: 'right', color: isDark ? '#fff' : '#333', fontWeight: 'bold', fontSize: '0.95rem' }}>{Math.round((n / total) * 100)}%</div>
               </div>
             ))}
           </div>
@@ -220,10 +339,10 @@ function Section({ title, isDark, children, isNarrow }) {
     <section style={{
       backgroundColor: isDark ? '#1a1a1a' : '#fff',
       border: isDark ? '1px solid #333' : '1px solid #e0e0e0',
-      borderRadius: '10px',
-      padding: isNarrow ? '12px' : '16px'
+      borderRadius: '16px',
+      padding: isNarrow ? '16px' : '24px'
     }}>
-      <h2 style={{ margin: 0, marginBottom: '12px', color: isDark ? '#fff' : '#333', fontSize: isNarrow ? '0.9rem' : '1rem' }}>{title}</h2>
+      <h2 style={{ margin: 0, marginBottom: '20px', color: isDark ? '#fff' : '#333', fontSize: '1.3rem', fontWeight: 'bold' }}>{title}</h2>
       {children}
     </section>
   );
@@ -243,21 +362,67 @@ function Monthly({ isDark, workouts, t, isMobile }) {
     byMonth[key].timeMin += w.elapsedTime !== undefined ? Math.round((Number(w.elapsedTime || 0)) / 60) : Number(w.totalTime || 0);
   });
   const entries = Object.entries(byMonth).sort((a, b) => b[0].localeCompare(a[0]));
+  
+  const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  
+  const formatMonth = (monthStr) => {
+    const [year, month] = monthStr.split('-');
+    return `${monthNames[parseInt(month) - 1]} ${year}`;
+  };
+
   return (
-    <Section title="Informe mensual" isDark={isDark}>
+    <Section title="📅 Informe Mensual" isDark={isDark}>
       {entries.length === 0 ? (
-        <p style={{ color: isDark ? '#aaa' : '#666' }}>{t('stats_no_data')}</p>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '16px' }}>📅</div>
+          <p style={{ color: isDark ? '#aaa' : '#666', fontSize: '1rem' }}>{t('stats_no_data')}</p>
+        </div>
       ) : (
-        <div style={{ display: 'grid', gap: '10px' }}>
-          {entries.map(([month, v]) => (
-            <div key={month} style={{ background: isDark ? '#0f0f0f' : '#f9f9f9', border: isDark ? '1px solid #2a2a2a' : '1px solid #eee', borderRadius: 8, padding: 12 }}>
-              <strong style={{ color: isDark ? '#fff' : '#333' }}>{month}</strong>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)', gap: '8px', marginTop: 8 }}>
-                <MiniStat label={t('completed_workouts')} value={v.sessions} isDark={isDark} />
-                <MiniStat label={t('total_series')} value={v.series} isDark={isDark} />
-                <MiniStat label={t('reps_label')} value={v.reps} isDark={isDark} />
-                <MiniStat label={t('total_volume_kg')} value={v.volume.toLocaleString()} isDark={isDark} />
-                <MiniStat label={t('total_time_min')} value={v.timeMin} isDark={isDark} />
+        <div style={{ display: 'grid', gap: '12px' }}>
+          {entries.map(([month, v], index) => (
+            <div key={month} style={{ 
+              background: isDark ? '#0f0f0f' : '#f9f9f9', 
+              border: isDark ? '1px solid #2a2a2a' : '1px solid #eee', 
+              borderRadius: 12, 
+              padding: 16,
+              transition: 'all 0.2s ease',
+              cursor: 'pointer'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.borderColor = '#1dd1a1';
+              e.currentTarget.style.transform = 'translateX(4px)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.borderColor = isDark ? '#2a2a2a' : '#eee';
+              e.currentTarget.style.transform = 'translateX(0)';
+            }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(29, 209, 161, 0.1)',
+                    color: '#1dd1a1',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    fontSize: '0.9rem'
+                  }}>
+                    {index + 1}
+                  </div>
+                  <strong style={{ color: isDark ? '#fff' : '#333', fontSize: '1.1rem' }}>{formatMonth(month)}</strong>
+                </div>
+                <span style={{ fontSize: '0.85rem', color: '#1dd1a1', fontWeight: '600' }}>{v.sessions} entrenamientos</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)', gap: '10px' }}>
+                <MiniStat label="Entrenos" value={v.sessions} isDark={isDark} />
+                <MiniStat label="Series" value={v.series} isDark={isDark} />
+                <MiniStat label="Reps" value={v.reps} isDark={isDark} />
+                <MiniStat label="Volumen" value={v.volume.toLocaleString()} isDark={isDark} />
+                <MiniStat label="Tiempo" value={v.timeMin} isDark={isDark} />
               </div>
             </div>
           ))}
@@ -270,8 +435,8 @@ function Monthly({ isDark, workouts, t, isMobile }) {
 function MiniStat({ label, value, isDark }) {
   return (
     <div style={{ textAlign: 'center' }}>
-      <div style={{ fontSize: '0.65rem', color: isDark ? '#666' : '#999', textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ fontSize: '1rem', fontWeight: 'bold', color: isDark ? '#fff' : '#333' }}>{value}</div>
+      <div style={{ fontSize: '0.7rem', color: isDark ? '#888' : '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
+      <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: isDark ? '#fff' : '#333' }}>{value}</div>
     </div>
   );
 }
@@ -295,29 +460,94 @@ function ExerciseStats({ isDark, workouts, t, isMobile }) {
   const results = Object.entries(index)
     .filter(([name]) => name.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => b[1].sessions - a[1].sessions);
+  
+  const exerciseIcons = {
+    'press': '🏋️',
+    'curl': '💪',
+    'squat': '🦵',
+    'deadlift': '🏋️',
+    'pull': '💪',
+    'push': '💪',
+    'lunge': '🦵',
+    'plank': '🎯',
+    'row': '💪',
+    'extension': '💪'
+  };
+  
+  const getExerciseIcon = (name) => {
+    const lowerName = name.toLowerCase();
+    for (const [key, icon] of Object.entries(exerciseIcons)) {
+      if (lowerName.includes(key)) return icon;
+    }
+    return '🏋️';
+  };
 
   return (
-    <Section title="Estadísticas por Ejercicio" isDark={isDark}>
-      <input
-        type="text"
-        placeholder="Buscar ejercicio..."
-        value={q}
-        onChange={e => setQ(e.target.value)}
-        style={{ width: '100%', padding: '10px', marginBottom: '15px', borderRadius: '8px', border: isDark ? '1px solid #333' : '1px solid #ddd', background: isDark ? '#0f0f0f' : '#fff', color: isDark ? '#fff' : '#000' }}
-      />
-      <div style={{ display: 'grid', gap: '10px' }}>
-        {results.map(([name, v]) => (
-          <div key={name} style={{ background: isDark ? '#0f0f0f' : '#f9f9f9', padding: 12, borderRadius: 8 }}>
-            <strong style={{ color: isDark ? '#fff' : '#333' }}>{name}</strong>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginTop: 8 }}>
-              <MiniStat label="Sesiones" value={v.sessions} isDark={isDark} />
-              <MiniStat label="Series" value={v.series} isDark={isDark} />
-              <MiniStat label="Reps" value={v.reps} isDark={isDark} />
-              <MiniStat label="Vol. Total" value={v.volume.toLocaleString()} isDark={isDark} />
-            </div>
-          </div>
-        ))}
+    <Section title="🏋️ Estadísticas por Ejercicio" isDark={isDark}>
+      <div style={{ position: 'relative', marginBottom: '20px' }}>
+        <input
+          type="text"
+          placeholder="🔍 Buscar ejercicio..."
+          value={q}
+          onChange={e => setQ(e.target.value)}
+          style={{ 
+            width: '100%', 
+            padding: '14px 16px 14px 48px', 
+            borderRadius: 12, 
+            border: `1px solid ${isDark ? '#333' : '#ddd'}`,
+            background: isDark ? '#0f0f0f' : '#fafafa', 
+            color: isDark ? '#fff' : '#333', 
+            outline: 'none',
+            fontSize: '1rem',
+            transition: 'border-color 0.2s ease'
+          }}
+          onFocus={(e) => e.target.style.borderColor = '#1dd1a1'}
+          onBlur={(e) => e.target.style.borderColor = isDark ? '#333' : '#ddd'}
+        />
+        <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontSize: '1.2rem' }}>🔍</div>
       </div>
+      {results.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🏋️</div>
+          <p style={{ color: isDark ? '#aaa' : '#666', fontSize: '1rem' }}>{q ? t('no_exercises_found') : 'No hay datos de ejercicios'}</p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gap: '12px' }}>
+          {results.map(([name, v], index) => (
+            <div key={name} style={{ 
+              background: isDark ? '#0f0f0f' : '#f9f9f9', 
+              border: isDark ? '1px solid #2a2a2a' : '1px solid #eee', 
+              borderRadius: 12, 
+              padding: 16,
+              transition: 'all 0.2s ease',
+              cursor: 'pointer'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.borderColor = '#1dd1a1';
+              e.currentTarget.style.transform = 'translateX(4px)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.borderColor = isDark ? '#2a2a2a' : '#eee';
+              e.currentTarget.style.transform = 'translateX(0)';
+            }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ fontSize: '1.5rem' }}>{getExerciseIcon(name)}</div>
+                  <strong style={{ color: isDark ? '#fff' : '#333', fontSize: '1rem' }}>{name}</strong>
+                </div>
+                <span style={{ fontSize: '0.85rem', color: '#1dd1a1', fontWeight: '600' }}>#{index + 1}</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                <MiniStat label="Sesiones" value={v.sessions} isDark={isDark} />
+                <MiniStat label="Series" value={v.series} isDark={isDark} />
+                <MiniStat label="Reps" value={v.reps} isDark={isDark} />
+                <MiniStat label="Volumen" value={v.volume.toLocaleString()} isDark={isDark} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </Section>
   );
 }

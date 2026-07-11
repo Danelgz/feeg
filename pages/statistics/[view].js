@@ -35,18 +35,6 @@ export default function StatisticsView() {
     Abdomen: ['Abdomen', 'Abs', 'Core', 'Obliques']
   };
 
-  const muscleIcons = {
-    Pecho: '💪',
-    Espalda: '🔙',
-    Hombros: '🏋️',
-    Bíceps: '💪',
-    Tríceps: '💪',
-    Cuádriceps: '🦵',
-    Femoral: '🦵',
-    Glúteos: '🍑',
-    Gemelos: '🦵',
-    Abdomen: '🎯'
-  };
 
   const filteredWorkouts = useMemo(() => {
     if (!workouts) return [];
@@ -160,17 +148,17 @@ export default function StatisticsView() {
   const total = useMemo(() => Object.values(seriesByGroup).reduce((a, b) => a + b, 0) || 1, [seriesByGroup]);
 
   const nav = [
-    { key: 'series', label: '💪 Series por grupo', icon: '💪', description: 'Distribución de series por músculo' },
-    { key: 'distribution', label: '📈 Distribución', icon: '📈', description: 'Gráfico de distribución muscular' },
-    { key: 'monthly', label: '📅 Mensual', icon: '📅', description: 'Informe detallado por mes' },
-    { key: 'exercises', label: '🏋️ Ejercicios', icon: '🏋️', description: 'Estadísticas por ejercicio' }
+    { key: 'series', label: 'Series por grupo', description: 'Distribución de series por músculo' },
+    { key: 'distribution', label: 'Distribución', description: 'Gráfico de distribución muscular' },
+    { key: 'monthly', label: 'Mensual', description: 'Informe detallado por mes' },
+    { key: 'exercises', label: 'Ejercicios', description: 'Estadísticas por ejercicio' }
   ];
 
   return (
     <Layout>
       <div style={{ marginBottom: "2rem" }}>
         <h1 style={{ fontSize: isNarrow ? "1.8rem" : "2.5rem", marginBottom: "0.5rem", color: isDark ? "#fff" : "#333", fontWeight: "bold" }}>
-          📊 {t('statistics')}
+          {t('statistics')}
         </h1>
         <p style={{ color: isDark ? "#888" : "#666", fontSize: isNarrow ? "0.9rem" : "1rem", marginBottom: "1rem" }}>
           Analiza tu progreso y mejora tu entrenamiento con datos detallados
@@ -242,7 +230,6 @@ export default function StatisticsView() {
               }
             }}
           >
-            <div style={{ fontSize: '1.5rem', marginBottom: '8px' }}>{item.icon}</div>
             <div style={{ fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '4px' }}>{item.label}</div>
             <div style={{ fontSize: '0.75rem', color: isDark ? '#888' : '#666' }}>{item.description}</div>
           </div>
@@ -251,25 +238,16 @@ export default function StatisticsView() {
       </div>
 
       {view === 'series' && (
-        <Section title="💪 Series por Grupo Muscular" isDark={isDark} isNarrow={isNarrow}>
+        <Section title="Series por Grupo Muscular" isDark={isDark} isNarrow={isNarrow}>
           {Object.entries(seriesByGroup).length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '16px' }}>💪</div>
+              <div style={{ fontSize: '3rem', marginBottom: '16px' }}>�</div>
               <p style={{ color: isDark ? '#aaa' : '#666', fontSize: '1rem' }}>{t('stats_no_data')}</p>
             </div>
           ) : (
             <div>
               {Object.entries(seriesByGroup).sort((a, b) => b[1] - a[1]).map(([g, n], i, arr) => (
                 <div key={g} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-                  <div style={{ 
-                    width: '45px', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    fontSize: '1.3rem'
-                  }}>
-                    {muscleIcons?.[g] || '💪'}
-                  </div>
                   <div style={{ width: '120px', color: isDark ? '#ddd' : '#444', fontSize: '0.9rem', fontWeight: '500' }}>{t(g) || g}</div>
                   <div style={{ flex: 1, height: '20px', background: isDark ? '#0f0f0f' : '#eee', borderRadius: '999px', overflow: 'hidden' }}>
                     <div style={{ 
@@ -289,19 +267,10 @@ export default function StatisticsView() {
       )}
 
       {view === 'distribution' && (
-        <Section title="📈 Distribución Muscular" isDark={isDark} isNarrow={isNarrow}>
+        <Section title="Distribución Muscular" isDark={isDark} isNarrow={isNarrow}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
             {Object.entries(seriesByGroup).map(([g, n]) => (
               <div key={g} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ 
-                  width: '45px', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  fontSize: '1.3rem'
-                }}>
-                  {muscleIcons?.[g] || '💪'}
-                </div>
                 <div style={{ width: '120px', color: isDark ? '#ddd' : '#444', fontSize: '0.9rem', fontWeight: '500' }}>{t(g) || g}</div>
                 <div style={{ flex: 1, height: '20px', background: isDark ? '#0f0f0f' : '#eee', borderRadius: '999px', overflow: 'hidden' }}>
                   <div style={{ 
@@ -371,10 +340,10 @@ function Monthly({ isDark, workouts, t, isMobile }) {
   };
 
   return (
-    <Section title="📅 Informe Mensual" isDark={isDark}>
+    <Section title="Informe Mensual" isDark={isDark}>
       {entries.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '16px' }}>📅</div>
+          <div style={{ fontSize: '3rem', marginBottom: '16px' }}>�</div>
           <p style={{ color: isDark ? '#aaa' : '#666', fontSize: '1rem' }}>{t('stats_no_data')}</p>
         </div>
       ) : (
@@ -461,38 +430,18 @@ function ExerciseStats({ isDark, workouts, t, isMobile }) {
     .filter(([name]) => name.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => b[1].sessions - a[1].sessions);
   
-  const exerciseIcons = {
-    'press': '🏋️',
-    'curl': '💪',
-    'squat': '🦵',
-    'deadlift': '🏋️',
-    'pull': '💪',
-    'push': '💪',
-    'lunge': '🦵',
-    'plank': '🎯',
-    'row': '💪',
-    'extension': '💪'
-  };
-  
-  const getExerciseIcon = (name) => {
-    const lowerName = name.toLowerCase();
-    for (const [key, icon] of Object.entries(exerciseIcons)) {
-      if (lowerName.includes(key)) return icon;
-    }
-    return '🏋️';
-  };
 
   return (
-    <Section title="🏋️ Estadísticas por Ejercicio" isDark={isDark}>
+    <Section title="Estadísticas por Ejercicio" isDark={isDark}>
       <div style={{ position: 'relative', marginBottom: '20px' }}>
         <input
           type="text"
-          placeholder="🔍 Buscar ejercicio..."
+          placeholder="Buscar ejercicio..."
           value={q}
           onChange={e => setQ(e.target.value)}
           style={{ 
             width: '100%', 
-            padding: '14px 16px 14px 48px', 
+            padding: '14px 16px', 
             borderRadius: 12, 
             border: `1px solid ${isDark ? '#333' : '#ddd'}`,
             background: isDark ? '#0f0f0f' : '#fafafa', 
@@ -504,11 +453,10 @@ function ExerciseStats({ isDark, workouts, t, isMobile }) {
           onFocus={(e) => e.target.style.borderColor = '#1dd1a1'}
           onBlur={(e) => e.target.style.borderColor = isDark ? '#333' : '#ddd'}
         />
-        <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontSize: '1.2rem' }}>🔍</div>
       </div>
       {results.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🏋️</div>
+          <div style={{ fontSize: '3rem', marginBottom: '16px' }}>📊</div>
           <p style={{ color: isDark ? '#aaa' : '#666', fontSize: '1rem' }}>{q ? t('no_exercises_found') : 'No hay datos de ejercicios'}</p>
         </div>
       ) : (
@@ -532,10 +480,7 @@ function ExerciseStats({ isDark, workouts, t, isMobile }) {
             }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ fontSize: '1.5rem' }}>{getExerciseIcon(name)}</div>
-                  <strong style={{ color: isDark ? '#fff' : '#333', fontSize: '1rem' }}>{name}</strong>
-                </div>
+                <strong style={{ color: isDark ? '#fff' : '#333', fontSize: '1rem' }}>{name}</strong>
                 <span style={{ fontSize: '0.85rem', color: '#1dd1a1', fontWeight: '600' }}>#{index + 1}</span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>

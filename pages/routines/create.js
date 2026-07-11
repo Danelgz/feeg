@@ -4,6 +4,7 @@ import Layout from "../../components/Layout";
 import { exercisesList } from "../../data/exercises";
 import { useUser } from "../../context/UserContext";
 import ExerciseSelector from "../../components/ExerciseSelector";
+import { Icon } from "../../components/ui";
 
 export default function CreateRoutine() {
   const router = useRouter();
@@ -418,9 +419,9 @@ export default function CreateRoutine() {
                   <div style={{ position: "relative" }}>
                     <button
                       onClick={() => setActiveExerciseMenu(activeExerciseMenu === exIdx ? null : exIdx)}
-                      style={{ background: "none", border: "none", color: "#fff", fontSize: "1.5rem", cursor: "pointer" }}
+                      style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", display: "flex" }}
                     >
-                      ⋮
+                      <Icon name="moreVertical" size={20} />
                     </button>
 
                     {activeExerciseMenu === exIdx && (
@@ -664,9 +665,9 @@ export default function CreateRoutine() {
                         <div style={{ textAlign: "right" }}>
                           <button
                             onClick={() => removeSeries(exIdx, serieIdx)}
-                            style={{ background: "none", border: "none", color: "#ff4d4d", cursor: "pointer", fontSize: "1.2rem" }}
+                            style={{ background: "none", border: "none", color: "#ff4d4d", cursor: "pointer", display: "flex" }}
                           >
-                            ×
+                            <Icon name="close" size={16} />
                           </button>
                         </div>
                       </div>
@@ -686,10 +687,14 @@ export default function CreateRoutine() {
                     fontSize: "0.9rem",
                     fontWeight: "500",
                     cursor: "pointer",
-                    transition: "background 0.2s"
+                    transition: "background 0.2s",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px"
                   }}
                 >
-                  + Agregar Serie
+                  <Icon name="plus" size={15} /> Agregar Serie
                 </button>
               </div>
             );
@@ -707,10 +712,14 @@ export default function CreateRoutine() {
               fontSize: "1rem",
               fontWeight: "600",
               cursor: "pointer",
-              marginBottom: "40px"
+              marginBottom: "40px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px"
             }}
           >
-            + AGREGAR EJERCICIO
+            <Icon name="plus" size={17} /> AGREGAR EJERCICIO
           </button>
         </div>
 
@@ -771,7 +780,7 @@ export default function CreateRoutine() {
                       <div style={{ fontWeight: "700", fontSize: "1rem" }}>{key} — {label}</div>
                       <div style={{ color: "#888", fontSize: "0.78rem", marginTop: "2px" }}>{desc}</div>
                     </div>
-                    {isSelected && <div style={{ color: mint, fontSize: "1.2rem" }}>✓</div>}
+                    {isSelected && <Icon name="check" size={18} color={mint} />}
                   </button>
                 );
               })}

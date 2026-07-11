@@ -2,10 +2,14 @@ import { useMemo } from "react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { useRouter } from "next/router";
+import { getTokens } from "../lib/tokens";
+import { Icon, Spinner, PageHeader } from "../components/ui";
 
 export default function Calendar() {
   const router = useRouter();
-  const { completedWorkouts, isLoaded, isMobile } = useUser();
+  const { completedWorkouts, isLoaded, isMobile, theme } = useUser();
+  const isDark = theme === 'dark';
+  const tk = getTokens(isDark);
 
   const workoutDays = useMemo(() => {
     const days = new Set();
@@ -29,7 +33,7 @@ export default function Calendar() {
     // Determinar fecha de inicio: primer entrenamiento o hace 6 meses
     let startYear = currentYear;
     let startMonth = currentMonth - 5;
-    
+
     if (completedWorkouts && completedWorkouts.length > 0) {
       const dates = completedWorkouts.map(w => new Date(w.completedAt).getTime());
       const minDate = new Date(Math.min(...dates));
@@ -54,7 +58,7 @@ export default function Calendar() {
     return months;
   }, [completedWorkouts]);
 
-  if (!isLoaded) return <Layout><div style={{ padding: "20px", color: "#fff" }}>Cargando...</div></Layout>;
+  if (!isLoaded) return <Layout><Spinner isDark={isDark} fullPage label="Cargando..." /></Layout>;
 
   const spanishMonths = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -66,10 +70,8 @@ export default function Calendar() {
   const MonthView = ({ year, month }) => {
     const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0=Sun, 1=Mon...
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    
+
     // Ajustar para que lunes sea el primer día (0)
-    // getDay(): 0(D), 1(L), 2(M), 3(X), 4(J), 5(V), 6(S)
-    // Target: 0(L), 1(M), 2(X), 3(J), 4(V), 5(S), 6(D)
     const emptyDays = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
 
     const days = [];
@@ -78,39 +80,39 @@ export default function Calendar() {
 
     return (
       <div style={{ marginBottom: "40px" }}>
-        <h2 style={{ 
-          fontSize: "1.8rem", 
-          fontWeight: "bold", 
-          marginBottom: "15px", 
-          color: "#fff",
+        <h2 style={{
+          fontSize: "1.5rem",
+          fontWeight: "bold",
+          marginBottom: "15px",
+          color: tk.text,
           display: "flex",
           alignItems: "baseline",
           gap: "10px"
         }}>
-          {spanishMonths[month]} 
-          <span style={{ fontSize: "1rem", color: "#444" }}>{year}</span>
+          {spanishMonths[month]}
+          <span style={{ fontSize: "1rem", color: tk.textFaint }}>{year}</span>
         </h2>
-        
-        <div style={{ 
-          display: "grid", 
-          gridTemplateColumns: "repeat(7, 1fr)", 
+
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(7, 1fr)",
           gap: "10px",
           textAlign: "center"
         }}>
           {daysOfWeek.map(d => (
-            <div key={d} style={{ color: "#444", fontSize: "0.75rem", fontWeight: "bold", paddingBottom: "5px" }}>
+            <div key={d} style={{ color: tk.textFaint, fontSize: "0.75rem", fontWeight: "bold", paddingBottom: "5px" }}>
               {d}
             </div>
           ))}
           {days.map((day, idx) => {
             if (day === null) return <div key={`empty-${idx}`} />;
-            
+
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const hasWorkout = workoutDays.has(dateStr);
             const isToday = new Date().toISOString().split('T')[0] === dateStr;
 
             return (
-              <div 
+              <div
                 key={dateStr}
                 style={{
                   aspectRatio: "1/1",
@@ -120,10 +122,11 @@ export default function Calendar() {
                   borderRadius: "50%",
                   fontSize: "0.9rem",
                   fontWeight: hasWorkout ? "bold" : "normal",
-                  color: hasWorkout ? "#000" : (isToday ? "#1dd1a1" : "#fff"),
-                  backgroundColor: hasWorkout ? "#1dd1a1" : "transparent",
-                  border: isToday && !hasWorkout ? "1px solid #1dd1a1" : "none",
-                  cursor: hasWorkout ? "pointer" : "default"
+                  color: hasWorkout ? tk.onAccent : (isToday ? tk.accent : tk.text),
+                  backgroundColor: hasWorkout ? tk.accent : "transparent",
+                  border: isToday && !hasWorkout ? `1px solid ${tk.accent}` : "none",
+                  cursor: hasWorkout ? "pointer" : "default",
+                  transition: tk.transition
                 }}
                 onClick={() => {
                   if (hasWorkout) {
@@ -142,60 +145,48 @@ export default function Calendar() {
 
   return (
     <Layout>
-      <div style={{
-        backgroundColor: "#000",
-        color: "#fff",
-        minHeight: "100vh",
-        padding: isMobile ? "20px 15px 100px 15px" : "30px"
-      }}>
-        {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
-          <div>
-            <h1 style={{ fontSize: "1.8rem", fontWeight: "bold", margin: 0, color: "#1dd1a1" }}>Calendario</h1>
-            <p style={{ color: "#666", margin: "5px 0 0 0" }}>Tu constancia visualizada</p>
-          </div>
-          <button 
+      <PageHeader
+        isDark={isDark}
+        isMobile={isMobile}
+        title="Calendario"
+        subtitle="Tu constancia visualizada"
+        actions={
+          <button
             onClick={() => router.back()}
-            style={{
-              background: "#1a1a1a",
-              border: "none",
-              color: "#fff",
-              padding: "10px",
-              borderRadius: "50%",
-              cursor: "pointer"
-            }}
+            style={{ background: tk.surface, border: `1px solid ${tk.border}`, color: tk.text, padding: "10px", borderRadius: tk.radius.full, cursor: "pointer", display: "flex" }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            <Icon name="chevronLeft" size={18} />
           </button>
-        </div>
+        }
+      />
 
-        {/* Legend */}
-        <div style={{ 
-          display: "flex", 
-          gap: "20px", 
-          marginBottom: "30px", 
-          fontSize: "0.8rem", 
-          color: "#888",
-          backgroundColor: "#1a1a1a",
-          padding: "12px",
-          borderRadius: "10px"
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <div style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: "#1dd1a1" }} />
-            Entrenado
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <div style={{ width: "12px", height: "12px", borderRadius: "50%", border: "1px solid #1dd1a1" }} />
-            Hoy
-          </div>
+      {/* Legend */}
+      <div style={{
+        display: "flex",
+        gap: "20px",
+        marginBottom: "30px",
+        fontSize: "0.8rem",
+        color: tk.textMuted,
+        backgroundColor: tk.surface,
+        border: `1px solid ${tk.border}`,
+        padding: "12px 16px",
+        borderRadius: tk.radius.md
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: tk.accent }} />
+          Entrenado
         </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ width: "12px", height: "12px", borderRadius: "50%", border: `1px solid ${tk.accent}` }} />
+          Hoy
+        </div>
+      </div>
 
-        {/* Months List */}
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          {monthsToRender.map(m => (
-            <MonthView key={`${m.year}-${m.month}`} year={m.year} month={m.month} />
-          ))}
-        </div>
+      {/* Months List */}
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        {monthsToRender.map(m => (
+          <MonthView key={`${m.year}-${m.month}`} year={m.year} month={m.month} />
+        ))}
       </div>
     </Layout>
   );

@@ -3,12 +3,15 @@ import { useState } from "react";
 import Layout from "../components/Layout";
 import { exercisesList } from "../data/exercises";
 import { useUser } from "../context/UserContext";
+import { getTokens } from "../lib/tokens";
+import { Icon, EmptyState, PageHeader } from "../components/ui";
 
 export default function Exercises() {
   const [search, setSearch] = useState("");
   const [expandedGroups, setExpandedGroups] = useState({});
   const { theme, isMobile, t } = useUser();
   const isDark = theme === 'dark';
+  const tk = getTokens(isDark);
 
   // Filtra ejercicios por búsqueda y los agrupa por grupo muscular
   const filteredGroups = Object.entries(exercisesList).reduce((acc, [group, exercises]) => {
@@ -32,31 +35,32 @@ export default function Exercises() {
 
   return (
     <Layout>
-      <h1 style={{ color: isDark ? "#fff" : "#333", fontSize: isMobile ? "1.8rem" : "2.5rem" }}>{t("exercises")}</h1>
-      <input
-        type="text"
-        placeholder={t("search_exercise")}
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        style={{
-          padding: "10px",
-          width: "100%",
-          maxWidth: "900px",
-          marginBottom: "20px",
-          borderRadius: "8px",
-          border: `2px solid ${isDark ? "#333" : "#ddd"}`,
-          backgroundColor: isDark ? "#2a2a2a" : "#fff",
-          color: isDark ? "#fff" : "#333",
-          fontSize: "1rem",
-          transition: "all 0.3s ease",
-          boxSizing: "border-box"
-        }}
-        onFocus={(e) => e.target.style.borderColor = "#1dd1a1"}
-        onBlur={(e) => e.target.style.borderColor = isDark ? "#333" : "#ddd"}
-      />
+      <PageHeader isDark={isDark} isMobile={isMobile} title={t("exercises")} />
 
+      <div style={{ position: "relative", maxWidth: "900px", marginBottom: "20px" }}>
+        <Icon name="search" size={17} color={tk.textFaint} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)" }} />
+        <input
+          type="text"
+          placeholder={t("search_exercise")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{
+            padding: "12px 12px 12px 40px",
+            width: "100%",
+            borderRadius: tk.radius.sm,
+            border: `1.5px solid ${tk.border}`,
+            backgroundColor: tk.surface,
+            color: tk.text,
+            fontSize: "1rem",
+            transition: tk.transition,
+            boxSizing: "border-box"
+          }}
+          onFocus={(e) => e.target.style.borderColor = tk.accent}
+          onBlur={(e) => e.target.style.borderColor = tk.border}
+        />
+      </div>
 
-      <div style={{ padding: isMobile ? "0" : "0 20px", maxWidth: "900px", margin: "0 auto" }}>
+      <div style={{ maxWidth: "900px", margin: "0 auto" }}>
         {hasResults ? (
           Object.entries(filteredGroups).map(([group, exercises]) => (
             <div key={group} id={`group-${group}`} style={{ marginBottom: "1rem" }}>
@@ -65,34 +69,34 @@ export default function Exercises() {
                 style={{
                   width: "100%",
                   padding: "1rem",
-                  backgroundColor: isDark ? "#1a1a1a" : "#fff",
-                  border: "2px solid #1dd1a1",
-                  borderRadius: "8px",
-                  color: "#1dd1a1",
+                  backgroundColor: tk.surface,
+                  border: `2px solid ${tk.accent}`,
+                  borderRadius: tk.radius.sm,
+                  color: tk.accent,
                   fontSize: "1.1rem",
                   fontWeight: "700",
                   cursor: "pointer",
-                  transition: "all 0.3s ease",
+                  transition: tk.transition,
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
                   textAlign: "left"
                 }}
                 onMouseOver={(e) => {
-                  e.target.style.backgroundColor = isDark ? "#2a2a2a" : "#f0fdf4";
-                  e.target.style.boxShadow = "0 4px 12px rgba(29, 209, 161, 0.3)";
+                  e.currentTarget.style.backgroundColor = tk.accentSoft;
+                  e.currentTarget.style.boxShadow = tk.shadow.accent;
                 }}
                 onMouseOut={(e) => {
-                  e.target.style.backgroundColor = isDark ? "#1a1a1a" : "#fff";
-                  e.target.style.boxShadow = "none";
+                  e.currentTarget.style.backgroundColor = tk.surface;
+                  e.currentTarget.style.boxShadow = "none";
                 }}
               >
                 <span>{t(group) || group}</span>
-                <span style={{ fontSize: "0.8rem", transition: "transform 0.3s ease", transform: expandedGroups[group] ? "rotate(180deg)" : "rotate(0)" }}>
-                  V
+                <span style={{ display: "flex", transition: "transform 0.3s ease", transform: expandedGroups[group] ? "rotate(180deg)" : "rotate(0)" }}>
+                  <Icon name="chevronLeft" size={16} style={{ transform: "rotate(-90deg)" }} />
                 </span>
               </button>
-              
+
               {expandedGroups[group] && (
                 <ul style={{ listStyle: "none", padding: "0.5rem 0 0 0", marginTop: "0.5rem" }}>
                   {exercises.map((exercise) => (
@@ -100,26 +104,24 @@ export default function Exercises() {
                       key={exercise.id}
                       style={{
                         padding: "12px",
-                        border: `1px solid ${isDark ? "#333" : "#eee"}`,
-                        borderRadius: "8px",
+                        border: `1px solid ${tk.border}`,
+                        borderRadius: tk.radius.sm,
                         marginBottom: "8px",
                         cursor: "pointer",
-                        backgroundColor: isDark ? "#1a1a1a" : "#fff",
-                        color: isDark ? "#fff" : "#333",
-                        transition: "all 0.3s ease",
+                        backgroundColor: tk.surface,
+                        color: tk.text,
+                        transition: tk.transition,
                         marginLeft: "1rem"
                       }}
                       onMouseOver={(e) => {
-                        e.target.style.backgroundColor = isDark ? "#2a2a2a" : "#f9f9f9";
-                        e.target.style.borderColor = "#1dd1a1";
-                        e.target.style.boxShadow = "0 2px 6px rgba(29, 209, 161, 0.2)";
-                        e.target.style.transform = "translateX(4px)";
+                        e.currentTarget.style.backgroundColor = tk.surfaceHover;
+                        e.currentTarget.style.borderColor = tk.accent;
+                        e.currentTarget.style.transform = "translateX(4px)";
                       }}
                       onMouseOut={(e) => {
-                        e.target.style.backgroundColor = isDark ? "#1a1a1a" : "#fff";
-                        e.target.style.borderColor = isDark ? "#333" : "#eee";
-                        e.target.style.boxShadow = "none";
-                        e.target.style.transform = "translateX(0)";
+                        e.currentTarget.style.backgroundColor = tk.surface;
+                        e.currentTarget.style.borderColor = tk.border;
+                        e.currentTarget.style.transform = "translateX(0)";
                       }}
                     >
                       {t(exercise.name)}
@@ -130,7 +132,7 @@ export default function Exercises() {
             </div>
           ))
         ) : (
-          <p style={{ color: "#ccc", textAlign: "center", marginTop: "2rem" }}>{t("no_exercises_found")}</p>
+          <EmptyState isDark={isDark} icon="search" title={t("no_exercises_found")} />
         )}
       </div>
     </Layout>

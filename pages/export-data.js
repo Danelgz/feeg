@@ -2,10 +2,13 @@ import { useState } from "react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { exercisesList } from "../data/exercises";
+import { getTokens } from "../lib/tokens";
+import { Icon, Button, EmptyState, PageHeader } from "../components/ui";
 
 export default function ExportData() {
   const { theme, t, bulkSaveWorkouts, bulkSaveMeasures, saveUser, user, authUser } = useUser();
   const isDark = theme === 'dark';
+  const tk = getTokens(isDark);
   const [isImporting, setIsImporting] = useState(false);
   const [importStatus, setImportStatus] = useState("");
   const [importedCount, setImportedCount] = useState(0);
@@ -258,37 +261,31 @@ export default function ExportData() {
   if (!authUser) {
     return (
       <Layout>
-        <div style={{ padding: "40px", textAlign: "center", color: isDark ? "#fff" : "#333" }}>
-          <h2>{t("please_login_to_import")}</h2>
-        </div>
+        <EmptyState isDark={isDark} icon="user" title={t("please_login_to_import")} />
       </Layout>
     );
   }
 
   return (
     <Layout>
-      <div style={{
-        maxWidth: "800px",
-        margin: "0 auto",
-        padding: "40px 20px",
-        color: isDark ? "#fff" : "#333"
-      }}>
-        <h1 style={{ marginBottom: "10px", color: "#1dd1a1" }}>{t("exportar_datos")}</h1>
-        <p style={{ marginBottom: "30px", opacity: 0.8 }}>
-          Importa tu historial de entrenamientos desde la aplicación Hevy mediante un archivo CSV.
-        </p>
+      <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+        <PageHeader
+          isDark={isDark}
+          title={t("exportar_datos")}
+          subtitle="Importa tu historial de entrenamientos desde la aplicación Hevy mediante un archivo CSV."
+        />
 
         <div style={{
-          backgroundColor: isDark ? "#1a1a1a" : "#fff",
+          backgroundColor: tk.surface,
           padding: "30px",
-          borderRadius: "12px",
-          border: isDark ? "1px solid #333" : "1px solid #eee",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
+          borderRadius: tk.radius.md,
+          border: `1px solid ${tk.border}`,
+          boxShadow: tk.shadow.card
         }}>
-          <h2 style={{ fontSize: "1.2rem", marginBottom: "20px" }}>Importar desde Hevy</h2>
-          
+          <h2 style={{ fontSize: "1.2rem", marginBottom: "20px", color: tk.text }}>Importar desde Hevy</h2>
+
           <div style={{ marginBottom: "20px" }}>
-            <ol style={{ paddingLeft: "20px", lineHeight: "1.6" }}>
+            <ol style={{ paddingLeft: "20px", lineHeight: "1.6", color: tk.textMuted }}>
               <li>Abre Hevy en tu móvil o web.</li>
               <li>Ve a Ajustes - Exportar datos.</li>
               <li>Descarga el archivo CSV.</li>
@@ -297,17 +294,17 @@ export default function ExportData() {
           </div>
 
           <div style={{
-            border: "2px dashed #1dd1a1",
-            borderRadius: "8px",
+            border: `2px dashed ${tk.accent}`,
+            borderRadius: tk.radius.sm,
             padding: "40px",
             textAlign: "center",
             cursor: "pointer",
             position: "relative",
-            transition: "all 0.3s ease",
-            backgroundColor: isDark ? "rgba(29, 209, 161, 0.05)" : "rgba(29, 209, 161, 0.02)"
+            transition: tk.transition,
+            backgroundColor: tk.accentSoft
           }}
-          onMouseOver={(e) => e.currentTarget.style.backgroundColor = isDark ? "rgba(29, 209, 161, 0.1)" : "rgba(29, 209, 161, 0.05)"}
-          onMouseOut={(e) => e.currentTarget.style.backgroundColor = isDark ? "rgba(29, 209, 161, 0.05)" : "rgba(29, 209, 161, 0.02)"}
+          onMouseOver={(e) => e.currentTarget.style.backgroundColor = isDark ? "rgba(29, 209, 161, 0.16)" : "rgba(29, 209, 161, 0.08)"}
+          onMouseOut={(e) => e.currentTarget.style.backgroundColor = tk.accentSoft}
           >
             <input
               type="file"
@@ -324,11 +321,13 @@ export default function ExportData() {
                 cursor: "pointer"
               }}
             />
-            <div style={{ fontSize: "3rem", marginBottom: "10px" }}>📄</div>
-            <p style={{ fontWeight: "600", fontSize: "1.1rem" }}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: "12px", color: tk.accent }}>
+              <Icon name="download" size={36} />
+            </div>
+            <p style={{ fontWeight: "600", fontSize: "1.1rem", color: tk.text, margin: 0 }}>
               {isImporting ? "Procesando..." : "Haz clic o arrastra tu archivo CSV aquí"}
             </p>
-            <p style={{ fontSize: "0.9rem", opacity: 0.6, marginTop: "5px" }}>
+            <p style={{ fontSize: "0.9rem", color: tk.textMuted, marginTop: "5px" }}>
               Solo archivos .csv exportados de Hevy
             </p>
           </div>
@@ -337,13 +336,13 @@ export default function ExportData() {
             <div style={{
               marginTop: "20px",
               padding: "15px",
-              borderRadius: "8px",
-              backgroundColor: importStatus.includes("éxito") ? "rgba(46, 204, 113, 0.2)" : 
-                             importStatus.includes("Error") ? "rgba(231, 76, 60, 0.2)" : 
-                             isDark ? "#2a2a2a" : "#f5f5f5",
-              color: importStatus.includes("éxito") ? "#2ecc71" : 
-                     importStatus.includes("Error") ? "#e74c3c" : 
-                     isDark ? "#fff" : "#333",
+              borderRadius: tk.radius.sm,
+              backgroundColor: importStatus.includes("éxito") ? tk.accentSoft :
+                             importStatus.includes("Error") ? tk.dangerSoft :
+                             tk.surfaceAlt,
+              color: importStatus.includes("éxito") ? tk.accent :
+                     importStatus.includes("Error") ? tk.danger :
+                     tk.text,
               textAlign: "center",
               fontWeight: "500"
             }}>
@@ -353,20 +352,9 @@ export default function ExportData() {
 
           {importedCount > 0 && (
             <div style={{ marginTop: "20px", textAlign: "center" }}>
-              <button
-                onClick={() => window.location.href = "/profile"}
-                style={{
-                  padding: "10px 20px",
-                  backgroundColor: "#1dd1a1",
-                  color: "#000",
-                  border: "none",
-                  borderRadius: "6px",
-                  fontWeight: "600",
-                  cursor: "pointer"
-                }}
-              >
+              <Button isDark={isDark} onClick={() => window.location.href = "/profile"}>
                 Ir a mi Perfil para ver los cambios
-              </button>
+              </Button>
             </div>
           )}
         </div>

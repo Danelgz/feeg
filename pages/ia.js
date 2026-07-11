@@ -7,7 +7,7 @@ import { useUser } from "../context/UserContext";
 import { exercisesList } from "../data/exercises";
 
 export default function IA() {
-  const { theme, isMobile, t, user, authUser, saveRoutine } = useUser();
+  const { theme, isMobile, t, user, authUser, saveRoutine, showNotification } = useUser();
   const isDark = theme === 'dark';
   const [activeTab, setActiveTab] = useState("training"); // training, chat, technique
 
@@ -88,7 +88,7 @@ export default function IA() {
       setShowTrainingForm(false);
     } catch (error) {
       console.error("Error al generar rutina:", error);
-      alert("Hubo un error al generar tu rutina. Inténtalo de nuevo.");
+      showNotification("Hubo un error al generar tu rutina. Inténtalo de nuevo.", 'error');
     } finally {
       setIsGenerating(false);
     }
@@ -152,7 +152,7 @@ export default function IA() {
 
     } catch (error) {
       console.error('Error enviando mensaje:', error);
-      alert("Hubo un problema al enviar tu mensaje. Asegúrate de tener conexión y de estar logueado.");
+      showNotification("Hubo un problema al enviar tu mensaje. Asegúrate de tener conexión y de estar logueado.", 'error');
     } finally {
       setIsLoadingChat(false);
     }
@@ -319,10 +319,10 @@ export default function IA() {
                               }))
                             )
                           });
-                          alert("¡Rutina guardada correctamente!");
+                          showNotification("¡Rutina guardada correctamente!", 'success');
                         } catch (err) {
                           console.error("Error guardando rutina", err);
-                          alert("Error al guardar rutina");
+                          showNotification("Error al guardar rutina", 'error');
                         }
                       }}
                       style={{ background: accentColor, border: "none", color: "#000", padding: "6px 12px", borderRadius: "15px", cursor: "pointer", fontWeight: "bold" }}>

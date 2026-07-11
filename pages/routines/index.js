@@ -3,10 +3,14 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useUser } from "../../context/UserContext";
+import { getTokens } from "../../lib/tokens";
+import { Icon, Button, EmptyState, PageHeader, ConfirmModal } from "../../components/ui";
 
 export default function Routines() {
   const router = useRouter();
-  const { routines, completedWorkouts, deleteRoutine, deleteCompletedWorkout, endRoutine, theme, t, authUser, refreshData } = useUser();
+  const { routines, completedWorkouts, deleteRoutine, deleteCompletedWorkout, endRoutine, theme, t, authUser, refreshData, isMobile } = useUser();
+  const isDark = theme === 'dark';
+  const tk = getTokens(isDark);
 
   // Forzar refresco de datos al entrar a rutinas
   useEffect(() => {
@@ -16,23 +20,14 @@ export default function Routines() {
   }, [authUser]);
 
   const [activeTab, setActiveTab] = useState("active"); // active, completed
-  const [isMobile, setIsMobile] = useState(false);
-  const isDark = theme === 'dark';
+  const [confirmDeleteRoutine, setConfirmDeleteRoutine] = useState(null);
+  const [confirmDeleteWorkout, setConfirmDeleteWorkout] = useState(null);
 
   useEffect(() => {
     if (router.query.tab && router.query.tab !== activeTab) {
       setActiveTab(router.query.tab);
     }
   }, [router.query.tab, activeTab]);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   const formatElapsedTime = (seconds) => {
     if (!seconds && seconds !== 0) return null;
@@ -52,15 +47,15 @@ export default function Routines() {
 
   return (
     <Layout>
-      <div style={{ padding: isMobile ? "0" : "20px", maxWidth: isMobile ? "100%" : "1000px", margin: isMobile ? "0" : "0 auto" }}>
-        <h1 style={{ marginBottom: "20px", color: isDark ? "#fff" : "#333" }}>{t("routines_title")}</h1>
+      <div style={{ maxWidth: isMobile ? "100%" : "1000px", margin: isMobile ? "0" : "0 auto" }}>
+        <PageHeader isDark={isDark} isMobile={isMobile} title={t("routines_title")} />
 
         {/* Tabs */}
         <div style={{
           display: "flex",
           gap: "10px",
           marginBottom: "25px",
-          borderBottom: `1px solid ${isDark ? "#333" : "#e0e0e0"}`,
+          borderBottom: `1px solid ${tk.border}`,
           paddingBottom: "10px",
           overflowX: "auto",
           whiteSpace: "nowrap"
@@ -69,13 +64,13 @@ export default function Routines() {
             onClick={() => setActiveTab("active")}
             style={{
               padding: "10px 20px",
-              backgroundColor: activeTab === "active" ? "#1dd1a1" : "transparent",
-              color: activeTab === "active" ? "#000" : (isDark ? "#ccc" : "#666"),
+              backgroundColor: activeTab === "active" ? tk.accent : "transparent",
+              color: activeTab === "active" ? tk.onAccent : tk.textMuted,
               border: "none",
-              borderRadius: "6px",
+              borderRadius: tk.radius.sm,
               cursor: "pointer",
               fontWeight: "600",
-              transition: "all 0.3s ease",
+              transition: tk.transition,
               flexShrink: 0
             }}
           >
@@ -85,13 +80,13 @@ export default function Routines() {
             onClick={() => setActiveTab("completed")}
             style={{
               padding: "10px 20px",
-              backgroundColor: activeTab === "completed" ? "#1dd1a1" : "transparent",
-              color: activeTab === "completed" ? "#000" : (isDark ? "#ccc" : "#666"),
+              backgroundColor: activeTab === "completed" ? tk.accent : "transparent",
+              color: activeTab === "completed" ? tk.onAccent : tk.textMuted,
               border: "none",
-              borderRadius: "6px",
+              borderRadius: tk.radius.sm,
               cursor: "pointer",
               fontWeight: "600",
-              transition: "all 0.3s ease",
+              transition: tk.transition,
               flexShrink: 0
             }}
           >
@@ -102,64 +97,35 @@ export default function Routines() {
         {activeTab === "active" ? (
           <>
             <div style={{ marginBottom: "25px" }}>
-              <button
+              <Button
+                isDark={isDark}
+                fullWidth
+                size="lg"
+                icon="plus"
                 onClick={() => {
                   endRoutine();
                   router.push("/routines/empty");
                 }}
-                style={{
-                  width: "100%",
-                  padding: "15px",
-                  backgroundColor: "#1dd1a1",
-                  color: "#000",
-                  border: "none",
-                  borderRadius: "10px",
-                  fontSize: "1.1rem",
-                  fontWeight: "bold",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "10px",
-                  transition: "all 0.3s ease",
-                  boxShadow: isDark ? "0 4px 10px rgba(0,0,0,0.3)" : "0 4px 10px rgba(0,0,0,0.1)"
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = "#16a853";
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = "#1dd1a1";
-                  e.currentTarget.style.transform = "translateY(0)";
-                }}
               >
                 {t("start_empty_workout")}
-              </button>
+              </Button>
             </div>
 
-            <p style={{ color: isDark ? "#aaa" : "#666", marginBottom: "20px" }}>
+            <p style={{ color: tk.textMuted, marginBottom: "20px" }}>
               {t("routines_description")}
             </p>
 
             {routines.length === 0 ? (
-              <div style={{ marginTop: "20px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                <p style={{ color: isDark ? "#fff" : "#333", width: "100%", marginBottom: "10px" }}>{t("no_routines_yet")}</p>
-                <Link href="/routines/create">
-                  <button
-                    style={{
-                      padding: "10px 20px",
-                      backgroundColor: "#1dd1a1",
-                      color: "#000",
-                      border: "none",
-                      borderRadius: "8px",
-                      cursor: "pointer",
-                      fontWeight: "600"
-                    }}
-                  >
-                    {t("create_new_routine")}
-                  </button>
-                </Link>
-              </div>
+              <EmptyState
+                isDark={isDark}
+                icon="dumbbell"
+                title={t("no_routines_yet")}
+                action={
+                  <Link href="/routines/create" style={{ textDecoration: "none" }}>
+                    <Button isDark={isDark}>{t("create_new_routine")}</Button>
+                  </Link>
+                }
+              />
             ) : (
               <div style={{ marginTop: isMobile ? "10px" : "20px" }}>
                 {routines.map((routine) => (
@@ -167,119 +133,52 @@ export default function Routines() {
                     key={routine.id}
                     style={{
                       padding: isMobile ? "12px" : "15px",
-                      backgroundColor: isDark ? "#1a1a1a" : "#fff",
-                      border: `1px solid ${isDark ? "#333" : "#eee"}`,
-                      borderRadius: "8px",
+                      backgroundColor: tk.surface,
+                      border: `1px solid ${tk.border}`,
+                      borderRadius: tk.radius.sm,
                       marginBottom: isMobile ? "10px" : "15px",
-                      transition: "all 0.3s ease",
-                      boxShadow: isDark ? "none" : "0 2px 8px rgba(0,0,0,0.05)"
+                      transition: tk.transition,
+                      boxShadow: tk.shadow.card
                     }}
                     onMouseOver={(e) => {
-                      e.currentTarget.style.borderColor = "#1dd1a1";
-                      e.currentTarget.style.boxShadow = isDark ? "0 4px 12px rgba(29, 209, 161, 0.2)" : "0 4px 12px rgba(29, 209, 161, 0.1)";
+                      e.currentTarget.style.borderColor = tk.accent;
                     }}
                     onMouseOut={(e) => {
-                      e.currentTarget.style.borderColor = isDark ? "#333" : "#eee";
-                      e.currentTarget.style.boxShadow = isDark ? "none" : "0 2px 8px rgba(0,0,0,0.05)";
+                      e.currentTarget.style.borderColor = tk.border;
                     }}
                   >
-                    <h3 style={{ margin: "0 0 8px 0", color: isDark ? "#fff" : "#333" }}>{routine.name}</h3>
-                    <p style={{ margin: "0 0 12px 0", color: isDark ? "#aaa" : "#666" }}>
+                    <h3 style={{ margin: "0 0 8px 0", color: tk.text }}>{routine.name}</h3>
+                    <p style={{ margin: "0 0 12px 0", color: tk.textMuted }}>
                       {routine.exercises.length} {t("exercises").toLowerCase()} · {routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0)} {t("series").toLowerCase()}
                     </p>
                     <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                      <button
+                      <Button
+                        isDark={isDark}
+                        size="sm"
                         onClick={() => {
                           endRoutine();
                           router.push(`/routines/${routine.id}`);
                         }}
-                        style={{
-                          padding: "8px 16px",
-                          backgroundColor: "#1dd1a1",
-                          color: "#000",
-                          border: "none",
-                          borderRadius: "6px",
-                          cursor: "pointer",
-                          fontSize: "0.95rem",
-                          fontWeight: "600",
-                          transition: "all 0.3s ease"
-                        }}
-                        onMouseOver={(e) => {
-                          e.target.style.backgroundColor = "#16a853";
-                          e.target.style.boxShadow = "0 4px 8px rgba(29, 209, 161, 0.3)";
-                        }}
-                        onMouseOut={(e) => {
-                          e.target.style.backgroundColor = "#1dd1a1";
-                          e.target.style.boxShadow = "none";
-                        }}
                       >
                         {t("start_routine")}
-                      </button>
-                      <Link href={`/routines/create?id=${routine.id}`}>
-                        <button
-                          style={{
-                            padding: "8px 16px",
-                            backgroundColor: isDark ? "#333" : "#eee",
-                            color: isDark ? "#fff" : "#333",
-                            border: `1px solid ${isDark ? "#444" : "#ddd"}`,
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                            fontSize: "0.95rem",
-                            fontWeight: "600",
-                            transition: "all 0.3s ease"
-                          }}
-                        >
+                      </Button>
+                      <Link href={`/routines/create?id=${routine.id}`} style={{ textDecoration: "none" }}>
+                        <Button isDark={isDark} variant="secondary" size="sm" icon="edit">
                           {t("edit")}
-                        </button>
+                        </Button>
                       </Link>
-                      <button
-                        onClick={() => {
-                          if (confirm(t("confirm_delete_routine"))) {
-                            deleteRoutine(routine.id);
-                          }
-                        }}
-                        style={{
-                          padding: "8px 16px",
-                          backgroundColor: "#e74c3c",
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: "6px",
-                          cursor: "pointer",
-                          fontSize: "0.95rem",
-                          fontWeight: "600",
-                          transition: "all 0.3s ease"
-                        }}
-                        onMouseOver={(e) => {
-                          e.target.style.backgroundColor = "#c0392b";
-                        }}
-                        onMouseOut={(e) => {
-                          e.target.style.backgroundColor = "#e74c3c";
-                        }}
-                      >
+                      <Button isDark={isDark} variant="danger" size="sm" icon="trash" onClick={() => setConfirmDeleteRoutine(routine.id)}>
                         {t("delete")}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}
 
                 <div style={{ marginTop: "20px" }}>
-                  <Link href="/routines/create">
-                    <button
-                      style={{
-                        width: "100%",
-                        padding: "15px",
-                        backgroundColor: isDark ? "#333" : "#eee",
-                        color: isDark ? "#fff" : "#333",
-                        border: `1px solid ${isDark ? "#444" : "#ddd"}`,
-                        borderRadius: "10px",
-                        fontSize: "1.1rem",
-                        fontWeight: "bold",
-                        cursor: "pointer",
-                        transition: "all 0.3s ease"
-                      }}
-                    >
+                  <Link href="/routines/create" style={{ textDecoration: "none" }}>
+                    <Button isDark={isDark} variant="secondary" fullWidth size="lg" icon="plus">
                       {t("create_new_routine")}
-                    </button>
+                    </Button>
                   </Link>
                 </div>
               </div>
@@ -288,32 +187,30 @@ export default function Routines() {
         ) : (
           <div style={{ marginTop: "20px" }}>
             {completedWorkouts.length === 0 ? (
-              <p style={{ color: isDark ? "#ccc" : "#666", textAlign: "center", padding: "40px 20px" }}>
-                {t("no_completed_workouts")}
-              </p>
+              <EmptyState isDark={isDark} icon="clock" title={t("no_completed_workouts")} />
             ) : (
               <div>
                 {completedWorkouts.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt)).map(workout => (
                   <div key={workout.id} style={{
-                    backgroundColor: isDark ? "#1a1a1a" : "#fff",
-                    border: isDark ? "1px solid #333" : "1px solid #e0e0e0",
-                    borderRadius: "10px",
+                    backgroundColor: tk.surface,
+                    border: `1px solid ${tk.border}`,
+                    borderRadius: tk.radius.md,
                     padding: isMobile ? "15px" : "20px",
                     marginBottom: isMobile ? "10px" : "15px",
-                    transition: "all 0.3s ease",
-                    boxShadow: isDark ? "none" : "0 2px 8px rgba(0,0,0,0.05)"
+                    transition: tk.transition,
+                    boxShadow: tk.shadow.card
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.borderColor = "#1dd1a1";
+                    e.currentTarget.style.borderColor = tk.accent;
                   }}
                   onMouseOut={(e) => {
-                    e.currentTarget.style.borderColor = isDark ? "#333" : "#e0e0e0";
+                    e.currentTarget.style.borderColor = tk.border;
                   }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "15px" }}>
                       <div>
-                        <h3 style={{ color: "#1dd1a1", margin: "0 0 8px 0" }}>{workout.name}</h3>
-                        <p style={{ color: isDark ? "#999" : "#666", fontSize: "0.85rem", margin: "0" }}>
+                        <h3 style={{ color: tk.accent, margin: "0 0 8px 0" }}>{workout.name}</h3>
+                        <p style={{ color: tk.textMuted, fontSize: "0.85rem", margin: "0" }}>
                           {new Date(workout.completedAt).toLocaleDateString('es-ES', {
                             year: 'numeric',
                             month: 'long',
@@ -324,22 +221,18 @@ export default function Routines() {
                         </p>
                       </div>
                       <button
-                        onClick={() => {
-                          if (confirm(t("confirm_delete"))) {
-                            deleteCompletedWorkout(workout.id);
-                          }
-                        }}
+                        onClick={() => setConfirmDeleteWorkout(workout.id)}
                         style={{
-                          padding: "6px 12px",
-                          backgroundColor: "#e74c3c",
-                          color: "#fff",
+                          padding: "6px 10px",
+                          backgroundColor: tk.dangerSoft,
+                          color: tk.danger,
                           border: "none",
-                          borderRadius: "5px",
+                          borderRadius: tk.radius.sm,
                           cursor: "pointer",
-                          fontSize: "0.85rem"
+                          display: "flex"
                         }}
                       >
-                        {t("delete")}
+                        <Icon name="trash" size={16} />
                       </button>
                     </div>
 
@@ -349,18 +242,18 @@ export default function Routines() {
                       gap: "10px",
                       marginBottom: "15px"
                     }}>
-                      <div style={{ backgroundColor: isDark ? "#0f0f0f" : "#f5f5f5", padding: "12px", borderRadius: "6px" }}>
-                        <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>{t("exercises_count")}</p>
-                        <p style={{ color: "#1dd1a1", margin: "0", fontSize: "1.1rem", fontWeight: "bold" }}>{workout.exercises}</p>
+                      <div style={{ backgroundColor: tk.surfaceAlt, padding: "12px", borderRadius: tk.radius.sm }}>
+                        <p style={{ color: tk.textMuted, margin: "0 0 5px 0", fontSize: "0.8rem" }}>{t("exercises_count")}</p>
+                        <p style={{ color: tk.accent, margin: "0", fontSize: "1.1rem", fontWeight: "bold" }}>{workout.exercises}</p>
                       </div>
-                      <div style={{ backgroundColor: isDark ? "#0f0f0f" : "#f5f5f5", padding: "12px", borderRadius: "6px" }}>
-                        <p style={{ color: isDark ? "#999" : "#666", margin: "0 0 5px 0", fontSize: "0.8rem" }}>{t("series_label")}</p>
-                        <p style={{ color: "#1dd1a1", margin: "0", fontSize: "1.1rem", fontWeight: "bold" }}>{workout.series}</p>
+                      <div style={{ backgroundColor: tk.surfaceAlt, padding: "12px", borderRadius: tk.radius.sm }}>
+                        <p style={{ color: tk.textMuted, margin: "0 0 5px 0", fontSize: "0.8rem" }}>{t("series_label")}</p>
+                        <p style={{ color: tk.accent, margin: "0", fontSize: "1.1rem", fontWeight: "bold" }}>{workout.series}</p>
                       </div>
                     </div>
 
                     {workout.elapsedTime && (
-                      <p style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", margin: "0" }}>
+                      <p style={{ color: tk.textMuted, fontSize: "0.9rem", margin: "0" }}>
                         {t("time_label")}: {formatElapsedTime(workout.elapsedTime)}
                       </p>
                     )}
@@ -371,6 +264,23 @@ export default function Routines() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isDark={isDark}
+        open={!!confirmDeleteRoutine}
+        title={t("confirm_delete_routine")}
+        danger
+        onConfirm={() => { deleteRoutine(confirmDeleteRoutine); setConfirmDeleteRoutine(null); }}
+        onCancel={() => setConfirmDeleteRoutine(null)}
+      />
+      <ConfirmModal
+        isDark={isDark}
+        open={!!confirmDeleteWorkout}
+        title={t("confirm_delete")}
+        danger
+        onConfirm={() => { deleteCompletedWorkout(confirmDeleteWorkout); setConfirmDeleteWorkout(null); }}
+        onCancel={() => setConfirmDeleteWorkout(null)}
+      />
     </Layout>
   );
 }

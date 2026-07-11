@@ -4,13 +4,18 @@ import { useUser } from "../context/UserContext";
 import { useState, useEffect } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
+import { getTokens } from "../lib/tokens";
+import { Icon, Button, Spinner, ConfirmModal } from "./ui";
 
 export default function Layout({ children, hideBottomNav = false }) {
   const { theme, isMobile, activeRoutine, endRoutine, notification, isSyncing, t } = useUser();
   const isDark = theme === 'dark';
+  const tk = getTokens(isDark);
   const [isMounted, setIsMounted] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
   const [isIntroExiting, setIsIntroExiting] = useState(false);
+  const [confirmEndRoutine, setConfirmEndRoutine] = useState(false);
+  const [liveElapsed, setLiveElapsed] = useState(null);
   const router = useRouter();
 
   // Usar useEffect para evitar problemas de SSR con sessionStorage
@@ -21,6 +26,41 @@ export default function Layout({ children, hideBottomNav = false }) {
       setShowIntro(true);
     }
   }, [isMobile]);
+
+  // Lee el timer persistido por routines/[id].js (solo lectura, no se modifica su estado)
+  // para mostrar el tiempo transcurrido en vivo en la pestaña flotante de rutina activa.
+  useEffect(() => {
+    if (!activeRoutine) {
+      setLiveElapsed(null);
+      return;
+    }
+    const readTimer = () => {
+      try {
+        const saved = localStorage.getItem('workoutTimerState');
+        if (!saved) return setLiveElapsed(null);
+        const parsed = JSON.parse(saved);
+        let elapsed = parsed.elapsedTime || 0;
+        if (parsed.isActive) {
+          const lastSave = localStorage.getItem('workoutTimerLastSave');
+          if (lastSave) {
+            elapsed += Math.floor((Date.now() - parseInt(lastSave, 10)) / 1000);
+          }
+        }
+        setLiveElapsed(elapsed);
+      } catch (_) {
+        setLiveElapsed(null);
+      }
+    };
+    readTimer();
+    const interval = setInterval(readTimer, 1000);
+    return () => clearInterval(interval);
+  }, [activeRoutine]);
+
+  const formatElapsed = (seconds) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const s = Math.floor(seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
 
   const topLevelPages = ["/", "/routines", "/exercises", "/statistics", "/profile", "/settings", "/statistics/[view]", "/routines/create", "/routines/[id]", "/routines/empty", "/user/[uid]", "/exercise-history"];
   const isTopLevel = topLevelPages.includes(router.pathname) || topLevelPages.includes(router.asPath);
@@ -152,23 +192,12 @@ export default function Layout({ children, hideBottomNav = false }) {
                   from { opacity: 0; }
                   to { opacity: 1; }
                 }
-                @keyframes syncSpin {
-                  from { transform: rotate(0deg); }
-                  to { transform: rotate(360deg); }
-                }
                 @keyframes syncPulse {
                   0%, 100% { opacity: 0.6; }
                   50% { opacity: 1; }
                 }
               `}</style>
-              <div style={{
-                width: "56px",
-                height: "56px",
-                borderRadius: "50%",
-                border: "4px solid rgba(29, 209, 161, 0.2)",
-                borderTopColor: "#1dd1a1",
-                animation: "syncSpin 0.9s linear infinite"
-              }} />
+              <Spinner isDark={true} size={56} />
               <div style={{ textAlign: "center" }}>
                 <div style={{
                   color: "#fff",
@@ -197,10 +226,10 @@ export default function Layout({ children, hideBottomNav = false }) {
               left: "50%",
               transform: "translateX(-50%)",
               zIndex: 11000,
-              backgroundColor: notification.type === 'error' ? "#ff4d4d" : (isDark ? "#1dd1a1" : "#19b088"),
-              color: notification.type === 'error' ? "#fff" : "#000",
+              backgroundColor: notification.type === 'error' ? tk.danger : tk.accent,
+              color: notification.type === 'error' ? "#fff" : tk.onAccent,
               padding: "12px 24px",
-              borderRadius: "12px",
+              borderRadius: tk.radius.md,
               boxShadow: "0 8px 30px rgba(0,0,0,0.3)",
               display: "flex",
               alignItems: "center",
@@ -218,6 +247,7 @@ export default function Layout({ children, hideBottomNav = false }) {
                   to { opacity: 1; transform: translate(-50%, 0); }
                 }
               `}</style>
+              <Icon name={notification.type === 'error' ? "alertCircle" : "check"} size={18} />
               <span>{notification.message}</span>
             </div>
           )}
@@ -279,33 +309,31 @@ export default function Layout({ children, hideBottomNav = false }) {
                   style={{
                     position: "fixed",
                     top: "15px",
-                    left: currentIsMobile ? "15px" : "235px",
+                    left: currentIsMobile ? "15px" : "245px",
                     zIndex: 2000,
-                    width: currentIsMobile ? "36px" : "45px",
-                    height: currentIsMobile ? "36px" : "45px",
-                    borderRadius: "50%",
-                    backgroundColor: isDark ? "#1a1a1a" : "#ffffff",
-                    border: `2px solid #1dd1a1`,
-                    color: "#1dd1a1",
+                    width: currentIsMobile ? "36px" : "42px",
+                    height: currentIsMobile ? "36px" : "42px",
+                    borderRadius: tk.radius.full,
+                    backgroundColor: tk.surface,
+                    border: `1.5px solid ${tk.accent}`,
+                    color: tk.accent,
                     cursor: "pointer",
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",
-                    fontSize: currentIsMobile ? "1rem" : "1.2rem",
-                    fontWeight: "bold",
-                    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-                    transition: "all 0.2s ease"
+                    boxShadow: tk.shadow.card,
+                    transition: tk.transition
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = "#1dd1a1";
-                    e.currentTarget.style.color = "#000";
+                    e.currentTarget.style.backgroundColor = tk.accent;
+                    e.currentTarget.style.color = tk.onAccent;
                   }}
                   onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = isDark ? "#1a1a1a" : "#ffffff";
-                    e.currentTarget.style.color = "#1dd1a1";
+                    e.currentTarget.style.backgroundColor = tk.surface;
+                    e.currentTarget.style.color = tk.accent;
                   }}
                 >
-                  ←
+                  <Icon name="chevronLeft" size={currentIsMobile ? 18 : 20} />
                 </button>
               )}
 
@@ -335,11 +363,11 @@ export default function Layout({ children, hideBottomNav = false }) {
                   position: "fixed",
                   bottom: currentIsMobile ? "80px" : "20px",
                   right: "20px",
-                  backgroundColor: isDark ? "#1a1a1a" : "#fff",
-                  border: "2px solid #1dd1a1",
-                  borderRadius: "12px",
+                  backgroundColor: tk.surface,
+                  border: `2px solid ${tk.accent}`,
+                  borderRadius: tk.radius.md,
                   padding: "15px",
-                  boxShadow: "0 8px 25px rgba(0,0,0,0.4)",
+                  boxShadow: tk.shadow.float,
                   zIndex: 3000,
                   display: "flex",
                   flexDirection: "column",
@@ -357,16 +385,24 @@ export default function Layout({ children, hideBottomNav = false }) {
                     <div style={{ display: "flex", flexDirection: "column" }}>
                       <span style={{
                         fontSize: "0.75rem",
-                        color: isDark ? "#aaa" : "#666",
+                        color: tk.textMuted,
                         textTransform: "uppercase",
                         letterSpacing: "1px",
-                        fontWeight: "bold"
+                        fontWeight: "bold",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px"
                       }}>
                         {t("active_routine_in_progress")}
+                        {liveElapsed !== null && (
+                          <span style={{ color: tk.accent, fontVariantNumeric: "tabular-nums" }}>
+                            · {formatElapsed(liveElapsed)}
+                          </span>
+                        )}
                       </span>
                       <span style={{
                         fontWeight: "bold",
-                        color: isDark ? "#fff" : "#333",
+                        color: tk.text,
                         fontSize: "1.1rem",
                         marginTop: "2px"
                       }}>
@@ -374,55 +410,43 @@ export default function Layout({ children, hideBottomNav = false }) {
                       </span>
                     </div>
                     <button
-                      onClick={(e) => { e.stopPropagation(); if (confirm(t("delete_routine_confirmation"))) endRoutine(); }}
+                      onClick={(e) => { e.stopPropagation(); setConfirmEndRoutine(true); }}
                       title={t("delete_routine_short")}
                       style={{
-                        background: isDark ? "#333" : "#eee",
+                        background: tk.surfaceHover,
                         border: "none",
-                        color: "#ff4d4d",
+                        color: tk.danger,
                         cursor: "pointer",
                         width: "24px",
                         height: "24px",
-                        borderRadius: "50%",
+                        borderRadius: tk.radius.full,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        fontSize: "1rem",
-                        fontWeight: "bold",
-                        transition: "all 0.2s ease"
+                        transition: tk.transition
                       }}
                       onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.1)"}
                       onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
-                    >×</button>
+                    >
+                      <Icon name="close" size={14} />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => router.push(activeRoutine?.id ? `/routines/${activeRoutine.id}` : activeRoutine.path)}
-                    style={{
-                      backgroundColor: "#1dd1a1",
-                      color: "#000",
-                      border: "none",
-                      borderRadius: "8px",
-                      padding: "10px",
-                      cursor: "pointer",
-                      fontWeight: "bold",
-                      fontSize: "0.95rem",
-                      marginTop: "5px",
-                      transition: "all 0.2s ease",
-                      boxShadow: "0 4px 10px rgba(29, 209, 161, 0.3)"
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = "#19b088";
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = "#1dd1a1";
-                      e.currentTarget.style.transform = "translateY(0)";
-                    }}
-                  >
+                  <Button isDark={isDark} fullWidth onClick={() => router.push(activeRoutine?.id ? `/routines/${activeRoutine.id}` : activeRoutine.path)}>
                     {t("continue_routine")}
-                  </button>
+                  </Button>
                 </div>
               )}
+
+              <ConfirmModal
+                isDark={isDark}
+                open={confirmEndRoutine}
+                title={t("delete_routine_confirmation")}
+                confirmLabel={t("yes_finish") || "Sí"}
+                cancelLabel={t("no_continue") || "No"}
+                danger
+                onConfirm={() => { setConfirmEndRoutine(false); endRoutine(); }}
+                onCancel={() => setConfirmEndRoutine(false)}
+              />
             </>
           )}
         </>

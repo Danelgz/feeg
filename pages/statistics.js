@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
-import Link from "next/link";
+import { useRouter } from "next/router";
+import MuscleMap from "../components/MuscleMap";
+import { getTokens } from "../lib/tokens";
+import { PageHeader } from "../components/ui";
 
 export default function Statistics() {
   const { t, theme, isMobile, completedWorkouts: workouts } = useUser();
+  const router = useRouter();
   const isDark = theme === 'dark';
+  const tk = getTokens(isDark);
   const [activeView, setActiveView] = useState('overview');
   const [isNarrow, setIsNarrow] = useState(false);
   const [timeFilter, setTimeFilter] = useState('all'); // all, week, month, year
@@ -149,6 +154,7 @@ export default function Statistics() {
 
   const navButtons = [
     { key: 'overview', label: 'Resumen', description: 'Visión general de tu progreso' },
+    { key: 'muscleMap', label: 'Mapa muscular', description: 'Intensidad por músculo esta semana' },
     { key: 'seriesByGroup', label: 'Series por grupo', description: 'Distribución de series por músculo' },
     { key: 'distChart', label: 'Distribución', description: 'Gráfico de distribución muscular' },
     { key: 'monthly', label: 'Mensual', description: 'Informe detallado por mes' },
@@ -157,14 +163,12 @@ export default function Statistics() {
 
   return (
     <Layout>
-      <div style={{ marginBottom: "2rem" }}>
-        <h1 style={{ fontSize: isNarrow ? "1.8rem" : "2.5rem", marginBottom: "0.5rem", color: isDark ? "#fff" : "#333", fontWeight: "bold" }}>
-          {t("statistics")}
-        </h1>
-        <p style={{ color: isDark ? "#888" : "#666", fontSize: isNarrow ? "0.9rem" : "1rem", marginBottom: "1rem" }}>
-          Analiza tu progreso y mejora tu entrenamiento con datos detallados
-        </p>
-      </div>
+      <PageHeader
+        isDark={isDark}
+        isMobile={isNarrow}
+        title={t("statistics")}
+        subtitle="Analiza tu progreso y mejora tu entrenamiento con datos detallados"
+      />
 
       {/* Period Filter */}
       <div style={{
@@ -184,14 +188,14 @@ export default function Statistics() {
             onClick={() => setSelectedPeriod(period.key)}
             style={{
               padding: '8px 16px',
-              backgroundColor: selectedPeriod === period.key ? '#1dd1a1' : (isDark ? '#1a1a1a' : '#fff'),
-              border: `1px solid ${selectedPeriod === period.key ? '#1dd1a1' : (isDark ? '#333' : '#ddd')}`,
-              borderRadius: '20px',
-              color: selectedPeriod === period.key ? '#000' : (isDark ? '#fff' : '#333'),
+              backgroundColor: selectedPeriod === period.key ? tk.accent : tk.surface,
+              border: `1px solid ${selectedPeriod === period.key ? tk.accent : tk.border}`,
+              borderRadius: tk.radius.pill,
+              color: selectedPeriod === period.key ? tk.onAccent : tk.text,
               fontWeight: '600',
               fontSize: '0.85rem',
               cursor: 'pointer',
-              transition: 'all 0.2s ease'
+              transition: tk.transition
             }}
           >
             {period.label}
@@ -212,29 +216,29 @@ export default function Statistics() {
             onClick={() => setActiveView(btn.key)}
             style={{
               padding: '16px',
-              backgroundColor: activeView === btn.key ? 'rgba(29, 209, 161, 0.1)' : (isDark ? '#1a1a1a' : '#fff'),
-              border: `2px solid ${activeView === btn.key ? '#1dd1a1' : (isDark ? '#333' : '#ddd')}`,
-              borderRadius: '16px',
-              color: isDark ? '#fff' : '#333',
+              backgroundColor: activeView === btn.key ? tk.accentSoft : tk.surface,
+              border: `2px solid ${activeView === btn.key ? tk.accent : tk.border}`,
+              borderRadius: tk.radius.lg,
+              color: tk.text,
               textAlign: 'left',
               transition: 'all 0.3s ease',
               cursor: 'pointer'
             }}
             onMouseOver={(e) => {
               if (activeView !== btn.key) {
-                e.currentTarget.style.borderColor = '#1dd1a1';
+                e.currentTarget.style.borderColor = tk.accent;
                 e.currentTarget.style.transform = 'translateY(-2px)';
               }
             }}
             onMouseOut={(e) => {
               if (activeView !== btn.key) {
-                e.currentTarget.style.borderColor = isDark ? '#333' : '#ddd';
+                e.currentTarget.style.borderColor = tk.border;
                 e.currentTarget.style.transform = 'translateY(0)';
               }
             }}
           >
             <div style={{ fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '4px' }}>{btn.label}</div>
-            <div style={{ fontSize: '0.75rem', color: isDark ? '#888' : '#666' }}>{btn.description}</div>
+            <div style={{ fontSize: '0.75rem', color: tk.textMuted }}>{btn.description}</div>
           </button>
         ))}
       </div>
@@ -283,6 +287,9 @@ export default function Statistics() {
 
       {activeView === 'overview' && (
         <OverviewSection isDark={isDark} isMobile={isMobile} workouts={filteredWorkouts} t={t} stats={stats} />
+      )}
+      {activeView === 'muscleMap' && (
+        <MuscleMapSection isDark={isDark} workouts={workouts} t={t} router={router} />
       )}
       {activeView === 'seriesByGroup' && (
         <SeriesByGroupSection isDark={isDark} seriesByGroup={seriesByGroup} t={t} />
@@ -621,7 +628,7 @@ function DistributionChartSection({ isDark, seriesByGroup, t }) {
   );
 }
 
-function WeeklyBodyMapSection({ isDark, workouts, t }) {
+function MuscleMapSection({ isDark, workouts, t, router }) {
   const groupMap = {
     Pecho: ['Pecho', 'Chest'],
     Espalda: ['Espalda', 'Back'],
@@ -633,17 +640,18 @@ function WeeklyBodyMapSection({ isDark, workouts, t }) {
     Glúteos: ['Glúteos', 'Glutes'],
     Gemelos: ['Gemelos', 'Calves'],
     Abdomen: ['Abdomen', 'Abs', 'Core'],
-    Antebrazos: ['Antebrazos', 'Forearms'],
-    Oblicuos: ['Oblicuos', 'Obliques'],
-    Trapecio: ['Trapecio', 'Trapezius'],
-    Cuello: ['Cuello', 'Neck'],
-    Cabeza: ['Cabeza', 'Head']
+    Antebrazo: ['Antebrazo', 'Antebrazos', 'Forearms'],
+    Cuello: ['Cuello', 'Neck']
   };
+
+  // Siempre se calcula sobre los últimos 7 días, independientemente del filtro de periodo de la página.
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const weekWorkouts = (workouts || []).filter(w => w.completedAt && new Date(w.completedAt) >= weekAgo);
 
   const muscleSeriesCount = {};
   Object.keys(groupMap).forEach(g => muscleSeriesCount[g] = 0);
 
-  workouts.forEach(w => {
+  weekWorkouts.forEach(w => {
     if (Array.isArray(w.details)) {
       w.details.forEach(d => {
         const grp = d.muscleGroup || d.group || d.category;
@@ -663,13 +671,27 @@ function WeeklyBodyMapSection({ isDark, workouts, t }) {
     <section style={{
       backgroundColor: isDark ? '#1a1a1a' : '#fff',
       border: isDark ? '1px solid #333' : '1px solid #e0e0e0',
-      borderRadius: '10px',
-      padding: '16px'
+      borderRadius: '16px',
+      padding: '24px'
     }}>
-      <h2 style={{ margin: 0, marginBottom: '12px', color: isDark ? '#fff' : '#333', fontSize: '1.1rem' }}>Distribución de músculos (cuerpo)</h2>
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <BodyHeatmap counts={muscleSeriesCount} isDark={isDark} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+        <h2 style={{ margin: 0, color: isDark ? '#fff' : '#333', fontSize: '1.3rem', fontWeight: 'bold' }}>Mapa Muscular Semanal</h2>
+        <span style={{ fontSize: '0.85rem', color: '#1dd1a1', fontWeight: '600' }}>Últimos 7 días</span>
       </div>
+      {weekWorkouts.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🧍</div>
+          <p style={{ color: isDark ? '#aaa' : '#666', fontSize: '1rem' }}>{t('stats_no_data')}</p>
+          <p style={{ color: isDark ? '#888' : '#999', fontSize: '0.85rem', marginTop: '8px' }}>Entrena esta semana para ver tu mapa muscular</p>
+        </div>
+      ) : (
+        <MuscleMap
+          seriesByMuscle={muscleSeriesCount}
+          isDark={isDark}
+          onMuscleClick={(group) => router.push(`/statistics/${encodeURIComponent(group)}`)}
+          labelForGroup={(group) => t(group) || group}
+        />
+      )}
     </section>
   );
 }

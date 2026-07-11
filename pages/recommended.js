@@ -3,95 +3,98 @@ import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { searchUsers } from "../lib/firebase";
 import { useRouter } from "next/router";
+import { getTokens } from "../lib/tokens";
+import { Icon, Button, Spinner, EmptyState } from "../components/ui";
 
 export default function Recommended() {
-  const { authUser, isLoaded, following, handleFollow, handleUnfollow, isMobile } = useUser();
+  const { authUser, isLoaded, following, handleFollow, handleUnfollow, isMobile, theme } = useUser();
+  const isDark = theme === 'dark';
+  const tk = getTokens(isDark);
   const [users, setUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const loadUsers = async () => {
       if (isLoaded) {
-        // Obtenemos una lista inicial de usuarios
+        setLoadingUsers(true);
         const results = await searchUsers("");
         setUsers(results);
+        setLoadingUsers(false);
       }
     };
     loadUsers();
   }, [isLoaded]);
 
-  if (!isLoaded) return <Layout><div style={{ padding: "20px", color: "#fff" }}>Cargando...</div></Layout>;
+  if (!isLoaded) return <Layout><Spinner isDark={isDark} fullPage label="Cargando..." /></Layout>;
 
   return (
     <Layout>
-      <div style={{ 
-        backgroundColor: "#000", 
-        color: "#fff", 
-        minHeight: "100vh", 
-        padding: isMobile ? "0" : "20px", 
-        maxWidth: isMobile ? "100%" : "600px", 
+      <div style={{
+        maxWidth: isMobile ? "100%" : "600px",
         margin: "0 auto",
         width: "100%",
         boxSizing: "border-box"
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "30px", padding: isMobile ? "15px 15px 0 15px" : "0" }}>
-          <button 
+        <div style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "24px" }}>
+          <button
             onClick={() => router.back()}
-            style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", padding: "5px", display: "flex", alignItems: "center" }}
+            style={{ background: "none", border: "none", color: tk.text, cursor: "pointer", padding: "5px", display: "flex", alignItems: "center" }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <Icon name="chevronLeft" size={22} />
           </button>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", margin: 0 }}>Gente recomendada</h1>
+          <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", margin: 0, color: tk.text }}>Gente recomendada</h1>
         </div>
 
-        <div style={{ backgroundColor: "#1a1a1a", borderRadius: isMobile ? "0" : "15px", border: isMobile ? "none" : "1px solid #333", borderTop: isMobile ? "1px solid #333" : "1px solid #333", borderBottom: isMobile ? "1px solid #333" : "1px solid #333", overflow: "hidden" }}>
-          {users.length === 0 ? (
-            <div style={{ padding: "20px", textAlign: "center", color: "#888" }}>No hay recomendaciones en este momento.</div>
+        <div style={{ backgroundColor: tk.surface, borderRadius: tk.radius.lg, border: `1px solid ${tk.border}`, overflow: "hidden" }}>
+          {loadingUsers ? (
+            <Spinner isDark={isDark} fullPage />
+          ) : users.length === 0 ? (
+            <EmptyState isDark={isDark} icon="users" title="No hay recomendaciones en este momento" description="Vuelve más tarde para descubrir gente nueva a la que seguir." />
           ) : (
             users.map(u => (
-              <div 
-                key={u.id} 
+              <div
+                key={u.id}
                 onClick={() => router.push(`/user/${u.id}`)}
-                style={{ 
-                  display: "flex", 
-                  alignItems: "center", 
-                  justifyContent: "space-between", 
-                  padding: "15px", 
-                  borderBottom: "1px solid #222",
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "15px",
+                  borderBottom: `1px solid ${tk.border}`,
                   cursor: "pointer",
-                  transition: "background 0.2s"
+                  transition: tk.transition
                 }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#222"}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = tk.surfaceHover}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  <div style={{ width: "45px", height: "45px", borderRadius: "50%", backgroundColor: "transparent", overflow: "hidden" }}>
-                    {u.photoURL ? <img src={u.photoURL} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#888" }}>?</div>}
+                  <div style={{ width: "45px", height: "45px", borderRadius: tk.radius.full, backgroundColor: tk.surfaceHover, overflow: "hidden" }}>
+                    {u.photoURL ? (
+                      <img src={u.photoURL} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: tk.textMuted }}>
+                        <Icon name="user" size={20} />
+                      </div>
+                    )}
                   </div>
                   <div>
-                    <div style={{ fontWeight: "bold" }}>@{u.username}</div>
-                    <div style={{ fontSize: "0.85rem", color: "#888" }}>{u.firstName}</div>
+                    <div style={{ fontWeight: "bold", color: tk.text }}>@{u.username}</div>
+                    <div style={{ fontSize: "0.85rem", color: tk.textMuted }}>{u.firstName}</div>
                   </div>
                 </div>
                 {u.id !== authUser?.uid && (
-                  <button
+                  <Button
+                    isDark={isDark}
+                    size="sm"
+                    variant={following.includes(u.id) ? "secondary" : "primary"}
                     onClick={(e) => {
                       e.stopPropagation();
                       following.includes(u.id) ? handleUnfollow(u.id) : handleFollow(u.id);
                     }}
-                    style={{
-                      backgroundColor: following.includes(u.id) ? "transparent" : "#1dd1a1",
-                      color: following.includes(u.id) ? "#fff" : "#000",
-                      border: following.includes(u.id) ? "1px solid #444" : "none",
-                      padding: "8px 16px",
-                      borderRadius: "20px",
-                      fontSize: "0.85rem",
-                      fontWeight: "bold",
-                      cursor: "pointer"
-                    }}
                   >
                     {following.includes(u.id) ? "Siguiendo" : "Seguir"}
-                  </button>
+                  </Button>
                 )}
               </div>
             ))

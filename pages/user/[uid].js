@@ -4,6 +4,8 @@ import Layout from "../../components/Layout";
 import { useUser } from "../../context/UserContext";
 import { getFromCloud, getUserWorkouts, likeWorkout, addWorkoutComment, getFollowersCount, getFollowersList, getFollowingList } from "../../lib/firebase";
 import { exercisesList } from "../../data/exercises";
+import { getTokens } from "../../lib/tokens";
+import { Icon, Button, Spinner, EmptyState } from "../../components/ui";
 
 export default function UserProfile() {
   const router = useRouter();
@@ -22,6 +24,7 @@ export default function UserProfile() {
   } = useUser();
 
   const isDark = theme === 'dark';
+  const tk = getTokens(isDark);
 
   const [targetUser, setTargetUser] = useState(null);
   const [workouts, setWorkouts] = useState([]);
@@ -217,22 +220,13 @@ export default function UserProfile() {
   const maxVal = Math.max(chartMode === 'duration' ? 5 : 1, ...chartData.map(d => d[chartMode]), 1);
 
   if (!isLoaded || loading) {
-    return (
-      <Layout>
-        <div style={{ padding: isMobile ? "0" : "20px" }}>
-          <h1 style={{ fontSize: isMobile ? "1.8rem" : "2rem", marginBottom: "1rem", color: isDark ? "#fff" : "#333" }}>{t("profile_title")}</h1>
-          <p style={{ color: isDark ? "#ccc" : "#666" }}>{t("loading")}</p>
-        </div>
-      </Layout>
-    );
+    return <Layout><Spinner isDark={isDark} fullPage label={t("loading")} /></Layout>;
   }
 
   if (!targetUser) {
     return (
       <Layout>
-        <div style={{ padding: "20px", color: isDark ? "#fff" : "#333", textAlign: 'center' }}>
-          Usuario no encontrado.
-        </div>
+        <EmptyState isDark={isDark} icon="user" title="Usuario no encontrado" />
       </Layout>
     );
   }
@@ -243,37 +237,25 @@ export default function UserProfile() {
   return (
     <>
       <Layout>
-        <div style={{
-          backgroundColor: "#000",
-          color: "#fff",
-          minHeight: "100vh",
-          padding: isMobile ? "10px" : "20px"
-        }}>
+        <div>
           {/* Header - Username and Follow Layout */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "5px" }}>
-            <h1 style={{ fontSize: "1.6rem", fontWeight: "800", margin: 0, letterSpacing: "-0.5px" }}>{profile?.username || "Usuario"}</h1>
+            <h1 style={{ fontSize: "1.6rem", fontWeight: "800", margin: 0, letterSpacing: "-0.5px", color: tk.text }}>{profile?.username || "Usuario"}</h1>
 
             {authUser && uid !== authUser.uid && (
-              <button
+              <Button
+                isDark={isDark}
+                size="sm"
+                variant={isFollowing ? "secondary" : "primary"}
                 onClick={() => isFollowing ? handleUnfollow(uid) : handleFollow(uid)}
-                style={{
-                  padding: "6px 16px",
-                  borderRadius: "20px",
-                  border: isFollowing ? "1px solid #333" : "none",
-                  backgroundColor: isFollowing ? "transparent" : "#1dd1a1",
-                  color: isFollowing ? "#fff" : "#000",
-                  fontWeight: "bold",
-                  cursor: "pointer",
-                  fontSize: "0.9rem"
-                }}
               >
                 {isFollowing ? "Siguiendo" : "Seguir"}
-              </button>
+              </Button>
             )}
           </div>
 
           {/* Real Name */}
-          <div style={{ fontSize: "1rem", color: "#1dd1a1", fontWeight: "600", marginBottom: "20px" }}>
+          <div style={{ fontSize: "1rem", color: tk.accent, fontWeight: "600", marginBottom: "20px" }}>
             {profile?.firstName || "Sin nombre"}
           </div>
 
@@ -284,8 +266,8 @@ export default function UserProfile() {
               style={{
                 width: "100px",
                 height: "100px",
-                borderRadius: "50%",
-                backgroundColor: "transparent",
+                borderRadius: tk.radius.full,
+                backgroundColor: tk.surfaceHover,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -304,21 +286,21 @@ export default function UserProfile() {
                     objectFit: "cover"
                   }}
                 />
-              ) : <span style={{ fontSize: "2rem" }}>👤</span>}
+              ) : <Icon name="user" size={36} color={tk.textFaint} />}
             </div>
 
             <div style={{ flex: 1, display: "flex", justifyContent: "space-between", textAlign: "center" }}>
               <div style={{ cursor: "default" }}>
-                <div style={{ fontSize: "1.2rem", fontWeight: "800" }}>{workouts?.length || 0}</div>
-                <div style={{ color: "#888", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px" }}>Entrenos</div>
+                <div style={{ fontSize: "1.2rem", fontWeight: "800", color: tk.text }}>{workouts?.length || 0}</div>
+                <div style={{ color: tk.textMuted, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px" }}>Entrenos</div>
               </div>
               <div onClick={handleOpenFollowers} style={{ cursor: "pointer" }}>
-                <div style={{ fontSize: "1.2rem", fontWeight: "800" }}>{targetUser.followersCount || 0}</div>
-                <div style={{ color: "#888", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px" }}>Seguidores</div>
+                <div style={{ fontSize: "1.2rem", fontWeight: "800", color: tk.text }}>{targetUser.followersCount || 0}</div>
+                <div style={{ color: tk.textMuted, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px" }}>Seguidores</div>
               </div>
               <div onClick={handleOpenFollowing} style={{ cursor: "pointer" }}>
-                <div style={{ fontSize: "1.2rem", fontWeight: "800" }}>{targetUser.following?.length || 0}</div>
-                <div style={{ color: "#888", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px" }}>Siguiendo</div>
+                <div style={{ fontSize: "1.2rem", fontWeight: "800", color: tk.text }}>{targetUser.following?.length || 0}</div>
+                <div style={{ color: tk.textMuted, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px" }}>Siguiendo</div>
               </div>
             </div>
           </div>
@@ -327,12 +309,12 @@ export default function UserProfile() {
           <div style={{
             marginBottom: "30px",
             fontSize: "0.95rem",
-            color: "#ccc",
+            color: tk.textMuted,
             lineHeight: "1.5",
-            backgroundColor: "#111",
+            backgroundColor: tk.surfaceAlt,
             padding: "12px 15px",
-            borderRadius: "12px",
-            borderLeft: "3px solid #1dd1a1"
+            borderRadius: tk.radius.md,
+            borderLeft: `3px solid ${tk.accent}`
           }}>
             {profile?.description || "Sin descripción"}
           </div>
@@ -340,24 +322,24 @@ export default function UserProfile() {
           {/* Graph Section */}
           <div style={{ marginBottom: "30px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-              <h2 style={{ fontSize: "1.1rem", margin: 0 }}>
-                Gráfico horas por semana <span style={{ color: "#888", fontSize: "0.8rem", marginLeft: "5px" }}>{overallRange}</span>
+              <h2 style={{ fontSize: "1.1rem", margin: 0, color: tk.text }}>
+                Gráfico horas por semana <span style={{ color: tk.textMuted, fontSize: "0.8rem", marginLeft: "5px" }}>{overallRange}</span>
               </h2>
               <select
                 value={chartFilter}
                 onChange={(e) => setChartFilter(e.target.value)}
-                style={{ background: "none", border: "none", color: "#1dd1a1", fontSize: "0.9rem", cursor: "pointer", outline: "none" }}
+                style={{ background: "none", border: "none", color: tk.accent, fontSize: "0.9rem", cursor: "pointer", outline: "none" }}
               >
-                <option value="3_months" style={{ backgroundColor: "#1a1a1a" }}>Últimos 3 meses</option>
-                <option value="6_months" style={{ backgroundColor: "#1a1a1a" }}>Últimos 6 meses</option>
-                <option value="1_year" style={{ backgroundColor: "#1a1a1a" }}>Último año</option>
-                <option value="always" style={{ backgroundColor: "#1a1a1a" }}>Siempre</option>
+                <option value="3_months" style={{ backgroundColor: tk.surface }}>Últimos 3 meses</option>
+                <option value="6_months" style={{ backgroundColor: tk.surface }}>Últimos 6 meses</option>
+                <option value="1_year" style={{ backgroundColor: tk.surface }}>Último año</option>
+                <option value="always" style={{ backgroundColor: tk.surface }}>Siempre</option>
               </select>
             </div>
 
             <div style={{ height: "150px", display: "flex", alignItems: "flex-end", gap: "8px", marginBottom: "10px", position: "relative", paddingTop: "20px" }}>
               {chartData.length === 0 ? (
-                <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#444" }}>Sin datos suficientes</div>
+                <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: tk.textFaint }}>Sin datos suficientes</div>
               ) : (
                 chartData.map((d, i) => (
                   <div
@@ -365,8 +347,8 @@ export default function UserProfile() {
                     onClick={() => setActiveBar(activeBar === i ? null : i)}
                     style={{
                       flex: 1,
-                      backgroundColor: activeBar === i ? "#fff" : (d[chartMode] > 0 ? "#1dd1a1" : "#1a1a1a"),
-                      border: d[chartMode] === 0 ? "1px solid #333" : "none",
+                      backgroundColor: activeBar === i ? tk.text : (d[chartMode] > 0 ? tk.accent : tk.surfaceAlt),
+                      border: d[chartMode] === 0 ? `1px solid ${tk.border}` : "none",
                       height: `${Math.max(5, (d[chartMode] / maxVal) * 100)}%`,
                       borderRadius: "2px",
                       cursor: "pointer",
@@ -380,7 +362,7 @@ export default function UserProfile() {
                         bottom: "105%",
                         left: "50%",
                         transform: "translateX(-50%)",
-                        color: "#555",
+                        color: tk.textFaint,
                         fontSize: "0.6rem",
                         whiteSpace: "nowrap",
                         fontWeight: "bold"
@@ -394,15 +376,15 @@ export default function UserProfile() {
                         bottom: "110%",
                         left: "50%",
                         transform: "translateX(-50%)",
-                        backgroundColor: "#fff",
-                        color: "#000",
+                        backgroundColor: tk.text,
+                        color: tk.bg,
                         padding: "4px 8px",
                         borderRadius: "4px",
                         fontSize: "0.75rem",
                         whiteSpace: "nowrap",
                         zIndex: 10,
                         fontWeight: "bold",
-                        boxShadow: "0 2px 5px rgba(0,0,0,0.5)"
+                        boxShadow: tk.shadow.card
                       }}>
                         {chartMode === 'duration' ? `${d.duration.toFixed(1)}h` :
                           chartMode === 'volume' ? `${d.volume.toLocaleString()}kg` :
@@ -426,14 +408,14 @@ export default function UserProfile() {
                   style={{
                     flex: 1,
                     padding: "8px",
-                    borderRadius: "20px",
+                    borderRadius: tk.radius.pill,
                     border: "none",
-                    backgroundColor: chartMode === m.id ? "#1dd1a1" : "#1a1a1a",
-                    color: chartMode === m.id ? "#000" : "#fff",
+                    backgroundColor: chartMode === m.id ? tk.accent : tk.surfaceAlt,
+                    color: chartMode === m.id ? tk.onAccent : tk.text,
                     fontSize: "0.9rem",
                     fontWeight: "500",
                     cursor: "pointer",
-                    transition: "all 0.2s ease"
+                    transition: tk.transition
                   }}
                 >{m.label}</button>
               ))}
@@ -442,32 +424,30 @@ export default function UserProfile() {
 
           {/* Workouts Section */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-            <h3 style={{ fontSize: "1.2rem", fontWeight: "bold", margin: 0, display: "flex", alignItems: "center", gap: "10px" }}>
-              <span style={{ width: "4px", height: "20px", backgroundColor: "#1dd1a1", borderRadius: "2px" }}></span>
+            <h3 style={{ fontSize: "1.2rem", fontWeight: "bold", margin: 0, display: "flex", alignItems: "center", gap: "10px", color: tk.text }}>
+              <span style={{ width: "4px", height: "20px", backgroundColor: tk.accent, borderRadius: "2px" }}></span>
               Entrenamientos
             </h3>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
             {(!workouts || workouts.length === 0) ? (
-              <div style={{ padding: "30px", textAlign: "center", backgroundColor: "#1a1a1a", borderRadius: "12px", color: "#666" }}>
-                Este usuario no tiene entrenamientos registrados aún.
-              </div>
+              <EmptyState isDark={isDark} icon="dumbbell" title="Este usuario no tiene entrenamientos registrados aún" />
             ) : (
               [...workouts]
                 .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
                 .map(workout => (
-                  <div key={workout.id} style={{ backgroundColor: "#1a1a1a", padding: "15px", borderRadius: "12px" }}>
+                  <div key={workout.id} style={{ backgroundColor: tk.surface, border: `1px solid ${tk.border}`, padding: "15px", borderRadius: tk.radius.md }}>
                     <div style={{ marginBottom: "10px" }}>
-                      <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#1dd1a1" }}>{workout.name}</div>
-                      <div style={{ fontSize: "0.9rem", color: "#ccc", marginTop: "5px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: tk.accent }}>{workout.name}</div>
+                      <div style={{ fontSize: "0.9rem", color: tk.textMuted, marginTop: "5px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <span>{workout.series} series • {workout.totalVolume?.toLocaleString()} kg • {workout.totalReps} reps • {workout.totalTime || Math.floor((workout.elapsedTime || 0) / 60)} min</span>
                         <button
                           onClick={() => setExpandedWorkout(expandedWorkout === workout.id ? null : workout.id)}
                           style={{
                             background: "none",
                             border: "none",
-                            color: "#1dd1a1",
+                            color: tk.accent,
                             fontSize: "0.8rem",
                             cursor: "pointer",
                             textDecoration: "underline",
@@ -481,14 +461,14 @@ export default function UserProfile() {
 
                     {expandedWorkout === workout.id && workout.exerciseDetails && (
                       <div style={{
-                        backgroundColor: "#000",
-                        borderRadius: "12px",
+                        backgroundColor: tk.surfaceAlt,
+                        borderRadius: tk.radius.md,
                         padding: "15px",
                         marginBottom: "15px",
                         display: "flex",
                         flexDirection: "column",
                         gap: "25px",
-                        border: "1px solid #1a1a1a"
+                        border: `1px solid ${tk.border}`
                       }}>
                         {workout.exerciseDetails.map((ex, idx) => {
                           const info = getExerciseInfo(ex.name);
@@ -515,11 +495,11 @@ export default function UserProfile() {
                                     style={{ width: "80%", height: "auto" }}
                                   />
                                 </div>
-                                <div style={{ fontWeight: "500", fontSize: "1rem", color: "#1dd1a1" }}>{t(ex.name)}</div>
+                                <div style={{ fontWeight: "500", fontSize: "1rem", color: tk.accent }}>{t(ex.name)}</div>
                               </div>
 
                               <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                                <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr", padding: "5px 0", borderBottom: "1px solid #1a1a1a", color: "#666", fontSize: "0.75rem", fontWeight: "bold", textAlign: "center" }}>
+                                <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr", padding: "5px 0", borderBottom: `1px solid ${tk.border}`, color: tk.textFaint, fontSize: "0.75rem", fontWeight: "bold", textAlign: "center" }}>
                                   <div>SERIE</div>
                                   <div>{isTimeBased ? "TIEMPO (MIN)" : isLastre ? "LASTRE (KG)" : "PESO (KG)"}</div>
                                   <div>{isTimeBased ? "KM/H" : "REPS"}</div>
@@ -531,10 +511,10 @@ export default function UserProfile() {
                                     padding: "8px 0",
                                     textAlign: "center",
                                     fontSize: "0.9rem",
-                                    color: "#fff",
-                                    backgroundColor: sIdx % 2 === 0 ? "transparent" : "#0a0a0a"
+                                    color: tk.text,
+                                    backgroundColor: sIdx % 2 === 0 ? "transparent" : tk.surfaceHover
                                   }}>
-                                    <div style={{ color: "#666", fontWeight: "bold" }}>{sIdx + 1}</div>
+                                    <div style={{ color: tk.textFaint, fontWeight: "bold" }}>{sIdx + 1}</div>
                                     <div>{s.weight || "-"}{isTimeBased ? "m" : isLastre ? "L" : ""}</div>
                                     <div>{s.reps || "-"}</div>
                                   </div>
@@ -547,18 +527,18 @@ export default function UserProfile() {
                     )}
 
                     {workout.comments && (
-                      <div style={{ fontSize: "0.9rem", color: isDark ? "#888" : "#666", fontStyle: "italic", borderLeft: "2px solid #1dd1a1", paddingLeft: "10px", margin: "10px 0" }}>
+                      <div style={{ fontSize: "0.9rem", color: tk.textMuted, fontStyle: "italic", borderLeft: `2px solid ${tk.accent}`, paddingLeft: "10px", margin: "10px 0" }}>
                         "{workout.comments}"
                       </div>
                     )}
 
-                    <div style={{ display: "flex", gap: "20px", borderTop: isDark ? "1px solid #333" : "1px solid #eee", paddingTop: "10px", marginTop: "10px" }}>
+                    <div style={{ display: "flex", gap: "20px", borderTop: `1px solid ${tk.border}`, paddingTop: "10px", marginTop: "10px" }}>
                       <button
                         onClick={() => handleLike(workout.id)}
                         style={{
                           background: "none",
                           border: "none",
-                          color: workout.likes?.includes(authUser?.uid) ? "#1dd1a1" : (isDark ? "#888" : "#999"),
+                          color: workout.likes?.includes(authUser?.uid) ? tk.accent : tk.textMuted,
                           display: "flex",
                           alignItems: "center",
                           gap: "5px",
@@ -566,7 +546,7 @@ export default function UserProfile() {
                           fontSize: "0.9rem"
                         }}
                       >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill={workout.likes?.includes(authUser?.uid) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                        <Icon name="heart" size={20} style={{ fill: workout.likes?.includes(authUser?.uid) ? "currentColor" : "none" }} />
                         {workout.likes?.length || 0}
                       </button>
                       <button
@@ -574,7 +554,7 @@ export default function UserProfile() {
                         style={{
                           background: "none",
                           border: "none",
-                          color: isDark ? "#888" : "#999",
+                          color: tk.textMuted,
                           display: "flex",
                           alignItems: "center",
                           gap: "5px",
@@ -582,7 +562,7 @@ export default function UserProfile() {
                           fontSize: "0.9rem"
                         }}
                       >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                        <Icon name="message" size={20} />
                         {workout.commentsList?.length || 0}
                       </button>
                     </div>
@@ -591,44 +571,39 @@ export default function UserProfile() {
                       <div style={{
                         marginTop: "15px",
                         paddingTop: "20px",
-                        borderTop: isDark ? "1px solid #222" : "1px solid #eee",
+                        borderTop: `1px solid ${tk.border}`,
                         display: "flex",
                         flexDirection: "column",
                         gap: "20px"
                       }}>
                         {/* Header Comentarios (Estilo Instagram) */}
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "5px" }}>
-                          <span style={{ fontSize: "0.9rem", fontWeight: "bold", color: "#888" }}>{t("comments_label")}</span>
-                          <span style={{ fontSize: "0.8rem", color: "#1dd1a1", cursor: "pointer" }} onClick={() => setCommentingOn(null)}>{t("close")}</span>
+                          <span style={{ fontSize: "0.9rem", fontWeight: "bold", color: tk.textMuted }}>{t("comments_label")}</span>
+                          <span style={{ fontSize: "0.8rem", color: tk.accent, cursor: "pointer" }} onClick={() => setCommentingOn(null)}>{t("close")}</span>
                         </div>
 
                         {/* Lista de Comentarios */}
                         <div style={{ display: "flex", flexDirection: "column", gap: "25px" }}>
                           {workout.commentsList?.length === 0 ? (
-                            <div style={{ fontSize: "0.9rem", color: "#888", textAlign: "center", padding: "10px" }}>No hay comentarios aún.</div>
+                            <div style={{ fontSize: "0.9rem", color: tk.textMuted, textAlign: "center", padding: "10px" }}>No hay comentarios aún.</div>
                           ) : (
                             workout.commentsList?.map((c, i) => (
                               <div key={i} style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
-                                <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: isDark ? "#333" : "#eee", overflow: "hidden", flexShrink: 0 }}>
-                                  {c.authorPhoto ? <img src={c.authorPhoto} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem", color: "#888" }}>?</div>}
+                                <div style={{ width: "32px", height: "32px", borderRadius: tk.radius.full, backgroundColor: tk.surfaceHover, overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                  {c.authorPhoto ? <img src={c.authorPhoto} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Icon name="user" size={14} color={tk.textFaint} />}
                                 </div>
 
                                 <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
                                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                    <span style={{ fontWeight: "bold", fontSize: "0.9rem", color: isDark ? "#fff" : "#333" }}>{c.authorName}</span>
-                                    <span style={{ color: "#888", fontSize: "0.75rem" }}>{getTimeAgo(c.createdAt)}</span>
+                                    <span style={{ fontWeight: "bold", fontSize: "0.9rem", color: tk.text }}>{c.authorName}</span>
+                                    <span style={{ color: tk.textFaint, fontSize: "0.75rem" }}>{getTimeAgo(c.createdAt)}</span>
                                   </div>
-                                  <div style={{ fontSize: "0.95rem", color: isDark ? "#fff" : "#444", lineHeight: "1.4" }}>
+                                  <div style={{ fontSize: "0.95rem", color: tk.text, lineHeight: "1.4" }}>
                                     {c.text}
                                   </div>
-                                  <div style={{ marginTop: "5px", fontSize: "0.8rem", color: "#888", fontWeight: "bold", cursor: "pointer" }}>
+                                  <div style={{ marginTop: "5px", fontSize: "0.8rem", color: tk.textMuted, fontWeight: "bold", cursor: "pointer" }}>
                                     {t("reply")}
                                   </div>
-                                </div>
-
-                                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", color: "#888", marginTop: "2px" }}>
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-                                  <span style={{ fontSize: "0.65rem" }}>0</span>
                                 </div>
                               </div>
                             ))
@@ -653,10 +628,10 @@ export default function UserProfile() {
                             display: "flex",
                             alignItems: "center",
                             gap: "10px",
-                            backgroundColor: isDark ? "#1a1a1a" : "#fff",
-                            borderRadius: "25px",
+                            backgroundColor: tk.surface,
+                            borderRadius: tk.radius.pill,
                             padding: "5px 5px 5px 15px",
-                            border: isDark ? "1px solid #333" : "1px solid #ddd"
+                            border: `1px solid ${tk.border}`
                           }}>
                             <input
                               placeholder={t("add_comment_placeholder")}
@@ -667,7 +642,7 @@ export default function UserProfile() {
                                 flex: 1,
                                 backgroundColor: "transparent",
                                 border: "none",
-                                color: isDark ? "#fff" : "#333",
+                                color: tk.text,
                                 outline: "none",
                                 fontSize: "0.95rem",
                                 padding: "8px 0"
@@ -677,8 +652,8 @@ export default function UserProfile() {
                               onClick={() => handleAddComment(workout.id)}
                               disabled={!newComment.trim()}
                               style={{
-                                backgroundColor: "#1dd1a1",
-                                color: "#000",
+                                backgroundColor: tk.accent,
+                                color: tk.onAccent,
                                 border: "none",
                                 width: "32px",
                                 height: "32px",
@@ -691,7 +666,7 @@ export default function UserProfile() {
                                 transition: "all 0.2s"
                               }}
                             >
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                              <Icon name="arrowRight" size={16} style={{ transform: "rotate(-90deg)" }} />
                             </button>
                           </div>
                         </div>
@@ -710,19 +685,21 @@ export default function UserProfile() {
           onClick={() => { setShowFollowers(false); setShowFollowing(false); }}
           style={{
             position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center",
+            backgroundColor: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center",
             justifyContent: "center", zIndex: 4000, padding: "20px"
           }}
         >
-          <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: "#1a1a1a", padding: "25px", borderRadius: "15px", width: "100%", maxWidth: "400px", maxHeight: "80vh", overflowY: "auto" }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: tk.surface, padding: "25px", borderRadius: tk.radius.lg, width: "100%", maxWidth: "400px", maxHeight: "80vh", overflowY: "auto", border: `1px solid ${tk.border}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <h2 style={{ color: "#fff", margin: 0 }}>{showFollowers ? "Seguidores" : "Siguiendo"}</h2>
-              <button onClick={() => { setShowFollowers(false); setShowFollowing(false); }} style={{ background: "none", border: "none", color: "#fff", fontSize: "1.5rem", cursor: "pointer" }}>&times;</button>
+              <h2 style={{ color: tk.text, margin: 0 }}>{showFollowers ? "Seguidores" : "Siguiendo"}</h2>
+              <button onClick={() => { setShowFollowers(false); setShowFollowing(false); }} style={{ background: "none", border: "none", color: tk.text, cursor: "pointer", display: "flex" }}>
+                <Icon name="close" size={20} />
+              </button>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
               {(showFollowers ? followersList : followingList).length === 0 ? (
-                <p style={{ color: "#888", textAlign: "center" }}>No hay nadie aquí todavía.</p>
+                <p style={{ color: tk.textMuted, textAlign: "center" }}>No hay nadie aquí todavía.</p>
               ) : (
                 (showFollowers ? followersList : followingList).map(u => (
                   <div
@@ -737,16 +714,16 @@ export default function UserProfile() {
                       setShowFollowers(false);
                       setShowFollowing(false);
                     }}
-                    style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer", padding: "8px", borderRadius: "8px", transition: "background 0.2s" }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#2a2a2a"}
+                    style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer", padding: "8px", borderRadius: tk.radius.sm, transition: tk.transition }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = tk.surfaceHover}
                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                   >
-                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "transparent", overflow: "hidden" }}>
+                    <div style={{ width: "40px", height: "40px", borderRadius: tk.radius.full, backgroundColor: tk.surfaceHover, overflow: "hidden" }}>
                       {u.photoURL && <img src={u.photoURL} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
                     </div>
                     <div>
-                      <div style={{ fontWeight: "bold", color: "#fff" }}>@{u.username}</div>
-                      <div style={{ fontSize: "0.8rem", color: "#888" }}>{u.firstName}</div>
+                      <div style={{ fontWeight: "bold", color: tk.text }}>@{u.username}</div>
+                      <div style={{ fontSize: "0.8rem", color: tk.textMuted }}>{u.firstName}</div>
                     </div>
                   </div>
                 ))
@@ -772,10 +749,10 @@ export default function UserProfile() {
               style={{
                 position: "absolute", top: "-40px", right: "0",
                 background: "none", border: "none", color: "#fff",
-                fontSize: "2rem", cursor: "pointer"
+                cursor: "pointer", display: "flex"
               }}
             >
-              &times;
+              <Icon name="close" size={26} />
             </button>
             <img
               src={profile?.photoURL || "/logo2.png"}

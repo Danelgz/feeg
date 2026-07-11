@@ -22,6 +22,7 @@ export function UserProvider({ children }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const lastLocalUpdate = useRef(0);
   const [theme, setTheme] = useState('dark');
+  const [themePreference, setThemePreferenceState] = useState('dark'); // 'dark' | 'light' | 'system'
   const [language, setLanguage] = useState('es');
   const [activeRoutine, setActiveRoutine] = useState(null);
   const [completedWorkouts, setCompletedWorkouts] = useState([]);
@@ -59,6 +60,7 @@ export function UserProvider({ children }) {
   useEffect(() => {
     const savedUser = localStorage.getItem('userProfile');
     const savedTheme = localStorage.getItem('theme');
+    const savedThemePreference = localStorage.getItem('themePreference');
     const savedLanguage = localStorage.getItem('language');
     const savedActiveRoutine = localStorage.getItem('activeRoutine');
     const savedWorkouts = localStorage.getItem('completedWorkouts');
@@ -67,6 +69,7 @@ export function UserProvider({ children }) {
     
     if (savedUser) try { setUser(JSON.parse(savedUser)); } catch (e) {}
     if (savedTheme) setTheme(savedTheme);
+    if (savedThemePreference) setThemePreferenceState(savedThemePreference);
     if (savedLanguage) setLanguage(savedLanguage);
     if (savedActiveRoutine) try { setActiveRoutine(JSON.parse(savedActiveRoutine)); } catch (e) {}
     if (savedWorkouts) try { setCompletedWorkouts(JSON.parse(savedWorkouts)); } catch (e) {}
@@ -133,6 +136,10 @@ export function UserProvider({ children }) {
           if (cloudData.settings.theme) {
             setTheme(cloudData.settings.theme);
             localStorage.setItem('theme', cloudData.settings.theme);
+          }
+          if (cloudData.settings.themePreference) {
+            setThemePreferenceState(cloudData.settings.themePreference);
+            localStorage.setItem('themePreference', cloudData.settings.themePreference);
           }
           if (cloudData.settings.language) {
             setLanguage(cloudData.settings.language);
@@ -280,12 +287,32 @@ export function UserProvider({ children }) {
     }
   };
 
-  const toggleTheme = async () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
+  // 'system' resuelve el tema real vía prefers-color-scheme y se mantiene sincronizado en vivo.
+  useEffect(() => {
+    if (themePreference !== 'system' || typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const applySystemTheme = (e) => {
+      const resolved = e.matches ? 'dark' : 'light';
+      setTheme(resolved);
+      localStorage.setItem('theme', resolved);
+    };
+    applySystemTheme(mq);
+    mq.addEventListener('change', applySystemTheme);
+    return () => mq.removeEventListener('change', applySystemTheme);
+  }, [themePreference]);
+
+  const setThemeMode = async (mode) => {
+    setThemePreferenceState(mode);
+    localStorage.setItem('themePreference', mode);
+
+    const resolved = mode === 'system'
+      ? (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : mode;
+    setTheme(resolved);
+    localStorage.setItem('theme', resolved);
+
     if (authUser) {
-      await saveToCloud(`users/${authUser.uid}`, { settings: { theme: newTheme, language } });
+      await saveToCloud(`users/${authUser.uid}`, { settings: { theme: resolved, themePreference: mode, language } });
     }
   };
 
@@ -472,9 +499,10 @@ export function UserProvider({ children }) {
       isLoaded, 
       isSyncing,
       refreshData,
-      theme, 
-      toggleTheme, 
-      language, 
+      theme,
+      themePreference,
+      setThemeMode,
+      language,
       updateLanguage,
       activeRoutine,
       startRoutine,

@@ -155,16 +155,14 @@ export default function Layout({ children, hideBottomNav = false }) {
           @keyframes fadeInPage {
             0% {
               opacity: 0;
-              transform: translateY(5px);
             }
             100% {
               opacity: 1;
-              transform: translateY(0);
             }
           }
           .page-transition {
-            animation: fadeInPage 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
-            will-change: opacity, transform;
+            animation: fadeInPage 0.3s ease both;
+            will-change: opacity;
           }
         `}</style>
       </Head>

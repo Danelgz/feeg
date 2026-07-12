@@ -302,7 +302,7 @@ export default function Home() {
         </h1>
 
         {/* Feed de Entrenamientos */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px", padding: isMobile ? "0 15px" : "0" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "0" : "20px", padding: isMobile ? "0" : "0" }}>
           {feedWorkouts.length === 0 ? (
             <EmptyState
               isDark={isDark}
@@ -323,10 +323,11 @@ export default function Home() {
                   key={workout.id}
                   style={{
                     backgroundColor: tk.surface,
-                    border: `1px solid ${tk.border}`,
-                    padding: "18px",
-                    borderRadius: tk.radius.lg,
-                    boxShadow: tk.shadow.card,
+                    border: isMobile ? "none" : `1px solid ${tk.border}`,
+                    borderBottom: `1px solid ${tk.border}`,
+                    padding: isMobile ? "18px 15px" : "18px",
+                    borderRadius: isMobile ? 0 : tk.radius.lg,
+                    boxShadow: isMobile ? "none" : tk.shadow.card,
                   }}
                 >
                   <div

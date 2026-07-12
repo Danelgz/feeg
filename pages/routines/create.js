@@ -145,7 +145,7 @@ export default function CreateRoutine() {
             onClick={() => setShowExerciseSelector(true)}
             style={{ width: "100%", padding: "15px", backgroundColor: tk.accentSoft, color: tk.accent, border: `1px dashed ${tk.accent}`, borderRadius: "10px", fontWeight: "600", cursor: "pointer" }}
           >
-            + Agregar Ejercicio
+            + {t("add_exercise")}
           </button>
         </div>
       </div>

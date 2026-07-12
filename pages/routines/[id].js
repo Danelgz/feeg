@@ -205,6 +205,7 @@ export default function RoutineDetail() {
           workout={finishedWorkout}
           prNames={sessionPRNames}
           onDone={() => router.push("/routines?tab=completed")}
+          t={t}
         />
       </Layout>
     );
@@ -227,23 +228,23 @@ export default function RoutineDetail() {
     return (
       <Layout>
         <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-          <h1 style={{ color: isDark ? "#fff" : "#333" }}>{foundRoutine?.name}</h1>
-          <p style={{ color: isDark ? "#aaa" : "#666", marginBottom: "20px" }}>
+          <h1 style={{ color: tk.text }}>{foundRoutine?.name}</h1>
+          <p style={{ color: tk.textMuted, marginBottom: "20px" }}>
             {previewExercises.length} {t("exercises_count")} · {previewExercises.reduce((sum, ex) => sum + ex.series.length, 0)} {t("total_series")}
           </p>
 
-          <div style={{ backgroundColor: isDark ? "#1a1a1a" : "#fff", border: `1px solid ${isDark ? "#333" : "#eee"}`, borderRadius: "8px", padding: "20px", marginBottom: "20px" }}>
-            <h2 style={{ marginTop: 0, color: isDark ? "#fff" : "#333" }}>{t("workout_summary")}</h2>
+          <div style={{ backgroundColor: tk.surface, border: `1px solid ${tk.border}`, borderRadius: tk.radius.md, padding: "20px", marginBottom: "20px" }}>
+            <h2 style={{ marginTop: 0, color: tk.text }}>{t("workout_summary")}</h2>
             {previewExercises.map((exercise, idx) => {
               const info = getExerciseInfo(exercise.name);
               return (
-                <div key={idx} style={{ backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9", padding: "12px", marginBottom: "10px", borderRadius: "6px", border: `1px solid ${isDark ? "#2a2a2a" : "#eee"}` }}>
-                  <h3 style={{ margin: "0 0 8px 0", color: "#1dd1a1" }}>{t(exercise.name)}</h3>
-                  <p style={{ margin: 0, color: isDark ? "#aaa" : "#666" }}>
+                <div key={idx} style={{ backgroundColor: tk.surfaceAlt, padding: "12px", marginBottom: "10px", borderRadius: tk.radius.sm, border: `1px solid ${tk.border}` }}>
+                  <h3 style={{ margin: "0 0 8px 0", color: tk.accent }}>{t(exercise.name)}</h3>
+                  <p style={{ margin: 0, color: tk.textMuted }}>
                     {exercise.series.length} {t("series_label")} · {t("rest_between_series")} {exercise.rest}s
                   </p>
                   {exercise.series.map((serie, sIdx) => (
-                    <div key={sIdx} style={{ fontSize: "0.9rem", color: isDark ? "#999" : "#888", marginLeft: "10px" }}>
+                    <div key={sIdx} style={{ fontSize: "0.9rem", color: tk.textFaint, marginLeft: "10px" }}>
                       {t("series_label")} {sIdx + 1}: {serie.reps} {info?.type === "time" ? "m" : t("reps_label")}
                       {(info?.type === "weight_reps" || !info?.type) && ` - ${serie.weight}${info?.unit === "lastre" ? "L" : "kg"}`}
                       {info?.type === "time" && ` - ${serie.weight}m`}
@@ -256,7 +257,7 @@ export default function RoutineDetail() {
 
           <button
             onClick={handleStart}
-            style={{ padding: "12px 30px", fontSize: "1.1rem", backgroundColor: "#1dd1a1", color: "#000", border: "none", borderRadius: "6px", fontWeight: "600", cursor: "pointer" }}
+            style={{ padding: "12px 30px", fontSize: "1.1rem", backgroundColor: tk.accent, color: tk.onAccent, border: "none", borderRadius: tk.radius.md, fontWeight: "600", cursor: "pointer" }}
           >
             {t("start_routine")}
           </button>
@@ -264,13 +265,13 @@ export default function RoutineDetail() {
 
         {showRoutineActiveAlert && (
           <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 3000, padding: "20px" }}>
-            <div style={{ backgroundColor: "#1a1a1a", borderRadius: "15px", padding: "30px", width: "320px", maxWidth: "100%", textAlign: "center", border: "2px solid #ff4d4d", boxSizing: "border-box" }}>
-              <h3 style={{ color: "#fff", margin: "0 0 15px 0" }}>Ya tienes una rutina iniciada</h3>
-              <p style={{ color: "#aaa", fontSize: "0.95rem", marginBottom: "25px", lineHeight: "1.4" }}>
-                Debes terminar o cancelar la rutina de <strong>{activeRoutine?.name}</strong> antes de empezar una nueva.
+            <div style={{ backgroundColor: tk.surface, borderRadius: tk.radius.lg, padding: "30px", width: "320px", maxWidth: "100%", textAlign: "center", border: `2px solid ${tk.danger}`, boxSizing: "border-box" }}>
+              <h3 style={{ color: tk.text, margin: "0 0 15px 0" }}>{t("routine_already_active_title")}</h3>
+              <p style={{ color: tk.textMuted, fontSize: "0.95rem", marginBottom: "25px", lineHeight: "1.4" }}>
+                {t("routine_already_active_desc").replace("{name}", activeRoutine?.name || "")}
               </p>
               <button onClick={() => setShowRoutineActiveAlert(false)} style={{ width: "100%", padding: "12px", backgroundColor: tk.accent, color: tk.onAccent, border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}>
-                Entendido
+                {t("understood")}
               </button>
             </div>
           </div>
@@ -283,20 +284,20 @@ export default function RoutineDetail() {
     return (
       <Layout hideBottomNav>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "80vh" }}>
-          <div style={{ backgroundColor: isDark ? "#1a1a1a" : "#fff", border: "2px solid #1dd1a1", borderRadius: "12px", padding: "40px", maxWidth: "500px", textAlign: "center" }}>
-            <h2 style={{ color: isDark ? "#1dd1a1" : "#333", marginBottom: "20px", fontSize: "1.5rem" }}>{t("confirm_finish_title")}</h2>
-            <p style={{ color: isDark ? "#ccc" : "#666", marginBottom: "30px" }}>{t("confirm_finish_subtitle")}</p>
+          <div style={{ backgroundColor: tk.surface, border: `2px solid ${tk.accent}`, borderRadius: tk.radius.md, padding: "40px", maxWidth: "500px", textAlign: "center" }}>
+            <h2 style={{ color: tk.accent, marginBottom: "20px", fontSize: "1.5rem" }}>{t("confirm_finish_title")}</h2>
+            <p style={{ color: tk.textMuted, marginBottom: "30px" }}>{t("confirm_finish_subtitle")}</p>
             <div style={{ display: "flex", gap: "15px" }}>
-              <button onClick={() => setShowFinishConfirm(false)} style={{ flex: 1, padding: "12px", backgroundColor: isDark ? "#444" : "#ddd", color: isDark ? "#fff" : "#333", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "600" }}>
+              <button onClick={() => setShowFinishConfirm(false)} style={{ flex: 1, padding: "12px", backgroundColor: tk.surfaceAlt, color: tk.text, border: "none", borderRadius: tk.radius.sm, cursor: "pointer", fontWeight: "600" }}>
                 {t("no_continue")}
               </button>
-              <button onClick={openFinishForm} style={{ flex: 1, padding: "12px", backgroundColor: "#1dd1a1", color: "#000", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "600" }}>
+              <button onClick={openFinishForm} style={{ flex: 1, padding: "12px", backgroundColor: tk.accent, color: tk.onAccent, border: "none", borderRadius: tk.radius.sm, cursor: "pointer", fontWeight: "600" }}>
                 {t("yes_finish")}
               </button>
             </div>
           </div>
         </div>
-        <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} />
+        <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} />
       </Layout>
     );
   }
@@ -306,68 +307,68 @@ export default function RoutineDetail() {
     return (
       <Layout hideBottomNav>
         <div style={{ maxWidth: "600px", margin: "0 auto" }}>
-          <div style={{ backgroundColor: isDark ? "#1a1a1a" : "#fff", border: `2px solid ${isDark ? "#1dd1a1" : "#eee"}`, borderRadius: "12px", padding: "40px" }}>
-            <h2 style={{ color: isDark ? "#1dd1a1" : "#333", marginBottom: "30px", fontSize: "1.5rem", textAlign: "center" }}>{t("finish_workout")}</h2>
+          <div style={{ backgroundColor: tk.surface, border: `2px solid ${tk.accent}`, borderRadius: tk.radius.md, padding: "40px" }}>
+            <h2 style={{ color: tk.accent, marginBottom: "30px", fontSize: "1.5rem", textAlign: "center" }}>{t("finish_workout")}</h2>
 
             <div style={{ marginBottom: "25px" }}>
-              <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", marginBottom: "8px" }}>{t("workout_name")}</label>
+              <label style={{ display: "block", color: tk.textMuted, fontSize: "0.9rem", marginBottom: "8px" }}>{t("workout_name")}</label>
               <input
                 type="text"
                 value={finishName}
                 onChange={(e) => setFinishName(e.target.value)}
                 placeholder={t("placeholder_workout_name")}
-                style={{ width: "100%", padding: "12px", backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9", border: `1px solid ${isDark ? "#333" : "#ddd"}`, borderRadius: "6px", color: isDark ? "#fff" : "#333", boxSizing: "border-box" }}
+                style={{ width: "100%", padding: "12px", backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.sm, color: tk.text, boxSizing: "border-box" }}
               />
             </div>
 
             <div style={{ marginBottom: "25px" }}>
-              <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", marginBottom: "8px" }}>{t("comments")}</label>
+              <label style={{ display: "block", color: tk.textMuted, fontSize: "0.9rem", marginBottom: "8px" }}>{t("comments")}</label>
               <textarea
                 value={finishComments}
                 onChange={(e) => setFinishComments(e.target.value)}
                 placeholder={t("placeholder_comments")}
-                style={{ width: "100%", padding: "12px", backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9", border: `1px solid ${isDark ? "#333" : "#ddd"}`, borderRadius: "6px", color: isDark ? "#fff" : "#333", minHeight: "80px", boxSizing: "border-box", resize: "vertical" }}
+                style={{ width: "100%", padding: "12px", backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.sm, color: tk.text, minHeight: "80px", boxSizing: "border-box", resize: "vertical" }}
               />
             </div>
 
             <div style={{ marginBottom: "25px" }}>
-              <label style={{ display: "block", color: isDark ? "#aaa" : "#666", fontSize: "0.9rem", marginBottom: "8px" }}>{t("total_time_min")}</label>
+              <label style={{ display: "block", color: tk.textMuted, fontSize: "0.9rem", marginBottom: "8px" }}>{t("total_time_min")}</label>
               <input
                 type="number"
                 value={finishTotalTime}
                 onChange={(e) => setFinishTotalTime(e.target.value)}
                 min="0"
-                style={{ width: "100%", padding: "12px", backgroundColor: isDark ? "#0f0f0f" : "#f9f9f9", border: `1px solid ${isDark ? "#333" : "#ddd"}`, borderRadius: "6px", color: isDark ? "#fff" : "#333", boxSizing: "border-box" }}
+                style={{ width: "100%", padding: "12px", backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.sm, color: tk.text, boxSizing: "border-box" }}
               />
-              <p style={{ margin: "5px 0 0 0", fontSize: "0.85rem", color: "#1dd1a1" }}>
+              <p style={{ margin: "5px 0 0 0", fontSize: "0.85rem", color: tk.accent }}>
                 {t("real_time")} {Math.floor(elapsedSeconds / 60)}m {elapsedSeconds % 60}s
               </p>
             </div>
 
             {(routineChanges.exercises > 0 || routineChanges.series > 0) && (
-              <div style={{ backgroundColor: isDark ? "rgba(46, 230, 197, 0.1)" : "#f0fff4", padding: "15px", borderRadius: "8px", marginBottom: "25px", border: `1px solid ${tk.accent}` }}>
+              <div style={{ backgroundColor: tk.accentSoft, padding: "15px", borderRadius: tk.radius.sm, marginBottom: "25px", border: `1px solid ${tk.accent}` }}>
                 <p style={{ color: tk.accent, fontWeight: "bold", margin: "0 0 10px 0", display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span>✨</span> ¡Has mejorado la rutina!
+                  <span>✨</span> {t("routine_improved_title")}
                 </p>
-                <p style={{ color: isDark ? "#ccc" : "#666", fontSize: "0.9rem", margin: "0 0 15px 0", lineHeight: "1.4" }}>
-                  Has realizado cambios:
+                <p style={{ color: tk.textMuted, fontSize: "0.9rem", margin: "0 0 15px 0", lineHeight: "1.4" }}>
+                  {t("routine_changes_prefix")}
                   <strong>
                     {" "}
-                    {routineChanges.exercises > 0 && `${routineChanges.exercises} ejercicios nuevos`}
+                    {routineChanges.exercises > 0 && `${routineChanges.exercises} ${t("new_exercises_label")}`}
                     {routineChanges.exercises > 0 && routineChanges.series > 0 && " y "}
-                    {routineChanges.series > 0 && `${routineChanges.series} series adicionales`}
+                    {routineChanges.series > 0 && `${routineChanges.series} ${t("additional_series_label")}`}
                   </strong>
                   .
                 </p>
-                <label style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer", color: isDark ? "#fff" : "#333", backgroundColor: isDark ? "#121212" : "#fff", padding: "10px", borderRadius: "6px", border: `1px solid ${isDark ? "#333" : "#eee"}` }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer", color: tk.text, backgroundColor: tk.surface, padding: "10px", borderRadius: tk.radius.sm, border: `1px solid ${tk.border}` }}>
                   <input type="checkbox" checked={updateOriginalRoutine} onChange={(e) => setUpdateOriginalRoutine(e.target.checked)} style={{ width: "20px", height: "20px", accentColor: tk.accent, cursor: "pointer" }} />
-                  <span style={{ fontSize: "0.95rem" }}>Actualizar rutina original con estos cambios</span>
+                  <span style={{ fontSize: "0.95rem" }}>{t("update_original_routine_label")}</span>
                 </label>
               </div>
             )}
 
-            <div style={{ backgroundColor: isDark ? "#0f0f0f" : "#f1f1f1", borderRadius: "8px", padding: "20px", marginBottom: "25px" }}>
-              <h3 style={{ color: isDark ? "#1dd1a1" : "#333", marginBottom: "15px", fontSize: "1.1rem" }}>{t("workout_summary")}</h3>
+            <div style={{ backgroundColor: tk.surfaceAlt, borderRadius: tk.radius.sm, padding: "20px", marginBottom: "25px" }}>
+              <h3 style={{ color: tk.accent, marginBottom: "15px", fontSize: "1.1rem" }}>{t("workout_summary")}</h3>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
                 {[
                   { label: t("exercises_count"), value: totalExercises },
@@ -376,18 +377,18 @@ export default function RoutineDetail() {
                   { label: t("total_volume"), value: `${totals.totalVolume.toFixed(1)}kg` },
                 ].map((stat) => (
                   <div key={stat.label} style={{ textAlign: "center" }}>
-                    <div style={{ color: "#1dd1a1", fontSize: "1.8rem", fontWeight: "700" }}>{stat.value}</div>
-                    <div style={{ color: isDark ? "#aaa" : "#666", fontSize: "0.9rem" }}>{stat.label}</div>
+                    <div style={{ color: tk.accent, fontSize: "1.8rem", fontWeight: "700" }}>{stat.value}</div>
+                    <div style={{ color: tk.textMuted, fontSize: "0.9rem" }}>{stat.label}</div>
                   </div>
                 ))}
               </div>
             </div>
 
             <div style={{ display: "flex", gap: "15px" }}>
-              <button onClick={() => setShowFinishForm(false)} disabled={savingWorkout} style={{ flex: 1, padding: "12px", backgroundColor: isDark ? "#444" : "#ccc", color: isDark ? "#fff" : "#333", border: "none", borderRadius: "8px", cursor: savingWorkout ? "not-allowed" : "pointer", fontWeight: "600", opacity: savingWorkout ? 0.6 : 1 }}>
+              <button onClick={() => setShowFinishForm(false)} disabled={savingWorkout} style={{ flex: 1, padding: "12px", backgroundColor: tk.surfaceAlt, color: tk.text, border: "none", borderRadius: tk.radius.sm, cursor: savingWorkout ? "not-allowed" : "pointer", fontWeight: "600", opacity: savingWorkout ? 0.6 : 1 }}>
                 {t("cancel")}
               </button>
-              <button onClick={handleSaveFinishedRoutine} disabled={savingWorkout} style={{ flex: 1, padding: "12px", backgroundColor: savingWorkout ? "#16a853" : "#1dd1a1", color: savingWorkout ? "#fff" : "#000", border: "none", borderRadius: "8px", cursor: savingWorkout ? "not-allowed" : "pointer", fontWeight: "600" }}>
+              <button onClick={handleSaveFinishedRoutine} disabled={savingWorkout} style={{ flex: 1, padding: "12px", backgroundColor: tk.accent, color: tk.onAccent, border: "none", borderRadius: tk.radius.sm, cursor: savingWorkout ? "not-allowed" : "pointer", fontWeight: "600", opacity: savingWorkout ? 0.7 : 1 }}>
                 {savingWorkout ? t("saving") : t("save_workout")}
               </button>
             </div>
@@ -401,7 +402,7 @@ export default function RoutineDetail() {
   return (
     <Layout hideBottomNav>
       <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-        <WorkoutHeader mode="live" title={state.name || foundRoutine?.name} onBack={() => setShowDiscardConfirm(true)} primaryLabel="Terminar" onPrimaryAction={() => setShowFinishConfirm(true)} />
+        <WorkoutHeader mode="live" title={state.name || foundRoutine?.name} onBack={() => setShowDiscardConfirm(true)} primaryLabel={t("finish_button")} onPrimaryAction={() => setShowFinishConfirm(true)} />
 
         <WorkoutStatsBar mode="live" elapsedSeconds={elapsedSeconds} totalVolume={totals.totalVolume} totalSeries={totals.totalSeries} />
 
@@ -433,18 +434,18 @@ export default function RoutineDetail() {
             onClick={() => setShowExerciseSelector(true)}
             style={{ width: "100%", padding: "15px", backgroundColor: tk.accentSoft, color: tk.accent, border: `1px dashed ${tk.accent}`, borderRadius: "10px", fontWeight: "600", cursor: "pointer" }}
           >
-            + Agregar Ejercicio
+            + {t("add_exercise")}
           </button>
         </div>
       </div>
 
-      <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} />
+      <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} />
 
       <ConfirmModal
         isDark
         open={showDiscardConfirm}
-        title="¿Cancelar entrenamiento?"
-        description="Se perderán todos los datos registrados en esta sesión."
+        title={t("cancel_workout_title")}
+        description={t("cancel_workout_msg")}
         confirmLabel="Sí, cancelar"
         cancelLabel="No, continuar"
         danger

@@ -111,6 +111,7 @@ export default function EmptyRoutine() {
           workout={finishedWorkout}
           prNames={sessionPRNames}
           onDone={() => router.push("/routines?tab=completed")}
+          t={t}
         />
       </Layout>
     );
@@ -183,15 +184,15 @@ export default function EmptyRoutine() {
                 boxSizing: "border-box",
               }}
             >
-              <h3 style={{ color: tk.text, margin: "0 0 15px 0" }}>Ya tienes una rutina iniciada</h3>
+              <h3 style={{ color: tk.text, margin: "0 0 15px 0" }}>{t("routine_already_active_title")}</h3>
               <p style={{ color: tk.textMuted, fontSize: "0.95rem", marginBottom: "25px" }}>
-                Debes terminar o cancelar la rutina de <strong>{activeRoutine?.name}</strong> antes de empezar una nueva.
+                {t("routine_already_active_desc").replace("{name}", activeRoutine?.name || "")}
               </p>
               <button
                 onClick={() => setShowRoutineActiveAlert(false)}
                 style={{ width: "100%", padding: "12px", backgroundColor: tk.accent, color: tk.onAccent, border: "none", borderRadius: tk.radius.md, fontWeight: "bold", cursor: "pointer" }}
               >
-                Entendido
+                {t("understood")}
               </button>
             </div>
           </div>
@@ -222,7 +223,7 @@ export default function EmptyRoutine() {
             </div>
           </div>
         </div>
-        <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} />
+        <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} />
       </Layout>
     );
   }
@@ -271,7 +272,7 @@ export default function EmptyRoutine() {
   return (
     <Layout hideBottomNav>
       <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-        <WorkoutHeader mode="live" title="Entreno Vacío" onBack={() => setShowDiscardConfirm(true)} primaryLabel="Terminar" onPrimaryAction={() => setShowFinishConfirm(true)} />
+        <WorkoutHeader mode="live" title="Entreno Vacío" onBack={() => setShowDiscardConfirm(true)} primaryLabel={t("finish_button")} onPrimaryAction={() => setShowFinishConfirm(true)} />
 
         <WorkoutStatsBar mode="live" elapsedSeconds={elapsedSeconds} totalVolume={totals.totalVolume} totalSeries={totals.totalSeries} />
 
@@ -312,18 +313,18 @@ export default function EmptyRoutine() {
               cursor: "pointer",
             }}
           >
-            + Agregar Ejercicio
+            + {t("add_exercise")}
           </button>
         </div>
       </div>
 
-      <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} />
+      <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} />
 
       <ConfirmModal
         isDark
         open={showDiscardConfirm}
-        title="¿Cancelar entrenamiento?"
-        description="Se perderán todos los datos registrados en esta sesión."
+        title={t("cancel_workout_title")}
+        description={t("cancel_workout_msg")}
         confirmLabel="Sí, cancelar"
         cancelLabel="No, continuar"
         danger

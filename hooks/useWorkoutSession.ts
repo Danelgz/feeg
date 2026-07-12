@@ -34,14 +34,16 @@ export interface PRToastItem {
   exerciseName: string;
   tier: PRTier;
   isFirstEver: boolean;
+  isRepPR: boolean;
+  isOneRMPR: boolean;
   reps: number;
   weight: number;
   weightUnit: string;
   deltaWeight: number | null;
   deltaOneRMPercent: number | null;
+  /** Peso anterior a este mismo número de reps, cuando existe — para el detalle "antes / ahora". */
+  previousWeight: number | null;
 }
-
-const PR_TOAST_HOLD_MS = 3200;
 
 export function useWorkoutSession({
   workoutId,
@@ -179,18 +181,14 @@ export function useWorkoutSession({
   // Cola de avisos de récord personal — como máximo uno visible a la vez (nunca apilados).
   // El PR se calcula aquí (no en el reducer) porque el hook es quien necesita el resultado en
   // el momento del dispatch para encolar el toast y disparar sonido/vibración sin re-derivarlo.
+  // El temporizador de cuánto se mantiene visible vive en el propio PRToast (no aquí), porque
+  // ahora es interactivo: al hacer clic para ver el detalle, la desaparición automática se pausa.
   const [prToastQueue, setPRToastQueue] = useState<PRToastItem[]>([]);
   const prToast = prToastQueue[0] ?? null;
 
   const dismissPRToast = useCallback(() => {
     setPRToastQueue((q) => q.slice(1));
   }, []);
-
-  useEffect(() => {
-    if (!prToast) return;
-    const timeout = setTimeout(dismissPRToast, PR_TOAST_HOLD_MS);
-    return () => clearTimeout(timeout);
-  }, [prToast?.id, dismissPRToast]);
 
   const toggleSeriesComplete = useCallback(
     (exerciseUid: string, serieUid: string) => {
@@ -206,6 +204,7 @@ export function useWorkoutSession({
       dispatch({ type: "TOGGLE_SERIES_COMPLETE", exerciseUid, serieUid, prResult });
 
       if (exercise && serie && prResult && (prResult.isPR || prResult.isFirstEver)) {
+        const weight = Number(serie.weight);
         setPRToastQueue((q) => [
           ...q,
           {
@@ -213,11 +212,14 @@ export function useWorkoutSession({
             exerciseName: exercise.name,
             tier: prResult.tier ?? "minor",
             isFirstEver: prResult.isFirstEver,
+            isRepPR: prResult.isRepPR,
+            isOneRMPR: prResult.isOneRMPR,
             reps: Number(serie.reps),
-            weight: Number(serie.weight),
+            weight,
             weightUnit: weightUnitFor(exercise),
             deltaWeight: prResult.deltaWeight,
             deltaOneRMPercent: prResult.deltaOneRMPercent,
+            previousWeight: prResult.deltaWeight != null ? weight - prResult.deltaWeight : null,
           },
         ]);
 

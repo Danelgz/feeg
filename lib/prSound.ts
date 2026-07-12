@@ -1,7 +1,7 @@
 // Sonido de récord personal, sintetizado con Web Audio API — sin assets, sin dependencias,
-// cero peso añadido al bundle. Dos tonos ascendentes cortos (cuarta justa, ~660Hz -> ~880Hz),
-// consonantes y breves, en la línea de los sonidos de éxito del ecosistema Apple. El nivel
-// "historic" añade un tercer tono como remate, sin cambiar el carácter del sonido.
+// cero peso añadido al bundle. Timbre tipo "acierto de juego" (dos notas ascendentes brillantes,
+// bi-bling), pedido explícitamente por el usuario en vez del chime más discreto de la v1. El
+// nivel "historic" añade una tercera nota como remate, sin cambiar el carácter del sonido.
 
 let sharedContext: AudioContext | null = null;
 
@@ -16,18 +16,30 @@ function getAudioContext(): AudioContext | null {
   return sharedContext;
 }
 
-function playTone(ctx: AudioContext, freq: number, startTime: number, duration: number, peakGain: number) {
+function playTone(
+  ctx: AudioContext,
+  freq: number,
+  startTime: number,
+  duration: number,
+  peakGain: number,
+  type: OscillatorType = "triangle"
+) {
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
-  osc.type = "sine";
+  osc.type = type;
   osc.frequency.value = freq;
   gain.gain.setValueAtTime(0, startTime);
-  gain.gain.linearRampToValueAtTime(peakGain, startTime + 0.02);
+  gain.gain.linearRampToValueAtTime(peakGain, startTime + 0.015);
   gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
   osc.connect(gain);
   gain.connect(ctx.destination);
   osc.start(startTime);
   osc.stop(startTime + duration + 0.02);
+}
+
+/** Capa de armónico agudo por encima de una nota — es lo que le da el "brillo" al bling. */
+function playSparkle(ctx: AudioContext, freq: number, startTime: number, duration: number, peakGain: number) {
+  playTone(ctx, freq, startTime, duration, peakGain, "sine");
 }
 
 export type PRSoundTier = "minor" | "major" | "historic";
@@ -39,13 +51,16 @@ export function playPRChime(tier: PRSoundTier = "minor"): void {
 
   try {
     const now = ctx.currentTime;
-    const peakGain = 0.18;
+    const peakGain = 0.22;
 
-    playTone(ctx, 659.25, now, 0.16, peakGain); // Mi5
-    playTone(ctx, 880, now + 0.09, 0.22, peakGain); // La5
+    // Bi-bling: nota base + nota alta con su propio armónico de brillo encima ("sparkle").
+    playTone(ctx, 1046.5, now, 0.13, peakGain); // Do6
+    playTone(ctx, 1567.98, now + 0.08, 0.24, peakGain); // Sol6 — el "bling"
+    playSparkle(ctx, 3135.96, now + 0.08, 0.18, peakGain * 0.4);
 
     if (tier === "historic") {
-      playTone(ctx, 1174.66, now + 0.19, 0.26, peakGain * 0.9); // Re6 — remate del salto grande
+      playTone(ctx, 2093, now + 0.21, 0.24, peakGain * 0.85); // remate del salto grande
+      playSparkle(ctx, 4186, now + 0.21, 0.16, peakGain * 0.3);
     }
   } catch (_) {
     /* Web Audio bloqueado o no soportado del todo — fallar en silencio, nunca romper el flujo. */

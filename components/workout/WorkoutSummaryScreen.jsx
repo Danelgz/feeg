@@ -145,7 +145,7 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], onDone, 
             <div
               style={{
                 backgroundColor: tk.surface,
-                border: `1px solid ${tk.accent}66`,
+                border: `1px solid ${tk.prAccent}66`,
                 borderRadius: tk.radius.lg,
                 padding: "20px",
                 textAlign: "left",
@@ -159,17 +159,17 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], onDone, 
                   width: "32px",
                   height: "32px",
                   borderRadius: tk.radius.full,
-                  backgroundColor: tk.accentSoft,
+                  backgroundColor: tk.prAccentSoft,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
                 }}
               >
-                <Icon name="trendUp" size={18} color={tk.accent} />
+                <Icon name="trendUp" size={18} color={tk.prAccent} />
               </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ color: tk.accent, fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
+                <div style={{ color: tk.prAccent, fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
                   {translate("pr_summary_eyebrow")}
                 </div>
                 <div style={{ color: tk.text, fontSize: "1.05rem", fontWeight: 700, marginBottom: "4px" }}>{hero.name}</div>
@@ -186,14 +186,14 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], onDone, 
                     width: "28px",
                     height: "28px",
                     borderRadius: tk.radius.full,
-                    backgroundColor: tk.accentSoft,
+                    backgroundColor: tk.prAccentSoft,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     flexShrink: 0,
                   }}
                 >
-                  <Icon name="trendUp" size={15} color={tk.accent} />
+                  <Icon name="trendUp" size={15} color={tk.prAccent} />
                 </div>
                 <div style={{ color: tk.text, fontSize: "0.95rem", fontWeight: 700 }}>
                   {realRecords.length >= 4
@@ -216,7 +216,7 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], onDone, 
                   <span style={{ color: tk.text, fontSize: "0.9rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {record.name}
                   </span>
-                  <span style={{ color: tk.accent, fontSize: "0.85rem", fontWeight: 600, flexShrink: 0 }}>
+                  <span style={{ color: tk.prAccent, fontSize: "0.85rem", fontWeight: 600, flexShrink: 0 }}>
                     {buildRecordDeltaShort(record)}
                   </span>
                 </div>

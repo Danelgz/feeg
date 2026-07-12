@@ -17,7 +17,7 @@ export default function EmptyRoutine() {
   const { activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, completedWorkouts, soundEnabled, t } = useUser();
   const tk = getWorkoutTokens();
 
-  const { state, actions, elapsedSeconds, restRemainingSeconds, restActive, totals, prToast } = useWorkoutSession({
+  const { state, actions, elapsedSeconds, restRemainingSeconds, restActive, totals, prToast, dismissPRToast } = useWorkoutSession({
     workoutId: WORKOUT_ID,
     routine: null,
     completedWorkouts,
@@ -320,7 +320,7 @@ export default function EmptyRoutine() {
       </div>
 
       <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} />
-      <PRToast item={prToast} t={t} />
+      <PRToast item={prToast} t={t} onDismiss={dismissPRToast} />
 
       <ConfirmModal
         isDark

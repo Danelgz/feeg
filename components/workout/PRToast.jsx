@@ -1,13 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getWorkoutTokens } from "../../lib/tokens";
 import { Icon } from "../ui";
+
+const HOLD_MS = 3200;
 
 function formatDelta(n) {
   const rounded = Math.round(n * 10) / 10;
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1).replace(".", ",");
 }
 
-function buildCopy(item, t) {
+function buildSummary(item, t) {
   if (item.isFirstEver) {
     return {
       title: t("pr_toast_first_title"),
@@ -43,92 +45,187 @@ function buildCopy(item, t) {
   return { title, detail };
 }
 
+function buildReason(item, t) {
+  if (item.isRepPR && item.isOneRMPR) return t("pr_toast_reason_both");
+  if (item.isRepPR) return t("pr_toast_reason_weight_only");
+  if (item.isOneRMPR) return t("pr_toast_reason_strength_only");
+  return null;
+}
+
 /**
- * Aviso flotante de récord personal. La cola y la temporización viven en useWorkoutSession —
- * este componente solo anima entrada/salida y hace un cross-fade breve cuando cambia el `item`
- * en cola (mismo patrón "el hook manda, el componente solo pinta" que FloatingRestTimer).
+ * Aviso de récord personal — arriba de la pantalla, para que se lea sin competir con los
+ * controles inferiores. La cola vive en useWorkoutSession (qué toca mostrar); el temporizador de
+ * cuánto se mantiene visible vive aquí, porque ahora es interactivo: un tap expande el detalle
+ * ("por qué" es récord + cuánto se ha mejorado) y pausa la desaparición automática mientras se lee.
  */
-export default function PRToast({ item, t }) {
+export default function PRToast({ item, t, onDismiss }) {
   const tk = getWorkoutTokens();
   const translate = t || ((s) => s);
   const [rendered, setRendered] = useState(item);
   const [visible, setVisible] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const dismissTimeoutRef = useRef(null);
+
+  const clearDismissTimer = () => {
+    if (dismissTimeoutRef.current) {
+      clearTimeout(dismissTimeoutRef.current);
+      dismissTimeoutRef.current = null;
+    }
+  };
+
+  const scheduleDismiss = () => {
+    clearDismissTimer();
+    dismissTimeoutRef.current = setTimeout(() => onDismiss?.(), HOLD_MS);
+  };
 
   useEffect(() => {
     if (!item) {
       setVisible(false);
+      setExpanded(false);
+      clearDismissTimer();
       const timeout = setTimeout(() => setRendered(null), 260);
       return () => clearTimeout(timeout);
     }
     setVisible(false);
+    setExpanded(false);
     setRendered(item);
     let raf2;
     const raf1 = requestAnimationFrame(() => {
       raf2 = requestAnimationFrame(() => setVisible(true));
     });
+    scheduleDismiss();
     return () => {
       cancelAnimationFrame(raf1);
       if (raf2) cancelAnimationFrame(raf2);
+      clearDismissTimer();
     };
   }, [item?.id]);
 
   if (!rendered) return null;
 
-  const { title, detail } = buildCopy(rendered, translate);
+  const canExpand = !rendered.isFirstEver;
+  const { title, detail } = buildSummary(rendered, translate);
+  const reason = canExpand ? buildReason(rendered, translate) : null;
+
+  const handleClick = () => {
+    if (!canExpand) return;
+    setExpanded((prev) => {
+      const next = !prev;
+      if (next) {
+        clearDismissTimer(); // con el detalle abierto no desaparece solo, hasta que se vuelva a tocar
+      } else {
+        scheduleDismiss();
+      }
+      return next;
+    });
+  };
 
   return (
     <div
+      onClick={handleClick}
       style={{
         position: "fixed",
-        bottom: "170px",
-        left: "50%",
-        transform: `translateX(-50%) translateY(${visible ? "0" : "12px"})`,
+        top: "62px",
+        left: "16px",
+        right: "16px",
+        maxWidth: "420px",
+        margin: "0 auto",
+        transform: `translateY(${visible ? "0" : "-10px"})`,
         opacity: visible ? 1 : 0,
         transition: "opacity 320ms cubic-bezier(0.16,1,0.3,1), transform 320ms cubic-bezier(0.16,1,0.3,1)",
-        display: "flex",
-        alignItems: "center",
-        gap: "12px",
-        maxWidth: "320px",
-        padding: "14px 18px",
-        backgroundColor: "rgba(17,17,17,0.92)", // tk.surface a ~92% para el efecto glass
+        backgroundColor: "rgba(17,17,17,0.94)", // tk.surface a ~94% para el efecto glass
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
-        border: "1px solid rgba(46,230,197,0.3)",
+        border: `1px solid ${tk.prAccent}55`,
         borderRadius: tk.radius.lg,
-        boxShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 24px rgba(46,230,197,0.18)",
-        zIndex: 1600,
-        pointerEvents: "none",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.45), 0 0 24px rgba(255,214,10,0.16)",
+        zIndex: 2000,
+        cursor: canExpand ? "pointer" : "default",
+        overflow: "hidden",
       }}
     >
-      <div
-        style={{
-          width: "36px",
-          height: "36px",
-          borderRadius: tk.radius.full,
-          backgroundColor: tk.accentSoft,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        <Icon name="trendUp" size={18} color={tk.accent} />
-      </div>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ color: tk.text, fontSize: "0.9rem", fontWeight: 700, lineHeight: 1.3 }}>{title}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "14px 16px" }}>
         <div
           style={{
-            color: tk.textMuted,
-            fontSize: "0.78rem",
-            lineHeight: 1.3,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
+            width: "36px",
+            height: "36px",
+            borderRadius: tk.radius.full,
+            backgroundColor: tk.prAccentSoft,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
           }}
         >
-          {detail}
+          <Icon name="trendUp" size={18} color={tk.prAccent} />
         </div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ color: tk.text, fontSize: "0.9rem", fontWeight: 700, lineHeight: 1.3 }}>{title}</div>
+          <div
+            style={{
+              color: tk.textMuted,
+              fontSize: "0.78rem",
+              lineHeight: 1.3,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {detail}
+          </div>
+        </div>
+        {canExpand && (
+          <Icon
+            name="chevronRight"
+            size={16}
+            color={tk.textFaint}
+            style={{
+              flexShrink: 0,
+              transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
+              transition: "transform 250ms ease",
+            }}
+          />
+        )}
       </div>
+
+      {canExpand && (
+        <div style={{ maxHeight: expanded ? "160px" : "0px", overflow: "hidden", transition: "max-height 280ms ease" }}>
+          <div style={{ padding: "0 16px 16px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+            <div style={{ display: "flex", gap: "20px", paddingTop: "12px", flexWrap: "wrap" }}>
+              <div>
+                <div style={{ color: tk.textFaint, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {translate("pr_toast_before_label")}
+                </div>
+                <div style={{ color: tk.textMuted, fontSize: "0.85rem", fontWeight: 600, marginTop: "2px" }}>
+                  {rendered.previousWeight != null
+                    ? `${formatDelta(rendered.previousWeight)}${rendered.weightUnit} × ${rendered.reps}`
+                    : "—"}
+                </div>
+              </div>
+              <div>
+                <div style={{ color: tk.prAccent, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {translate("pr_toast_after_label")}
+                </div>
+                <div style={{ color: tk.text, fontSize: "0.85rem", fontWeight: 700, marginTop: "2px" }}>
+                  {formatDelta(rendered.weight)}
+                  {rendered.weightUnit} × {rendered.reps}
+                </div>
+              </div>
+              {rendered.deltaOneRMPercent != null && (
+                <div>
+                  <div style={{ color: tk.textFaint, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    {translate("pr_toast_estimated_1rm")}
+                  </div>
+                  <div style={{ color: tk.prAccent, fontSize: "0.85rem", fontWeight: 700, marginTop: "2px" }}>
+                    +{Math.round(rendered.deltaOneRMPercent)}%
+                  </div>
+                </div>
+              )}
+            </div>
+            {reason && <div style={{ color: tk.textMuted, fontSize: "0.78rem", marginTop: "10px", lineHeight: 1.4 }}>{reason}</div>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -23,7 +23,7 @@ export default function RoutineDetail() {
     return allRoutines.find((r) => r.id.toString() === id.toString()) || null;
   }, [id, allRoutines]);
 
-  const { state, actions, elapsedSeconds, restRemainingSeconds, restActive, totals, prToast } = useWorkoutSession({
+  const { state, actions, elapsedSeconds, restRemainingSeconds, restActive, totals, prToast, dismissPRToast } = useWorkoutSession({
     workoutId,
     routine: foundRoutine,
     completedWorkouts,
@@ -441,7 +441,7 @@ export default function RoutineDetail() {
       </div>
 
       <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} />
-      <PRToast item={prToast} t={t} />
+      <PRToast item={prToast} t={t} onDismiss={dismissPRToast} />
 
       <ConfirmModal
         isDark

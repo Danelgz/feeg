@@ -15,22 +15,23 @@ function SeriesRow({ serie, effectiveIndex, previous, mode, weightUnit, onFieldC
   const isPR = serie.isPR;
   const wasPRRef = useRef(isPR);
   const [justAchieved, setJustAchieved] = useState(false);
-  const [glow, setGlow] = useState({ shadow: "0 0 0 rgba(46,230,197,0)", transition: "none" });
+  const [glow, setGlow] = useState({ shadow: "0 0 0 rgba(255,214,10,0)", transition: "box-shadow 0s linear" });
 
   // Al pasar de "no récord" a "récord" en este render: destello instantáneo del halo que decae
   // en 900ms (mismo patrón de doble rAF que PRToast) + el badge muestra el icono ~380ms antes
-  // de volver a mostrar el número, ahora con el anillo de acento permanente.
+  // de volver a mostrar el número. La fila entera queda teñida de amarillo (prAccent) mientras
+  // esta serie sea récord — no solo el badge — para que se lea de un vistazo al hacer scroll.
   useEffect(() => {
     if (isPR && !wasPRRef.current) {
       wasPRRef.current = true;
       setJustAchieved(true);
       const iconTimeout = setTimeout(() => setJustAchieved(false), 380);
 
-      setGlow({ shadow: "0 0 22px rgba(46,230,197,0.4)", transition: "none" });
+      setGlow({ shadow: "0 0 22px rgba(255,214,10,0.45)", transition: "box-shadow 0s linear" });
       let raf2;
       const raf1 = requestAnimationFrame(() => {
         raf2 = requestAnimationFrame(() => {
-          setGlow({ shadow: "0 0 0 rgba(46,230,197,0)", transition: "box-shadow 900ms ease-out" });
+          setGlow({ shadow: "0 0 0 rgba(255,214,10,0)", transition: "box-shadow 900ms ease-out" });
         });
       });
 
@@ -57,8 +58,11 @@ function SeriesRow({ serie, effectiveIndex, previous, mode, weightUnit, onFieldC
         height: "45px",
         marginBottom: "5px",
         borderRadius: "8px",
+        boxSizing: "border-box",
+        padding: isPR ? "0 8px" : "0",
+        backgroundColor: isPR ? tk.prAccentSoft : "transparent",
         boxShadow: glow.shadow,
-        transition: glow.transition,
+        transition: `background-color 400ms ease, ${glow.transition}`,
       }}
     >
       <div
@@ -69,12 +73,12 @@ function SeriesRow({ serie, effectiveIndex, previous, mode, weightUnit, onFieldC
           alignItems: "center",
           justifyContent: "center",
           boxSizing: "border-box",
-          color: isPR && !justAchieved ? tk.accent : badgeColor,
+          color: isPR && !justAchieved ? tk.prAccent : badgeColor,
           fontWeight: "bold",
           fontSize: "1rem",
           backgroundColor: tk.surfaceAlt,
           borderRadius: "4px",
-          border: isPR ? `1.5px solid ${tk.accent}` : "1.5px solid transparent",
+          border: isPR ? `1.5px solid ${tk.prAccent}` : "1.5px solid transparent",
           padding: "4px 0",
           cursor: "pointer",
           userSelect: "none",
@@ -82,7 +86,7 @@ function SeriesRow({ serie, effectiveIndex, previous, mode, weightUnit, onFieldC
           transition: "transform 380ms cubic-bezier(0.34,1.56,0.64,1), border-color 300ms ease, color 300ms ease",
         }}
       >
-        {justAchieved ? <Icon name="trendUp" size={14} color={tk.accent} /> : badgeLabel}
+        {justAchieved ? <Icon name="trendUp" size={14} color={tk.prAccent} /> : badgeLabel}
       </div>
 
       <div

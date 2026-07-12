@@ -197,7 +197,7 @@ export function useWorkoutSession({
       const willBeCompleted = !!serie && !serie.completed;
 
       const prResult =
-        willBeCompleted && exercise && serie && serie.type !== "W"
+        willBeCompleted && exercise && serie
           ? checkForNewPR(exercise.name, Number(serie.reps), Number(serie.weight), personalRecords)
           : null;
 

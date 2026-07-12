@@ -73,14 +73,15 @@ export interface WorkoutTotals {
 
 /**
  * Totales de una lista de ejercicios de la sesión en curso (o de un completedWorkout ya guardado).
- * Excluye por defecto las series de calentamiento ("W") del volumen/reps — antes el modal de tipo
- * de serie prometía esto pero ningún cálculo real lo aplicaba.
+ * Por defecto no excluye ningún tipo de serie — el calentamiento ("W") cuenta igual que el resto
+ * para el volumen (decisión explícita del usuario). `excludeTypes` sigue disponible para quien lo
+ * necesite puntualmente.
  */
 export function computeWorkoutTotals(
   exercises: { series: ExerciseSeriesLike[] }[],
   opts: { excludeTypes?: string[]; onlyCompleted?: boolean } = {}
 ): WorkoutTotals {
-  const excludeTypes = opts.excludeTypes ?? ["W"];
+  const excludeTypes = opts.excludeTypes ?? [];
   let totalReps = 0;
   let totalVolume = 0;
   let totalSeries = 0;
@@ -125,7 +126,6 @@ export function computePersonalRecords(completedWorkouts: CompletedWorkout[]): P
       const record = map[name];
 
       detail.series.forEach((s) => {
-        if (s.type === "W") return; // el calentamiento no cuenta para récords
         const weight = toNumber(s.weight);
         const reps = Math.round(toNumber(s.reps));
         if (weight <= 0 || reps <= 0) return;

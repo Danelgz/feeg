@@ -1,13 +1,48 @@
-import { memo } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { getWorkoutTokens } from "../../lib/tokens";
 import { Icon } from "../ui";
 
 /**
  * Una fila de serie. Memoizada — con estado indexado por uid (no por posición), tocar una fila
  * no re-renderiza a sus hermanas ni al resto del ejercicio.
+ *
+ * `serie.isPR` es récord genuino (el reducer nunca lo pone a true para "primera vez que se
+ * registra el ejercicio" — eso es `serie.isFirstEver`, que aquí no recibe ningún tratamiento
+ * visual especial para no inflar la señal de "récord real").
  */
 function SeriesRow({ serie, effectiveIndex, previous, mode, weightUnit, onFieldChange, onToggleComplete, onOpenType }) {
   const tk = getWorkoutTokens();
+  const isPR = serie.isPR;
+  const wasPRRef = useRef(isPR);
+  const [justAchieved, setJustAchieved] = useState(false);
+  const [glow, setGlow] = useState({ shadow: "0 0 0 rgba(46,230,197,0)", transition: "none" });
+
+  // Al pasar de "no récord" a "récord" en este render: destello instantáneo del halo que decae
+  // en 900ms (mismo patrón de doble rAF que PRToast) + el badge muestra el icono ~380ms antes
+  // de volver a mostrar el número, ahora con el anillo de acento permanente.
+  useEffect(() => {
+    if (isPR && !wasPRRef.current) {
+      wasPRRef.current = true;
+      setJustAchieved(true);
+      const iconTimeout = setTimeout(() => setJustAchieved(false), 380);
+
+      setGlow({ shadow: "0 0 22px rgba(46,230,197,0.4)", transition: "none" });
+      let raf2;
+      const raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(() => {
+          setGlow({ shadow: "0 0 0 rgba(46,230,197,0)", transition: "box-shadow 900ms ease-out" });
+        });
+      });
+
+      return () => {
+        clearTimeout(iconTimeout);
+        cancelAnimationFrame(raf1);
+        if (raf2) cancelAnimationFrame(raf2);
+      };
+    }
+    wasPRRef.current = isPR;
+  }, [isPR]);
+
   const badgeLabel = serie.type === "W" ? "W" : serie.type === "D" ? "D" : String(effectiveIndex);
   const badgeColor = serie.type === "W" ? tk.accent : serie.type === "D" ? tk.warning : tk.text;
   const previousLabel = previous ? `${previous.weight}${weightUnit} × ${previous.reps}` : "—";
@@ -21,29 +56,33 @@ function SeriesRow({ serie, effectiveIndex, previous, mode, weightUnit, onFieldC
         alignItems: "center",
         height: "45px",
         marginBottom: "5px",
+        borderRadius: "8px",
+        boxShadow: glow.shadow,
+        transition: glow.transition,
       }}
     >
       <div
         onClick={onOpenType}
+        title={isPR ? "Récord personal" : undefined}
         style={{
-          color: badgeColor,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxSizing: "border-box",
+          color: isPR && !justAchieved ? tk.accent : badgeColor,
           fontWeight: "bold",
           fontSize: "1rem",
           backgroundColor: tk.surfaceAlt,
           borderRadius: "4px",
-          textAlign: "center",
+          border: isPR ? `1.5px solid ${tk.accent}` : "1.5px solid transparent",
           padding: "4px 0",
           cursor: "pointer",
           userSelect: "none",
-          position: "relative",
+          transform: justAchieved ? "scale(1.15)" : "scale(1)",
+          transition: "transform 380ms cubic-bezier(0.34,1.56,0.64,1), border-color 300ms ease, color 300ms ease",
         }}
       >
-        {badgeLabel}
-        {serie.isPR && (
-          <span style={{ position: "absolute", top: "-8px", right: "-6px", fontSize: "0.75rem" }} title="Récord personal">
-            🏆
-          </span>
-        )}
+        {justAchieved ? <Icon name="trendUp" size={14} color={tk.accent} /> : badgeLabel}
       </div>
 
       <div

@@ -126,4 +126,8 @@ export const ICONS = {
     { tag: 'line', x1: 5, y1: 12, x2: 19, y2: 12 },
     { tag: 'polyline', points: '12 5 19 12 12 19' },
   ],
+  trendUp: [
+    { tag: 'polyline', points: '22 7 13.5 15.5 8.5 10.5 2 17' },
+    { tag: 'polyline', points: '16 7 22 7 22 13' },
+  ],
 };

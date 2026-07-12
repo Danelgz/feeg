@@ -1,5 +1,6 @@
 import { memo, useState } from "react";
 import { getWorkoutTokens } from "../../lib/tokens";
+import { weightUnitFor } from "../../lib/exerciseStats";
 import { Icon, ConfirmModal } from "../ui";
 import ExerciseThumb from "./ExerciseThumb";
 import ExerciseActionsMenu from "./ExerciseActionsMenu";
@@ -12,12 +13,6 @@ function formatRest(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
   return s === 0 ? `${m}min` : `${m}min ${s}s`;
-}
-
-function weightUnitFor(exercise) {
-  if (exercise.exerciseType === "time") return "m";
-  if (exercise.unit === "lastre") return "L";
-  return "kg";
 }
 
 /**

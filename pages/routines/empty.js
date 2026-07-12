@@ -5,22 +5,23 @@ import { useUser } from "../../context/UserContext";
 import ExerciseSelector from "../../components/ExerciseSelector";
 import { useWorkoutSession } from "../../hooks/useWorkoutSession";
 import { createExerciseFromCatalog } from "../../hooks/workoutSessionReducer";
-import { getExerciseInfo, computeWorkoutTotals } from "../../lib/exerciseStats";
+import { getExerciseInfo, computeWorkoutTotals, buildPRRecordsFromExercises } from "../../lib/exerciseStats";
 import { getWorkoutTokens } from "../../lib/tokens";
 import { ConfirmModal } from "../../components/ui";
-import { ExerciseCard, WorkoutHeader, WorkoutStatsBar, FloatingRestTimer, WorkoutSummaryScreen } from "../../components/workout";
+import { ExerciseCard, WorkoutHeader, WorkoutStatsBar, FloatingRestTimer, WorkoutSummaryScreen, PRToast } from "../../components/workout";
 
 const WORKOUT_ID = "empty";
 
 export default function EmptyRoutine() {
   const router = useRouter();
-  const { activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, completedWorkouts, t } = useUser();
+  const { activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, completedWorkouts, soundEnabled, t } = useUser();
   const tk = getWorkoutTokens();
 
-  const { state, actions, elapsedSeconds, restRemainingSeconds, restActive, totals } = useWorkoutSession({
+  const { state, actions, elapsedSeconds, restRemainingSeconds, restActive, totals, prToast } = useWorkoutSession({
     workoutId: WORKOUT_ID,
     routine: null,
     completedWorkouts,
+    soundEnabled,
   });
 
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
@@ -33,7 +34,7 @@ export default function EmptyRoutine() {
   const [finishComments, setFinishComments] = useState("");
   const [savingWorkout, setSavingWorkout] = useState(false);
   const [finishedWorkout, setFinishedWorkout] = useState(null);
-  const [sessionPRNames, setSessionPRNames] = useState([]);
+  const [sessionPRRecords, setSessionPRRecords] = useState([]);
 
   // Red de seguridad: si el contexto global dice que hay una rutina activa "empty" pero el
   // snapshot local no se restauró (p.ej. localStorage vacío en este navegador), sincroniza.
@@ -75,7 +76,7 @@ export default function EmptyRoutine() {
     setSavingWorkout(true);
 
     const totals = computeWorkoutTotals(state.exercises, { onlyCompleted: true });
-    const prNames = state.exercises.filter((ex) => ex.series.some((s) => s.completed && s.isPR)).map((ex) => ex.name);
+    const prRecords = buildPRRecordsFromExercises(state.exercises);
 
     const completedWorkout = {
       id: Date.now(),
@@ -100,7 +101,7 @@ export default function EmptyRoutine() {
     endRoutine();
     actions.finish();
     setFinishedWorkout(completedWorkout);
-    setSessionPRNames(prNames);
+    setSessionPRRecords(prRecords);
     setSavingWorkout(false);
   };
 
@@ -109,7 +110,7 @@ export default function EmptyRoutine() {
       <Layout hideBottomNav>
         <WorkoutSummaryScreen
           workout={finishedWorkout}
-          prNames={sessionPRNames}
+          prRecords={sessionPRRecords}
           onDone={() => router.push("/routines?tab=completed")}
           t={t}
         />
@@ -319,6 +320,7 @@ export default function EmptyRoutine() {
       </div>
 
       <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} />
+      <PRToast item={prToast} t={t} />
 
       <ConfirmModal
         isDark

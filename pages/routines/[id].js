@@ -5,15 +5,15 @@ import { useUser } from "../../context/UserContext";
 import ExerciseSelector from "../../components/ExerciseSelector";
 import { useWorkoutSession } from "../../hooks/useWorkoutSession";
 import { createExerciseFromCatalog } from "../../hooks/workoutSessionReducer";
-import { getExerciseInfo, computeWorkoutTotals } from "../../lib/exerciseStats";
+import { getExerciseInfo, computeWorkoutTotals, buildPRRecordsFromExercises } from "../../lib/exerciseStats";
 import { getWorkoutTokens } from "../../lib/tokens";
 import { ConfirmModal, Spinner } from "../../components/ui";
-import { ExerciseCard, WorkoutHeader, WorkoutStatsBar, FloatingRestTimer, WorkoutSummaryScreen } from "../../components/workout";
+import { ExerciseCard, WorkoutHeader, WorkoutStatsBar, FloatingRestTimer, WorkoutSummaryScreen, PRToast } from "../../components/workout";
 
 export default function RoutineDetail() {
   const router = useRouter();
   const { id } = router.query;
-  const { routines: allRoutines, activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, completedWorkouts, t, updateRoutine, theme } = useUser();
+  const { routines: allRoutines, activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, completedWorkouts, soundEnabled, t, updateRoutine, theme } = useUser();
   const isDark = theme === "dark";
   const tk = getWorkoutTokens();
   const workoutId = id ? id.toString() : "";
@@ -23,10 +23,11 @@ export default function RoutineDetail() {
     return allRoutines.find((r) => r.id.toString() === id.toString()) || null;
   }, [id, allRoutines]);
 
-  const { state, actions, elapsedSeconds, restRemainingSeconds, restActive, totals } = useWorkoutSession({
+  const { state, actions, elapsedSeconds, restRemainingSeconds, restActive, totals, prToast } = useWorkoutSession({
     workoutId,
     routine: foundRoutine,
     completedWorkouts,
+    soundEnabled,
   });
 
   // Snapshot de la rutina tal como estaba al empezar, para poder ofrecer "actualizar rutina
@@ -50,7 +51,7 @@ export default function RoutineDetail() {
   const [updateOriginalRoutine, setUpdateOriginalRoutine] = useState(false);
   const [savingWorkout, setSavingWorkout] = useState(false);
   const [finishedWorkout, setFinishedWorkout] = useState(null);
-  const [sessionPRNames, setSessionPRNames] = useState([]);
+  const [sessionPRRecords, setSessionPRRecords] = useState([]);
 
   // Red de seguridad: si el contexto global dice que esta rutina ya está activa pero el
   // snapshot local no se restauró, sincroniza.
@@ -152,7 +153,7 @@ export default function RoutineDetail() {
       exerciseDetails.map((ex) => ({ series: ex.series })),
       {}
     );
-    const prNames = state.exercises.filter((ex) => ex.series.some((s) => s.completed && s.isPR)).map((ex) => ex.name);
+    const prRecords = buildPRRecordsFromExercises(state.exercises);
 
     const completedWorkout = {
       id: Date.now(),
@@ -176,7 +177,7 @@ export default function RoutineDetail() {
     endRoutine();
     actions.finish();
     setFinishedWorkout(completedWorkout);
-    setSessionPRNames(prNames);
+    setSessionPRRecords(prRecords);
     setSavingWorkout(false);
   };
 
@@ -203,7 +204,7 @@ export default function RoutineDetail() {
       <Layout hideBottomNav>
         <WorkoutSummaryScreen
           workout={finishedWorkout}
-          prNames={sessionPRNames}
+          prRecords={sessionPRRecords}
           onDone={() => router.push("/routines?tab=completed")}
           t={t}
         />
@@ -440,6 +441,7 @@ export default function RoutineDetail() {
       </div>
 
       <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} />
+      <PRToast item={prToast} t={t} />
 
       <ConfirmModal
         isDark

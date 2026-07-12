@@ -33,6 +33,7 @@ export function UserProvider({ children }) {
   const [followers, setFollowers] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [soundEnabled, setSoundEnabledState] = useState(true);
 
   // Función para mostrar notificaciones personalizadas
   const showNotification = (message, type = 'info', duration = 4000) => {
@@ -67,7 +68,8 @@ export function UserProvider({ children }) {
     const savedWorkouts = localStorage.getItem('completedWorkouts');
     const savedRoutines = localStorage.getItem('routines');
     const savedMeasures = localStorage.getItem('measures');
-    
+    const savedSoundEnabled = localStorage.getItem('soundEnabled');
+
     if (savedUser) try { setUser(JSON.parse(savedUser)); } catch (e) {}
     if (savedTheme) setTheme(savedTheme);
     if (savedThemePreference) setThemePreferenceState(savedThemePreference);
@@ -76,7 +78,13 @@ export function UserProvider({ children }) {
     if (savedWorkouts) try { setCompletedWorkouts(JSON.parse(savedWorkouts)); } catch (e) {}
     if (savedRoutines) try { setRoutines(JSON.parse(savedRoutines)); } catch (e) {}
     if (savedMeasures) try { setMeasures(JSON.parse(savedMeasures)); } catch (e) {}
+    if (savedSoundEnabled !== null) setSoundEnabledState(savedSoundEnabled === 'true');
   }, []);
+
+  const setSoundEnabled = (enabled) => {
+    setSoundEnabledState(enabled);
+    localStorage.setItem('soundEnabled', String(enabled));
+  };
 
   // Función para sincronizar datos desde la nube
   const refreshData = async (force = false) => {
@@ -507,6 +515,8 @@ export function UserProvider({ children }) {
       setThemeMode,
       language,
       updateLanguage,
+      soundEnabled,
+      setSoundEnabled,
       activeRoutine,
       startRoutine,
       endRoutine,

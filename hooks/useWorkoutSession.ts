@@ -13,17 +13,42 @@ import { loadSnapshot, saveSnapshot, clearSnapshot } from "../lib/workoutStorage
 import {
   computePersonalRecords,
   computeWorkoutTotals,
+  checkForNewPR,
+  weightUnitFor,
   type PersonalRecordsMap,
   type CompletedWorkout,
+  type PRTier,
 } from "../lib/exerciseStats";
+import { playPRChime } from "../lib/prSound";
 
 export interface UseWorkoutSessionOptions {
   workoutId: string;
   routine?: { id?: string | number; name: string; exercises: any[] } | null;
   completedWorkouts: CompletedWorkout[];
+  /** Si el usuario ha desactivado el sonido de récord personal en ajustes. Por defecto activo. */
+  soundEnabled?: boolean;
 }
 
-export function useWorkoutSession({ workoutId, routine, completedWorkouts }: UseWorkoutSessionOptions) {
+export interface PRToastItem {
+  id: string;
+  exerciseName: string;
+  tier: PRTier;
+  isFirstEver: boolean;
+  reps: number;
+  weight: number;
+  weightUnit: string;
+  deltaWeight: number | null;
+  deltaOneRMPercent: number | null;
+}
+
+const PR_TOAST_HOLD_MS = 3200;
+
+export function useWorkoutSession({
+  workoutId,
+  routine,
+  completedWorkouts,
+  soundEnabled = true,
+}: UseWorkoutSessionOptions) {
   const [state, dispatch] = useReducer(
     workoutSessionReducer,
     undefined as unknown as WorkoutSessionState,
@@ -150,10 +175,65 @@ export function useWorkoutSession({ workoutId, routine, completedWorkouts }: Use
       dispatch({ type: "SET_SERIES_TYPE", exerciseUid, serieUid, seriesType }),
     []
   );
+
+  // Cola de avisos de récord personal — como máximo uno visible a la vez (nunca apilados).
+  // El PR se calcula aquí (no en el reducer) porque el hook es quien necesita el resultado en
+  // el momento del dispatch para encolar el toast y disparar sonido/vibración sin re-derivarlo.
+  const [prToastQueue, setPRToastQueue] = useState<PRToastItem[]>([]);
+  const prToast = prToastQueue[0] ?? null;
+
+  const dismissPRToast = useCallback(() => {
+    setPRToastQueue((q) => q.slice(1));
+  }, []);
+
+  useEffect(() => {
+    if (!prToast) return;
+    const timeout = setTimeout(dismissPRToast, PR_TOAST_HOLD_MS);
+    return () => clearTimeout(timeout);
+  }, [prToast?.id, dismissPRToast]);
+
   const toggleSeriesComplete = useCallback(
-    (exerciseUid: string, serieUid: string) =>
-      dispatch({ type: "TOGGLE_SERIES_COMPLETE", exerciseUid, serieUid, prMap: personalRecords }),
-    [personalRecords]
+    (exerciseUid: string, serieUid: string) => {
+      const exercise = stateRef.current.exercises.find((ex) => ex.uid === exerciseUid);
+      const serie = exercise?.series.find((s) => s.uid === serieUid);
+      const willBeCompleted = !!serie && !serie.completed;
+
+      const prResult =
+        willBeCompleted && exercise && serie && serie.type !== "W"
+          ? checkForNewPR(exercise.name, Number(serie.reps), Number(serie.weight), personalRecords)
+          : null;
+
+      dispatch({ type: "TOGGLE_SERIES_COMPLETE", exerciseUid, serieUid, prResult });
+
+      if (exercise && serie && prResult && (prResult.isPR || prResult.isFirstEver)) {
+        setPRToastQueue((q) => [
+          ...q,
+          {
+            id: `${serieUid}_${Date.now()}`,
+            exerciseName: exercise.name,
+            tier: prResult.tier ?? "minor",
+            isFirstEver: prResult.isFirstEver,
+            reps: Number(serie.reps),
+            weight: Number(serie.weight),
+            weightUnit: weightUnitFor(exercise),
+            deltaWeight: prResult.deltaWeight,
+            deltaOneRMPercent: prResult.deltaOneRMPercent,
+          },
+        ]);
+
+        if (prResult.isPR) {
+          if (soundEnabled) playPRChime(prResult.tier === "historic" ? "historic" : "minor");
+          if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+            try {
+              navigator.vibrate([40, 60, 20]);
+            } catch (_) {
+              /* no soportado, ignorar */
+            }
+          }
+        }
+      }
+    },
+    [personalRecords, soundEnabled]
   );
   const setExerciseRest = useCallback(
     (exerciseUid: string, restSeconds: number) =>
@@ -187,6 +267,8 @@ export function useWorkoutSession({ workoutId, routine, completedWorkouts }: Use
     restRemainingSeconds,
     restActive,
     totals,
+    prToast,
+    dismissPRToast,
     actions: {
       start,
       setName,

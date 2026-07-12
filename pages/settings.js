@@ -2,10 +2,10 @@ import { useEffect } from "react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { getTokens } from "../lib/tokens";
-import { Icon, Button, Card, PageHeader } from "../components/ui";
+import { Icon, Button, Card, PageHeader, Switch } from "../components/ui";
 
 export default function Settings() {
-  const { theme, themePreference, setThemeMode, isMobile, language, updateLanguage, t, authUser, loginWithGoogle, logout, refreshData } = useUser();
+  const { theme, themePreference, setThemeMode, isMobile, language, updateLanguage, soundEnabled, setSoundEnabled, t, authUser, loginWithGoogle, logout, refreshData } = useUser();
 
   // Forzar refresco de datos al entrar a ajustes
   useEffect(() => {
@@ -164,6 +164,23 @@ export default function Settings() {
               </option>
             ))}
           </select>
+        </div>
+
+        <div style={{ height: "1px", backgroundColor: tk.border }} />
+
+        {/* Apartado de Sonido */}
+        <div style={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          justifyContent: "space-between",
+          alignItems: isMobile ? "flex-start" : "center",
+          gap: isMobile ? "12px" : "0"
+        }}>
+          <div>
+            <div style={{ color: tk.text, fontSize: "1.1rem" }}>{t("sound_pr_label")}</div>
+            <div style={{ color: tk.textMuted, fontSize: "0.85rem", marginTop: "2px" }}>{t("sound_pr_desc")}</div>
+          </div>
+          <Switch isDark={isDark} checked={soundEnabled} onChange={setSoundEnabled} />
         </div>
       </Card>
     </Layout>

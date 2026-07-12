@@ -6,5 +6,6 @@ export { default as ExerciseActionsMenu } from "./ExerciseActionsMenu";
 export { default as SeriesTypeModal } from "./SeriesTypeModal";
 export { default as RestTimePickerModal } from "./RestTimePickerModal";
 export { default as FloatingRestTimer } from "./FloatingRestTimer";
+export { default as PRToast } from "./PRToast";
 export { default as ExerciseCard } from "./ExerciseCard";
 export { default as WorkoutSummaryScreen } from "./WorkoutSummaryScreen";

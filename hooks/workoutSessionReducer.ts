@@ -3,8 +3,7 @@
 // implementación anterior por un único árbol indexado por uid estable: borrar/reordenar nunca
 // desincroniza nada porque no hay ningún índice externo que reindexar.
 
-import type { PersonalRecordsMap } from "../lib/exerciseStats";
-import { checkForNewPR } from "../lib/exerciseStats";
+import type { PRCheckResult, PRTier } from "../lib/exerciseStats";
 
 export type SeriesType = "N" | "W" | "D";
 export type WorkoutStatus = "preview" | "ongoing" | "finished";
@@ -15,7 +14,12 @@ export interface SeriesEntry {
   reps: number | string;
   weight: number | string;
   completed: boolean;
+  /** Récord genuino (no cuenta la primera vez que se registra el ejercicio). */
   isPR: boolean;
+  isFirstEver: boolean;
+  prTier: PRTier | null;
+  prDeltaWeight: number | null;
+  prDeltaOneRMPercent: number | null;
 }
 
 export interface ExerciseSession {
@@ -55,6 +59,10 @@ export function createSeries(overrides: Partial<SeriesEntry> = {}): SeriesEntry 
     weight: "",
     completed: false,
     isPR: false,
+    isFirstEver: false,
+    prTier: null,
+    prDeltaWeight: null,
+    prDeltaOneRMPercent: null,
     ...overrides,
   };
 }
@@ -127,7 +135,7 @@ export type WorkoutSessionAction =
   | { type: "REMOVE_SERIES"; exerciseUid: string; serieUid: string }
   | { type: "UPDATE_SERIES_FIELD"; exerciseUid: string; serieUid: string; field: "reps" | "weight"; value: number | string }
   | { type: "SET_SERIES_TYPE"; exerciseUid: string; serieUid: string; seriesType: SeriesType }
-  | { type: "TOGGLE_SERIES_COMPLETE"; exerciseUid: string; serieUid: string; prMap: PersonalRecordsMap }
+  | { type: "TOGGLE_SERIES_COMPLETE"; exerciseUid: string; serieUid: string; prResult: PRCheckResult | null }
   | { type: "SET_EXERCISE_REST"; exerciseUid: string; restSeconds: number }
   | { type: "SET_EXERCISE_NOTES"; exerciseUid: string; notes: string }
   | { type: "ADJUST_REST"; deltaSeconds: number }
@@ -229,7 +237,6 @@ export function workoutSessionReducer(
     case "TOGGLE_SERIES_COMPLETE": {
       let targetExercise: ExerciseSession | undefined;
       let willBeCompleted = false;
-      let completedSerie: SeriesEntry | undefined;
 
       const exercises = state.exercises.map((ex) => {
         if (ex.uid !== action.exerciseUid) return ex;
@@ -239,13 +246,16 @@ export function workoutSessionReducer(
           series: ex.series.map((s) => {
             if (s.uid !== action.serieUid) return s;
             willBeCompleted = !s.completed;
-            let isPR = false;
-            if (willBeCompleted && s.type !== "W") {
-              const check = checkForNewPR(ex.name, Number(s.reps), Number(s.weight), action.prMap);
-              isPR = check.isPR;
-            }
-            completedSerie = { ...s, completed: willBeCompleted, isPR };
-            return completedSerie;
+            const pr = willBeCompleted ? action.prResult : null;
+            return {
+              ...s,
+              completed: willBeCompleted,
+              isPR: pr?.isPR ?? false,
+              isFirstEver: pr?.isFirstEver ?? false,
+              prTier: pr?.tier ?? null,
+              prDeltaWeight: pr?.deltaWeight ?? null,
+              prDeltaOneRMPercent: pr?.deltaOneRMPercent ?? null,
+            };
           }),
         };
       });

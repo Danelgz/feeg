@@ -4,6 +4,7 @@ import { useUser } from "../context/UserContext";
 import { getWorkoutsFeed, searchUsers, likeWorkout, addWorkoutComment } from "../lib/firebase";
 import { useRouter } from "next/router";
 import { getTokens } from "../lib/tokens";
+import { translateExerciseName } from "../lib/exerciseTranslation";
 import { ExerciseThumb } from "../components/workout";
 import { Icon, Button, Spinner, EmptyState, Avatar } from "../components/ui";
 
@@ -16,8 +17,11 @@ function formatFeedDuration(workout) {
 }
 
 export default function Home() {
-  const { user, authUser, isLoaded, following, handleFollow, handleUnfollow, isMobile, refreshData, t, theme, showNotification } = useUser();
+  const { user, authUser, isLoaded, following, handleFollow, handleUnfollow, isMobile, refreshData, t, language, theme, showNotification } = useUser();
   const [feedWorkouts, setFeedWorkouts] = useState([]);
+  const [feedCursor, setFeedCursor] = useState(null);
+  const [feedHasMore, setFeedHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [commentingOn, setCommentingOn] = useState(null);
@@ -63,14 +67,31 @@ export default function Home() {
   useEffect(() => {
     const fetchFeed = async () => {
       if (authUser) {
-        // Feed incluye mis entrenos y los de la gente que sigo
+        // Feed incluye mis entrenos y los de la gente que sigo. Reinicia la paginación
+        // cada vez que cambia el usuario o a quién sigue (el cursor anterior ya no vale).
         const userIds = [authUser.uid, ...following];
-        const workouts = await getWorkoutsFeed(userIds);
+        const { workouts, cursor, hasMore } = await getWorkoutsFeed(userIds);
         setFeedWorkouts(workouts);
+        setFeedCursor(cursor);
+        setFeedHasMore(hasMore);
       }
     };
     fetchFeed();
   }, [authUser, following]);
+
+  const handleLoadMoreFeed = async () => {
+    if (!authUser || isLoadingMore || !feedCursor) return;
+    setIsLoadingMore(true);
+    try {
+      const userIds = [authUser.uid, ...following];
+      const { workouts, cursor, hasMore } = await getWorkoutsFeed(userIds, { cursor: feedCursor });
+      setFeedWorkouts(prev => [...prev, ...workouts]);
+      setFeedCursor(cursor);
+      setFeedHasMore(hasMore);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -376,7 +397,7 @@ export default function Home() {
                               <ExerciseThumb name={ex.name} size={36} />
                               <div style={{ flex: 1, fontSize: "0.88rem", color: tk.text, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                 <span style={{ color: tk.textFaint }}>{ex.series?.length || 0} {t("series_label").toLowerCase()}</span>{" "}
-                                {t(ex.name)}
+                                {translateExerciseName(ex.name, language)}
                               </div>
                               <Icon
                                 name="chevronRight"
@@ -596,6 +617,14 @@ export default function Home() {
                 </div>
               );
             })
+          )}
+
+          {feedHasMore && (
+            <div style={{ display: "flex", justifyContent: "center", padding: isMobile ? "10px 15px 20px" : "10px 0 0" }}>
+              <Button isDark={isDark} variant="secondary" onClick={handleLoadMoreFeed} disabled={isLoadingMore}>
+                {isLoadingMore ? <Spinner isDark={isDark} size={16} /> : t("load_more")}
+              </Button>
+            </div>
           )}
         </div>
       </div>

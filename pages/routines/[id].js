@@ -7,13 +7,14 @@ import { useWorkoutSession } from "../../hooks/useWorkoutSession";
 import { createExerciseFromCatalog } from "../../hooks/workoutSessionReducer";
 import { getExerciseInfo, computeWorkoutTotals, buildPRRecordsFromExercises, checkWorkoutVolumePR } from "../../lib/exerciseStats";
 import { getWorkoutTokens } from "../../lib/tokens";
+import { translateExerciseName } from "../../lib/exerciseTranslation";
 import { ConfirmModal, Spinner } from "../../components/ui";
 import { ExerciseCard, WorkoutHeader, WorkoutStatsBar, FloatingRestTimer, WorkoutSummaryScreen, PRToast } from "../../components/workout";
 
 export default function RoutineDetail() {
   const router = useRouter();
   const { id } = router.query;
-  const { routines: allRoutines, activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, completedWorkouts, soundEnabled, t, updateRoutine, theme } = useUser();
+  const { routines: allRoutines, activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, completedWorkouts, soundEnabled, t, language, updateRoutine, theme } = useUser();
   const isDark = theme === "dark";
   const tk = getWorkoutTokens();
   const workoutId = id ? id.toString() : "";
@@ -249,7 +250,7 @@ export default function RoutineDetail() {
               const info = getExerciseInfo(exercise.name);
               return (
                 <div key={idx} style={{ backgroundColor: tk.surfaceAlt, padding: "12px", marginBottom: "10px", borderRadius: tk.radius.sm, border: `1px solid ${tk.border}` }}>
-                  <h3 style={{ margin: "0 0 8px 0", color: tk.accent }}>{t(exercise.name)}</h3>
+                  <h3 style={{ margin: "0 0 8px 0", color: tk.accent }}>{translateExerciseName(exercise.name, language)}</h3>
                   <p style={{ margin: 0, color: tk.textMuted }}>
                     {exercise.series.length} {t("series_label")} · {t("rest_between_series")} {exercise.rest}s
                   </p>
@@ -423,6 +424,7 @@ export default function RoutineDetail() {
               exercise={exercise}
               mode="live"
               translate={t}
+              translateExerciseName={(name) => translateExerciseName(name, language)}
               previousSeries={previousByName[exercise.name]}
               onUpdateField={(serieUid, field, value) => actions.updateSeriesField(exercise.uid, serieUid, field, value)}
               onToggleComplete={(serieUid) => actions.toggleSeriesComplete(exercise.uid, serieUid)}

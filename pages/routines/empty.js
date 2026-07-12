@@ -7,6 +7,7 @@ import { useWorkoutSession } from "../../hooks/useWorkoutSession";
 import { createExerciseFromCatalog } from "../../hooks/workoutSessionReducer";
 import { getExerciseInfo, computeWorkoutTotals, buildPRRecordsFromExercises, checkWorkoutVolumePR } from "../../lib/exerciseStats";
 import { getWorkoutTokens } from "../../lib/tokens";
+import { translateExerciseName } from "../../lib/exerciseTranslation";
 import { ConfirmModal } from "../../components/ui";
 import { ExerciseCard, WorkoutHeader, WorkoutStatsBar, FloatingRestTimer, WorkoutSummaryScreen, PRToast } from "../../components/workout";
 
@@ -14,7 +15,7 @@ const WORKOUT_ID = "empty";
 
 export default function EmptyRoutine() {
   const router = useRouter();
-  const { activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, completedWorkouts, soundEnabled, t } = useUser();
+  const { activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, completedWorkouts, soundEnabled, t, language } = useUser();
   const tk = getWorkoutTokens();
 
   const { state, actions, elapsedSeconds, restRemainingSeconds, restActive, totals, prToast, dismissPRToast } = useWorkoutSession({
@@ -293,6 +294,7 @@ export default function EmptyRoutine() {
               exercise={exercise}
               mode="live"
               translate={t}
+              translateExerciseName={(name) => translateExerciseName(name, language)}
               previousSeries={undefined}
               onUpdateField={(serieUid, field, value) => actions.updateSeriesField(exercise.uid, serieUid, field, value)}
               onToggleComplete={(serieUid) => actions.toggleSeriesComplete(exercise.uid, serieUid)}

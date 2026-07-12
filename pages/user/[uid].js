@@ -5,6 +5,7 @@ import { useUser } from "../../context/UserContext";
 import { getFromCloud, getUserWorkouts, likeWorkout, addWorkoutComment, getFollowersCount, getFollowersList, getFollowingList } from "../../lib/firebase";
 import { exercisesList } from "../../data/exercises";
 import { getTokens } from "../../lib/tokens";
+import { translateExerciseName } from "../../lib/exerciseTranslation";
 import { Icon, Button, Spinner, EmptyState } from "../../components/ui";
 
 export default function UserProfile() {
@@ -20,6 +21,7 @@ export default function UserProfile() {
     handleUnfollow,
     theme,
     t,
+    language,
     showNotification
   } = useUser();
 
@@ -495,7 +497,7 @@ export default function UserProfile() {
                                     style={{ width: "80%", height: "auto" }}
                                   />
                                 </div>
-                                <div style={{ fontWeight: "500", fontSize: "1rem", color: tk.accent }}>{t(ex.name)}</div>
+                                <div style={{ fontWeight: "500", fontSize: "1rem", color: tk.accent }}>{translateExerciseName(ex.name, language)}</div>
                               </div>
 
                               <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>

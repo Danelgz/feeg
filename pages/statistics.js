@@ -2,9 +2,49 @@ import { useEffect, useMemo, useState } from "react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { useRouter } from "next/router";
-import MuscleMap from "../components/MuscleMap";
 import { getTokens } from "../lib/tokens";
 import { PageHeader } from "../components/ui";
+import {
+  EnhancedStatCard,
+  MiniStatCard,
+  OverviewSection,
+  MuscleMapSection,
+  SeriesByGroupSection,
+  DistributionChartSection,
+  MonthlyReportSection,
+  ExerciseStatsSection,
+} from "../components/statistics";
+
+const GROUP_MAP = {
+  Pecho: ['Pecho', 'Chest'],
+  Espalda: ['Espalda', 'Back'],
+  Hombros: ['Hombros', 'Shoulders'],
+  Bíceps: ['Bíceps', 'Biceps'],
+  Tríceps: ['Tríceps', 'Triceps'],
+  Cuádriceps: ['Cuádriceps', 'Quads'],
+  Femoral: ['Femoral', 'Hamstrings'],
+  Glúteos: ['Glúteos', 'Glutes'],
+  Gemelos: ['Gemelos', 'Calves'],
+  Abdomen: ['Abdomen', 'Abs', 'Core'],
+  Antebrazos: ['Antebrazos', 'Forearms'],
+  Oblicuos: ['Oblicuos', 'Obliques']
+};
+
+const NAV_BUTTONS = [
+  { key: 'overview', label: 'Resumen', description: 'Visión general de tu progreso' },
+  { key: 'muscleMap', label: 'Mapa muscular', description: 'Intensidad por músculo esta semana' },
+  { key: 'seriesByGroup', label: 'Series por grupo', description: 'Distribución de series por músculo' },
+  { key: 'distChart', label: 'Distribución', description: 'Gráfico de distribución muscular' },
+  { key: 'monthly', label: 'Mensual', description: 'Informe detallado por mes' },
+  { key: 'exerciseStats', label: 'Ejercicios', description: 'Estadísticas por ejercicio' }
+];
+
+const PERIOD_OPTIONS = [
+  { key: '7days', label: '7 días' },
+  { key: '30days', label: '30 días' },
+  { key: '90days', label: '90 días' },
+  { key: 'all', label: 'Todo' }
+];
 
 export default function Statistics() {
   const { t, theme, isMobile, completedWorkouts: workouts } = useUser();
@@ -13,7 +53,6 @@ export default function Statistics() {
   const tk = getTokens(isDark);
   const [activeView, setActiveView] = useState('overview');
   const [isNarrow, setIsNarrow] = useState(false);
-  const [timeFilter, setTimeFilter] = useState('all'); // all, week, month, year
   const [selectedPeriod, setSelectedPeriod] = useState('7days'); // 7days, 30days, 90days, all
 
   useEffect(() => {
@@ -22,22 +61,6 @@ export default function Statistics() {
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
-
-  const groupMap = {
-    Pecho: ['Pecho', 'Chest'],
-    Espalda: ['Espalda', 'Back'],
-    Hombros: ['Hombros', 'Shoulders'],
-    Bíceps: ['Bíceps', 'Biceps'],
-    Tríceps: ['Tríceps', 'Triceps'],
-    Cuádriceps: ['Cuádriceps', 'Quads'],
-    Femoral: ['Femoral', 'Hamstrings'],
-    Glúteos: ['Glúteos', 'Glutes'],
-    Gemelos: ['Gemelos', 'Calves'],
-    Abdomen: ['Abdomen', 'Abs', 'Core'],
-    Antebrazos: ['Antebrazos', 'Forearms'],
-    Oblicuos: ['Oblicuos', 'Obliques']
-  };
-
 
   const filteredWorkouts = useMemo(() => {
     if (!workouts) return [];
@@ -133,33 +156,24 @@ export default function Statistics() {
 
   const seriesByGroup = useMemo(() => {
     const counts = {};
-    Object.keys(groupMap).forEach(g => counts[g] = 0);
+    Object.keys(GROUP_MAP).forEach(g => counts[g] = 0);
     filteredWorkouts.forEach(w => {
       if (Array.isArray(w.details)) {
         w.details.forEach(d => {
           const grp = d.muscleGroup || d.group || d.category;
-          const found = Object.keys(groupMap).find(key => groupMap[key].includes(grp));
+          const found = Object.keys(GROUP_MAP).find(key => GROUP_MAP[key].includes(grp));
           if (found) counts[found] += Number(d.series || 0);
         });
       }
       if (!Array.isArray(w.details) && w.seriesByGroup) {
         Object.entries(w.seriesByGroup).forEach(([k, v]) => {
-          const found = Object.keys(groupMap).find(key => groupMap[key].includes(k) || key === k);
+          const found = Object.keys(GROUP_MAP).find(key => GROUP_MAP[key].includes(k) || key === k);
           if (found) counts[found] += Number(v || 0);
         });
       }
     });
     return counts;
   }, [filteredWorkouts]);
-
-  const navButtons = [
-    { key: 'overview', label: 'Resumen', description: 'Visión general de tu progreso' },
-    { key: 'muscleMap', label: 'Mapa muscular', description: 'Intensidad por músculo esta semana' },
-    { key: 'seriesByGroup', label: 'Series por grupo', description: 'Distribución de series por músculo' },
-    { key: 'distChart', label: 'Distribución', description: 'Gráfico de distribución muscular' },
-    { key: 'monthly', label: 'Mensual', description: 'Informe detallado por mes' },
-    { key: 'exerciseStats', label: 'Ejercicios', description: 'Estadísticas por ejercicio' }
-  ];
 
   return (
     <Layout>
@@ -177,12 +191,7 @@ export default function Statistics() {
         marginBottom: '20px',
         flexWrap: 'wrap'
       }}>
-        {[
-          { key: '7days', label: '7 días' },
-          { key: '30days', label: '30 días' },
-          { key: '90days', label: '90 días' },
-          { key: 'all', label: 'Todo' }
-        ].map(period => (
+        {PERIOD_OPTIONS.map(period => (
           <button
             key={period.key}
             onClick={() => setSelectedPeriod(period.key)}
@@ -210,7 +219,7 @@ export default function Statistics() {
         gap: '12px',
         marginBottom: '24px'
       }}>
-        {navButtons.map(btn => (
+        {NAV_BUTTONS.map(btn => (
           <button
             key={btn.key}
             onClick={() => setActiveView(btn.key)}
@@ -250,26 +259,10 @@ export default function Statistics() {
         gap: '16px',
         marginBottom: '24px'
       }}>
-        <EnhancedStatCard 
-          label="Entrenamientos" 
-          value={stats.sessions} 
-          isDark={isDark} 
-        />
-        <EnhancedStatCard 
-          label="Series Totales" 
-          value={stats.totalSeries} 
-          isDark={isDark} 
-        />
-        <EnhancedStatCard 
-          label="Volumen (kg)" 
-          value={stats.totalVolume.toLocaleString()} 
-          isDark={isDark} 
-        />
-        <EnhancedStatCard 
-          label="Racha" 
-          value={`${stats.streak} días`} 
-          isDark={isDark} 
-        />
+        <EnhancedStatCard label="Entrenamientos" value={stats.sessions} isDark={isDark} />
+        <EnhancedStatCard label="Series Totales" value={stats.totalSeries} isDark={isDark} />
+        <EnhancedStatCard label="Volumen (kg)" value={stats.totalVolume.toLocaleString()} isDark={isDark} />
+        <EnhancedStatCard label="Racha" value={`${stats.streak} días`} isDark={isDark} />
       </div>
 
       {/* Secondary Stats */}
@@ -304,611 +297,5 @@ export default function Statistics() {
         <ExerciseStatsSection isDark={isDark} workouts={workouts} t={t} />
       )}
     </Layout>
-  );
-}
-
-function EnhancedStatCard({ label, value, isDark }) {
-  return (
-    <div style={{
-      backgroundColor: isDark ? '#1a1a1a' : '#fff',
-      border: `1px solid ${isDark ? '#333' : '#e0e0e0'}`,
-      borderRadius: '16px',
-      padding: '20px',
-      transition: 'all 0.3s ease'
-    }}>
-      <div style={{ fontSize: '0.75rem', color: isDark ? '#888' : '#666', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.5px' }}>{label}</div>
-      <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: isDark ? '#fff' : '#333' }}>{value}</div>
-    </div>
-  );
-}
-
-function MiniStatCard({ label, value, isDark }) {
-  return (
-    <div style={{
-      backgroundColor: isDark ? '#1a1a1a' : '#fff',
-      border: `1px solid ${isDark ? '#333' : '#e0e0e0'}`,
-      borderRadius: '12px',
-      padding: '16px'
-    }}>
-      <div style={{ fontSize: '0.7rem', color: isDark ? '#888' : '#666', textTransform: 'uppercase', marginBottom: '2px' }}>{label}</div>
-      <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: isDark ? '#fff' : '#333' }}>{value}</div>
-    </div>
-  );
-}
-
-function OverviewSection({ isDark, isMobile, workouts, t, stats }) {
-  const items = workouts
-    .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
-    .slice(0, 8);
-  
-  const getTimeAgo = (timestamp) => {
-    if (!timestamp) return "";
-    const seconds = Math.floor((Date.now() - timestamp) / 1000);
-    let interval = seconds / 31536000;
-    if (interval > 1) return Math.floor(interval) + "a";
-    interval = seconds / 2592000;
-    if (interval > 1) return Math.floor(interval) + "mes";
-    interval = seconds / 604800;
-    if (interval > 1) return Math.floor(interval) + "sem.";
-    interval = seconds / 86400;
-    if (interval > 1) return Math.floor(interval) + "d";
-    interval = seconds / 3600;
-    if (interval > 1) return Math.floor(interval) + "h";
-    interval = seconds / 60;
-    if (interval > 1) return Math.floor(interval) + "m";
-    return Math.floor(seconds) + "s";
-  };
-
-  return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr',
-      gap: '20px'
-    }}>
-      <section style={{
-        backgroundColor: isDark ? '#1a1a1a' : '#fff',
-        border: isDark ? '1px solid #333' : '1px solid #e0e0e0',
-        borderRadius: '16px',
-        padding: '24px'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 style={{ margin: 0, color: isDark ? '#fff' : '#333', fontSize: '1.3rem', fontWeight: 'bold' }}>Entrenamientos Recientes</h2>
-          <span style={{ fontSize: '0.85rem', color: '#1dd1a1', fontWeight: '600' }}>{items.length} registros</span>
-        </div>
-        {workouts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '16px' }}>📊</div>
-            <p style={{ color: isDark ? '#aaa' : '#666', fontSize: '1rem' }}>{t('stats_no_data')}</p>
-            <p style={{ color: isDark ? '#888' : '#999', fontSize: '0.85rem', marginTop: '8px' }}>Comienza tu entrenamiento para ver estadísticas</p>
-          </div>
-        ) : (
-          <div style={{ maxHeight: '500px', overflowY: 'auto', WebkitOverflowScrolling: 'touch', paddingRight: '8px' }}>
-            {items.map((w, index) => (
-              <div key={w.id} style={{
-                backgroundColor: isDark ? '#0f0f0f' : '#f9f9f9',
-                border: isDark ? '1px solid #2a2a2a' : '1px solid #eee',
-                borderRadius: '12px',
-                padding: isMobile ? '14px' : '16px',
-                marginBottom: '12px',
-                transition: 'all 0.2s ease',
-                cursor: 'pointer'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.borderColor = '#1dd1a1';
-                e.currentTarget.style.transform = 'translateX(4px)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.borderColor = isDark ? '#2a2a2a' : '#eee';
-                e.currentTarget.style.transform = 'translateX(0)';
-              }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '50%',
-                      backgroundColor: 'rgba(29, 209, 161, 0.1)',
-                      color: '#1dd1a1',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 'bold',
-                      fontSize: '0.9rem'
-                    }}>
-                      {index + 1}
-                    </div>
-                    <strong style={{ color: isDark ? '#fff' : '#333', fontSize: '1rem' }}>{w.name}</strong>
-                  </div>
-                  <span style={{ color: isDark ? '#888' : '#666', fontSize: '0.8rem', backgroundColor: isDark ? '#1a1a1a' : '#f0f0f0', padding: '4px 10px', borderRadius: '12px' }}>
-                    {getTimeAgo(w.completedAt)}
-                  </span>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '10px' }}>
-                  <MiniStat label="Ejercicios" value={w.exercises} isDark={isDark} />
-                  <MiniStat label="Series" value={w.series} isDark={isDark} />
-                  <MiniStat label="Reps" value={w.totalReps} isDark={isDark} />
-                  <MiniStat label="Volumen" value={(w.totalVolume || 0).toLocaleString()} isDark={isDark} />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section style={{
-        backgroundColor: isDark ? '#1a1a1a' : '#fff',
-        border: isDark ? '1px solid #333' : '1px solid #e0e0e0',
-        borderRadius: '16px',
-        padding: '24px'
-      }}>
-        <h2 style={{ margin: 0, marginBottom: '20px', color: isDark ? '#fff' : '#333', fontSize: '1.3rem', fontWeight: 'bold' }}>Logros</h2>
-        <div style={{ display: 'grid', gap: '16px' }}>
-          <AchievementCard 
-            title="Racha Actual" 
-            value={`${stats.streak} días`} 
-            description="Días consecutivos" 
-            isDark={isDark} 
-          />
-          <AchievementCard 
-            title="Volumen Total" 
-            value={`${stats.totalVolume.toLocaleString()} kg`} 
-            description="Peso levantado" 
-            isDark={isDark} 
-          />
-          <AchievementCard 
-            title="Tiempo Entrenado" 
-            value={`${stats.totalTimeMin} min`} 
-            description="En el gimnasio" 
-            isDark={isDark} 
-          />
-          <AchievementCard 
-            title="Mejor Día" 
-            value={stats.bestDay || 'N/A'} 
-            description="Día más activo" 
-            isDark={isDark} 
-          />
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function AchievementCard({ title, value, description, isDark }) {
-  return (
-    <div style={{
-      backgroundColor: isDark ? '#0f0f0f' : '#f9f9f9',
-      border: isDark ? '1px solid #2a2a2a' : '1px solid #eee',
-      borderRadius: '12px',
-      padding: '16px'
-    }}>
-      <div style={{ fontSize: '0.75rem', color: isDark ? '#888' : '#666', textTransform: 'uppercase', marginBottom: '2px' }}>{title}</div>
-      <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: isDark ? '#fff' : '#333', marginBottom: '2px' }}>{value}</div>
-      <div style={{ fontSize: '0.75rem', color: '#1dd1a1' }}>{description}</div>
-    </div>
-  );
-}
-
-function SeriesByGroupSection({ isDark, seriesByGroup, t }) {
-  const entries = Object.entries(seriesByGroup).sort((a, b) => b[1] - a[1]);
-  const maxVal = entries[0]?.[1] || 1;
-  const [tooltip, setTooltip] = useState(null);
-
-  return (
-    <section style={{
-      backgroundColor: isDark ? '#1a1a1a' : '#fff',
-      border: isDark ? '1px solid #333' : '1px solid #e0e0e0',
-      borderRadius: '16px',
-      padding: '24px'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2 style={{ margin: 0, color: isDark ? '#fff' : '#333', fontSize: '1.3rem', fontWeight: 'bold' }}>Series por Grupo Muscular</h2>
-        <span style={{ fontSize: '0.85rem', color: '#1dd1a1', fontWeight: '600' }}>{entries.filter(([_, n]) => n > 0).length} grupos activos</span>
-      </div>
-      {entries.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '16px' }}>�</div>
-          <p style={{ color: isDark ? '#aaa' : '#666', fontSize: '1rem' }}>{t('stats_no_data')}</p>
-        </div>
-      ) : (
-        <div>
-          {entries.map(([g, n]) => (
-            <div key={g} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-              <div style={{ width: '120px', color: isDark ? '#ddd' : '#444', fontSize: '0.9rem', fontWeight: '500' }}>{t(g) || g}</div>
-              <div
-                style={{ flex: 1, height: '20px', background: isDark ? '#0f0f0f' : '#eee', borderRadius: '999px', overflow: 'visible', position: 'relative', cursor: 'pointer' }}
-                onMouseEnter={(e) => setTooltip({ g, n, x: e.clientX, y: e.clientY })}
-                onMouseMove={(e) => setTooltip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : prev)}
-                onMouseLeave={() => setTooltip(null)}
-                onTouchStart={(e) => { const t2 = e.touches[0]; setTooltip({ g, n, x: t2.clientX, y: t2.clientY }); }}
-                onTouchEnd={() => setTimeout(() => setTooltip(null), 900)}
-              >
-                <div style={{
-                  width: `${n === 0 ? 2 : Math.min(100, (n / maxVal) * 100)}%`,
-                  height: '100%',
-                  background: n > 0 ? 'linear-gradient(90deg, #1dd1a1, #19b088)' : (isDark ? '#333' : '#ddd'),
-                  borderRadius: '999px',
-                  transition: 'width 0.4s ease'
-                }} />
-              </div>
-              <div style={{ width: '50px', textAlign: 'right', color: isDark ? '#fff' : '#333', fontWeight: 'bold', fontSize: '0.95rem' }}>{n}</div>
-            </div>
-          ))}
-
-          {/* Tooltip */}
-          {tooltip && (
-            <div style={{
-              position: 'fixed',
-              left: tooltip.x + 12,
-              top: tooltip.y - 36,
-              backgroundColor: isDark ? '#1a1a1a' : '#333',
-              color: '#fff',
-              padding: '8px 16px',
-              borderRadius: '10px',
-              fontSize: '0.9rem',
-              fontWeight: '600',
-              pointerEvents: 'none',
-              zIndex: 9999,
-              border: '1px solid #1dd1a1',
-              whiteSpace: 'nowrap',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-            }}>
-              {t(tooltip.g) || tooltip.g}: <span style={{ color: '#1dd1a1' }}>{tooltip.n} series</span>
-            </div>
-          )}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function DistributionChartSection({ isDark, seriesByGroup, t }) {
-  const total = Object.values(seriesByGroup).reduce((a, b) => a + b, 0) || 1;
-  const [tooltip, setTooltip] = useState(null);
-
-  return (
-    <section style={{
-      backgroundColor: isDark ? '#1a1a1a' : '#fff',
-      border: isDark ? '1px solid #333' : '1px solid #e0e0e0',
-      borderRadius: '16px',
-      padding: '24px',
-      position: 'relative'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2 style={{ margin: 0, color: isDark ? '#fff' : '#333', fontSize: '1.3rem', fontWeight: 'bold' }}>Distribución Muscular</h2>
-        <span style={{ fontSize: '0.85rem', color: '#1dd1a1', fontWeight: '600' }}>{total} series totales</span>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
-        {Object.entries(seriesByGroup).map(([g, n]) => (
-          <div key={g} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '120px', color: isDark ? '#ddd' : '#444', fontSize: '0.9rem', fontWeight: '500' }}>{t(g) || g}</div>
-            <div
-              style={{ flex: 1, height: '20px', background: isDark ? '#0f0f0f' : '#eee', borderRadius: '999px', overflow: 'visible', position: 'relative', cursor: 'pointer' }}
-              onMouseEnter={(e) => setTooltip({ g, n, pct: Math.round((n / total) * 100), x: e.clientX, y: e.clientY })}
-              onMouseMove={(e) => setTooltip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : prev)}
-              onMouseLeave={() => setTooltip(null)}
-              onTouchStart={(e) => { const t2 = e.touches[0]; setTooltip({ g, n, pct: Math.round((n / total) * 100), x: t2.clientX, y: t2.clientY }); }}
-              onTouchEnd={() => setTimeout(() => setTooltip(null), 900)}
-            >
-              <div style={{
-                width: `${(n / total) * 100}%`,
-                height: '100%',
-                background: n > 0 ? 'linear-gradient(90deg, #1dd1a1, #19b088)' : (isDark ? '#333' : '#ddd'),
-                borderRadius: '999px',
-                transition: 'width 0.4s ease'
-              }} />
-            </div>
-            <div style={{ width: '60px', textAlign: 'right', color: isDark ? '#fff' : '#333', fontWeight: 'bold', fontSize: '0.95rem' }}>{Math.round((n / total) * 100)}%</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Tooltip */}
-      {tooltip && (
-        <div style={{
-          position: 'fixed',
-          left: tooltip.x + 12,
-          top: tooltip.y - 36,
-          backgroundColor: isDark ? '#1a1a1a' : '#333',
-          color: '#fff',
-          padding: '8px 16px',
-          borderRadius: '10px',
-          fontSize: '0.9rem',
-          fontWeight: '600',
-          pointerEvents: 'none',
-          zIndex: 9999,
-          border: '1px solid #1dd1a1',
-          whiteSpace: 'nowrap',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-        }}>
-          {t(tooltip.g) || tooltip.g}: <span style={{ color: '#1dd1a1' }}>{tooltip.pct}% ({tooltip.n} series)</span>
-        </div>
-      )}
-    </section>
-  );
-}
-
-function MuscleMapSection({ isDark, workouts, t, router }) {
-  const groupMap = {
-    Pecho: ['Pecho', 'Chest'],
-    Espalda: ['Espalda', 'Back'],
-    Hombros: ['Hombros', 'Shoulders'],
-    Bíceps: ['Bíceps', 'Biceps'],
-    Tríceps: ['Tríceps', 'Triceps'],
-    Cuádriceps: ['Cuádriceps', 'Quads'],
-    Femoral: ['Femoral', 'Hamstrings'],
-    Glúteos: ['Glúteos', 'Glutes'],
-    Gemelos: ['Gemelos', 'Calves'],
-    Abdomen: ['Abdomen', 'Abs', 'Core'],
-    Antebrazo: ['Antebrazo', 'Antebrazos', 'Forearms'],
-    Cuello: ['Cuello', 'Neck']
-  };
-
-  // Siempre se calcula sobre los últimos 7 días, independientemente del filtro de periodo de la página.
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const weekWorkouts = (workouts || []).filter(w => w.completedAt && new Date(w.completedAt) >= weekAgo);
-
-  const muscleSeriesCount = {};
-  Object.keys(groupMap).forEach(g => muscleSeriesCount[g] = 0);
-
-  weekWorkouts.forEach(w => {
-    if (Array.isArray(w.details)) {
-      w.details.forEach(d => {
-        const grp = d.muscleGroup || d.group || d.category;
-        const found = Object.keys(groupMap).find(key => groupMap[key].includes(grp));
-        if (found) muscleSeriesCount[found] += Number(d.series || 0);
-      });
-    }
-    if (!Array.isArray(w.details) && w.seriesByGroup) {
-      Object.entries(w.seriesByGroup).forEach(([k, v]) => {
-        const found = Object.keys(groupMap).find(key => groupMap[key].includes(k) || key === k);
-        if (found) muscleSeriesCount[found] += Number(v || 0);
-      });
-    }
-  });
-
-  return (
-    <section style={{
-      backgroundColor: isDark ? '#1a1a1a' : '#fff',
-      border: isDark ? '1px solid #333' : '1px solid #e0e0e0',
-      borderRadius: '16px',
-      padding: '24px'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-        <h2 style={{ margin: 0, color: isDark ? '#fff' : '#333', fontSize: '1.3rem', fontWeight: 'bold' }}>Mapa Muscular Semanal</h2>
-        <span style={{ fontSize: '0.85rem', color: '#1dd1a1', fontWeight: '600' }}>Últimos 7 días</span>
-      </div>
-      {weekWorkouts.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🧍</div>
-          <p style={{ color: isDark ? '#aaa' : '#666', fontSize: '1rem' }}>{t('stats_no_data')}</p>
-          <p style={{ color: isDark ? '#888' : '#999', fontSize: '0.85rem', marginTop: '8px' }}>Entrena esta semana para ver tu mapa muscular</p>
-        </div>
-      ) : (
-        <MuscleMap
-          seriesByMuscle={muscleSeriesCount}
-          isDark={isDark}
-          onMuscleClick={(group) => router.push(`/statistics/${encodeURIComponent(group)}`)}
-          labelForGroup={(group) => t(group) || group}
-        />
-      )}
-    </section>
-  );
-}
-
-function MonthlyReportSection({ isDark, workouts, t }) {
-  const byMonth = {};
-  workouts.forEach(w => {
-    if (!w.completedAt) return;
-    const d = new Date(w.completedAt);
-    const key = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
-    if (!byMonth[key]) byMonth[key] = { sessions: 0, series: 0, reps: 0, volume: 0, timeMin: 0 };
-    byMonth[key].sessions += 1;
-    byMonth[key].series += Number(w.series || 0);
-    byMonth[key].reps += Number(w.totalReps || 0);
-    byMonth[key].volume += Number(w.totalVolume || 0);
-    byMonth[key].timeMin += w.elapsedTime !== undefined ? Math.round((Number(w.elapsedTime || 0)) / 60) : Number(w.totalTime || 0);
-  });
-  const entries = Object.entries(byMonth).sort((a, b) => b[0].localeCompare(a[0]));
-  
-  const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-  
-  const formatMonth = (monthStr) => {
-    const [year, month] = monthStr.split('-');
-    return `${monthNames[parseInt(month) - 1]} ${year}`;
-  };
-
-  return (
-    <section style={{
-      backgroundColor: isDark ? '#1a1a1a' : '#fff',
-      border: isDark ? '1px solid #333' : '1px solid #e0e0e0',
-      borderRadius: '16px',
-      padding: '24px'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2 style={{ margin: 0, color: isDark ? '#fff' : '#333', fontSize: '1.3rem', fontWeight: 'bold' }}>Informe Mensual</h2>
-        <span style={{ fontSize: '0.85rem', color: '#1dd1a1', fontWeight: '600' }}>{entries.length} meses</span>
-      </div>
-      {entries.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '16rem' }}>�</div>
-          <p style={{ color: isDark ? '#aaa' : '#666', fontSize: '1rem' }}>{t('stats_no_data')}</p>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gap: '12px' }}>
-          {entries.map(([month, v], index) => (
-            <div key={month} style={{ 
-              background: isDark ? '#0f0f0f' : '#f9f9f9', 
-              border: isDark ? '1px solid #2a2a2a' : '1px solid #eee', 
-              borderRadius: 12, 
-              padding: 16,
-              transition: 'all 0.2s ease',
-              cursor: 'pointer'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.borderColor = '#1dd1a1';
-              e.currentTarget.style.transform = 'translateX(4px)';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.borderColor = isDark ? '#2a2a2a' : '#eee';
-              e.currentTarget.style.transform = 'translateX(0)';
-            }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(29, 209, 161, 0.1)',
-                    color: '#1dd1a1',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 'bold',
-                    fontSize: '0.9rem'
-                  }}>
-                    {index + 1}
-                  </div>
-                  <strong style={{ color: isDark ? '#fff' : '#333', fontSize: '1.1rem' }}>{formatMonth(month)}</strong>
-                </div>
-                <span style={{ fontSize: '0.85rem', color: '#1dd1a1', fontWeight: '600' }}>{v.sessions} entrenamientos</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
-                <MiniStat label="Entrenos" value={v.sessions} isDark={isDark} />
-                <MiniStat label="Series" value={v.series} isDark={isDark} />
-                <MiniStat label="Reps" value={v.reps} isDark={isDark} />
-                <MiniStat label="Volumen" value={v.volume.toLocaleString()} isDark={isDark} />
-                <MiniStat label="Tiempo" value={v.timeMin} isDark={isDark} />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function ExerciseStatsSection({ isDark, workouts, t }) {
-  const [q, setQ] = useState('');
-  const index = {};
-  workouts.forEach(w => {
-    if (Array.isArray(w.details)) {
-      w.details.forEach(d => {
-        const name = d.name || d.exercise || '';
-        if (!name) return;
-        if (!index[name]) index[name] = { sessions: 0, series: 0, reps: 0, volume: 0 };
-        index[name].sessions += 1;
-        index[name].series += Number(d.series || 0);
-        index[name].reps += Number(d.reps || 0);
-        index[name].volume += Number(d.weight || 0) * Number(d.reps || 0) * Number(d.series || 1);
-      });
-    }
-  });
-  const results = Object.entries(index)
-    .filter(([name]) => name.toLowerCase().includes(q.toLowerCase()))
-    .sort((a, b) => b[1].sessions - a[1].sessions);
-  
-  const exerciseIcons = {
-    'press': '🏋️',
-    'curl': '💪',
-    'squat': '🦵',
-    'deadlift': '🏋️',
-    'pull': '💪',
-    'push': '💪',
-    'lunge': '🦵',
-    'plank': '🎯',
-    'row': '💪',
-    'extension': '💪'
-  };
-  
-  const getExerciseIcon = (name) => {
-    const lowerName = name.toLowerCase();
-    for (const [key, icon] of Object.entries(exerciseIcons)) {
-      if (lowerName.includes(key)) return icon;
-    }
-    return '🏋️';
-  };
-
-  return (
-    <section style={{
-      backgroundColor: isDark ? '#1a1a1a' : '#fff',
-      border: isDark ? '1px solid #333' : '1px solid #e0e0e0',
-      borderRadius: '16px',
-      padding: '24px'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2 style={{ margin: 0, color: isDark ? '#fff' : '#333', fontSize: '1.3rem', fontWeight: 'bold' }}>Estadísticas por Ejercicio</h2>
-        <span style={{ fontSize: '0.85rem', color: '#1dd1a1', fontWeight: '600' }}>{results.length} ejercicios</span>
-      </div>
-      <div style={{ position: 'relative', marginBottom: '20px' }}>
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Buscar ejercicio..."
-          style={{
-            width: '100%', 
-            padding: '14px 16px', 
-            borderRadius: 12, 
-            border: `1px solid ${isDark ? '#333' : '#ddd'}`,
-            background: isDark ? '#0f0f0f' : '#fafafa', 
-            color: isDark ? '#fff' : '#333', 
-            outline: 'none',
-            fontSize: '1rem',
-            transition: 'border-color 0.2s ease'
-          }}
-          onFocus={(e) => e.target.style.borderColor = '#1dd1a1'}
-          onBlur={(e) => e.target.style.borderColor = isDark ? '#333' : '#ddd'}
-        />
-      </div>
-      {results.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '16px' }}>📊</div>
-          <p style={{ color: isDark ? '#aaa' : '#666', fontSize: '1rem' }}>{q ? t('no_exercises_found') : 'No hay datos de ejercicios'}</p>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gap: '12px' }}>
-          {results.map(([name, v], index) => (
-            <div key={name} style={{ 
-              background: isDark ? '#0f0f0f' : '#f9f9f9', 
-              border: isDark ? '1px solid #2a2a2a' : '1px solid #eee', 
-              borderRadius: 12, 
-              padding: 16,
-              transition: 'all 0.2s ease',
-              cursor: 'pointer'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.borderColor = '#1dd1a1';
-              e.currentTarget.style.transform = 'translateX(4px)';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.borderColor = isDark ? '#2a2a2a' : '#eee';
-              e.currentTarget.style.transform = 'translateX(0)';
-            }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <strong style={{ color: isDark ? '#fff' : '#333', fontSize: '1rem' }}>{name}</strong>
-                <span style={{ fontSize: '0.85rem', color: '#1dd1a1', fontWeight: '600' }}>#{index + 1}</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
-                <MiniStat label="Sesiones" value={v.sessions} isDark={isDark} />
-                <MiniStat label="Series" value={v.series} isDark={isDark} />
-                <MiniStat label="Reps" value={v.reps} isDark={isDark} />
-                <MiniStat label="Volumen" value={v.volume.toLocaleString()} isDark={isDark} />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function MiniStat({ label, value, isDark }) {
-  return (
-    <div style={{ textAlign: 'center' }}>
-      <div style={{ fontSize: '0.65rem', color: isDark ? '#666' : '#999', textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ fontSize: '1rem', fontWeight: 'bold', color: isDark ? '#fff' : '#333' }}>{value}</div>
-    </div>
   );
 }

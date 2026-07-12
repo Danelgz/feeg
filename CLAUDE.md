@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # FEEG
 
 FEEG is a premium, free workout tracking app. Mission: become the most beautiful, intuitive
@@ -22,6 +26,10 @@ Every screen should feel premium, modern, clean, fast, delightful. Think Apple/L
 Arc/Stripe as *directional* taste references (generous spacing, restrained color, obvious
 hierarchy, intentional motion) — not a literal per-PR bar for a solo-dev free app. Avoid
 generic AI-looking cards/dashboards. Every page should have its own visual identity.
+
+Theme baseline (`docs/DESIGN.md`): black background, white text, mint green accent, minimalist,
+Apple/Linear inspired, smooth animations, rounded corners, glass effects when appropriate. Never
+ship an ugly interface.
 
 ## Components & code
 
@@ -64,3 +72,73 @@ the user's first draft of an idea.
 
 Not done because it works — done when it looks premium, feels premium, performs well, the
 architecture scales, and the code is clean.
+
+## Commands
+
+```bash
+npm run dev      # start dev server (localhost:3000)
+npm run build    # production build
+npm run start    # run production build
+npm run lint     # ESLint (flat config, eslint.config.js)
+```
+
+No test framework is configured. There is no typecheck script — TypeScript is checked implicitly
+via `next build`/`next dev`; run `npx tsc --noEmit` directly if you need a standalone check.
+
+## Architecture
+
+**Next.js 16 Pages Router** (not App Router) + React 19. Routing is file-based under `pages/`
+(e.g. `pages/routines/[id].js` → `/routines/:id`). API routes live in `pages/api/`.
+
+**State management**: no Redux/Zustand. A single global context, [context/UserContext.js](context/UserContext.js),
+holds auth state, profile, routines, completed workouts, measures, social graph (following/followers),
+theme/language/sound preferences, and exposes all mutator functions (`saveRoutine`, `saveCompletedWorkout`,
+`startRoutine`, `handleFollow`, etc.). It's provided once in [pages/_app.js](pages/_app.js).
+
+**Persistence model — local-first, cloud-synced**: every mutator in `UserContext` writes to
+`localStorage` synchronously (for instant UI) and, if a Firebase user is signed in, fires an
+async write to Firestore via [lib/firebase.js](lib/firebase.js) (`saveToCloud`/`getFromCloud`).
+A `lastLocalUpdate` timestamp guards against a cloud refresh clobbering a very recent local edit
+(see `refreshData` in UserContext). When editing any mutator, preserve this local-write-then-cloud-sync
+order — don't await the cloud write before updating local state/UI.
+
+**Live workout session engine**: the in-progress workout (`pages/routines/empty.js`, `pages/routines/[id].js`)
+is driven by [hooks/useWorkoutSession.ts](hooks/useWorkoutSession.ts), a wrapper around the pure reducer
+in [hooks/workoutSessionReducer.ts](hooks/workoutSessionReducer.ts). The reducer indexes every exercise/series
+by a stable `uid` (not array index), so deleting/reordering series never desyncs state. Session snapshots
+persist to `localStorage` via [lib/workoutStorage.ts](lib/workoutStorage.ts) under the key
+`workoutSessionSnapshot` (intentionally separate from the legacy `workoutTimerState` key used by
+not-yet-migrated screens — don't merge these without checking both call sites). [components/Layout.jsx](components/Layout.jsx)
+reads that snapshot read-only to show a live elapsed-time pill for the active routine from anywhere in the app.
+
+**Design tokens**: [lib/tokens.js](lib/tokens.js) exports `getTokens(isDark)` for normal screens and
+`getWorkoutTokens()` for the always-dark "workout mode" screens (create/empty/[id] routines — these
+three intentionally ignore the user's theme preference). Always derive colors from these instead of
+hardcoding new hex values; the file's comments explain past hex-drift bugs this was built to prevent.
+
+**Firebase**: client SDK in `lib/firebase.js` (Auth via Google popup, Firestore, Storage), guarded so
+the app degrades gracefully if env vars are missing. Firebase Admin (`pages/api/generate-routine.js`,
+`pages/api/chat.js`) verifies ID tokens server-side before calling OpenAI. Firestore security rules are
+in [firestore.rules](firestore.rules); social/profile documents (`users/{uid}`, `usersPublic/{uid}`,
+`workouts/{id}`) are readable by anyone but writable only by their owner (with a carve-out for
+likes/comments on workouts and posts).
+
+**Navigation**: the single source of truth for nav links is [data/navigation.js](data/navigation.js)
+(`NAV_ITEMS`, `MOBILE_PRIMARY_KEYS`), consumed by both `Sidebar.jsx` (desktop) and `BottomNavigation.jsx`
+(mobile). Add new top-level pages there, not by editing the sidebar/bottom-nav directly.
+
+**i18n**: `data/translations.js` holds `es`/`eu` string tables; `UserContext`'s `t(key)` looks up the
+current `language`. Nav labels and most user-facing strings go through translation keys, not literals.
+
+**Styling convention**: inline `style={{...}}` objects sourced from `lib/tokens.js`, not CSS files or
+Tailwind classes (Tailwind is installed but unused). This is a deliberate repo convention — follow it
+for consistency rather than introducing a second styling system.
+
+## Known inconsistencies to be aware of
+
+- Mixed `.js`/`.jsx`/`.ts`/`.tsx` file extensions across `components/`, `hooks/`, and `lib/` reflect an
+  in-progress TypeScript migration — see "Components & code" above for the policy (new files TS,
+  don't force-migrate existing ones).
+- `pages/api/chat.js` and `pages/api/generate-routine.js` call OpenAI directly from a Next.js API route
+  using `OPENAI_API_KEY`/Firebase Admin env vars — these must be set in Vercel/deployment env, not just
+  `.env.local`.

@@ -24,6 +24,7 @@ function ExerciseCard({
   mode = "live",
   previousSeries,
   translate,
+  translateExerciseName,
   onUpdateField,
   onToggleComplete,
   onSetSeriesType,
@@ -36,6 +37,7 @@ function ExerciseCard({
   onOpenHistory,
 }) {
   const t = translate || ((s) => s);
+  const tName = translateExerciseName || ((s) => s);
   const tk = getWorkoutTokens();
   const [menuOpen, setMenuOpen] = useState(false);
   const [restPickerOpen, setRestPickerOpen] = useState(false);
@@ -65,7 +67,7 @@ function ExerciseCard({
           <ExerciseThumb name={exercise.name} />
           <div style={{ minWidth: 0 }}>
             <h2 style={{ margin: 0, color: tk.accent, fontSize: "1.15rem", fontWeight: 500, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {t(exercise.name)}
+              {tName(exercise.name)}
             </h2>
             <span style={{ fontSize: "0.75rem", color: tk.textFaint, textTransform: "uppercase" }}>{t(exercise.muscleGroup)}</span>
           </div>

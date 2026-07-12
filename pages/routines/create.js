@@ -7,12 +7,13 @@ import { useRoutineEditor } from "../../hooks/useRoutineEditor";
 import { createExerciseFromCatalog } from "../../hooks/workoutSessionReducer";
 import { getExerciseInfo, computeWorkoutTotals } from "../../lib/exerciseStats";
 import { getWorkoutTokens } from "../../lib/tokens";
+import { translateExerciseName } from "../../lib/exerciseTranslation";
 import { ExerciseCard, WorkoutHeader, WorkoutStatsBar } from "../../components/workout";
 
 export default function CreateRoutine() {
   const router = useRouter();
   const { id, editWorkout } = router.query;
-  const { t, routines, completedWorkouts, saveRoutine: contextSaveRoutine, updateRoutine: contextUpdateRoutine, updateCompletedWorkout, showNotification } = useUser();
+  const { t, language, routines, completedWorkouts, saveRoutine: contextSaveRoutine, updateRoutine: contextUpdateRoutine, updateCompletedWorkout, showNotification } = useUser();
   const tk = getWorkoutTokens();
 
   const isEditMode = !!id;
@@ -128,6 +129,7 @@ export default function CreateRoutine() {
               exercise={exercise}
               mode="template"
               translate={t}
+              translateExerciseName={(name) => translateExerciseName(name, language)}
               onUpdateField={(serieUid, field, value) => actions.updateSeriesField(exercise.uid, serieUid, field, value)}
               onSetSeriesType={(serieUid, type) => actions.setSeriesType(exercise.uid, serieUid, type)}
               onAddSeries={() => actions.addSeries(exercise.uid)}

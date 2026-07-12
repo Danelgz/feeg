@@ -4,12 +4,13 @@ import Layout from "../components/Layout";
 import { exercisesList } from "../data/exercises";
 import { useUser } from "../context/UserContext";
 import { getTokens } from "../lib/tokens";
+import { translateExerciseName } from "../lib/exerciseTranslation";
 import { Icon, EmptyState, PageHeader } from "../components/ui";
 
 export default function Exercises() {
   const [search, setSearch] = useState("");
   const [expandedGroups, setExpandedGroups] = useState({});
-  const { theme, isMobile, t } = useUser();
+  const { theme, isMobile, t, language } = useUser();
   const isDark = theme === 'dark';
   const tk = getTokens(isDark);
 
@@ -124,7 +125,7 @@ export default function Exercises() {
                         e.currentTarget.style.transform = "translateX(0)";
                       }}
                     >
-                      {t(exercise.name)}
+                      {translateExerciseName(exercise.name, language)}
                     </li>
                   ))}
                 </ul>

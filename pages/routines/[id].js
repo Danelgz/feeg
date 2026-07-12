@@ -54,6 +54,11 @@ export default function RoutineDetail() {
   const [sessionPRRecords, setSessionPRRecords] = useState([]);
   const [sessionWorkoutVolumeRecord, setSessionWorkoutVolumeRecord] = useState(null);
 
+  // Duración configurada del descanso en curso (no cambia con los ajustes +/-10s manuales) —
+  // sirve para pintar la barra de progreso del temporizador de descanso.
+  const restingExercise = state.exercises.find((ex) => ex.uid === state.restForExerciseUid);
+  const totalRestSeconds = restingExercise?.restSeconds || 0;
+
   // Red de seguridad: si el contexto global dice que esta rutina ya está activa pero el
   // snapshot local no se restauró, sincroniza.
   useEffect(() => {
@@ -302,7 +307,7 @@ export default function RoutineDetail() {
             </div>
           </div>
         </div>
-        <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} />
+        <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} totalRestSeconds={totalRestSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} />
       </Layout>
     );
   }
@@ -411,7 +416,7 @@ export default function RoutineDetail() {
 
         <WorkoutStatsBar mode="live" elapsedSeconds={elapsedSeconds} totalVolume={totals.totalVolume} totalSeries={totals.totalSeries} t={t} />
 
-        <div style={{ padding: "20px 15px" }}>
+        <div style={{ padding: "20px 15px 100px" }}>
           {state.exercises.map((exercise) => (
             <ExerciseCard
               key={exercise.uid}
@@ -444,7 +449,7 @@ export default function RoutineDetail() {
         </div>
       </div>
 
-      <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} />
+      <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} totalRestSeconds={totalRestSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} />
       <PRToast item={prToast} t={t} onDismiss={dismissPRToast} />
 
       <ConfirmModal

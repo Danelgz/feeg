@@ -1,4 +1,5 @@
 import { getWorkoutTokens } from "../../lib/tokens";
+import { useUser } from "../../context/UserContext";
 import { Icon } from "../ui";
 
 function formatMinSec(total) {
@@ -19,164 +20,176 @@ function formatElapsed(seconds) {
 }
 
 const adjustBtnStyle = (tk) => ({
-  background: "rgba(0,0,0,0.14)",
+  backgroundColor: tk.surfaceAlt,
   border: "none",
-  color: tk.onAccent,
-  width: 32,
-  height: 32,
-  borderRadius: "50%",
+  color: tk.text,
+  padding: "10px 16px",
+  borderRadius: tk.radius.pill,
   cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
+  fontSize: "0.95rem",
+  fontWeight: 700,
   flexShrink: 0,
   transition: "transform 100ms ease, background-color 150ms ease",
 });
 
 const pressHandlers = {
-  onMouseDown: (e) => (e.currentTarget.style.transform = "scale(0.9)"),
+  onMouseDown: (e) => (e.currentTarget.style.transform = "scale(0.94)"),
   onMouseUp: (e) => (e.currentTarget.style.transform = "scale(1)"),
   onMouseLeave: (e) => (e.currentTarget.style.transform = "scale(1)"),
 };
 
 /**
- * Pastilla flotante: mientras hay descanso activo muestra la cuenta atrás con +/-10s y cancelar;
- * si no, muestra el tiempo total transcurrido (siempre visible aunque se haga scroll más allá
- * de WorkoutStatsBar). No se muestra en absoluto si el entreno no está en curso.
- *
- * Los botones de ajuste usan un solo glifo (+/−) en vez de "+10"/"-10" — ese texto no cabía bien
- * en un círculo de 28px y se veía recortado/distorsionado.
+ * Barra de descanso a todo lo ancho, fija en la parte inferior de la pantalla (mismo lenguaje
+ * visual que apps de referencia como Hevy, con los colores propios de FEEG). Sustituye la pastilla
+ * flotante anterior — más legible, botones más fáciles de acertar con el pulgar, y una barra de
+ * progreso real (no solo el número) que se vuelve ámbar en los últimos 5s como aviso.
  */
-export default function FloatingRestTimer({ restActive, restRemainingSeconds, elapsedSeconds, onAdjust, onStop, t }) {
+export default function FloatingRestTimer({
+  restActive,
+  restRemainingSeconds,
+  totalRestSeconds,
+  elapsedSeconds,
+  onAdjust,
+  onStop,
+  t,
+}) {
   const tk = getWorkoutTokens();
+  const { isMobile } = useUser();
   const translate = t || ((s) => s);
+
+  const progress =
+    restActive && totalRestSeconds > 0
+      ? Math.min(1, Math.max(0, (totalRestSeconds - restRemainingSeconds) / totalRestSeconds))
+      : 0;
+  const isFinalStretch = restActive && restRemainingSeconds > 0 && restRemainingSeconds <= 5;
 
   return (
     <div
       style={{
         position: "fixed",
-        bottom: "90px",
-        left: "50%",
-        transform: "translateX(-50%)",
-        backgroundColor: restActive ? tk.accent : tk.surface,
-        color: restActive ? tk.onAccent : tk.text,
-        border: restActive ? "none" : `1.5px solid ${tk.accent}`,
-        borderRadius: tk.radius.pill,
-        padding: "8px 10px",
-        display: "flex",
-        alignItems: "center",
-        gap: "10px",
-        boxShadow: tk.shadow.float,
+        bottom: 0,
+        left: isMobile ? 0 : "230px",
+        right: 0,
         zIndex: 1500,
-        boxSizing: "border-box",
       }}
     >
-      {restActive ? (
-        <>
-          <button
-            onClick={() => onAdjust(-10)}
-            aria-label="-10s"
-            title="-10s"
-            style={adjustBtnStyle(tk)}
-            {...pressHandlers}
-          >
-            <Icon name="minus" size={15} />
-          </button>
-
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "58px" }}>
-            <span
-              style={{
-                fontSize: "0.6rem",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "0.04em",
-                opacity: 0.75,
-                lineHeight: 1,
-              }}
-            >
-              {translate("rest_prefix")}
-            </span>
-            <span style={{ fontWeight: 800, fontSize: "1.25rem", fontVariantNumeric: "tabular-nums", lineHeight: 1.25 }}>
-              {formatMinSec(restRemainingSeconds)}
-            </span>
-          </div>
-
-          <button
-            onClick={() => onAdjust(10)}
-            aria-label="+10s"
-            title="+10s"
-            style={adjustBtnStyle(tk)}
-            {...pressHandlers}
-          >
-            <Icon name="plus" size={15} />
-          </button>
-
-          <div style={{ width: "1px", height: "26px", backgroundColor: "rgba(0,0,0,0.18)", flexShrink: 0 }} />
-
-          <button
-            onClick={onStop}
-            aria-label={translate("close")}
-            title={translate("close")}
-            style={{
-              background: "none",
-              border: "none",
-              color: tk.onAccent,
-              width: 30,
-              height: 30,
-              borderRadius: "50%",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-              opacity: 0.85,
-              transition: "background-color 150ms ease, opacity 150ms ease",
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.14)";
-              e.currentTarget.style.opacity = 1;
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
-              e.currentTarget.style.opacity = 0.85;
-            }}
-          >
-            <Icon name="close" size={16} />
-          </button>
-        </>
-      ) : (
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0 8px" }}>
+      {restActive && (
+        <div style={{ height: "3px", backgroundColor: tk.surfaceAlt }}>
           <div
             style={{
-              width: 30,
-              height: 30,
-              borderRadius: "50%",
-              backgroundColor: tk.accentSoft,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
+              height: "100%",
+              width: `${progress * 100}%`,
+              backgroundColor: isFinalStretch ? tk.warning : tk.accent,
+              transition: "width 1s linear, background-color 400ms ease",
             }}
-          >
-            <Icon name="clock" size={15} color={tk.accent} />
-          </div>
-          <div style={{ display: "flex", flexDirection: "column" }}>
+          />
+        </div>
+      )}
+
+      <div
+        style={{
+          backgroundColor: tk.surface,
+          borderTop: `1px solid ${tk.border}`,
+          padding: "12px 16px",
+          paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: restActive ? "space-between" : "center",
+          gap: "10px",
+          boxShadow: tk.shadow.float,
+          boxSizing: "border-box",
+        }}
+      >
+        {restActive ? (
+          <>
+            <button onClick={() => onAdjust(-10)} style={adjustBtnStyle(tk)} {...pressHandlers}>
+              −10
+            </button>
+
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, minWidth: 0 }}>
+              <span
+                style={{
+                  fontSize: "0.65rem",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  color: tk.accent,
+                  lineHeight: 1,
+                  marginBottom: "3px",
+                }}
+              >
+                {translate("rest_prefix")}
+              </span>
+              <span
+                style={{
+                  fontWeight: 800,
+                  fontSize: "1.9rem",
+                  fontVariantNumeric: "tabular-nums",
+                  lineHeight: 1,
+                  color: tk.text,
+                  display: "inline-block",
+                  transform: isFinalStretch ? "scale(1.08)" : "scale(1)",
+                  transition: "transform 300ms ease",
+                }}
+              >
+                {formatMinSec(restRemainingSeconds)}
+              </span>
+            </div>
+
+            <button onClick={() => onAdjust(10)} style={adjustBtnStyle(tk)} {...pressHandlers}>
+              +10
+            </button>
+
+            <button
+              onClick={onStop}
+              style={{
+                backgroundColor: tk.accent,
+                color: tk.onAccent,
+                border: "none",
+                borderRadius: tk.radius.pill,
+                padding: "10px 20px",
+                fontWeight: 700,
+                fontSize: "0.9rem",
+                cursor: "pointer",
+                flexShrink: 0,
+                transition: "transform 100ms ease",
+              }}
+              {...pressHandlers}
+            >
+              {translate("skip_rest")}
+            </button>
+          </>
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div
+              style={{
+                width: 26,
+                height: 26,
+                borderRadius: "50%",
+                backgroundColor: tk.accentSoft,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Icon name="clock" size={13} color={tk.accent} />
+            </div>
             <span
               style={{
-                fontSize: "0.6rem",
+                fontSize: "0.7rem",
                 fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: "0.04em",
                 color: tk.accent,
-                lineHeight: 1,
               }}
             >
               {translate("total_time_label")}
             </span>
-            <span style={{ fontWeight: 800, fontSize: "1.1rem", lineHeight: 1.25 }}>{formatElapsed(elapsedSeconds || 0)}</span>
+            <span style={{ fontWeight: 800, fontSize: "1rem", color: tk.text }}>{formatElapsed(elapsedSeconds || 0)}</span>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

@@ -19,7 +19,10 @@ export default function NumberWheel({ value, onChange, min, max, label, step = 1
   const scrollToIndex = (idx, smooth = false) => {
     const el = scrollRef.current;
     if (!el) return;
-    const targetTop = (baseOptions.length + idx) * itemHeight - (containerHeight / 2) + (itemHeight / 2);
+    // El spacer superior ya vale (containerHeight - itemHeight) / 2, así que centrar el ítem i
+    // es simplemente scrollTop = i * itemHeight — restar containerHeight/2 aquí lo desplazaba
+    // dos posiciones (era la causa de que "4m" seleccionara en realidad "4m10s").
+    const targetTop = (baseOptions.length + idx) * itemHeight;
     el.scrollTo({ top: targetTop, behavior: smooth ? 'smooth' : 'auto' });
   };
 
@@ -32,8 +35,9 @@ export default function NumberWheel({ value, onChange, min, max, label, step = 1
   }, []);
 
   const getSelectedIndex = (scrollTop) => {
-    const center = scrollTop + (containerHeight / 2) - (itemHeight / 2);
-    return Math.round(center / itemHeight);
+    // Inversa exacta de scrollToIndex/handleItemClick — sin el offset de containerHeight/2 que
+    // hacía que el índice detectado fuera 2 posiciones mayor que el ítem realmente centrado.
+    return Math.round(scrollTop / itemHeight);
   };
 
   const snapToNearest = (scrollTop) => {
@@ -45,10 +49,10 @@ export default function NumberWheel({ value, onChange, min, max, label, step = 1
     // Infinite loop correction
     let correctedTop = scrollTop;
     if (rawIdx >= baseLen * 2.5) {
-      correctedTop = (rawIdx % baseLen) * itemHeight + baseLen * itemHeight - (containerHeight / 2) + (itemHeight / 2);
+      correctedTop = (rawIdx % baseLen) * itemHeight + baseLen * itemHeight;
       el.scrollTop = correctedTop;
     } else if (rawIdx <= baseLen * 0.5) {
-      correctedTop = ((rawIdx % baseLen) + baseLen) * itemHeight - (containerHeight / 2) + (itemHeight / 2);
+      correctedTop = ((rawIdx % baseLen) + baseLen) * itemHeight;
       el.scrollTop = correctedTop;
     }
 
@@ -89,7 +93,7 @@ export default function NumberWheel({ value, onChange, min, max, label, step = 1
     const el = scrollRef.current;
     if (!el) return;
     const baseLen = baseOptions.length;
-    const targetTop = idx * itemHeight - (containerHeight / 2) + (itemHeight / 2);
+    const targetTop = idx * itemHeight;
     el.scrollTo({ top: targetTop, behavior: 'smooth' });
     const actualIdx = idx % baseLen;
     onChange(baseOptions[actualIdx]);

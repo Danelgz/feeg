@@ -322,7 +322,7 @@ export default function Home() {
                 <div
                   key={workout.id}
                   style={{
-                    backgroundColor: tk.surface,
+                    backgroundColor: isMobile ? tk.bg : tk.surface,
                     border: isMobile ? "none" : `1px solid ${tk.border}`,
                     borderBottom: `1px solid ${tk.border}`,
                     padding: isMobile ? "18px 15px" : "18px",

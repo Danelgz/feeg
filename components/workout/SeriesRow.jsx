@@ -15,17 +15,22 @@ function SeriesRow({ serie, effectiveIndex, previous, mode, weightUnit, onFieldC
   const isPR = serie.isPR;
   const wasPRRef = useRef(isPR);
   const [justAchieved, setJustAchieved] = useState(false);
+  // Aro + color de acento en el badge — dura 2s desde el logro y luego el badge vuelve a verse
+  // como cualquier serie completada normal (la fila se queda verde igualmente, pero sin el aro).
+  const [showRecordHighlight, setShowRecordHighlight] = useState(false);
   const [glow, setGlow] = useState({ shadow: "0 0 0 rgba(46,230,197,0)", transition: "box-shadow 0s linear" });
 
   // Cualquier serie completada tiñe la fila entera de verde claro (tk.accentSoft) — no solo el
   // botón de check. Al pasar de "no récord" a "récord" además: destello instantáneo del halo que
   // decae en 900ms (mismo patrón de doble rAF que PRToast) + el badge muestra el icono ~380ms
-  // antes de volver a mostrar el número, con el anillo de acento permanente mientras sea récord.
+  // antes de volver a mostrar el número, con el anillo de acento visible solo 2s en total.
   useEffect(() => {
     if (isPR && !wasPRRef.current) {
       wasPRRef.current = true;
       setJustAchieved(true);
+      setShowRecordHighlight(true);
       const iconTimeout = setTimeout(() => setJustAchieved(false), 380);
+      const highlightTimeout = setTimeout(() => setShowRecordHighlight(false), 2000);
 
       setGlow({ shadow: "0 0 22px rgba(46,230,197,0.45)", transition: "box-shadow 0s linear" });
       let raf2;
@@ -37,6 +42,7 @@ function SeriesRow({ serie, effectiveIndex, previous, mode, weightUnit, onFieldC
 
       return () => {
         clearTimeout(iconTimeout);
+        clearTimeout(highlightTimeout);
         cancelAnimationFrame(raf1);
         if (raf2) cancelAnimationFrame(raf2);
       };
@@ -73,12 +79,12 @@ function SeriesRow({ serie, effectiveIndex, previous, mode, weightUnit, onFieldC
           alignItems: "center",
           justifyContent: "center",
           boxSizing: "border-box",
-          color: isPR && !justAchieved ? tk.accent : badgeColor,
+          color: showRecordHighlight && !justAchieved ? tk.accent : badgeColor,
           fontWeight: "bold",
           fontSize: "1rem",
           backgroundColor: tk.surfaceAlt,
           borderRadius: "4px",
-          border: isPR ? `1.5px solid ${tk.accent}` : "1.5px solid transparent",
+          border: showRecordHighlight ? `1.5px solid ${tk.accent}` : "1.5px solid transparent",
           padding: "4px 0",
           cursor: "pointer",
           userSelect: "none",

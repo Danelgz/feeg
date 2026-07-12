@@ -409,7 +409,7 @@ export default function RoutineDetail() {
       <div style={{ maxWidth: "900px", margin: "0 auto" }}>
         <WorkoutHeader mode="live" title={state.name || foundRoutine?.name} onBack={() => setShowDiscardConfirm(true)} primaryLabel={t("finish_button")} onPrimaryAction={() => setShowFinishConfirm(true)} />
 
-        <WorkoutStatsBar mode="live" elapsedSeconds={elapsedSeconds} totalVolume={totals.totalVolume} totalSeries={totals.totalSeries} />
+        <WorkoutStatsBar mode="live" elapsedSeconds={elapsedSeconds} totalVolume={totals.totalVolume} totalSeries={totals.totalSeries} t={t} />
 
         <div style={{ padding: "20px 15px" }}>
           {state.exercises.map((exercise) => (

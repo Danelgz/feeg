@@ -130,4 +130,11 @@ export const ICONS = {
     { tag: 'polyline', points: '22 7 13.5 15.5 8.5 10.5 2 17' },
     { tag: 'polyline', points: '16 7 22 7 22 13' },
   ],
+  share: [
+    { tag: 'circle', cx: 18, cy: 5, r: 3 },
+    { tag: 'circle', cx: 6, cy: 12, r: 3 },
+    { tag: 'circle', cx: 18, cy: 19, r: 3 },
+    { tag: 'line', x1: 8.59, y1: 13.51, x2: 15.42, y2: 17.49 },
+    { tag: 'line', x1: 15.41, y1: 6.51, x2: 8.59, y2: 10.49 },
+  ],
 };

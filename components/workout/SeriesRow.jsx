@@ -17,10 +17,10 @@ function SeriesRow({ serie, effectiveIndex, previous, mode, weightUnit, onFieldC
   const [justAchieved, setJustAchieved] = useState(false);
   const [glow, setGlow] = useState({ shadow: "0 0 0 rgba(46,230,197,0)", transition: "box-shadow 0s linear" });
 
-  // Al pasar de "no récord" a "récord" en este render: destello instantáneo del halo que decae
-  // en 900ms (mismo patrón de doble rAF que PRToast) + el badge muestra el icono ~380ms antes
-  // de volver a mostrar el número. La fila entera queda teñida del acento mientras esta serie
-  // sea récord — no solo el badge — para que se lea de un vistazo al hacer scroll.
+  // Cualquier serie completada tiñe la fila entera de verde claro (tk.accentSoft) — no solo el
+  // botón de check. Al pasar de "no récord" a "récord" además: destello instantáneo del halo que
+  // decae en 900ms (mismo patrón de doble rAF que PRToast) + el badge muestra el icono ~380ms
+  // antes de volver a mostrar el número, con el anillo de acento permanente mientras sea récord.
   useEffect(() => {
     if (isPR && !wasPRRef.current) {
       wasPRRef.current = true;
@@ -59,8 +59,8 @@ function SeriesRow({ serie, effectiveIndex, previous, mode, weightUnit, onFieldC
         marginBottom: "5px",
         borderRadius: "8px",
         boxSizing: "border-box",
-        padding: isPR ? "0 8px" : "0",
-        backgroundColor: isPR ? tk.accentSoft : "transparent",
+        padding: serie.completed ? "0 8px" : "0",
+        backgroundColor: serie.completed ? tk.accentSoft : "transparent",
         boxShadow: glow.shadow,
         transition: `background-color 400ms ease, ${glow.transition}`,
       }}

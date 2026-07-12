@@ -1,10 +1,17 @@
-// Sustituye el <img src="/exercises/{nombre}.png"> que existía en 4 sitios distintos apuntando
-// a una carpeta que no existe (siempre caía al fallback). Avatar por iniciales + gradiente
-// determinista por nombre — sin requests de red, identidad visual real ya mismo.
-
 import { gradientForString, getInitials } from "../../lib/avatarColor";
 
-export default function ExerciseThumb({ name, size = 45 }) {
+/** Avatar de usuario: foto si existe, si no iniciales sobre gradiente determinista por nombre. */
+export default function Avatar({ photoURL, name, size = 40, style }) {
+  if (photoURL) {
+    return (
+      <img
+        src={photoURL}
+        alt=""
+        style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0, ...style }}
+      />
+    );
+  }
+
   const [from, to] = gradientForString(name);
 
   return (
@@ -20,8 +27,9 @@ export default function ExerciseThumb({ name, size = 45 }) {
         flexShrink: 0,
         color: "#000",
         fontWeight: 800,
-        fontSize: size * 0.36,
+        fontSize: size * 0.4,
         letterSpacing: "-0.02em",
+        ...style,
       }}
     >
       {getInitials(name)}

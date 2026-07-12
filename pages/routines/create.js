@@ -119,7 +119,7 @@ export default function CreateRoutine() {
           onPrimaryAction={handleSave}
         />
 
-        <WorkoutStatsBar mode="template" totalVolume={totals.totalVolume} totalSeries={totals.totalSeries} exerciseCount={state.exercises.length} />
+        <WorkoutStatsBar mode="template" totalVolume={totals.totalVolume} totalSeries={totals.totalSeries} exerciseCount={state.exercises.length} t={t} />
 
         <div style={{ padding: "20px 15px" }}>
           {state.exercises.map((exercise) => (

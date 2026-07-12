@@ -14,10 +14,12 @@ import {
   computePersonalRecords,
   computeWorkoutTotals,
   checkForNewPR,
+  calculateOneRM,
   weightUnitFor,
   type PersonalRecordsMap,
   type CompletedWorkout,
   type PRTier,
+  type PRTypeResult,
 } from "../lib/exerciseStats";
 import { playPRChime } from "../lib/prSound";
 
@@ -34,15 +36,13 @@ export interface PRToastItem {
   exerciseName: string;
   tier: PRTier;
   isFirstEver: boolean;
-  isRepPR: boolean;
-  isOneRMPR: boolean;
+  /** Uno por cada tipo de récord conseguido en esta serie (peso, reps, 1RM, volumen). */
+  types: PRTypeResult[];
   reps: number;
   weight: number;
   weightUnit: string;
-  deltaWeight: number | null;
-  deltaOneRMPercent: number | null;
-  /** Peso anterior a este mismo número de reps, cuando existe — para el detalle "antes / ahora". */
-  previousWeight: number | null;
+  /** 1RM estimado de esta serie — se muestra en el detalle aunque no sea en sí un récord de 1RM. */
+  estimatedOneRM: number;
 }
 
 export function useWorkoutSession({
@@ -205,6 +205,7 @@ export function useWorkoutSession({
 
       if (exercise && serie && prResult && (prResult.isPR || prResult.isFirstEver)) {
         const weight = Number(serie.weight);
+        const reps = Number(serie.reps);
         setPRToastQueue((q) => [
           ...q,
           {
@@ -212,19 +213,16 @@ export function useWorkoutSession({
             exerciseName: exercise.name,
             tier: prResult.tier ?? "minor",
             isFirstEver: prResult.isFirstEver,
-            isRepPR: prResult.isRepPR,
-            isOneRMPR: prResult.isOneRMPR,
-            reps: Number(serie.reps),
+            types: prResult.types,
+            reps,
             weight,
             weightUnit: weightUnitFor(exercise),
-            deltaWeight: prResult.deltaWeight,
-            deltaOneRMPercent: prResult.deltaOneRMPercent,
-            previousWeight: prResult.deltaWeight != null ? weight - prResult.deltaWeight : null,
+            estimatedOneRM: calculateOneRM(weight, reps),
           },
         ]);
 
         if (prResult.isPR) {
-          if (soundEnabled) playPRChime(prResult.tier === "historic" ? "historic" : "minor");
+          if (soundEnabled) playPRChime();
           if (typeof navigator !== "undefined" && "vibrate" in navigator) {
             try {
               navigator.vibrate([40, 60, 20]);

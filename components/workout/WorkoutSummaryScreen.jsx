@@ -1,4 +1,5 @@
 import { getWorkoutTokens } from "../../lib/tokens";
+import { pickPrimaryPRType } from "../../lib/exerciseStats";
 import { Icon } from "../ui";
 
 function formatDuration(seconds) {
@@ -15,36 +16,41 @@ function formatDelta(n) {
 
 /** Línea de detalle larga, para la tarjeta "hero" de un único récord. */
 function buildRecordDetail(record, t) {
-  if (record.tier === "historic" && record.deltaOneRMPercent != null) {
-    return t("pr_summary_historic_detail").replace("{pct}", String(Math.round(record.deltaOneRMPercent)));
-  }
-  if (record.deltaWeight != null && record.deltaWeight > 0) {
-    if (record.previousWeight != null) {
-      return t("pr_summary_weight_detail")
-        .replace("{delta}", formatDelta(record.deltaWeight))
-        .replace("{unit}", record.weightUnit)
-        .replace("{prev}", formatDelta(record.previousWeight));
+  if (record.tier === "historic") {
+    const oneRMType = record.types.find((x) => x.type === "oneRM");
+    if (oneRMType && oneRMType.deltaPercent != null) {
+      return t("pr_summary_historic_detail").replace("{pct}", String(Math.round(oneRMType.deltaPercent)));
     }
-    return `+${formatDelta(record.deltaWeight)}${record.weightUnit}`;
   }
-  if (record.deltaOneRMPercent != null && record.deltaOneRMPercent > 0) {
-    return t("pr_summary_percent_detail").replace("{pct}", String(Math.round(record.deltaOneRMPercent)));
+
+  const primary = pickPrimaryPRType(record.types);
+  if (!primary) return null;
+
+  switch (primary.type) {
+    case "weight":
+      return t("pr_summary_weight_detail")
+        .replace("{delta}", formatDelta(primary.deltaAbsolute))
+        .replace("{unit}", record.weightUnit)
+        .replace("{prev}", formatDelta(primary.previousValue));
+    case "reps":
+      return t("pr_summary_reps_detail").replace("{delta}", String(Math.round(primary.deltaAbsolute)));
+    case "oneRM":
+      return t("pr_summary_percent_detail").replace("{pct}", String(Math.round(primary.deltaPercent ?? 0)));
+    case "setVolume":
+      return t("pr_summary_volume_detail").replace("{delta}", formatDelta(primary.deltaAbsolute)).replace("{unit}", record.weightUnit);
+    default:
+      return null;
   }
-  return null;
 }
 
 /** Delta corto, para las filas de la lista compacta cuando hay varios récords. */
 function buildRecordDeltaShort(record) {
-  if (record.tier === "historic" && record.deltaOneRMPercent != null) {
-    return `+${Math.round(record.deltaOneRMPercent)}%`;
-  }
-  if (record.deltaWeight != null && record.deltaWeight > 0) {
-    return `+${formatDelta(record.deltaWeight)}${record.weightUnit}`;
-  }
-  if (record.deltaOneRMPercent != null && record.deltaOneRMPercent > 0) {
-    return `+${Math.round(record.deltaOneRMPercent)}%`;
-  }
-  return "";
+  const primary = pickPrimaryPRType(record.types);
+  if (!primary) return "";
+
+  if (primary.type === "reps") return `+${Math.round(primary.deltaAbsolute)}`;
+  if (primary.type === "oneRM") return `+${Math.round(primary.deltaPercent ?? 0)}%`;
+  return `+${formatDelta(primary.deltaAbsolute)}${record.weightUnit}`;
 }
 
 /**
@@ -54,16 +60,17 @@ function buildRecordDeltaShort(record) {
  * `prRecords` (uno por ejercicio, ya deduplicado por el llamador) trae `tier: null` para los
  * ejercicios que solo tuvieron un "primer registro" — esos NO cuentan como récord real (no hay
  * nada que superar) y se muestran aparte, en una línea discreta, para no inflar la sensación de
- * cuántos récords se han batido de verdad.
+ * cuántos récords se han batido de verdad. `workoutVolumeRecord` es el 5º tipo de récord —
+ * volumen total de la sesión completa — y se muestra aparte porque no pertenece a ningún ejercicio.
  */
-export default function WorkoutSummaryScreen({ workout, prRecords = [], onDone, t }) {
+export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutVolumeRecord = null, onDone, t }) {
   const tk = getWorkoutTokens();
   const translate = t || ((s) => s);
 
   const realRecords = prRecords.filter((r) => r.tier);
   const firstEverOnly = prRecords.filter((r) => !r.tier && r.isFirstEver);
   const hasRealRecords = realRecords.length > 0;
-  const hasAnyPRContent = hasRealRecords || firstEverOnly.length > 0;
+  const hasAnyPRContent = hasRealRecords || firstEverOnly.length > 0 || !!workoutVolumeRecord;
   const hero = realRecords.length === 1 ? realRecords[0] : null;
 
   return (
@@ -132,6 +139,48 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], onDone, 
         ))}
       </div>
 
+      {workoutVolumeRecord && (
+        <div
+          style={{
+            width: "100%",
+            maxWidth: "360px",
+            marginBottom: hasRealRecords || firstEverOnly.length > 0 ? "14px" : "36px",
+            backgroundColor: tk.surface,
+            border: `1px solid ${tk.accent}66`,
+            borderRadius: tk.radius.lg,
+            padding: "16px 20px",
+            textAlign: "left",
+            display: "flex",
+            alignItems: "center",
+            gap: "14px",
+            animation: "workout-summary-pr-rise 340ms cubic-bezier(0.16,1,0.3,1) both",
+          }}
+        >
+          <div
+            style={{
+              width: "32px",
+              height: "32px",
+              borderRadius: tk.radius.full,
+              backgroundColor: tk.accentSoft,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Icon name="trendUp" size={18} color={tk.accent} />
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ color: tk.text, fontSize: "0.95rem", fontWeight: 700 }}>{translate("pr_summary_workout_volume_title")}</div>
+            <div style={{ color: tk.textMuted, fontSize: "0.82rem", marginTop: "2px" }}>
+              {translate("pr_summary_workout_volume_detail")
+                .replace("{pct}", String(Math.round(workoutVolumeRecord.deltaPercent ?? 0)))
+                .replace("{prev}", workoutVolumeRecord.previousValue.toLocaleString())}
+            </div>
+          </div>
+        </div>
+      )}
+
       {hasRealRecords && (
         <div
           style={{
@@ -145,7 +194,7 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], onDone, 
             <div
               style={{
                 backgroundColor: tk.surface,
-                border: `1px solid ${tk.prAccent}66`,
+                border: `1px solid ${tk.accent}66`,
                 borderRadius: tk.radius.lg,
                 padding: "20px",
                 textAlign: "left",
@@ -159,17 +208,17 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], onDone, 
                   width: "32px",
                   height: "32px",
                   borderRadius: tk.radius.full,
-                  backgroundColor: tk.prAccentSoft,
+                  backgroundColor: tk.accentSoft,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
                 }}
               >
-                <Icon name="trendUp" size={18} color={tk.prAccent} />
+                <Icon name="trendUp" size={18} color={tk.accent} />
               </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ color: tk.prAccent, fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
+                <div style={{ color: tk.accent, fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
                   {translate("pr_summary_eyebrow")}
                 </div>
                 <div style={{ color: tk.text, fontSize: "1.05rem", fontWeight: 700, marginBottom: "4px" }}>{hero.name}</div>
@@ -186,14 +235,14 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], onDone, 
                     width: "28px",
                     height: "28px",
                     borderRadius: tk.radius.full,
-                    backgroundColor: tk.prAccentSoft,
+                    backgroundColor: tk.accentSoft,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     flexShrink: 0,
                   }}
                 >
-                  <Icon name="trendUp" size={15} color={tk.prAccent} />
+                  <Icon name="trendUp" size={15} color={tk.accent} />
                 </div>
                 <div style={{ color: tk.text, fontSize: "0.95rem", fontWeight: 700 }}>
                   {realRecords.length >= 4
@@ -216,7 +265,7 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], onDone, 
                   <span style={{ color: tk.text, fontSize: "0.9rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {record.name}
                   </span>
-                  <span style={{ color: tk.prAccent, fontSize: "0.85rem", fontWeight: 600, flexShrink: 0 }}>
+                  <span style={{ color: tk.accent, fontSize: "0.85rem", fontWeight: 600, flexShrink: 0 }}>
                     {buildRecordDeltaShort(record)}
                   </span>
                 </div>

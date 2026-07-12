@@ -5,7 +5,7 @@ import { useUser } from "../../context/UserContext";
 import ExerciseSelector from "../../components/ExerciseSelector";
 import { useWorkoutSession } from "../../hooks/useWorkoutSession";
 import { createExerciseFromCatalog } from "../../hooks/workoutSessionReducer";
-import { getExerciseInfo, computeWorkoutTotals, buildPRRecordsFromExercises } from "../../lib/exerciseStats";
+import { getExerciseInfo, computeWorkoutTotals, buildPRRecordsFromExercises, checkWorkoutVolumePR } from "../../lib/exerciseStats";
 import { getWorkoutTokens } from "../../lib/tokens";
 import { ConfirmModal } from "../../components/ui";
 import { ExerciseCard, WorkoutHeader, WorkoutStatsBar, FloatingRestTimer, WorkoutSummaryScreen, PRToast } from "../../components/workout";
@@ -35,6 +35,7 @@ export default function EmptyRoutine() {
   const [savingWorkout, setSavingWorkout] = useState(false);
   const [finishedWorkout, setFinishedWorkout] = useState(null);
   const [sessionPRRecords, setSessionPRRecords] = useState([]);
+  const [sessionWorkoutVolumeRecord, setSessionWorkoutVolumeRecord] = useState(null);
 
   // Red de seguridad: si el contexto global dice que hay una rutina activa "empty" pero el
   // snapshot local no se restauró (p.ej. localStorage vacío en este navegador), sincroniza.
@@ -77,6 +78,7 @@ export default function EmptyRoutine() {
 
     const totals = computeWorkoutTotals(state.exercises, { onlyCompleted: true });
     const prRecords = buildPRRecordsFromExercises(state.exercises);
+    const workoutVolumeRecord = checkWorkoutVolumePR(totals.totalVolume, completedWorkouts);
 
     const completedWorkout = {
       id: Date.now(),
@@ -102,6 +104,7 @@ export default function EmptyRoutine() {
     actions.finish();
     setFinishedWorkout(completedWorkout);
     setSessionPRRecords(prRecords);
+    setSessionWorkoutVolumeRecord(workoutVolumeRecord);
     setSavingWorkout(false);
   };
 
@@ -111,6 +114,7 @@ export default function EmptyRoutine() {
         <WorkoutSummaryScreen
           workout={finishedWorkout}
           prRecords={sessionPRRecords}
+          workoutVolumeRecord={sessionWorkoutVolumeRecord}
           onDone={() => router.push("/routines?tab=completed")}
           t={t}
         />

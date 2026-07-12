@@ -1,12 +1,45 @@
 import { useEffect, useRef, useState } from "react";
 import { getWorkoutTokens } from "../../lib/tokens";
+import { pickPrimaryPRType } from "../../lib/exerciseStats";
 import { Icon } from "../ui";
 
 const HOLD_MS = 3200;
+const TYPE_LABEL_KEYS = {
+  weight: "pr_type_weight",
+  reps: "pr_type_reps",
+  oneRM: "pr_type_onerm",
+  setVolume: "pr_type_set_volume",
+};
 
 function formatDelta(n) {
   const rounded = Math.round(n * 10) / 10;
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1).replace(".", ",");
+}
+
+function formatTypeValue(type, value, weightUnit) {
+  if (type === "reps") return String(Math.round(value));
+  return `${formatDelta(value)}${weightUnit}`;
+}
+
+function formatTypeDeltaShort(primary, item, t) {
+  switch (primary.type) {
+    case "weight":
+      return t("pr_toast_weight_delta")
+        .replace("{delta}", formatDelta(primary.deltaAbsolute))
+        .replace("{unit}", item.weightUnit)
+        .replace("{reps}", String(item.reps));
+    case "reps":
+      return t("pr_toast_reps_delta")
+        .replace("{delta}", String(Math.round(primary.deltaAbsolute)))
+        .replace("{weight}", formatDelta(item.weight))
+        .replace("{unit}", item.weightUnit);
+    case "oneRM":
+      return t("pr_toast_percent_delta").replace("{pct}", String(Math.round(primary.deltaPercent ?? 0)));
+    case "setVolume":
+      return t("pr_toast_volume_delta").replace("{delta}", formatDelta(primary.deltaAbsolute)).replace("{unit}", item.weightUnit);
+    default:
+      return "";
+  }
 }
 
 function buildSummary(item, t) {
@@ -19,44 +52,33 @@ function buildSummary(item, t) {
 
   const title = t("pr_toast_title");
 
-  if (item.tier === "historic" && item.deltaOneRMPercent != null) {
-    return {
-      title,
-      detail: `${item.exerciseName} — ${t("pr_toast_historic_detail").replace(
-        "{pct}",
-        String(Math.round(item.deltaOneRMPercent))
-      )}`,
-    };
+  if (item.tier === "historic") {
+    const oneRMType = item.types.find((x) => x.type === "oneRM");
+    if (oneRMType && oneRMType.deltaPercent != null) {
+      return {
+        title,
+        detail: `${item.exerciseName} — ${t("pr_toast_historic_detail").replace(
+          "{pct}",
+          String(Math.round(oneRMType.deltaPercent))
+        )}`,
+      };
+    }
   }
 
-  let deltaText = "";
-  if (item.deltaWeight != null && item.deltaWeight > 0) {
-    deltaText = t("pr_toast_weight_delta")
-      .replace("{delta}", formatDelta(item.deltaWeight))
-      .replace("{unit}", item.weightUnit)
-      .replace("{reps}", String(item.reps));
-  } else if (item.deltaOneRMPercent != null && item.deltaOneRMPercent > 0) {
-    deltaText = t("pr_toast_percent_delta").replace("{pct}", String(Math.round(item.deltaOneRMPercent)));
-  }
-
+  const primary = pickPrimaryPRType(item.types);
+  const deltaText = primary ? formatTypeDeltaShort(primary, item, t) : "";
   let detail = deltaText ? `${item.exerciseName} — ${deltaText}` : item.exerciseName;
   if (item.tier === "major") detail += t("pr_toast_major_suffix");
 
   return { title, detail };
 }
 
-function buildReason(item, t) {
-  if (item.isRepPR && item.isOneRMPR) return t("pr_toast_reason_both");
-  if (item.isRepPR) return t("pr_toast_reason_weight_only");
-  if (item.isOneRMPR) return t("pr_toast_reason_strength_only");
-  return null;
-}
-
 /**
  * Aviso de récord personal — arriba de la pantalla, para que se lea sin competir con los
  * controles inferiores. La cola vive en useWorkoutSession (qué toca mostrar); el temporizador de
  * cuánto se mantiene visible vive aquí, porque ahora es interactivo: un tap expande el detalle
- * ("por qué" es récord + cuánto se ha mejorado) y pausa la desaparición automática mientras se lee.
+ * (qué tipos de récord se han conseguido, antes/ahora de cada uno, y el 1RM estimado) y pausa la
+ * desaparición automática mientras se lee.
  */
 export default function PRToast({ item, t, onDismiss }) {
   const tk = getWorkoutTokens();
@@ -105,7 +127,7 @@ export default function PRToast({ item, t, onDismiss }) {
 
   const canExpand = !rendered.isFirstEver;
   const { title, detail } = buildSummary(rendered, translate);
-  const reason = canExpand ? buildReason(rendered, translate) : null;
+  const showStandaloneOneRM = canExpand && rendered.estimatedOneRM > 0 && !rendered.types.some((tr) => tr.type === "oneRM");
 
   const handleClick = () => {
     if (!canExpand) return;
@@ -136,9 +158,9 @@ export default function PRToast({ item, t, onDismiss }) {
         backgroundColor: "rgba(17,17,17,0.94)", // tk.surface a ~94% para el efecto glass
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
-        border: `1px solid ${tk.prAccent}55`,
+        border: `1px solid ${tk.accent}55`,
         borderRadius: tk.radius.lg,
-        boxShadow: "0 8px 32px rgba(0,0,0,0.45), 0 0 24px rgba(255,214,10,0.16)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.45), 0 0 24px rgba(46,230,197,0.16)",
         zIndex: 2000,
         cursor: canExpand ? "pointer" : "default",
         overflow: "hidden",
@@ -150,14 +172,14 @@ export default function PRToast({ item, t, onDismiss }) {
             width: "36px",
             height: "36px",
             borderRadius: tk.radius.full,
-            backgroundColor: tk.prAccentSoft,
+            backgroundColor: tk.accentSoft,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
           }}
         >
-          <Icon name="trendUp" size={18} color={tk.prAccent} />
+          <Icon name="trendUp" size={18} color={tk.accent} />
         </div>
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ color: tk.text, fontSize: "0.9rem", fontWeight: 700, lineHeight: 1.3 }}>{title}</div>
@@ -189,40 +211,41 @@ export default function PRToast({ item, t, onDismiss }) {
       </div>
 
       {canExpand && (
-        <div style={{ maxHeight: expanded ? "160px" : "0px", overflow: "hidden", transition: "max-height 280ms ease" }}>
-          <div style={{ padding: "0 16px 16px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-            <div style={{ display: "flex", gap: "20px", paddingTop: "12px", flexWrap: "wrap" }}>
-              <div>
-                <div style={{ color: tk.textFaint, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  {translate("pr_toast_before_label")}
+        <div style={{ maxHeight: expanded ? "220px" : "0px", overflow: "hidden", transition: "max-height 280ms ease" }}>
+          <div style={{ padding: "0 16px 14px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+            <div style={{ paddingTop: "10px" }}>
+              {rendered.types.map((tr) => (
+                <div
+                  key={tr.type}
+                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0" }}
+                >
+                  <span style={{ color: tk.textMuted, fontSize: "0.8rem" }}>{translate(TYPE_LABEL_KEYS[tr.type])}</span>
+                  <span style={{ fontSize: "0.8rem", fontWeight: 600 }}>
+                    <span style={{ color: tk.textFaint }}>{formatTypeValue(tr.type, tr.previousValue, rendered.weightUnit)}</span>
+                    <span style={{ color: tk.textFaint, margin: "0 6px" }}>→</span>
+                    <span style={{ color: tk.accent }}>{formatTypeValue(tr.type, tr.newValue, rendered.weightUnit)}</span>
+                  </span>
                 </div>
-                <div style={{ color: tk.textMuted, fontSize: "0.85rem", fontWeight: 600, marginTop: "2px" }}>
-                  {rendered.previousWeight != null
-                    ? `${formatDelta(rendered.previousWeight)}${rendered.weightUnit} × ${rendered.reps}`
-                    : "—"}
-                </div>
-              </div>
-              <div>
-                <div style={{ color: tk.prAccent, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  {translate("pr_toast_after_label")}
-                </div>
-                <div style={{ color: tk.text, fontSize: "0.85rem", fontWeight: 700, marginTop: "2px" }}>
-                  {formatDelta(rendered.weight)}
-                  {rendered.weightUnit} × {rendered.reps}
-                </div>
-              </div>
-              {rendered.deltaOneRMPercent != null && (
-                <div>
-                  <div style={{ color: tk.textFaint, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    {translate("pr_toast_estimated_1rm")}
-                  </div>
-                  <div style={{ color: tk.prAccent, fontSize: "0.85rem", fontWeight: 700, marginTop: "2px" }}>
-                    +{Math.round(rendered.deltaOneRMPercent)}%
-                  </div>
+              ))}
+              {showStandaloneOneRM && (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "6px 0",
+                    marginTop: "2px",
+                    borderTop: "1px solid rgba(255,255,255,0.06)",
+                  }}
+                >
+                  <span style={{ color: tk.textFaint, fontSize: "0.78rem" }}>{translate("pr_toast_current_1rm")}</span>
+                  <span style={{ color: tk.textMuted, fontSize: "0.78rem", fontWeight: 600 }}>
+                    {formatDelta(rendered.estimatedOneRM)}
+                    {rendered.weightUnit}
+                  </span>
                 </div>
               )}
             </div>
-            {reason && <div style={{ color: tk.textMuted, fontSize: "0.78rem", marginTop: "10px", lineHeight: 1.4 }}>{reason}</div>}
           </div>
         </div>
       )}

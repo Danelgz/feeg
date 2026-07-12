@@ -3,7 +3,7 @@
 // implementación anterior por un único árbol indexado por uid estable: borrar/reordenar nunca
 // desincroniza nada porque no hay ningún índice externo que reindexar.
 
-import type { PRCheckResult, PRTier } from "../lib/exerciseStats";
+import type { PRCheckResult, PRTier, PRTypeResult } from "../lib/exerciseStats";
 
 export type SeriesType = "N" | "W" | "D";
 export type WorkoutStatus = "preview" | "ongoing" | "finished";
@@ -18,8 +18,8 @@ export interface SeriesEntry {
   isPR: boolean;
   isFirstEver: boolean;
   prTier: PRTier | null;
-  prDeltaWeight: number | null;
-  prDeltaOneRMPercent: number | null;
+  /** Uno por cada tipo de récord conseguido (peso, reps, 1RM, volumen de la serie). */
+  prTypes: PRTypeResult[];
 }
 
 export interface ExerciseSession {
@@ -61,8 +61,7 @@ export function createSeries(overrides: Partial<SeriesEntry> = {}): SeriesEntry 
     isPR: false,
     isFirstEver: false,
     prTier: null,
-    prDeltaWeight: null,
-    prDeltaOneRMPercent: null,
+    prTypes: [],
     ...overrides,
   };
 }
@@ -253,8 +252,7 @@ export function workoutSessionReducer(
               isPR: pr?.isPR ?? false,
               isFirstEver: pr?.isFirstEver ?? false,
               prTier: pr?.tier ?? null,
-              prDeltaWeight: pr?.deltaWeight ?? null,
-              prDeltaOneRMPercent: pr?.deltaOneRMPercent ?? null,
+              prTypes: pr?.types ?? [],
             };
           }),
         };

@@ -102,6 +102,7 @@ export function computeWorkoutTotals(
 
 export interface ExercisePersonalRecord {
   byReps: Record<number, number>; // reps -> mejor peso levantado a ese número exacto de reps
+  byWeight: Record<number, number>; // peso -> más repeticiones hechas a ese peso exacto
   best1RM: number;
   maxSingleSetVolume: number;
 }
@@ -119,7 +120,7 @@ export function computePersonalRecords(completedWorkouts: CompletedWorkout[]): P
       if (!name || !Array.isArray(detail.series)) return;
 
       if (!map[name]) {
-        map[name] = { byReps: {}, best1RM: 0, maxSingleSetVolume: 0 };
+        map[name] = { byReps: {}, byWeight: {}, best1RM: 0, maxSingleSetVolume: 0 };
       }
       const record = map[name];
 
@@ -131,6 +132,9 @@ export function computePersonalRecords(completedWorkouts: CompletedWorkout[]): P
 
         if (!record.byReps[reps] || record.byReps[reps] < weight) {
           record.byReps[reps] = weight;
+        }
+        if (!record.byWeight[weight] || record.byWeight[weight] < reps) {
+          record.byWeight[weight] = reps;
         }
         record.best1RM = Math.max(record.best1RM, calculateOneRM(weight, reps));
         record.maxSingleSetVolume = Math.max(record.maxSingleSetVolume, weight * reps);
@@ -149,18 +153,30 @@ export const PR_HISTORIC_THRESHOLD_PCT = 10;
 
 export type PRTier = "first" | "minor" | "major" | "historic";
 
+/**
+ * Hasta 5 tipos de récord distintos que una sola serie puede disparar a la vez (p.ej. una serie
+ * puede ser récord de peso Y de 1RM estimado en el mismo golpe). El 5º tipo, "workoutVolume", no
+ * se detecta aquí — es un récord de sesión completa, ver checkWorkoutVolumePR más abajo.
+ */
+export type PRRecordType = "weight" | "reps" | "oneRM" | "setVolume" | "workoutVolume";
+
+export interface PRTypeResult {
+  type: PRRecordType;
+  previousValue: number;
+  newValue: number;
+  deltaAbsolute: number;
+  deltaPercent: number | null;
+}
+
 export interface PRCheckResult {
   /** Récord genuino (hay algo real que superar). Nunca true si isFirstEver. */
   isPR: boolean;
   /** No existía ningún historial previo para este ejercicio — no es "un récord", es el primero. */
   isFirstEver: boolean;
-  isRepPR: boolean;
-  isOneRMPR: boolean;
+  /** Uno por cada tipo de récord conseguido en esta serie — vacío si no hay ninguno. */
+  types: PRTypeResult[];
   /** null cuando no es ni récord ni primera vez. */
   tier: PRTier | null;
-  previousBestAtReps: number | null;
-  /** Diferencia de peso vs. previousBestAtReps, solo cuando ese valor existe. */
-  deltaWeight: number | null;
   /** % de mejora del 1RM estimado vs. el mejor histórico — la señal que decide el tier. */
   deltaOneRMPercent: number | null;
 }
@@ -168,19 +184,18 @@ export interface PRCheckResult {
 const EMPTY_PR_RESULT: PRCheckResult = {
   isPR: false,
   isFirstEver: false,
-  isRepPR: false,
-  isOneRMPR: false,
+  types: [],
   tier: null,
-  previousBestAtReps: null,
-  deltaWeight: null,
   deltaOneRMPercent: null,
 };
 
 /**
- * Comprueba si una serie recién completada es un récord personal, contra un mapa
- * ya precalculado (computePersonalRecords) — O(1), no recorre completedWorkouts.
- * Distingue "primera vez que se registra este ejercicio" de un récord real: sin historial
- * previo no hay nada que superar, así que isPR queda en false y solo isFirstEver es true.
+ * Comprueba si una serie recién completada es un récord personal, contra un mapa ya
+ * precalculado (computePersonalRecords) — O(1), no recorre completedWorkouts. Distingue
+ * "primera vez que se registra este ejercicio" de un récord real: sin historial previo no hay
+ * nada que superar, así que isPR queda en false y solo isFirstEver es true. Comprueba 4 tipos de
+ * récord de forma independiente (una serie puede disparar varios a la vez): peso a estas
+ * repeticiones exactas, repeticiones a este peso exacto, 1RM estimado, y volumen de la serie.
  */
 export function checkForNewPR(
   exerciseName: string,
@@ -197,15 +212,54 @@ export function checkForNewPR(
     return { ...EMPTY_PR_RESULT, isFirstEver: true, tier: "first" };
   }
 
+  const types: PRTypeResult[] = [];
+
   const previousBestAtReps = record.byReps[roundedReps] ?? null;
-  const isRepPR = previousBestAtReps === null || weight > previousBestAtReps;
-  const deltaWeight = previousBestAtReps !== null ? weight - previousBestAtReps : null;
+  if (previousBestAtReps !== null && weight > previousBestAtReps) {
+    types.push({
+      type: "weight",
+      previousValue: previousBestAtReps,
+      newValue: weight,
+      deltaAbsolute: weight - previousBestAtReps,
+      deltaPercent: (( weight - previousBestAtReps) / previousBestAtReps) * 100,
+    });
+  }
+
+  const previousBestReps = record.byWeight[weight] ?? null;
+  if (previousBestReps !== null && roundedReps > previousBestReps) {
+    types.push({
+      type: "reps",
+      previousValue: previousBestReps,
+      newValue: roundedReps,
+      deltaAbsolute: roundedReps - previousBestReps,
+      deltaPercent: ((roundedReps - previousBestReps) / previousBestReps) * 100,
+    });
+  }
 
   const oneRM = calculateOneRM(weight, roundedReps);
-  const isOneRMPR = oneRM > record.best1RM;
   const deltaOneRMPercent = record.best1RM > 0 ? ((oneRM - record.best1RM) / record.best1RM) * 100 : null;
+  if (record.best1RM > 0 && oneRM > record.best1RM) {
+    types.push({
+      type: "oneRM",
+      previousValue: record.best1RM,
+      newValue: oneRM,
+      deltaAbsolute: oneRM - record.best1RM,
+      deltaPercent: deltaOneRMPercent,
+    });
+  }
 
-  const isPR = isRepPR || isOneRMPR;
+  const setVolume = weight * roundedReps;
+  if (record.maxSingleSetVolume > 0 && setVolume > record.maxSingleSetVolume) {
+    types.push({
+      type: "setVolume",
+      previousValue: record.maxSingleSetVolume,
+      newValue: setVolume,
+      deltaAbsolute: setVolume - record.maxSingleSetVolume,
+      deltaPercent: ((setVolume - record.maxSingleSetVolume) / record.maxSingleSetVolume) * 100,
+    });
+  }
+
+  const isPR = types.length > 0;
   let tier: PRTier | null = null;
   if (isPR) {
     if (deltaOneRMPercent !== null && deltaOneRMPercent >= PR_HISTORIC_THRESHOLD_PCT) tier = "historic";
@@ -213,7 +267,29 @@ export function checkForNewPR(
     else tier = "minor";
   }
 
-  return { isPR, isFirstEver: false, isRepPR, isOneRMPR, tier, previousBestAtReps, deltaWeight, deltaOneRMPercent };
+  return { isPR, isFirstEver: false, types, tier, deltaOneRMPercent };
+}
+
+/**
+ * 5º tipo de récord: volumen total de UN entrenamiento completo, comparado contra el mejor
+ * histórico entre todos los entrenamientos guardados. Se comprueba una sola vez al terminar la
+ * sesión (no por serie, como los otros 4) porque hasta el final no se conoce el total real.
+ */
+export function checkWorkoutVolumePR(
+  newTotalVolume: number,
+  completedWorkouts: { totalVolume?: number }[]
+): PRTypeResult | null {
+  if (newTotalVolume <= 0) return null;
+  const previousBest = (completedWorkouts || []).reduce((max, w) => Math.max(max, w.totalVolume || 0), 0);
+  if (previousBest <= 0 || newTotalVolume <= previousBest) return null;
+
+  return {
+    type: "workoutVolume",
+    previousValue: previousBest,
+    newValue: newTotalVolume,
+    deltaAbsolute: newTotalVolume - previousBest,
+    deltaPercent: ((newTotalVolume - previousBest) / previousBest) * 100,
+  };
 }
 
 export interface PRSummaryRecord {
@@ -221,15 +297,32 @@ export interface PRSummaryRecord {
   /** null cuando el único motivo es "primera vez" — ver isFirstEver. */
   tier: PRTier | null;
   isFirstEver: boolean;
-  deltaWeight: number | null;
-  deltaOneRMPercent: number | null;
-  previousWeight: number | null;
+  types: PRTypeResult[];
   weightUnit: string;
   reps: number;
   weight: number;
 }
 
 const PR_TIER_RANK: Record<PRTier, number> = { historic: 3, major: 2, minor: 1, first: 0 };
+
+const PR_TYPE_PRIORITY: PRRecordType[] = ["weight", "setVolume", "oneRM", "reps"];
+
+/**
+ * Elige qué tipo de récord destacar cuando una serie logra varios a la vez (p.ej. peso + 1RM en
+ * el mismo golpe) — compartido entre PRToast y WorkoutSummaryScreen para que ambos coincidan en
+ * cuál es "el" récord de esa serie.
+ */
+export function pickPrimaryPRType(types: PRTypeResult[]): PRTypeResult | null {
+  for (const key of PR_TYPE_PRIORITY) {
+    const found = types.find((t) => t.type === key);
+    if (found) return found;
+  }
+  return types[0] || null;
+}
+
+function oneRMDeltaPercentOf(types: PRTypeResult[]): number {
+  return types.find((t) => t.type === "oneRM")?.deltaPercent ?? 0;
+}
 
 /**
  * Un registro por ejercicio (no por serie) para la pantalla de resumen final — si hubo varias
@@ -250,21 +343,17 @@ export function buildPRRecordsFromExercises(
       const rankA = a.isPR ? PR_TIER_RANK[a.prTier as PRTier] ?? 0 : 0;
       const rankB = b.isPR ? PR_TIER_RANK[b.prTier as PRTier] ?? 0 : 0;
       if (rankB !== rankA) return rankB > rankA ? b : a;
-      return (b.prDeltaOneRMPercent ?? 0) > (a.prDeltaOneRMPercent ?? 0) ? b : a;
+      return oneRMDeltaPercentOf(b.prTypes || []) > oneRMDeltaPercentOf(a.prTypes || []) ? b : a;
     });
 
-    const weight = toNumber(best.weight);
-    const deltaWeight = best.prDeltaWeight ?? null;
     records.push({
       name: ex.name,
       tier: best.isPR ? (best.prTier as PRTier) : null,
       isFirstEver: !best.isPR && !!best.isFirstEver,
-      deltaWeight,
-      deltaOneRMPercent: best.prDeltaOneRMPercent ?? null,
-      previousWeight: deltaWeight != null ? weight - deltaWeight : null,
+      types: best.prTypes || [],
       weightUnit: weightUnitFor(ex),
       reps: Math.round(toNumber(best.reps)),
-      weight,
+      weight: toNumber(best.weight),
     });
   });
 

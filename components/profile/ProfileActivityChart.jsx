@@ -91,6 +91,9 @@ export default function ProfileActivityChart({ completedWorkouts }) {
     setActiveBar(null);
   }, [chartFilter, chartData.length]);
 
+  const valueLabel = (d) =>
+    chartMode === "duration" ? `${d.duration.toFixed(1)}h` : chartMode === "volume" ? `${d.volume.toLocaleString()}kg` : `${d.reps.toLocaleString()} reps`;
+
   return (
     <div style={{ marginBottom: "30px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px", flexWrap: "wrap", gap: "8px" }}>
@@ -131,7 +134,10 @@ export default function ProfileActivityChart({ completedWorkouts }) {
           {chartData.map((d, i) => (
             <div
               key={i}
-              onClick={() => setActiveBar(activeBar === i ? null : i)}
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setActiveBar(activeBar?.i === i ? null : { i, x: rect.left + rect.width / 2, y: rect.top });
+              }}
               style={{
                 position: "relative",
                 width: `${BAR_WIDTH}px`,
@@ -145,7 +151,7 @@ export default function ProfileActivityChart({ completedWorkouts }) {
               <div
                 style={{
                   width: "100%",
-                  backgroundColor: activeBar === i ? "#fff" : d[chartMode] > 0 ? "#1dd1a1" : "#1a1a1a",
+                  backgroundColor: activeBar?.i === i ? "#fff" : d[chartMode] > 0 ? "#1dd1a1" : "#1a1a1a",
                   border: d[chartMode] === 0 ? "1px solid #333" : "none",
                   height: `${Math.max(6, (d[chartMode] / maxVal) * 100)}%`,
                   borderRadius: "6px 6px 3px 3px",
@@ -166,29 +172,34 @@ export default function ProfileActivityChart({ completedWorkouts }) {
               >
                 {d.range}
               </div>
-              {activeBar === i && (
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: "calc(100% + 20px)",
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    backgroundColor: "#fff",
-                    color: "#000",
-                    padding: "4px 8px",
-                    borderRadius: "4px",
-                    fontSize: "0.75rem",
-                    whiteSpace: "nowrap",
-                    zIndex: 10,
-                    fontWeight: "bold",
-                    boxShadow: "0 2px 5px rgba(0,0,0,0.5)",
-                  }}
-                >
-                  {chartMode === "duration" ? `${d.duration.toFixed(1)}h` : chartMode === "volume" ? `${d.volume.toLocaleString()}kg` : `${d.reps.toLocaleString()} reps`}
-                </div>
-              )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* position: fixed a propósito — dentro del contenedor con scroll horizontal, un tooltip
+          "absolute" quedaba recortado verticalmente (overflow-x: auto fuerza overflow-y: auto
+          también), así que nunca se veía al hacer clic. Fixed lo saca de ese recorte. */}
+      {activeBar && chartData[activeBar.i] && (
+        <div
+          style={{
+            position: "fixed",
+            left: activeBar.x,
+            top: activeBar.y - 12,
+            transform: "translate(-50%, -100%)",
+            backgroundColor: "#fff",
+            color: "#000",
+            padding: "6px 10px",
+            borderRadius: "6px",
+            fontSize: "0.8rem",
+            whiteSpace: "nowrap",
+            zIndex: 200,
+            fontWeight: "bold",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+            pointerEvents: "none",
+          }}
+        >
+          {chartData[activeBar.i].range}: {valueLabel(chartData[activeBar.i])}
         </div>
       )}
 

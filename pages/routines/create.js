@@ -20,12 +20,28 @@ export default function CreateRoutine() {
   const isWorkoutEditMode = !!editWorkout;
 
   // Fuente de datos a editar: una rutina guardada, un entrenamiento ya completado, o ninguna
-  // (creación desde cero). Los entrenamientos completados usan 'details' en vez de 'exercises'.
+  // (creación desde cero). Un entrenamiento completado guarda sus ejercicios en `exerciseDetails`
+  // (name/muscleGroup/series) — no tiene type/unit propios, así que se enriquecen desde el
+  // catálogo para que el editor sepa si es peso/tiempo/lastre.
   const sourceRoutine = useMemo(() => {
     if (editWorkout && completedWorkouts?.length > 0) {
       const w = completedWorkouts.find((w) => w.id.toString() === editWorkout.toString());
       if (!w) return null;
-      return { name: w.name, exercises: w.details || w.exercises || [] };
+      const details = w.exerciseDetails || w.details || [];
+      return {
+        name: w.name,
+        exercises: details.map((d) => {
+          const name = d.name || d.exercise;
+          const info = getExerciseInfo(name);
+          return {
+            name,
+            group: d.muscleGroup || info?.group || "",
+            type: info?.type,
+            unit: info?.unit,
+            series: d.series,
+          };
+        }),
+      };
     }
     if (id && routines?.length > 0) {
       return routines.find((r) => r.id.toString() === id.toString()) || null;
@@ -75,15 +91,22 @@ export default function CreateRoutine() {
 
     if (isWorkoutEditMode) {
       const original = completedWorkouts.find((w) => w.id.toString() === editWorkout.toString());
-      const payload = buildRoutinePayload();
+      // Shape real de un entreno completado: exerciseDetails[].{name, muscleGroup, series} — sin
+      // type/unit/rest (eso es del catálogo, no se persiste aquí). Guardar con la forma de
+      // buildRoutinePayload (pensada para rutinas) rompía las estadísticas de este entreno.
+      const exerciseDetails = state.exercises.map((ex) => ({
+        name: ex.name,
+        muscleGroup: ex.muscleGroup,
+        series: ex.series.map((s) => ({ reps: s.reps, weight: s.weight, type: s.type })),
+      }));
       const updatedWorkout = {
         ...original,
-        name: payload.name,
-        details: payload.exercises,
+        name: state.name,
+        exerciseDetails,
         totalVolume: totals.totalVolume,
         totalReps: totals.totalReps,
         series: totals.totalSeries,
-        exercises: payload.exercises.length,
+        exercises: exerciseDetails.length,
       };
       await updateCompletedWorkout(updatedWorkout);
       router.push("/profile");

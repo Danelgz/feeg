@@ -256,7 +256,7 @@ export default function Profile() {
             onOpenDetail={(workout) => setViewingWorkoutDetail(workout)}
             onAddToRoutine={(id) => setAddingToRoutine(id)}
             onDeleteWorkout={(id) => setConfirmDelete(id)}
-            onEditWorkout={(workout) => router.push(`/routines/${workout.routineId || "edit"}?editWorkoutId=${workout.id}`)}
+            onEditWorkout={(workout) => router.push(`/routines/create?editWorkout=${workout.id}`)}
             onDeleteAll={() => setConfirmDeleteAll(true)}
             t={t}
           />

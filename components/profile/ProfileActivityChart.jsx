@@ -1,56 +1,36 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const SPANISH_MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const BAR_WIDTH = 34;
 
 function formatRangeDate(date) {
   return date ? `${date.getDate()} ${SPANISH_MONTHS[date.getMonth()]}` : "";
 }
 
+/**
+ * Solo genera una barra por semana que tuvo AL MENOS un entreno — nada de relleno para semanas
+ * vacías (antes "Siempre" arrancaba en 1970 y rellenaba miles de semanas en blanco hasta el
+ * primer entreno real, aplastando los datos útiles en una esquina). Así el primer punto del
+ * gráfico es siempre tu primer entreno real, y un parón de varias semanas simplemente no deja
+ * huecos en blanco en medio del gráfico.
+ */
 function getChartData(completedWorkouts, chartFilter) {
   if (!completedWorkouts || !Array.isArray(completedWorkouts)) return [];
 
   try {
     const now = new Date();
-    let startDate = new Date();
-    if (chartFilter === "3_months") startDate.setMonth(now.getMonth() - 3);
-    else if (chartFilter === "6_months") startDate.setMonth(now.getMonth() - 6);
-    else if (chartFilter === "1_year") startDate.setFullYear(now.getFullYear() - 1);
-    else startDate = new Date(0);
+    let minDate = null;
+    if (chartFilter === "3_months") { minDate = new Date(); minDate.setMonth(now.getMonth() - 3); }
+    else if (chartFilter === "6_months") { minDate = new Date(); minDate.setMonth(now.getMonth() - 6); }
+    else if (chartFilter === "1_year") { minDate = new Date(); minDate.setFullYear(now.getFullYear() - 1); }
+    // "always": sin límite inferior — el primer punto será tu primer entreno real.
 
-    // Alinear startDate al lunes de esa semana
-    const startDay = startDate.getDay();
-    const startDiff = startDate.getDate() - startDay + (startDay === 0 ? -6 : 1);
-    startDate = new Date(new Date(startDate).setDate(startDiff));
-    startDate.setHours(0, 0, 0, 0);
-
-    const weeks = [];
     const weeksMap = {};
-
-    // Generar todas las semanas desde startDate hasta hoy
-    let current = new Date(startDate);
-    while (current <= now) {
-      const weekKey = current.toISOString().split("T")[0];
-      const weekEnd = new Date(current);
-      weekEnd.setDate(current.getDate() + 6);
-
-      const weekObj = {
-        duration: 0,
-        volume: 0,
-        reps: 0,
-        count: 0,
-        date: new Date(current),
-        range: `${current.getDate()}-${weekEnd.getDate()}`,
-      };
-      weeksMap[weekKey] = weekObj;
-      weeks.push(weekObj);
-
-      current.setDate(current.getDate() + 7);
-    }
 
     completedWorkouts.forEach((w) => {
       if (!w || !w.completedAt) return;
       const date = new Date(w.completedAt);
-      if (isNaN(date.getTime()) || date < startDate) return;
+      if (isNaN(date.getTime()) || (minDate && date < minDate)) return;
 
       const day = date.getDay();
       const diff = date.getDate() - day + (day === 0 ? -6 : 1);
@@ -58,15 +38,27 @@ function getChartData(completedWorkouts, chartFilter) {
       monday.setHours(0, 0, 0, 0);
       const weekKey = monday.toISOString().split("T")[0];
 
-      if (weeksMap[weekKey]) {
-        weeksMap[weekKey].duration += (Number(w.elapsedTime) || Number(w.totalTime) * 60 || 0) / 3600;
-        weeksMap[weekKey].volume += Number(w.totalVolume) || 0;
-        weeksMap[weekKey].reps += Number(w.totalReps) || 0;
-        weeksMap[weekKey].count += 1;
+      if (!weeksMap[weekKey]) {
+        const weekEnd = new Date(monday);
+        weekEnd.setDate(monday.getDate() + 6);
+        weeksMap[weekKey] = {
+          duration: 0,
+          volume: 0,
+          reps: 0,
+          count: 0,
+          date: monday,
+          range: `${monday.getDate()}-${weekEnd.getDate()}`,
+        };
       }
+
+      const week = weeksMap[weekKey];
+      week.duration += (Number(w.elapsedTime) || Number(w.totalTime) * 60 || 0) / 3600;
+      week.volume += Number(w.totalVolume) || 0;
+      week.reps += Number(w.totalReps) || 0;
+      week.count += 1;
     });
 
-    return weeks;
+    return Object.values(weeksMap).sort((a, b) => a.date - b.date);
   } catch (e) {
     console.error("Error generating chart data:", e);
     return [];
@@ -84,16 +76,26 @@ export default function ProfileActivityChart({ completedWorkouts }) {
   const [chartFilter, setChartFilter] = useState("3_months");
   const [chartMode, setChartMode] = useState("duration");
   const [activeBar, setActiveBar] = useState(null);
+  const scrollRef = useRef(null);
 
   const chartData = getChartData(completedWorkouts, chartFilter);
-  const overallRange = chartData.length > 0 ? `(${formatRangeDate(chartData[0].date)}, ${formatRangeDate(new Date())})` : "";
+  const overallRange = chartData.length > 0 ? `(${formatRangeDate(chartData[0].date)} — ${formatRangeDate(new Date())})` : "";
   const maxVal = Math.max(chartMode === "duration" ? 5 : 1, ...chartData.map((d) => d[chartMode]), 1);
+
+  // Arranca mostrando las semanas más recientes (el extremo derecho), que es lo que casi
+  // siempre se quiere ver primero; deslizar hacia la izquierda revela el histórico.
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+    }
+    setActiveBar(null);
+  }, [chartFilter, chartData.length]);
 
   return (
     <div style={{ marginBottom: "30px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px", flexWrap: "wrap", gap: "8px" }}>
         <h2 style={{ fontSize: "1.1rem", margin: 0 }}>
-          Gráfico horas por semana <span style={{ color: "#888", fontSize: "0.8rem", marginLeft: "5px" }}>{overallRange}</span>
+          Actividad semanal <span style={{ color: "#888", fontSize: "0.8rem", marginLeft: "5px" }}>{overallRange}</span>
         </h2>
         <select
           value={chartFilter}
@@ -107,35 +109,68 @@ export default function ProfileActivityChart({ completedWorkouts }) {
         </select>
       </div>
 
-      <div style={{ height: "150px", display: "flex", alignItems: "flex-end", gap: "8px", marginBottom: "10px", position: "relative", paddingTop: "20px" }}>
-        {chartData.length === 0 ? (
-          <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#444" }}>Sin datos suficientes</div>
-        ) : (
-          chartData.map((d, i) => (
+      {chartData.length === 0 ? (
+        <div style={{ height: "150px", display: "flex", alignItems: "center", justifyContent: "center", color: "#444", backgroundColor: "#111", borderRadius: "12px" }}>
+          Sin datos suficientes
+        </div>
+      ) : (
+        <div
+          ref={scrollRef}
+          style={{
+            height: "170px",
+            display: "flex",
+            alignItems: "flex-end",
+            gap: "10px",
+            marginBottom: "10px",
+            paddingTop: "24px",
+            paddingBottom: "4px",
+            overflowX: "auto",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
+          {chartData.map((d, i) => (
             <div
               key={i}
               onClick={() => setActiveBar(activeBar === i ? null : i)}
               style={{
-                flex: 1,
-                backgroundColor: activeBar === i ? "#fff" : d[chartMode] > 0 ? "#1dd1a1" : "#1a1a1a",
-                border: d[chartMode] === 0 ? "1px solid #333" : "none",
-                height: `${Math.max(5, (d[chartMode] / maxVal) * 100)}%`,
-                borderRadius: "2px",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
                 position: "relative",
+                width: `${BAR_WIDTH}px`,
+                flexShrink: 0,
+                height: "100%",
+                display: "flex",
+                alignItems: "flex-end",
+                cursor: "pointer",
               }}
             >
-              {i % 2 === 0 && (
-                <div style={{ position: "absolute", bottom: "105%", left: "50%", transform: "translateX(-50%)", color: "#555", fontSize: "0.6rem", whiteSpace: "nowrap", fontWeight: "bold" }}>
-                  {d.range}
-                </div>
-              )}
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: activeBar === i ? "#fff" : d[chartMode] > 0 ? "#1dd1a1" : "#1a1a1a",
+                  border: d[chartMode] === 0 ? "1px solid #333" : "none",
+                  height: `${Math.max(6, (d[chartMode] / maxVal) * 100)}%`,
+                  borderRadius: "6px 6px 3px 3px",
+                  transition: "all 0.2s ease",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: "calc(100% + 6px)",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  color: "#555",
+                  fontSize: "0.62rem",
+                  whiteSpace: "nowrap",
+                  fontWeight: "bold",
+                }}
+              >
+                {d.range}
+              </div>
               {activeBar === i && (
                 <div
                   style={{
                     position: "absolute",
-                    bottom: "110%",
+                    bottom: "calc(100% + 20px)",
                     left: "50%",
                     transform: "translateX(-50%)",
                     backgroundColor: "#fff",
@@ -153,9 +188,9 @@ export default function ProfileActivityChart({ completedWorkouts }) {
                 </div>
               )}
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       <div style={{ display: "flex", gap: "10px", marginBottom: "30px" }}>
         {CHART_MODES.map((m) => (

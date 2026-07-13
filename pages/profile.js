@@ -10,6 +10,7 @@ import {
   ProfileActivityChart,
   ProfileInfoMenu,
   ProfileWorkoutsSection,
+  ProfileWorkoutDetailModal,
   ProfileConfirmModal,
   ProfileAddToRoutineModal,
   ProfileEditModal,
@@ -53,7 +54,7 @@ export default function Profile() {
   const [followingList, setFollowingList] = useState([]);
   const [isPhotoFullScreen, setIsPhotoFullScreen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [expandedWorkout, setExpandedWorkout] = useState(null);
+  const [viewingWorkoutDetail, setViewingWorkoutDetail] = useState(null);
   const [addingToRoutine, setAddingToRoutine] = useState(null);
   const [routineName, setRoutineName] = useState("");
   const [isProcessingImage, setIsProcessingImage] = useState(false);
@@ -252,17 +253,23 @@ export default function Profile() {
 
           <ProfileWorkoutsSection
             completedWorkouts={completedWorkouts}
-            expandedWorkout={expandedWorkout}
-            onToggleExpand={(id) => setExpandedWorkout(expandedWorkout === id ? null : id)}
+            onOpenDetail={(workout) => setViewingWorkoutDetail(workout)}
             onAddToRoutine={(id) => setAddingToRoutine(id)}
             onDeleteWorkout={(id) => setConfirmDelete(id)}
             onEditWorkout={(workout) => router.push(`/routines/${workout.routineId || "edit"}?editWorkoutId=${workout.id}`)}
             onDeleteAll={() => setConfirmDeleteAll(true)}
-            language={language}
             t={t}
           />
         </div>
       </Layout>
+
+      {viewingWorkoutDetail && (
+        <ProfileWorkoutDetailModal
+          workout={viewingWorkoutDetail}
+          language={language}
+          onClose={() => setViewingWorkoutDetail(null)}
+        />
+      )}
 
       <ProfileConfirmModal
         open={!!confirmDelete}

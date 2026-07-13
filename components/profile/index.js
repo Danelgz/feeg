@@ -4,6 +4,7 @@ export { default as ProfileActivityChart } from "./ProfileActivityChart";
 export { default as ProfileInfoMenu } from "./ProfileInfoMenu";
 export { default as ProfileWorkoutsSection } from "./ProfileWorkoutsSection";
 export { default as ProfileWorkoutCard } from "./ProfileWorkoutCard";
+export { default as ProfileWorkoutDetailModal } from "./ProfileWorkoutDetailModal";
 export { default as ProfileConfirmModal } from "./ProfileConfirmModal";
 export { default as ProfileAddToRoutineModal } from "./ProfileAddToRoutineModal";
 export { default as ProfileEditModal } from "./ProfileEditModal";

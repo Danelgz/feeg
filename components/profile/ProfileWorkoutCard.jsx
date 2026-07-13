@@ -1,179 +1,115 @@
-import { getExerciseInfo } from "../../lib/exerciseStats";
-import { translateExerciseName } from "../../lib/exerciseTranslation";
+import { useState } from "react";
+import { Icon } from "../ui";
 
-/** Tarjeta de un entrenamiento completado en la lista de perfil, con detalle expandible de series. */
-export default function ProfileWorkoutCard({ workout, expanded, onToggleExpand, onAddToRoutine, onDelete, onEdit, language }) {
+/** Tarjeta de un entrenamiento completado en la lista de perfil. */
+export default function ProfileWorkoutCard({ workout, onOpenDetail, onAddToRoutine, onDelete, onEdit }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
-    <div style={{ backgroundColor: "#1a1a1a", padding: "15px", borderRadius: "12px", marginBottom: "15px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
-        <div>
-          <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#1dd1a1" }}>{workout.name}</div>
+    <div style={{ backgroundColor: "#1a1a1a", padding: "15px", borderRadius: "14px", marginBottom: "15px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px", gap: "10px" }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#1dd1a1", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {workout.name}
+          </div>
           <div style={{ fontSize: "0.8rem", color: "#888" }}>{new Date(workout.completedAt).toLocaleString()}</div>
         </div>
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "flex-end" }}>
+
+        <div style={{ position: "relative", flexShrink: 0 }}>
           <button
-            onClick={onToggleExpand}
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="Más acciones"
             style={{
-              backgroundColor: expanded ? "#1dd1a1" : "rgba(29, 209, 161, 0.1)",
+              background: "rgba(255,255,255,0.06)",
               border: "none",
-              borderRadius: "8px",
-              padding: "6px 12px",
+              borderRadius: "10px",
+              width: "34px",
+              height: "34px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#ccc",
               cursor: "pointer",
-              color: expanded ? "#000" : "#1dd1a1",
-              fontSize: "0.8rem",
-              fontWeight: "700",
-              transition: "all 0.2s ease",
+              transition: "background-color 0.2s ease",
             }}
+            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.12)")}
+            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.06)")}
           >
-            {expanded ? "Ocultar" : "Detalles"}
+            <Icon name="moreVertical" size={18} />
           </button>
-          <button
-            onClick={onAddToRoutine}
-            style={{
-              backgroundColor: "rgba(46, 230, 197, 0.1)",
-              border: "none",
-              borderRadius: "8px",
-              padding: "6px 12px",
-              cursor: "pointer",
-              color: "#2EE6C5",
-              fontSize: "0.8rem",
-              fontWeight: "600",
-              transition: "all 0.2s ease",
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "rgba(46, 230, 197, 0.2)")}
-            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "rgba(46, 230, 197, 0.1)")}
-          >
-            Añadir a Rutinas
-          </button>
-          <button
-            onClick={onEdit}
-            style={{
-              backgroundColor: "rgba(255, 255, 255, 0.05)",
-              border: "none",
-              borderRadius: "8px",
-              padding: "6px 12px",
-              cursor: "pointer",
-              color: "#aaa",
-              fontSize: "0.8rem",
-              fontWeight: "600",
-              transition: "all 0.2s ease",
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
-              e.currentTarget.style.color = "#fff";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
-              e.currentTarget.style.color = "#aaa";
-            }}
-          >
-            Editar
-          </button>
-          <button
-            onClick={onDelete}
-            style={{
-              backgroundColor: "rgba(255, 71, 87, 0.1)",
-              border: "none",
-              borderRadius: "8px",
-              padding: "6px 12px",
-              cursor: "pointer",
-              color: "#ff4757",
-              fontSize: "0.8rem",
-              fontWeight: "600",
-              transition: "all 0.2s ease",
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = "#ff4757";
-              e.currentTarget.style.color = "#fff";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = "rgba(255, 71, 87, 0.1)";
-              e.currentTarget.style.color = "#ff4757";
-            }}
-          >
-            Borrar
-          </button>
+
+          {menuOpen && (
+            <>
+              <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 90 }} />
+              <div
+                style={{
+                  position: "absolute",
+                  top: "40px",
+                  right: 0,
+                  backgroundColor: "#242424",
+                  border: "1px solid #333",
+                  borderRadius: "12px",
+                  boxShadow: "0 8px 25px rgba(0,0,0,0.5)",
+                  zIndex: 100,
+                  width: "190px",
+                  overflow: "hidden",
+                }}
+              >
+                <button
+                  onClick={() => { setMenuOpen(false); onAddToRoutine(); }}
+                  style={{ width: "100%", padding: "12px 14px", background: "none", border: "none", borderBottom: "1px solid #333", color: "#fff", textAlign: "left", cursor: "pointer", fontSize: "0.88rem", display: "flex", alignItems: "center", gap: "10px" }}
+                >
+                  <Icon name="plus" size={15} color="#2EE6C5" />
+                  Añadir a rutina
+                </button>
+                <button
+                  onClick={() => { setMenuOpen(false); onEdit(); }}
+                  style={{ width: "100%", padding: "12px 14px", background: "none", border: "none", borderBottom: "1px solid #333", color: "#fff", textAlign: "left", cursor: "pointer", fontSize: "0.88rem", display: "flex", alignItems: "center", gap: "10px" }}
+                >
+                  <Icon name="edit" size={15} color="#aaa" />
+                  Editar
+                </button>
+                <button
+                  onClick={() => { setMenuOpen(false); onDelete(); }}
+                  style={{ width: "100%", padding: "12px 14px", background: "none", border: "none", color: "#ff4757", textAlign: "left", cursor: "pointer", fontSize: "0.88rem", display: "flex", alignItems: "center", gap: "10px" }}
+                >
+                  <Icon name="trash" size={15} />
+                  Borrar
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
-      <div style={{ fontSize: "0.9rem", color: "#ccc", marginBottom: expanded ? "15px" : "0" }}>
+
+      <div style={{ fontSize: "0.9rem", color: "#ccc", marginBottom: "14px" }}>
         {workout.series} series • {workout.totalVolume?.toLocaleString()} kg • {workout.totalReps} reps • {workout.totalTime || Math.floor((workout.elapsedTime || 0) / 60)} min
       </div>
 
-      {expanded && workout.exerciseDetails && (
-        <div
-          style={{
-            backgroundColor: "#000",
-            borderRadius: "12px",
-            padding: "15px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "25px",
-            border: "1px solid #1a1a1a",
-            marginTop: "10px",
-          }}
-        >
-          {workout.exerciseDetails.map((ex, idx) => {
-            const info = getExerciseInfo(ex.name);
-            const isTimeBased = info?.type === "time";
-            const isLastre = info?.unit === "lastre";
-
-            return (
-              <div key={idx}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                  <div
-                    style={{
-                      width: "35px",
-                      height: "35px",
-                      borderRadius: "50%",
-                      backgroundColor: "#fff",
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <img
-                      src={`/exercises/${(ex?.name || "").toLowerCase().replace(/ /g, "_")}.png`}
-                      onError={(e) => {
-                        e.target.src = "/logo3.png";
-                      }}
-                      alt=""
-                      style={{ width: "80%", height: "auto" }}
-                    />
-                  </div>
-                  <div style={{ fontWeight: "500", fontSize: "1rem", color: "#1dd1a1" }}>{translateExerciseName(ex.name, language)}</div>
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr", padding: "5px 0", borderBottom: "1px solid #1a1a1a", color: "#666", fontSize: "0.75rem", fontWeight: "bold", textAlign: "center" }}>
-                    <div>SERIE</div>
-                    <div>{isTimeBased ? "TIEMPO (MIN)" : isLastre ? "LASTRE (KG)" : "PESO (KG)"}</div>
-                    <div>{isTimeBased ? "KM/H" : "REPS"}</div>
-                  </div>
-                  {ex.series.map((s, sIdx) => (
-                    <div
-                      key={sIdx}
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "40px 1fr 1fr",
-                        padding: "8px 0",
-                        textAlign: "center",
-                        fontSize: "0.9rem",
-                        color: "#fff",
-                        backgroundColor: sIdx % 2 === 0 ? "transparent" : "#0a0a0a",
-                      }}
-                    >
-                      <div style={{ color: "#666", fontWeight: "bold" }}>{sIdx + 1}</div>
-                      <div>{s.weight || "-"}{isTimeBased ? "m" : isLastre ? "L" : ""}</div>
-                      <div>{s.reps || "-"}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      <button
+        onClick={onOpenDetail}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "8px",
+          backgroundColor: "rgba(29, 209, 161, 0.12)",
+          border: "1px solid rgba(29, 209, 161, 0.3)",
+          borderRadius: "10px",
+          padding: "10px",
+          cursor: "pointer",
+          color: "#1dd1a1",
+          fontSize: "0.85rem",
+          fontWeight: "700",
+          transition: "all 0.2s ease",
+        }}
+        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "rgba(29, 209, 161, 0.2)")}
+        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "rgba(29, 209, 161, 0.12)")}
+      >
+        <Icon name="list" size={16} />
+        Ver detalles
+      </button>
     </div>
   );
 }

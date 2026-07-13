@@ -3,13 +3,11 @@ import ProfileWorkoutCard from "./ProfileWorkoutCard";
 /** Sección "Entrenamientos" del perfil: cabecera con borrar-todo + lista ordenada de tarjetas. */
 export default function ProfileWorkoutsSection({
   completedWorkouts,
-  expandedWorkout,
-  onToggleExpand,
+  onOpenDetail,
   onAddToRoutine,
   onDeleteWorkout,
   onEditWorkout,
   onDeleteAll,
-  language,
   t,
 }) {
   return (
@@ -59,12 +57,10 @@ export default function ProfileWorkoutsSection({
               <ProfileWorkoutCard
                 key={workout.id}
                 workout={workout}
-                expanded={expandedWorkout === workout.id}
-                onToggleExpand={() => onToggleExpand(workout.id)}
+                onOpenDetail={() => onOpenDetail(workout)}
                 onAddToRoutine={() => onAddToRoutine(workout.id)}
                 onDelete={() => onDeleteWorkout(workout.id)}
                 onEdit={() => onEditWorkout(workout)}
-                language={language}
               />
             ))
         )}

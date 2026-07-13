@@ -1,43 +1,15 @@
 import MuscleMap from "../MuscleMap";
+import { computeSeriesByGroup } from "../../lib/exerciseStats";
+import { MUSCLE_GROUPS } from "../../data/muscleMapRegions";
 
-const GROUP_MAP = {
-  Pecho: ['Pecho', 'Chest'],
-  Espalda: ['Espalda', 'Back'],
-  Hombros: ['Hombros', 'Shoulders'],
-  Bíceps: ['Bíceps', 'Biceps'],
-  Tríceps: ['Tríceps', 'Triceps'],
-  Cuádriceps: ['Cuádriceps', 'Quads'],
-  Femoral: ['Femoral', 'Hamstrings'],
-  Glúteos: ['Glúteos', 'Glutes'],
-  Gemelos: ['Gemelos', 'Calves'],
-  Abdomen: ['Abdomen', 'Abs', 'Core'],
-  Antebrazo: ['Antebrazo', 'Antebrazos', 'Forearms'],
-  Cuello: ['Cuello', 'Neck']
-};
-
-export default function MuscleMapSection({ isDark, workouts, t, router }) {
+export default function MuscleMapSection({ isDark, workouts, t, onSelectMuscle }) {
   // Siempre se calcula sobre los últimos 7 días, independientemente del filtro de periodo de la página.
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const weekWorkouts = (workouts || []).filter(w => w.completedAt && new Date(w.completedAt) >= weekAgo);
 
-  const muscleSeriesCount = {};
-  Object.keys(GROUP_MAP).forEach(g => muscleSeriesCount[g] = 0);
-
-  weekWorkouts.forEach(w => {
-    if (Array.isArray(w.details)) {
-      w.details.forEach(d => {
-        const grp = d.muscleGroup || d.group || d.category;
-        const found = Object.keys(GROUP_MAP).find(key => GROUP_MAP[key].includes(grp));
-        if (found) muscleSeriesCount[found] += Number(d.series || 0);
-      });
-    }
-    if (!Array.isArray(w.details) && w.seriesByGroup) {
-      Object.entries(w.seriesByGroup).forEach(([k, v]) => {
-        const found = Object.keys(GROUP_MAP).find(key => GROUP_MAP[key].includes(k) || key === k);
-        if (found) muscleSeriesCount[found] += Number(v || 0);
-      });
-    }
-  });
+  // Solo los grupos que el cuerpo esquemático puede dibujar (Cardio/Aductor/Abductor/Cuerpo
+  // Completo no tienen región propia) — ver "Series por grupo" para el desglose completo.
+  const muscleSeriesCount = computeSeriesByGroup(weekWorkouts, MUSCLE_GROUPS);
 
   return (
     <section style={{
@@ -57,12 +29,17 @@ export default function MuscleMapSection({ isDark, workouts, t, router }) {
           <p style={{ color: isDark ? '#888' : '#999', fontSize: '0.85rem', marginTop: '8px' }}>Entrena esta semana para ver tu mapa muscular</p>
         </div>
       ) : (
-        <MuscleMap
-          seriesByMuscle={muscleSeriesCount}
-          isDark={isDark}
-          onMuscleClick={(group) => router.push(`/statistics/${encodeURIComponent(group)}`)}
-          labelForGroup={(group) => t(group) || group}
-        />
+        <>
+          <MuscleMap
+            seriesByMuscle={muscleSeriesCount}
+            isDark={isDark}
+            onMuscleClick={onSelectMuscle}
+            labelForGroup={(group) => t(group) || group}
+          />
+          <p style={{ textAlign: 'center', color: isDark ? '#666' : '#999', fontSize: '0.8rem', marginTop: '12px' }}>
+            Toca un músculo para ver qué ejercicios lo han trabajado esta semana.
+          </p>
+        </>
       )}
     </section>
   );

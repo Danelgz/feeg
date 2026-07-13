@@ -30,6 +30,9 @@ export default function UserProfile() {
 
   const [targetUser, setTargetUser] = useState(null);
   const [workouts, setWorkouts] = useState([]);
+  const [workoutsCursor, setWorkoutsCursor] = useState(null);
+  const [workoutsHasMore, setWorkoutsHasMore] = useState(false);
+  const [isLoadingMoreWorkouts, setIsLoadingMoreWorkouts] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [commentingOn, setCommentingOn] = useState(null);
@@ -105,13 +108,31 @@ export default function UserProfile() {
         const fCount = await getFollowersCount(uid);
         setTargetUser({ ...userData, followersCount: fCount });
 
-        const userWorkouts = await getUserWorkouts(uid);
+        // El gráfico de actividad se calcula sobre `workouts`, así que de momento solo refleja
+        // lo cargado hasta ahora (la primera página, y más si el usuario pulsa "cargar más") en
+        // vez del historial completo — igual que ya hace el feed principal.
+        const { workouts: userWorkouts, cursor, hasMore } = await getUserWorkouts(uid);
         setWorkouts(userWorkouts);
+        setWorkoutsCursor(cursor);
+        setWorkoutsHasMore(hasMore);
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLoadMoreWorkouts = async () => {
+    if (isLoadingMoreWorkouts || !workoutsCursor) return;
+    setIsLoadingMoreWorkouts(true);
+    try {
+      const { workouts: nextWorkouts, cursor, hasMore } = await getUserWorkouts(uid, { cursor: workoutsCursor });
+      setWorkouts(prev => [...prev, ...nextWorkouts]);
+      setWorkoutsCursor(cursor);
+      setWorkoutsHasMore(hasMore);
+    } finally {
+      setIsLoadingMoreWorkouts(false);
     }
   };
 
@@ -678,6 +699,14 @@ export default function UserProfile() {
                 ))
             )}
           </div>
+
+          {workoutsHasMore && (
+            <div style={{ display: "flex", justifyContent: "center", padding: "20px 0 0" }}>
+              <Button isDark={isDark} variant="secondary" onClick={handleLoadMoreWorkouts} disabled={isLoadingMoreWorkouts}>
+                {isLoadingMoreWorkouts ? <Spinner isDark={isDark} size={16} /> : "Cargar más"}
+              </Button>
+            </div>
+          )}
         </div>
       </Layout>
 

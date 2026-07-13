@@ -1,34 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
-import { useRouter } from "next/router";
 import { getTokens } from "../lib/tokens";
 import { PageHeader } from "../components/ui";
+import { computeSeriesByGroup } from "../lib/exerciseStats";
 import {
   EnhancedStatCard,
   MiniStatCard,
   OverviewSection,
   MuscleMapSection,
+  MuscleDetailSection,
   SeriesByGroupSection,
   DistributionChartSection,
   MonthlyReportSection,
   ExerciseStatsSection,
 } from "../components/statistics";
-
-const GROUP_MAP = {
-  Pecho: ['Pecho', 'Chest'],
-  Espalda: ['Espalda', 'Back'],
-  Hombros: ['Hombros', 'Shoulders'],
-  Bíceps: ['Bíceps', 'Biceps'],
-  Tríceps: ['Tríceps', 'Triceps'],
-  Cuádriceps: ['Cuádriceps', 'Quads'],
-  Femoral: ['Femoral', 'Hamstrings'],
-  Glúteos: ['Glúteos', 'Glutes'],
-  Gemelos: ['Gemelos', 'Calves'],
-  Abdomen: ['Abdomen', 'Abs', 'Core'],
-  Antebrazos: ['Antebrazos', 'Forearms'],
-  Oblicuos: ['Oblicuos', 'Obliques']
-};
 
 const NAV_BUTTONS = [
   { key: 'overview', label: 'Resumen', description: 'Visión general de tu progreso' },
@@ -47,13 +33,18 @@ const PERIOD_OPTIONS = [
 ];
 
 export default function Statistics() {
-  const { t, theme, isMobile, completedWorkouts: workouts } = useUser();
-  const router = useRouter();
+  const { t, theme, isMobile, language, completedWorkouts: workouts } = useUser();
   const isDark = theme === 'dark';
   const tk = getTokens(isDark);
   const [activeView, setActiveView] = useState('overview');
   const [isNarrow, setIsNarrow] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('7days'); // 7days, 30days, 90days, all
+  const [selectedMuscle, setSelectedMuscle] = useState(null);
+
+  const changeView = (view) => {
+    setActiveView(view);
+    setSelectedMuscle(null);
+  };
 
   useEffect(() => {
     const check = () => setIsNarrow(window.innerWidth <= 768);
@@ -154,26 +145,7 @@ export default function Statistics() {
     };
   }, [filteredWorkouts]);
 
-  const seriesByGroup = useMemo(() => {
-    const counts = {};
-    Object.keys(GROUP_MAP).forEach(g => counts[g] = 0);
-    filteredWorkouts.forEach(w => {
-      if (Array.isArray(w.details)) {
-        w.details.forEach(d => {
-          const grp = d.muscleGroup || d.group || d.category;
-          const found = Object.keys(GROUP_MAP).find(key => GROUP_MAP[key].includes(grp));
-          if (found) counts[found] += Number(d.series || 0);
-        });
-      }
-      if (!Array.isArray(w.details) && w.seriesByGroup) {
-        Object.entries(w.seriesByGroup).forEach(([k, v]) => {
-          const found = Object.keys(GROUP_MAP).find(key => GROUP_MAP[key].includes(k) || key === k);
-          if (found) counts[found] += Number(v || 0);
-        });
-      }
-    });
-    return counts;
-  }, [filteredWorkouts]);
+  const seriesByGroup = useMemo(() => computeSeriesByGroup(filteredWorkouts), [filteredWorkouts]);
 
   return (
     <Layout>
@@ -222,7 +194,7 @@ export default function Statistics() {
         {NAV_BUTTONS.map(btn => (
           <button
             key={btn.key}
-            onClick={() => setActiveView(btn.key)}
+            onClick={() => changeView(btn.key)}
             style={{
               padding: '16px',
               backgroundColor: activeView === btn.key ? tk.accentSoft : tk.surface,
@@ -282,7 +254,20 @@ export default function Statistics() {
         <OverviewSection isDark={isDark} isMobile={isMobile} workouts={filteredWorkouts} t={t} stats={stats} />
       )}
       {activeView === 'muscleMap' && (
-        <MuscleMapSection isDark={isDark} workouts={workouts} t={t} router={router} />
+        // El mapa (y su detalle) siempre miran a los últimos 7 días, independientemente del
+        // filtro de periodo de la página — es un mapa de calor semanal por diseño.
+        selectedMuscle ? (
+          <MuscleDetailSection
+            isDark={isDark}
+            group={selectedMuscle}
+            workouts={workouts}
+            t={t}
+            language={language}
+            onBack={() => setSelectedMuscle(null)}
+          />
+        ) : (
+          <MuscleMapSection isDark={isDark} workouts={workouts} t={t} onSelectMuscle={setSelectedMuscle} />
+        )
       )}
       {activeView === 'seriesByGroup' && (
         <SeriesByGroupSection isDark={isDark} seriesByGroup={seriesByGroup} t={t} />
@@ -294,7 +279,7 @@ export default function Statistics() {
         <MonthlyReportSection isDark={isDark} workouts={workouts} t={t} />
       )}
       {activeView === 'exerciseStats' && (
-        <ExerciseStatsSection isDark={isDark} workouts={workouts} t={t} />
+        <ExerciseStatsSection isDark={isDark} workouts={workouts} t={t} language={language} />
       )}
     </Layout>
   );

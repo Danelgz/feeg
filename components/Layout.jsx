@@ -48,7 +48,7 @@ export default function Layout({ children, hideBottomNav = false }) {
     return `${m}:${s}`;
   };
 
-  const topLevelPages = ["/", "/routines", "/exercises", "/statistics", "/profile", "/settings", "/statistics/[view]", "/routines/create", "/routines/[id]", "/routines/empty", "/user/[uid]", "/exercise-history"];
+  const topLevelPages = ["/", "/routines", "/exercises", "/statistics", "/profile", "/settings", "/routines/create", "/routines/[id]", "/routines/empty", "/user/[uid]", "/exercise-history"];
   const isTopLevel = topLevelPages.includes(router.pathname) || topLevelPages.includes(router.asPath);
 
   // Botón de retroceso inteligente: si no hay historial o la entrada es directa, ir a una ruta de respaldo

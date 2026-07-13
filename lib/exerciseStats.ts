@@ -45,6 +45,78 @@ export function getExerciseInfo(name: string): ExerciseCatalogInfo | null {
   return null;
 }
 
+/** Único origen de verdad para los grupos musculares del catálogo — deriva de data/exercises.js
+ * en vez de mantener listas de alias a mano en cada pantalla de estadísticas (la causa de que
+ * antes faltaran grupos enteros como Cardio/Aductor/Abductor en los gráficos). */
+export const ALL_MUSCLE_GROUPS: string[] = Object.keys(exercisesList);
+
+function detailsOf(w: CompletedWorkout): CompletedExerciseDetail[] {
+  return w.exerciseDetails || w.details || [];
+}
+
+/**
+ * Series entrenadas por grupo muscular a partir del historial real. `d.series` es el array de
+ * series de ese ejercicio (no un contador), así que se cuenta su longitud.
+ */
+export function computeSeriesByGroup(
+  workouts: CompletedWorkout[],
+  groups: string[] = ALL_MUSCLE_GROUPS
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  groups.forEach((g) => (counts[g] = 0));
+
+  (workouts || []).forEach((w) => {
+    detailsOf(w).forEach((d) => {
+      const group = d.muscleGroup;
+      if (!group || !(group in counts)) return;
+      counts[group] += Array.isArray(d.series) ? d.series.length : 0;
+    });
+  });
+
+  return counts;
+}
+
+export interface ExerciseStatsEntry {
+  name: string;
+  sessions: number;
+  series: number;
+  reps: number;
+  volume: number;
+}
+
+/**
+ * Agrega el historial por nombre de ejercicio (sesiones, series, reps, volumen). Fuente única
+ * para la pestaña "Ejercicios" y para el detalle por músculo — antes cada uno leía un campo
+ * (`details`/`d.series` como número) que el flujo de guardado real nunca escribe.
+ */
+export function computeExerciseIndex(
+  workouts: CompletedWorkout[],
+  filter?: (detail: CompletedExerciseDetail) => boolean
+): Record<string, ExerciseStatsEntry> {
+  const index: Record<string, ExerciseStatsEntry> = {};
+
+  (workouts || []).forEach((w) => {
+    detailsOf(w).forEach((d) => {
+      const name = d.name || d.exercise;
+      if (!name || !Array.isArray(d.series) || d.series.length === 0) return;
+      if (filter && !filter(d)) return;
+
+      if (!index[name]) index[name] = { name, sessions: 0, series: 0, reps: 0, volume: 0 };
+      const entry = index[name];
+      entry.sessions += 1;
+      entry.series += d.series.length;
+      d.series.forEach((s) => {
+        const reps = toNumber(s.reps);
+        const weight = toNumber(s.weight);
+        entry.reps += reps;
+        entry.volume += reps * weight;
+      });
+    });
+  });
+
+  return index;
+}
+
 /** Etiqueta de unidad para mostrar junto al peso (compartido entre ExerciseCard y el toast de PR). */
 export function weightUnitFor(exercise: { exerciseType?: string; unit?: string }): string {
   if (exercise.exerciseType === "time") return "m";

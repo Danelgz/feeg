@@ -1,25 +1,14 @@
 import { useState } from "react";
 import MiniStat from "./MiniStat";
+import { computeExerciseIndex } from "../../lib/exerciseStats";
+import { translateExerciseName } from "../../lib/exerciseTranslation";
 
-export default function ExerciseStatsSection({ isDark, workouts, t }) {
+export default function ExerciseStatsSection({ isDark, workouts, t, language }) {
   const [q, setQ] = useState('');
-  const index = {};
-  workouts.forEach(w => {
-    if (Array.isArray(w.details)) {
-      w.details.forEach(d => {
-        const name = d.name || d.exercise || '';
-        if (!name) return;
-        if (!index[name]) index[name] = { sessions: 0, series: 0, reps: 0, volume: 0 };
-        index[name].sessions += 1;
-        index[name].series += Number(d.series || 0);
-        index[name].reps += Number(d.reps || 0);
-        index[name].volume += Number(d.weight || 0) * Number(d.reps || 0) * Number(d.series || 1);
-      });
-    }
-  });
-  const results = Object.entries(index)
-    .filter(([name]) => name.toLowerCase().includes(q.toLowerCase()))
-    .sort((a, b) => b[1].sessions - a[1].sessions);
+  const index = computeExerciseIndex(workouts);
+  const results = Object.values(index)
+    .filter((entry) => translateExerciseName(entry.name, language).toLowerCase().includes(q.toLowerCase()))
+    .sort((a, b) => b.sessions - a.sessions);
 
   return (
     <section style={{
@@ -55,12 +44,12 @@ export default function ExerciseStatsSection({ isDark, workouts, t }) {
       {results.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px 20px' }}>
           <div style={{ fontSize: '3rem', marginBottom: '16px' }}>📊</div>
-          <p style={{ color: isDark ? '#aaa' : '#666', fontSize: '1rem' }}>{q ? t('no_exercises_found') : 'No hay datos de ejercicios'}</p>
+          <p style={{ color: isDark ? '#aaa' : '#666', fontSize: '1rem' }}>{q ? t('no_exercises_found') : 'Aún no hay ejercicios registrados en este periodo'}</p>
         </div>
       ) : (
         <div style={{ display: 'grid', gap: '12px' }}>
-          {results.map(([name, v], index) => (
-            <div key={name} style={{
+          {results.map((entry, idx) => (
+            <div key={entry.name} style={{
               background: isDark ? '#0f0f0f' : '#f9f9f9',
               border: isDark ? '1px solid #2a2a2a' : '1px solid #eee',
               borderRadius: 12,
@@ -78,14 +67,14 @@ export default function ExerciseStatsSection({ isDark, workouts, t }) {
             }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <strong style={{ color: isDark ? '#fff' : '#333', fontSize: '1rem' }}>{name}</strong>
-                <span style={{ fontSize: '0.85rem', color: '#1dd1a1', fontWeight: '600' }}>#{index + 1}</span>
+                <strong style={{ color: isDark ? '#fff' : '#333', fontSize: '1rem' }}>{translateExerciseName(entry.name, language)}</strong>
+                <span style={{ fontSize: '0.85rem', color: '#1dd1a1', fontWeight: '600' }}>#{idx + 1}</span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
-                <MiniStat label="Sesiones" value={v.sessions} isDark={isDark} />
-                <MiniStat label="Series" value={v.series} isDark={isDark} />
-                <MiniStat label="Reps" value={v.reps} isDark={isDark} />
-                <MiniStat label="Volumen" value={v.volume.toLocaleString()} isDark={isDark} />
+                <MiniStat label="Sesiones" value={entry.sessions} isDark={isDark} />
+                <MiniStat label="Series" value={entry.series} isDark={isDark} />
+                <MiniStat label="Reps" value={entry.reps} isDark={isDark} />
+                <MiniStat label="Volumen" value={`${Math.round(entry.volume).toLocaleString()} kg`} isDark={isDark} />
               </div>
             </div>
           ))}

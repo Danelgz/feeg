@@ -1,9 +1,11 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Reglas para perfiles de usuario
+    // Reglas para perfiles de usuario. Documento PRIVADO: aquí vive el historial completo de
+    // entrenamientos, medidas corporales y ajustes — solo su dueño puede leerlo. Lo que debe ser
+    // público (username, foto, descripción) vive aparte en usersPublic/{userId}.
     match /users/{userId} {
-      allow read: if true;
+      allow read: if request.auth != null && request.auth.uid == userId;
       allow write: if request.auth != null && request.auth.uid == userId;
 
       // Subcolección de mensajes del chat IA

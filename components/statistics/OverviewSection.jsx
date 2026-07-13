@@ -1,9 +1,9 @@
 import MiniStat from "./MiniStat";
 import AchievementCard from "./AchievementCard";
 
-function getTimeAgo(timestamp) {
-  if (!timestamp) return "";
-  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+function getTimeAgo(completedAt) {
+  if (!completedAt) return "";
+  const seconds = Math.floor((Date.now() - new Date(completedAt).getTime()) / 1000);
   let interval = seconds / 31536000;
   if (interval > 1) return Math.floor(interval) + "a";
   interval = seconds / 2592000;

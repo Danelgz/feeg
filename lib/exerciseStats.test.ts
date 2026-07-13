@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  ALL_MUSCLE_GROUPS,
   buildPRRecordsFromExercises,
   calculateOneRM,
   checkForNewPR,
   checkWorkoutVolumePR,
+  computeExerciseIndex,
   computePersonalRecords,
+  computeSeriesByGroup,
   computeWorkoutTotals,
   pickPrimaryPRType,
   weightUnitFor,
@@ -197,5 +200,80 @@ describe("buildPRRecordsFromExercises", () => {
     expect(records).toHaveLength(1);
     expect(records[0].tier).toBe("historic");
     expect(records[0].weight).toBe(35);
+  });
+});
+
+describe("ALL_MUSCLE_GROUPS", () => {
+  it("covers every group defined in the exercise catalog, including non-drawable ones", () => {
+    expect(ALL_MUSCLE_GROUPS).toContain("Cardio");
+    expect(ALL_MUSCLE_GROUPS).toContain("Aductor");
+    expect(ALL_MUSCLE_GROUPS).toContain("Abductor");
+    expect(ALL_MUSCLE_GROUPS).toContain("Cuerpo Completo");
+    expect(ALL_MUSCLE_GROUPS).toContain("Antebrazo");
+  });
+});
+
+describe("computeSeriesByGroup", () => {
+  it("counts series from the real exerciseDetails shape (series is an array, not a count)", () => {
+    const workouts: CompletedWorkout[] = [
+      {
+        exerciseDetails: [
+          { name: "Press militar con barra", muscleGroup: "Hombros", series: [{ reps: 8, weight: 40 }, { reps: 8, weight: 40 }] },
+          { name: "Sentadilla trasera con barra", muscleGroup: "Cuádriceps", series: [{ reps: 5, weight: 100 }] },
+        ],
+      },
+    ];
+    const counts = computeSeriesByGroup(workouts);
+    expect(counts["Hombros"]).toBe(2);
+    expect(counts["Cuádriceps"]).toBe(1);
+    // Grupos sin actividad siguen presentes a 0, no desaparecen del objeto.
+    expect(counts["Cardio"]).toBe(0);
+  });
+
+  it("ignores details with a muscleGroup outside the requested group list", () => {
+    const workouts: CompletedWorkout[] = [
+      { exerciseDetails: [{ name: "X", muscleGroup: "GrupoInventado", series: [{ reps: 1, weight: 1 }] }] },
+    ];
+    const counts = computeSeriesByGroup(workouts);
+    expect(Object.values(counts).every((n) => n === 0)).toBe(true);
+  });
+
+  it("respects a custom group subset (used to scope the visual muscle map)", () => {
+    const workouts: CompletedWorkout[] = [
+      { exerciseDetails: [{ name: "Aerobic", muscleGroup: "Cardio", series: [{ reps: 1, weight: 0 }] }] },
+    ];
+    const counts = computeSeriesByGroup(workouts, ["Pecho", "Espalda"]);
+    expect(counts).toEqual({ Pecho: 0, Espalda: 0 });
+  });
+});
+
+describe("computeExerciseIndex", () => {
+  it("aggregates sessions/series/reps/volume per exercise across workouts", () => {
+    const workouts: CompletedWorkout[] = [
+      { exerciseDetails: [{ name: "Curl con barra recta", muscleGroup: "Bíceps", series: [{ reps: 10, weight: 20 }] }] },
+      { exerciseDetails: [{ name: "Curl con barra recta", muscleGroup: "Bíceps", series: [{ reps: 8, weight: 25 }, { reps: 8, weight: 25 }] }] },
+    ];
+    const index = computeExerciseIndex(workouts);
+    const entry = index["Curl con barra recta"];
+    expect(entry.sessions).toBe(2);
+    expect(entry.series).toBe(3);
+    expect(entry.reps).toBe(26);
+    expect(entry.volume).toBe(10 * 20 + 8 * 25 + 8 * 25);
+  });
+
+  it("skips exercises with no completed series", () => {
+    const workouts: CompletedWorkout[] = [{ exerciseDetails: [{ name: "X", series: [] }] }];
+    expect(computeExerciseIndex(workouts)).toEqual({});
+  });
+
+  it("supports filtering (used to scope the exercise breakdown to one muscle group)", () => {
+    const workouts: CompletedWorkout[] = [
+      { exerciseDetails: [
+        { name: "Curl con barra recta", muscleGroup: "Bíceps", series: [{ reps: 10, weight: 20 }] },
+        { name: "Sentadilla trasera con barra", muscleGroup: "Cuádriceps", series: [{ reps: 5, weight: 100 }] },
+      ] },
+    ];
+    const index = computeExerciseIndex(workouts, (d) => d.muscleGroup === "Bíceps");
+    expect(Object.keys(index)).toEqual(["Curl con barra recta"]);
   });
 });

@@ -5,9 +5,9 @@ import {
   createSessionFromRoutine,
   workoutSessionReducer,
   type ExerciseSession,
-  type PRCheckResult,
   type WorkoutSessionState,
 } from "./workoutSessionReducer";
+import type { PRCheckResult } from "../lib/exerciseStats";
 
 function exercise(overrides: Partial<ExerciseSession> = {}): ExerciseSession {
   return {

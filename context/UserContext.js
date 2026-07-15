@@ -8,8 +8,10 @@ import {
   saveToCloud,
   getFromCloud,
   deleteFromCloud,
+  getPublicWorkoutDocId,
   bulkSaveWorkoutsToCloud,
   bulkDeleteWorkoutsFromCloud,
+  bulkDeleteRawWorkoutDocs,
   followUser,
   unfollowUser,
   getFollowersCount,
@@ -357,9 +359,12 @@ export function UserProvider({ children }) {
     localStorage.setItem('completedWorkouts', JSON.stringify(newList));
     if (authUser) {
       await saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList });
-      // Guardar también en colección global para el feed (público por defecto)
-      await saveToCloud(`workouts/${workout.id}`, { 
-        ...workout, 
+      // Guardar también en colección global para el feed (público por defecto). El id del
+      // documento lleva el uid delante (ver getPublicWorkoutDocId): el id local (Date.now())
+      // no tiene nada que lo distinga por usuario, así que sin el prefijo dos cuentas podrían
+      // generar el mismo id de documento y pisarse entre sí.
+      await saveToCloud(`workouts/${getPublicWorkoutDocId(authUser.uid, workout.id)}`, {
+        ...workout,
         userId: authUser.uid,
         userName: user?.username || authUser.displayName,
         userPhoto: user?.photoURL || authUser.photoURL,
@@ -413,9 +418,12 @@ export function UserProvider({ children }) {
     localStorage.setItem('completedWorkouts', JSON.stringify(newList));
     if (authUser) {
       await saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList });
-      // Sin esto, la copia pública en `workouts/{id}` (la que lee el feed y los perfiles de
+      // Sin esto, la copia pública en `workouts/{...}` (la que lee el feed y los perfiles de
       // otros usuarios, con o sin cuenta) nunca se borraba: el entrenamiento seguía visible
       // para todos aunque tú ya lo hubieras eliminado.
+      await deleteFromCloud(`workouts/${getPublicWorkoutDocId(authUser.uid, id)}`);
+      // Best-effort: borra también la clave antigua sin prefijo, por si este entrenamiento se
+      // había publicado antes de este fix.
       await deleteFromCloud(`workouts/${id}`);
     }
   };
@@ -428,7 +436,10 @@ export function UserProvider({ children }) {
     if (authUser) {
       await saveToCloud(`users/${authUser.uid}`, { completedWorkouts: [] });
       try {
-        await bulkDeleteWorkoutsFromCloud(idsToDelete);
+        await bulkDeleteWorkoutsFromCloud(authUser.uid, idsToDelete);
+        // Best-effort: limpia también cualquier copia publicada antes de este fix, con la
+        // clave antigua sin prefijo de uid.
+        await bulkDeleteRawWorkoutDocs(idsToDelete);
       } catch (error) {
         console.error('[deleteAllWorkouts] Fallo al borrar del feed público:', error);
       }
@@ -442,7 +453,7 @@ export function UserProvider({ children }) {
     localStorage.setItem('completedWorkouts', JSON.stringify(newList));
     if (authUser) {
       await saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList });
-      await saveToCloud(`workouts/${updatedWorkout.id}`, updatedWorkout);
+      await saveToCloud(`workouts/${getPublicWorkoutDocId(authUser.uid, updatedWorkout.id)}`, updatedWorkout);
     }
   };
 

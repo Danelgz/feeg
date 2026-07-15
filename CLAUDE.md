@@ -76,14 +76,21 @@ architecture scales, and the code is clean.
 ## Commands
 
 ```bash
-npm run dev      # start dev server (localhost:3000)
-npm run build    # production build
-npm run start    # run production build
-npm run lint     # ESLint (flat config, eslint.config.js)
+npm run dev         # start dev server (localhost:3000)
+npm run build       # production build
+npm run start       # run production build
+npm run lint        # ESLint (flat config, eslint.config.js)
+npm run test        # run Vitest suite once
+npm run test:watch  # Vitest in watch mode
 ```
 
-No test framework is configured. There is no typecheck script — TypeScript is checked implicitly
-via `next build`/`next dev`; run `npx tsc --noEmit` directly if you need a standalone check.
+Run a single test file with `npx vitest run path/to/file.test.ts` (or `npx vitest path/to/file.test.ts`
+to watch just that file). Tests live next to the code they cover (e.g. `hooks/workoutSessionReducer.test.ts`,
+`lib/exerciseStats.test.ts`) and run in `jsdom` via [vitest.config.ts](vitest.config.ts). Only a handful of
+`lib`/`hooks` modules have coverage — most UI code has none.
+
+There is no typecheck script — TypeScript is checked implicitly via `next build`/`next dev`; run
+`npx tsc --noEmit` directly if you need a standalone check.
 
 ## Architecture
 
@@ -142,3 +149,11 @@ for consistency rather than introducing a second styling system.
 - `pages/api/chat.js` and `pages/api/generate-routine.js` call OpenAI directly from a Next.js API route
   using `OPENAI_API_KEY`/Firebase Admin env vars — these must be set in Vercel/deployment env, not just
   `.env.local`.
+- `split.py`, `split_svg.py`, `split_frontrear.py` at the repo root are one-off local scripts for
+  reformatting the muscle-map SVG/HTML assets under `public/` into a more readable line-per-tag form;
+  they aren't part of the build and don't need maintaining.
+
+## Reference docs
+
+`docs/` holds short product notes: `DESIGN.md` (theme baseline, referenced above) and `PROJECT.md`
+(one-line feature list). `FEATURES.md` and `ROADMAP.md` exist but are currently empty.

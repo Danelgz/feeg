@@ -358,17 +358,15 @@ export function UserProvider({ children }) {
     const newList = [...workouts, ...completedWorkouts];
     // Sort by date descending
     newList.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
-    
+
     setCompletedWorkouts(newList);
     localStorage.setItem('completedWorkouts', JSON.stringify(newList));
-    
+
     if (authUser) {
-      await saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList });
-      
       // Save imported workouts to global feed (no limit to ensure visibility)
-      const feedPromises = workouts.map(workout => 
-        saveToCloud(`workouts/${workout.id}`, { 
-          ...workout, 
+      const feedPromises = workouts.map(workout =>
+        saveToCloud(`workouts/${workout.id}`, {
+          ...workout,
           userId: authUser.uid,
           userName: user?.username || authUser.displayName,
           userPhoto: user?.photoURL || authUser.photoURL,
@@ -377,7 +375,20 @@ export function UserProvider({ children }) {
           isPublic: true
         })
       );
-      await Promise.all(feedPromises);
+      // El guardado del perfil (`users/{uid}`) y la publicación en el feed (`workouts/{id}`) van
+      // en paralelo y de forma independiente: con un historial grande (import de Hevy con años de
+      // datos) el documento de perfil puede fallar (p.ej. supera el límite de tamaño de Firestore),
+      // y antes ese fallo impedía que se publicara CUALQUIER entrenamiento en el feed público —
+      // el usuario seguía viéndolos localmente pero nadie más los veía nunca.
+      const results = await Promise.allSettled([
+        saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList }),
+        ...feedPromises
+      ]);
+      results.forEach((r, i) => {
+        if (r.status === 'rejected') {
+          console.error(`[bulkSaveWorkouts] Fallo al guardar en la nube (índice ${i}):`, r.reason);
+        }
+      });
     }
   };
 

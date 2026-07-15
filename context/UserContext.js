@@ -5,10 +5,13 @@ import {
   signInWithGoogle,
   getGoogleRedirectResult,
   signOutUser,
-  saveToCloud, 
-  getFromCloud, 
-  followUser, 
-  unfollowUser, 
+  saveToCloud,
+  getFromCloud,
+  deleteFromCloud,
+  bulkSaveWorkoutsToCloud,
+  bulkDeleteWorkoutsFromCloud,
+  followUser,
+  unfollowUser,
   getFollowersCount,
   getFollowersList,
   getFollowingList
@@ -377,32 +380,20 @@ export function UserProvider({ children }) {
     localStorage.setItem('completedWorkouts', JSON.stringify(newList));
 
     if (authUser) {
-      // Save imported workouts to global feed (no limit to ensure visibility)
-      const feedPromises = workouts.map(workout =>
-        saveToCloud(`workouts/${workout.id}`, {
-          ...workout,
-          userId: authUser.uid,
-          userName: user?.username || authUser.displayName,
-          userPhoto: user?.photoURL || authUser.photoURL,
-          likes: [],
-          commentsList: [],
-          isPublic: true
-        })
-      );
-      // El guardado del perfil (`users/{uid}`) y la publicación en el feed (`workouts/{id}`) van
-      // en paralelo y de forma independiente: con un historial grande (import de Hevy con años de
-      // datos) el documento de perfil puede fallar (p.ej. supera el límite de tamaño de Firestore),
-      // y antes ese fallo impedía que se publicara CUALQUIER entrenamiento en el feed público —
-      // el usuario seguía viéndolos localmente pero nadie más los veía nunca.
-      const results = await Promise.allSettled([
-        saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList }),
-        ...feedPromises
-      ]);
-      results.forEach((r, i) => {
-        if (r.status === 'rejected') {
-          console.error(`[bulkSaveWorkouts] Fallo al guardar en la nube (índice ${i}):`, r.reason);
-        }
-      });
+      try {
+        // Publica en batches atómicos en vez de un setDoc por entrenamiento: con cientos de
+        // entrenos importados de golpe, cientos de escrituras concurrentes son poco fiables
+        // (compiten por conexión, se cortan si el usuario navega justo tras "importación
+        // completada"). Ver bulkSaveWorkoutsToCloud en lib/firebase.js.
+        await bulkSaveWorkoutsToCloud(
+          authUser.uid,
+          workouts,
+          { userName: user?.username || authUser.displayName, userPhoto: user?.photoURL || authUser.photoURL },
+          newList
+        );
+      } catch (error) {
+        console.error('[bulkSaveWorkouts] Fallo al guardar en la nube:', error);
+      }
     }
   };
 
@@ -422,15 +413,25 @@ export function UserProvider({ children }) {
     localStorage.setItem('completedWorkouts', JSON.stringify(newList));
     if (authUser) {
       await saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList });
+      // Sin esto, la copia pública en `workouts/{id}` (la que lee el feed y los perfiles de
+      // otros usuarios, con o sin cuenta) nunca se borraba: el entrenamiento seguía visible
+      // para todos aunque tú ya lo hubieras eliminado.
+      await deleteFromCloud(`workouts/${id}`);
     }
   };
 
   const deleteAllWorkouts = async () => {
     lastLocalUpdate.current = Date.now();
+    const idsToDelete = completedWorkouts.map(w => w.id);
     setCompletedWorkouts([]);
     localStorage.setItem('completedWorkouts', JSON.stringify([]));
     if (authUser) {
       await saveToCloud(`users/${authUser.uid}`, { completedWorkouts: [] });
+      try {
+        await bulkDeleteWorkoutsFromCloud(idsToDelete);
+      } catch (error) {
+        console.error('[deleteAllWorkouts] Fallo al borrar del feed público:', error);
+      }
     }
   };
 

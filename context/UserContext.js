@@ -1,9 +1,10 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { translations } from '../data/translations';
-import { 
-  onAuthChange, 
-  signInWithGoogle, 
-  signOutUser, 
+import {
+  onAuthChange,
+  signInWithGoogle,
+  getGoogleRedirectResult,
+  signOutUser,
   saveToCloud, 
   getFromCloud, 
   followUser, 
@@ -162,6 +163,19 @@ export function UserProvider({ children }) {
       setIsSyncing(false);
     }
   };
+
+  // Recoger el resultado de un signInWithRedirect pendiente (login con Google en móvil: la
+  // página navega fuera y vuelve, así que el resultado solo se puede leer al recargar).
+  // onAuthChange ya actualiza authUser en cuanto Firebase procesa el redirect, pero esta
+  // llamada es la única forma de enterarnos si el redirect terminó en error.
+  useEffect(() => {
+    getGoogleRedirectResult().then((result) => {
+      if (result && result.error) {
+        console.error("Error en login (redirect):", result.error);
+        showNotification("Ocurrió un error al iniciar sesión con Google", "error");
+      }
+    });
+  }, []);
 
   // Suscribirse a cambios de autenticación de Firebase
   useEffect(() => {

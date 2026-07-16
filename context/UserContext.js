@@ -169,15 +169,17 @@ export function UserProvider({ children }) {
     }
   };
 
-  // Recoger el resultado de un signInWithRedirect pendiente (login con Google en móvil: la
-  // página navega fuera y vuelve, así que el resultado solo se puede leer al recargar).
-  // onAuthChange ya actualiza authUser en cuanto Firebase procesa el redirect, pero esta
-  // llamada es la única forma de enterarnos si el redirect terminó en error.
+  // Recoger el resultado de un signInWithRedirect pendiente (login con Google cuando el popup
+  // falla: la página navega fuera y vuelve, así que el resultado solo se puede leer al
+  // recargar). Esto se ejecuta en CADA carga de la app, haya habido o no un redirect pendiente
+  // — por eso solo registramos el error en consola y nunca se lo mostramos al usuario: mostrar
+  // una notificación aquí significaría que cualquier fallo interno de esta comprobación (sin
+  // relación con un intento real de login) aparecería como error en cada visita a la web.
+  // onAuthChange ya actualiza authUser en cuanto Firebase procesa el redirect correctamente.
   useEffect(() => {
     getGoogleRedirectResult().then((result) => {
       if (result && result.error) {
         console.error("Error en login (redirect):", result.error);
-        showNotification("Ocurrió un error al iniciar sesión con Google", "error");
       }
     });
   }, []);

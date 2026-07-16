@@ -11,7 +11,6 @@ import {
   getPublicWorkoutDocId,
   bulkSaveWorkoutsToCloud,
   bulkDeleteWorkoutsFromCloud,
-  bulkDeleteRawWorkoutDocs,
   followUser,
   unfollowUser,
   getFollowersCount,
@@ -435,15 +434,15 @@ export function UserProvider({ children }) {
       // En paralelo, no en serie: encadenar tres awaits seguidos triplicaba la latencia de red
       // percibida por quien pulsa "Borrar" (el modal de confirmación no se cierra hasta que
       // esta función termina — ver handleDeleteWorkout en pages/profile.js).
+      // En paralelo, no en serie: encadenar awaits seguidos aumenta la latencia percibida por
+      // quien pulsa "Borrar" (el modal de confirmación no se cierra hasta que esta función
+      // termina — ver handleDeleteWorkout en pages/profile.js).
       const results = await Promise.allSettled([
         saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList }),
         // Sin esto, la copia pública en `workouts/{...}` (la que lee el feed y los perfiles de
         // otros usuarios, con o sin cuenta) nunca se borraba: el entrenamiento seguía visible
         // para todos aunque tú ya lo hubieras eliminado.
         deleteFromCloud(`workouts/${getPublicWorkoutDocId(authUser.uid, id)}`),
-        // Best-effort: borra también la clave antigua sin prefijo, por si este entrenamiento se
-        // había publicado antes de este fix.
-        deleteFromCloud(`workouts/${id}`),
       ]);
       results.forEach((r) => {
         if (r.status === 'rejected') {
@@ -462,9 +461,6 @@ export function UserProvider({ children }) {
       const results = await Promise.allSettled([
         saveToCloud(`users/${authUser.uid}`, { completedWorkouts: [] }),
         bulkDeleteWorkoutsFromCloud(authUser.uid, idsToDelete),
-        // Best-effort: limpia también cualquier copia publicada antes de este fix, con la
-        // clave antigua sin prefijo de uid.
-        bulkDeleteRawWorkoutDocs(idsToDelete),
       ]);
       results.forEach((r) => {
         if (r.status === 'rejected') {

@@ -206,11 +206,24 @@ export function UserProvider({ children }) {
     };
   }, []);
 
-  // Sincronización automática cuando el usuario se detecta por primera vez
+  // Sincronización automática cuando el usuario se detecta por primera vez, o cuando cambia a
+  // una cuenta distinta (p.ej. "cambiar cuenta" en ajustes) sin pasar por un logout completo.
+  // isLoaded es un simple flag de "listo para renderizar" que una vez a true nunca vuelve a
+  // false por sí solo — usar solo `!isLoaded` como guarda hacía que cambiar de cuenta se
+  // quedara con los datos (vacíos o de la cuenta anterior) para siempre, porque refreshData
+  // nunca se volvía a disparar para el nuevo uid.
+  const loadedUidRef = useRef(null);
   useEffect(() => {
-    if (authUser && !isLoaded) {
-      refreshData(true).then(() => setIsLoaded(true));
+    if (!authUser) return;
+    if (loadedUidRef.current === authUser.uid) return;
+    if (loadedUidRef.current !== null) {
+      // Cambiando de una cuenta a otra ya autenticada: limpia los datos de la anterior para
+      // no mostrarlos mezclados mientras cargan los de la nueva.
+      clearUser();
     }
+    loadedUidRef.current = authUser.uid;
+    setIsLoaded(false);
+    refreshData(true).then(() => setIsLoaded(true));
   }, [authUser]);
 
   const saveUser = async (userData) => {

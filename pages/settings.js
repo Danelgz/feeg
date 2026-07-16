@@ -5,7 +5,7 @@ import { getTokens } from "../lib/tokens";
 import { Icon, Button, Card, PageHeader, Switch } from "../components/ui";
 
 export default function Settings() {
-  const { theme, themePreference, setThemeMode, isMobile, language, updateLanguage, soundEnabled, setSoundEnabled, t, authUser, loginWithGoogle, logout, refreshData } = useUser();
+  const { theme, themePreference, setThemeMode, isMobile, language, updateLanguage, soundEnabled, setSoundEnabled, t, authUser, loginWithGoogle, refreshData } = useUser();
 
   // Forzar refresco de datos al entrar a ajustes
   useEffect(() => {
@@ -29,7 +29,13 @@ export default function Settings() {
   ];
 
   const handleSwitchAccount = async () => {
-    await logout();
+    // Ojo: signInWithPopup tiene que lanzarse de forma síncrona dentro del gesto del click
+    // para que el navegador no lo bloquee — sobre todo en móvil, mucho más estricto que
+    // escritorio con esto. Antes había un `await logout()` justo delante, que rompía esa
+    // cadena síncrona y hacía que el selector de cuenta nunca se abriera en el móvil (aunque
+    // en PC sí colaba). No hace falta cerrar sesión antes: signInWithPopup con
+    // prompt: 'select_account' ya fuerza el selector y sustituye la cuenta activa al elegir
+    // una distinta.
     await loginWithGoogle();
   };
 

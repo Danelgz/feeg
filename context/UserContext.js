@@ -10,7 +10,7 @@ import {
   deleteFromCloud,
   getPublicWorkoutDocId,
   bulkSaveWorkoutsToCloud,
-  bulkDeleteWorkoutsFromCloud,
+  deleteAllPublicWorkoutsForUser,
   followUser,
   unfollowUser,
   getFollowersCount,
@@ -431,9 +431,6 @@ export function UserProvider({ children }) {
     setCompletedWorkouts(newList);
     localStorage.setItem('completedWorkouts', JSON.stringify(newList));
     if (authUser) {
-      // En paralelo, no en serie: encadenar tres awaits seguidos triplicaba la latencia de red
-      // percibida por quien pulsa "Borrar" (el modal de confirmación no se cierra hasta que
-      // esta función termina — ver handleDeleteWorkout en pages/profile.js).
       // En paralelo, no en serie: encadenar awaits seguidos aumenta la latencia percibida por
       // quien pulsa "Borrar" (el modal de confirmación no se cierra hasta que esta función
       // termina — ver handleDeleteWorkout en pages/profile.js).
@@ -454,13 +451,15 @@ export function UserProvider({ children }) {
 
   const deleteAllWorkouts = async () => {
     lastLocalUpdate.current = Date.now();
-    const idsToDelete = completedWorkouts.map(w => w.id);
     setCompletedWorkouts([]);
     localStorage.setItem('completedWorkouts', JSON.stringify([]));
     if (authUser) {
+      // deleteAllPublicWorkoutsForUser busca en Firestore por userId en vez de reconstruir ids
+      // desde el estado local: así se limpian también los documentos que pudieran haber
+      // quedado con esquemas de id de versiones anteriores, no solo los que el cliente conoce.
       const results = await Promise.allSettled([
         saveToCloud(`users/${authUser.uid}`, { completedWorkouts: [] }),
-        bulkDeleteWorkoutsFromCloud(authUser.uid, idsToDelete),
+        deleteAllPublicWorkoutsForUser(authUser.uid),
       ]);
       results.forEach((r) => {
         if (r.status === 'rejected') {

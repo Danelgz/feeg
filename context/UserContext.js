@@ -432,14 +432,24 @@ export function UserProvider({ children }) {
     setCompletedWorkouts(newList);
     localStorage.setItem('completedWorkouts', JSON.stringify(newList));
     if (authUser) {
-      await saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList });
-      // Sin esto, la copia pública en `workouts/{...}` (la que lee el feed y los perfiles de
-      // otros usuarios, con o sin cuenta) nunca se borraba: el entrenamiento seguía visible
-      // para todos aunque tú ya lo hubieras eliminado.
-      await deleteFromCloud(`workouts/${getPublicWorkoutDocId(authUser.uid, id)}`);
-      // Best-effort: borra también la clave antigua sin prefijo, por si este entrenamiento se
-      // había publicado antes de este fix.
-      await deleteFromCloud(`workouts/${id}`);
+      // En paralelo, no en serie: encadenar tres awaits seguidos triplicaba la latencia de red
+      // percibida por quien pulsa "Borrar" (el modal de confirmación no se cierra hasta que
+      // esta función termina — ver handleDeleteWorkout en pages/profile.js).
+      const results = await Promise.allSettled([
+        saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList }),
+        // Sin esto, la copia pública en `workouts/{...}` (la que lee el feed y los perfiles de
+        // otros usuarios, con o sin cuenta) nunca se borraba: el entrenamiento seguía visible
+        // para todos aunque tú ya lo hubieras eliminado.
+        deleteFromCloud(`workouts/${getPublicWorkoutDocId(authUser.uid, id)}`),
+        // Best-effort: borra también la clave antigua sin prefijo, por si este entrenamiento se
+        // había publicado antes de este fix.
+        deleteFromCloud(`workouts/${id}`),
+      ]);
+      results.forEach((r) => {
+        if (r.status === 'rejected') {
+          console.error('[deleteCompletedWorkout] Fallo al borrar en la nube:', r.reason);
+        }
+      });
     }
   };
 
@@ -449,15 +459,18 @@ export function UserProvider({ children }) {
     setCompletedWorkouts([]);
     localStorage.setItem('completedWorkouts', JSON.stringify([]));
     if (authUser) {
-      await saveToCloud(`users/${authUser.uid}`, { completedWorkouts: [] });
-      try {
-        await bulkDeleteWorkoutsFromCloud(authUser.uid, idsToDelete);
+      const results = await Promise.allSettled([
+        saveToCloud(`users/${authUser.uid}`, { completedWorkouts: [] }),
+        bulkDeleteWorkoutsFromCloud(authUser.uid, idsToDelete),
         // Best-effort: limpia también cualquier copia publicada antes de este fix, con la
         // clave antigua sin prefijo de uid.
-        await bulkDeleteRawWorkoutDocs(idsToDelete);
-      } catch (error) {
-        console.error('[deleteAllWorkouts] Fallo al borrar del feed público:', error);
-      }
+        bulkDeleteRawWorkoutDocs(idsToDelete),
+      ]);
+      results.forEach((r) => {
+        if (r.status === 'rejected') {
+          console.error('[deleteAllWorkouts] Fallo al borrar del feed público:', r.reason);
+        }
+      });
     }
   };
 

@@ -103,9 +103,15 @@ export default function Profile() {
     setFollowingList(list);
   };
 
-  const handleDeleteWorkout = async (id) => {
-    await deleteCompletedWorkout(id);
+  const handleDeleteWorkout = (id) => {
+    // El borrado local ya es instantáneo (deleteCompletedWorkout actualiza el estado antes de
+    // tocar la nube); cerrar el modal aquí en vez de esperar al await hacía que el botón
+    // "Borrar" pareciera no reaccionar hasta que la llamada a la nube terminaba.
     setConfirmDelete(null);
+    deleteCompletedWorkout(id).catch((error) => {
+      console.error("Error al borrar entrenamiento:", error);
+      showNotification("No se pudo borrar el entrenamiento del feed público", "error");
+    });
   };
 
   const handleAddToRoutine = async () => {
@@ -287,9 +293,12 @@ export default function Profile() {
         confirmLabel={t("delete_all")}
         cancelLabel={t("cancel")}
         onCancel={() => setConfirmDeleteAll(false)}
-        onConfirm={async () => {
-          await deleteAllWorkouts();
+        onConfirm={() => {
           setConfirmDeleteAll(false);
+          deleteAllWorkouts().catch((error) => {
+            console.error("Error al borrar todos los entrenamientos:", error);
+            showNotification("No se pudieron borrar todos los entrenamientos del feed público", "error");
+          });
         }}
       />
 

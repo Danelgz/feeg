@@ -25,10 +25,10 @@ const trackingTypes = [
   { id: "weight_bodyweight", label: "Peso corporal + peso", description: "Lastre adicional" },
 ];
 
-export default function CreateCustomExerciseModal({ onSave, onCancel }) {
-  const [exerciseName, setExerciseName] = useState("");
+export default function CreateCustomExerciseModal({ onSave, onCancel, initialName = "", initialMuscleGroup = "Pecho" }) {
+  const [exerciseName, setExerciseName] = useState(initialName);
   const [trackingType, setTrackingType] = useState("weight_reps");
-  const [muscleGroup, setMuscleGroup] = useState("Pecho");
+  const [muscleGroup, setMuscleGroup] = useState(initialMuscleGroup);
   const { theme, t } = useUser();
   const isDark = theme === "dark";
 

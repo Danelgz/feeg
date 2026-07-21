@@ -111,8 +111,16 @@ export function UserProvider({ children }) {
     setIsSyncing(true);
     try {
       console.log(`[UserContext] Sincronizando datos desde la nube (force: ${force})...`);
-      const cloudData = await getFromCloud(`users/${authUser.uid}`);
-      const publicData = await getFromCloud(`usersPublic/${authUser.uid}`);
+      // Las tres lecturas son independientes entre sí — en paralelo en vez de en serie, así el
+      // peor caso es ~1 timeout de red (lib/firebase.js) en vez de la suma de los tres, que es
+      // lo que dejaba la pantalla de "Sincronizando tus datos..." colgada tanto tiempo en móvil.
+      const [cloudData, publicData, followersList] = await Promise.all([
+        getFromCloud(`users/${authUser.uid}`),
+        getFromCloud(`usersPublic/${authUser.uid}`),
+        getFollowersList(authUser.uid),
+      ]);
+
+      setFollowers(followersList.map(u => u.id));
 
       if (cloudData) {
         if (cloudData.profile) {
@@ -146,9 +154,6 @@ export function UserProvider({ children }) {
         } else if (cloudData.following) {
           setFollowing(cloudData.following);
         }
-
-        const fList = await getFollowersList(authUser.uid);
-        setFollowers(fList.map(u => u.id));
 
         if (cloudData.settings) {
           if (cloudData.settings.theme) {

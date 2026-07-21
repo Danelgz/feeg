@@ -4,6 +4,8 @@ import { useUser } from "../context/UserContext";
 import { exercisesList } from "../data/exercises";
 import { getTokens } from "../lib/tokens";
 import { Icon, Button, EmptyState, PageHeader } from "../components/ui";
+import { resolveExerciseNames } from "../lib/exerciseMatcher";
+import ExerciseMatchReview from "../components/import/ExerciseMatchReview";
 
 export default function ExportData() {
   const { theme, t, bulkSaveWorkouts, bulkSaveMeasures, saveUser, user, authUser, completedWorkouts, routines, measures } = useUser();
@@ -12,6 +14,9 @@ export default function ExportData() {
   const [isImporting, setIsImporting] = useState(false);
   const [importStatus, setImportStatus] = useState("");
   const [importedCount, setImportedCount] = useState(0);
+  // Cuando el matcher deja ejercicios ambiguos/sin conectar, el import se pausa aquí a la espera
+  // de que ExerciseMatchReview resuelva cada uno (ver handleReviewComplete más abajo).
+  const [pendingImport, setPendingImport] = useState(null);
 
   // Backup personal completo en JSON — descarga directa en el cliente, sin pasar por un
   // endpoint. Es la contraparte real de "Importar desde Hevy" más abajo: antes esta página se
@@ -61,54 +66,112 @@ export default function ExportData() {
     return "Otros";
   };
 
+  // Reescribe exerciseDetails[].name/muscleGroup/group con lo que se resolvió en el matcher
+  // (automático) y/o en ExerciseMatchReview (manual). Los nombres sin resolución en `resolutions`
+  // (omitidos, o directamente ya conectados de forma automática por resolveExerciseNames) se
+  // dejan tal y como los dejó parseHevyCSV.
+  const applyResolutions = (workouts, resolutions) => {
+    return workouts.map((w) => ({
+      ...w,
+      exerciseDetails: w.exerciseDetails.map((ex) => {
+        const resolution = resolutions[ex.name];
+        if (!resolution) return ex;
+        return { ...ex, name: resolution.name, muscleGroup: resolution.group, group: resolution.group };
+      }),
+    }));
+  };
+
+  const finalizeImport = async (workouts, weightMeasures, latestWeight) => {
+    try {
+      let statusMsg = "";
+      if (workouts.length > 0) {
+        setImportStatus(`Importando ${workouts.length} entrenamientos...`);
+        await bulkSaveWorkouts(workouts);
+        statusMsg += `${workouts.length} entrenamientos `;
+      }
+
+      if (weightMeasures.length > 0) {
+        setImportStatus(prev => prev + " y medidas de peso...");
+        await bulkSaveMeasures(weightMeasures);
+        statusMsg += (statusMsg ? "y " : "") + `${weightMeasures.length} medidas de peso `;
+
+        if (latestWeight) {
+          const updatedUser = { ...user, weight: latestWeight };
+          await saveUser(updatedUser);
+          statusMsg += "(perfil actualizado) ";
+        }
+      }
+
+      setImportedCount(workouts.length || weightMeasures.length);
+      setImportStatus(`¡Importación completada! Se han importado ${statusMsg}.`);
+    } catch (error) {
+      console.error("Error importing CSV:", error);
+      setImportStatus("Error al procesar el archivo CSV. Asegúrate de que sea un export de Hevy.");
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     setIsImporting(true);
     setImportStatus("Leyendo archivo...");
-    
+
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
         const text = event.target.result;
         const { workouts, latestWeight, weightMeasures } = parseHevyCSV(text);
-        
+
         if (workouts.length === 0 && weightMeasures.length === 0) {
           setImportStatus("No se encontraron datos válidos en el archivo.");
           setIsImporting(false);
           return;
         }
 
-        let statusMsg = "";
-        if (workouts.length > 0) {
-          setImportStatus(`Importando ${workouts.length} entrenamientos...`);
-          await bulkSaveWorkouts(workouts);
-          statusMsg += `${workouts.length} entrenamientos `;
+        // Conecta cada ejercicio importado con el catálogo de FEEG (ver lib/exerciseMatcher.js)
+        // antes de guardar nada, para que el historial/PRs queden bajo el mismo nombre que el
+        // resto de la app en vez de duplicarse con el nombre literal de la app de origen.
+        const occurrencesByName = {};
+        const uniqueNames = [];
+        workouts.forEach((w) => w.exerciseDetails.forEach((ex) => {
+          if (!(ex.name in occurrencesByName)) { occurrencesByName[ex.name] = 0; uniqueNames.push(ex.name); }
+          occurrencesByName[ex.name] += ex.series.length;
+        }));
+
+        const { resolved, pending } = resolveExerciseNames(uniqueNames);
+        const autoConnected = applyResolutions(workouts, resolved);
+
+        if (pending.length > 0) {
+          setImportStatus("");
+          setIsImporting(false);
+          setPendingImport({
+            workouts: autoConnected,
+            weightMeasures,
+            latestWeight,
+            pending: pending.map((p) => ({ ...p, occurrences: occurrencesByName[p.foreignName] || 0 })),
+          });
+          return;
         }
 
-        if (weightMeasures.length > 0) {
-          setImportStatus(prev => prev + " y medidas de peso...");
-          await bulkSaveMeasures(weightMeasures);
-          statusMsg += (statusMsg ? "y " : "") + `${weightMeasures.length} medidas de peso `;
-          
-          if (latestWeight) {
-            const updatedUser = { ...user, weight: latestWeight };
-            await saveUser(updatedUser);
-            statusMsg += "(perfil actualizado) ";
-          }
-        }
-        
-        setImportedCount(workouts.length || weightMeasures.length);
-        setImportStatus(`¡Importación completada! Se han importado ${statusMsg}.`);
+        await finalizeImport(autoConnected, weightMeasures, latestWeight);
       } catch (error) {
         console.error("Error importing CSV:", error);
         setImportStatus("Error al procesar el archivo CSV. Asegúrate de que sea un export de Hevy.");
-      } finally {
         setIsImporting(false);
       }
     };
     reader.readAsText(file);
+  };
+
+  const handleReviewComplete = async (resolutions) => {
+    const { workouts, weightMeasures, latestWeight } = pendingImport;
+    setPendingImport(null);
+    setIsImporting(true);
+    setImportStatus("Importando entrenamientos...");
+    await finalizeImport(applyResolutions(workouts, resolutions), weightMeasures, latestWeight);
   };
 
   const parseHevyCSV = (text) => {
@@ -399,6 +462,17 @@ export default function ExportData() {
           )}
         </div>
       </div>
+
+      {pendingImport && (
+        <ExerciseMatchReview
+          pending={pendingImport.pending}
+          onComplete={handleReviewComplete}
+          onCancel={() => {
+            setPendingImport(null);
+            setImportStatus("Importación cancelada.");
+          }}
+        />
+      )}
     </Layout>
   );
 }

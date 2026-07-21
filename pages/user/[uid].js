@@ -97,7 +97,10 @@ export default function UserProfile() {
 
   const handleToggleLike = async (workoutId) => {
     if (!authUser) return;
-    await likeWorkout(workoutId, authUser.uid);
+    await likeWorkout(workoutId, authUser.uid, {
+      name: currentUser?.username || authUser.displayName || "Alguien",
+      photo: currentUser?.photoURL || authUser.photoURL || null,
+    });
     setWorkouts((prev) => prev.map((w) => (w.id === workoutId ? {
       ...w,
       likes: w.likes?.includes(authUser.uid) ? w.likes.filter((id) => id !== authUser.uid) : [...(w.likes || []), authUser.uid],

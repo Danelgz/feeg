@@ -126,7 +126,10 @@ export default function Home() {
   const handleLike = async (workoutId) => {
     if (!authUser) return;
     try {
-      await likeWorkout(workoutId, authUser.uid);
+      await likeWorkout(workoutId, authUser.uid, {
+        name: user?.username || authUser.displayName || "Alguien",
+        photo: user?.photoURL || authUser.photoURL || null,
+      });
       // Optimistic update
       setFeedWorkouts(prev => prev.map(w => w.id === workoutId ? {
         ...w,

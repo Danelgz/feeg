@@ -271,6 +271,13 @@ export const translations = {
     google_account: "Cuenta de Google",
     no_pfp: "Sin foto",
     please_login_to_import: "Inicia sesión para importar tus datos",
+
+    // Notificaciones
+    notifications: "Notificaciones",
+    notifications_empty: "No tienes notificaciones todavía.",
+    notification_liked_workout: "le dio like a tu entrenamiento",
+    notification_commented_workout: "comentó tu entrenamiento",
+    notification_started_following: "empezó a seguirte",
   },
   eu: {
     // Sidebar
@@ -543,5 +550,12 @@ export const translations = {
     google_account: "Google Kontua",
     no_pfp: "Argazkirik gabe",
     please_login_to_import: "Hasi saioa zure datuak inportatzeko",
+
+    // Jakinarazpenak
+    notifications: "Jakinarazpenak",
+    notifications_empty: "Oraindik ez duzu jakinarazpenik.",
+    notification_liked_workout: "zure entrenamenduari atsegin eman dio",
+    notification_commented_workout: "zure entrenamendua iruzkindu du",
+    notification_started_following: "jarraitzen hasi zaizu",
   }
 };

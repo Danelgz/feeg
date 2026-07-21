@@ -15,7 +15,9 @@ import {
   unfollowUser,
   getFollowersCount,
   getFollowersList,
-  getFollowingList
+  getFollowingList,
+  subscribeToNotifications,
+  markNotificationsRead as markNotificationsReadInCloud,
 } from '../lib/firebase';
 import { clearSnapshot as clearWorkoutSessionSnapshot } from '../lib/workoutStorage';
 
@@ -36,6 +38,8 @@ export function UserProvider({ children }) {
   const [measures, setMeasures] = useState([]);
   const [following, setFollowing] = useState([]);
   const [followers, setFollowers] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const unreadNotificationsCount = notifications.filter((n) => !n.read).length;
   const [isMobile, setIsMobile] = useState(false);
   const [notification, setNotification] = useState(null);
   const [soundEnabled, setSoundEnabledState] = useState(true);
@@ -205,6 +209,25 @@ export function UserProvider({ children }) {
     };
   }, []);
 
+  // Notificaciones sociales (like/comentario/nuevo seguidor) en vivo — onSnapshot en vez de un
+  // fetch puntual para que el contador de no leídas se actualice solo, sin recargar ni navegar.
+  useEffect(() => {
+    if (!authUser) {
+      setNotifications([]);
+      return;
+    }
+    const unsub = subscribeToNotifications(authUser.uid, setNotifications);
+    return () => unsub();
+  }, [authUser]);
+
+  const markNotificationsAsRead = async (notificationIds) => {
+    if (!authUser || !notificationIds || notificationIds.length === 0) return;
+    // Optimista: el badge baja al instante en vez de esperar a que el onSnapshot confirme la
+    // escritura.
+    setNotifications((prev) => prev.map((n) => (notificationIds.includes(n.id) ? { ...n, read: true } : n)));
+    await markNotificationsReadInCloud(authUser.uid, notificationIds);
+  };
+
   // Sincronización automática cuando el usuario se detecta por primera vez, o cuando cambia a
   // una cuenta distinta (p.ej. "cambiar cuenta" en ajustes) sin pasar por un logout completo.
   // isLoaded es un simple flag de "listo para renderizar" que una vez a true nunca vuelve a
@@ -284,6 +307,7 @@ export function UserProvider({ children }) {
     setActiveRoutine(null);
     setFollowing([]);
     setFollowers([]);
+    setNotifications([]);
   };
 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -548,7 +572,10 @@ export function UserProvider({ children }) {
 
   const handleFollow = async (targetId) => {
     if (!authUser) return;
-    await followUser(authUser.uid, targetId);
+    await followUser(authUser.uid, targetId, {
+      name: user?.username || authUser.displayName || 'Alguien',
+      photo: user?.photoURL || authUser.photoURL || null,
+    });
     setFollowing(prev => [...prev, targetId]);
   };
 
@@ -599,6 +626,9 @@ export function UserProvider({ children }) {
       isMobile,
       handleFollow,
       handleUnfollow,
+      notifications,
+      unreadNotificationsCount,
+      markNotificationsAsRead,
       notification,
       showNotification,
       t

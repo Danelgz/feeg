@@ -9,7 +9,7 @@ import { Icon, Button, Spinner, ConfirmModal } from "./ui";
 import { readLiveElapsedFromSnapshot } from "../lib/workoutStorage";
 
 export default function Layout({ children, hideBottomNav = false }) {
-  const { theme, isMobile, activeRoutine, endRoutine, notification, isSyncing, t } = useUser();
+  const { theme, isMobile, activeRoutine, endRoutine, notification, isSyncing, t, authUser, unreadNotificationsCount } = useUser();
   const isDark = theme === 'dark';
   const tk = getTokens(isDark);
   const [isMounted, setIsMounted] = useState(false);
@@ -50,6 +50,11 @@ export default function Layout({ children, hideBottomNav = false }) {
 
   const topLevelPages = ["/", "/routines", "/exercises", "/statistics", "/profile", "/settings", "/routines/create", "/routines/[id]", "/routines/empty", "/user/[uid]", "/exercise-history"];
   const isTopLevel = topLevelPages.includes(router.pathname) || topLevelPages.includes(router.asPath);
+
+  // Las tres pantallas de "modo entreno" reducen el chrome a propósito (ver getWorkoutTokens en
+  // lib/tokens.js) — la campana de notificaciones no pinta ahí, igual que el botón de atrás.
+  const workoutModePages = ["/routines/create", "/routines/[id]", "/routines/empty"];
+  const isWorkoutMode = workoutModePages.includes(router.pathname);
 
   // Botón de retroceso inteligente: si no hay historial o la entrada es directa, ir a una ruta de respaldo
   const smartBack = () => {
@@ -318,6 +323,59 @@ export default function Layout({ children, hideBottomNav = false }) {
                   }}
                 >
                   <Icon name="chevronLeft" size={currentIsMobile ? 18 : 20} />
+                </button>
+              )}
+
+              {/* Campana de notificaciones — flotante y global como el botón de atrás, en vez de
+                  competir por uno de los 3 huecos fijos de BottomNavigation en móvil. */}
+              {authUser && !isWorkoutMode && (
+                <button
+                  onClick={() => router.push("/notifications")}
+                  title={t("notifications")}
+                  aria-label={t("notifications")}
+                  style={{
+                    position: "fixed",
+                    top: "15px",
+                    right: "15px",
+                    zIndex: 2000,
+                    width: currentIsMobile ? "36px" : "42px",
+                    height: currentIsMobile ? "36px" : "42px",
+                    borderRadius: tk.radius.full,
+                    backgroundColor: tk.surface,
+                    border: `1.5px solid ${tk.border}`,
+                    color: tk.text,
+                    cursor: "pointer",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    boxShadow: tk.shadow.card,
+                    transition: tk.transition,
+                  }}
+                >
+                  <Icon name="bell" size={currentIsMobile ? 17 : 19} />
+                  {unreadNotificationsCount > 0 && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: "-4px",
+                        right: "-4px",
+                        minWidth: "18px",
+                        height: "18px",
+                        padding: "0 4px",
+                        borderRadius: tk.radius.full,
+                        backgroundColor: tk.danger,
+                        color: "#fff",
+                        fontSize: "0.65rem",
+                        fontWeight: 800,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        border: `2px solid ${tk.bg}`,
+                      }}
+                    >
+                      {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
+                    </span>
+                  )}
                 </button>
               )}
 

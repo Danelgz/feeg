@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { getWorkoutsFeed, searchUsers, likeWorkout, addWorkoutComment } from "../lib/firebase";
@@ -64,20 +64,33 @@ export default function Home() {
     }
   }, [authUser]);
 
-  useEffect(() => {
-    const fetchFeed = async () => {
-      if (authUser) {
-        // Feed incluye mis entrenos y los de la gente que sigo. Reinicia la paginación
-        // cada vez que cambia el usuario o a quién sigue (el cursor anterior ya no vale).
-        const userIds = [authUser.uid, ...following];
-        const { workouts, cursor, hasMore } = await getWorkoutsFeed(userIds);
-        setFeedWorkouts(workouts);
-        setFeedCursor(cursor);
-        setFeedHasMore(hasMore);
-      }
-    };
-    fetchFeed();
+  const fetchFeed = useCallback(async () => {
+    if (authUser) {
+      // Feed incluye mis entrenos y los de la gente que sigo. Reinicia la paginación
+      // cada vez que se llama (el cursor anterior ya no vale).
+      const userIds = [authUser.uid, ...following];
+      const { workouts, cursor, hasMore } = await getWorkoutsFeed(userIds);
+      setFeedWorkouts(workouts);
+      setFeedCursor(cursor);
+      setFeedHasMore(hasMore);
+    }
   }, [authUser, following]);
+
+  useEffect(() => {
+    fetchFeed();
+  }, [fetchFeed]);
+
+  // getWorkoutsFeed es un getDocs puntual, no un listener en vivo: en móvil el navegador suele
+  // congelar la pestaña en memoria al cambiar de app en vez de destruirla, así que sin esto se
+  // seguiría viendo el feed de antes de un borrado indefinidamente al volver (en PC se enmascara
+  // porque recargar o abrir pestaña nueva es más habitual y eso sí remonta la página).
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") fetchFeed();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [fetchFeed]);
 
   const handleLoadMoreFeed = async () => {
     if (!authUser || isLoadingMore || !feedCursor) return;

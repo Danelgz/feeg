@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Layout from "../../components/Layout";
 import { useUser } from "../../context/UserContext";
-import { getFromCloud, getUserWorkouts, getFollowersCount, getFollowersList, getFollowingList, likeWorkout, addWorkoutComment } from "../../lib/firebase";
+import { getFromCloud, getUserWorkouts, getUserWorkoutsCount, getFollowersCount, getFollowersList, getFollowingList, likeWorkout, addWorkoutComment } from "../../lib/firebase";
 import { Spinner, EmptyState } from "../../components/ui";
 import {
   ProfileHeader,
@@ -29,6 +29,7 @@ export default function UserProfile() {
   const [workouts, setWorkouts] = useState([]);
   const [workoutsCursor, setWorkoutsCursor] = useState(null);
   const [workoutsHasMore, setWorkoutsHasMore] = useState(false);
+  const [workoutsTotalCount, setWorkoutsTotalCount] = useState(0);
   const [isLoadingMoreWorkouts, setIsLoadingMoreWorkouts] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -59,11 +60,17 @@ export default function UserProfile() {
 
         // El gráfico de actividad se calcula sobre `workouts`, así que de momento solo refleja
         // lo cargado hasta ahora (la primera página, y más si se pulsa "cargar más") en vez del
-        // historial completo — igual que en el feed principal.
-        const { workouts: userWorkouts, cursor, hasMore } = await getUserWorkouts(uid);
+        // historial completo — igual que en el feed principal. El contador "Entrenos" de
+        // ProfileHeader, en cambio, usa getUserWorkoutsCount (query de agregación) para mostrar
+        // el total real sin depender de cuánto se haya paginado.
+        const [{ workouts: userWorkouts, cursor, hasMore }, totalCount] = await Promise.all([
+          getUserWorkouts(uid),
+          getUserWorkoutsCount(uid),
+        ]);
         setWorkouts(userWorkouts);
         setWorkoutsCursor(cursor);
         setWorkoutsHasMore(hasMore);
+        setWorkoutsTotalCount(totalCount);
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
@@ -147,7 +154,7 @@ export default function UserProfile() {
         <div style={{ backgroundColor: "#000", color: "#fff", minHeight: "100vh", padding: isMobile ? "10px" : "20px" }}>
           <ProfileHeader
             user={targetUser}
-            workoutsCount={workouts?.length}
+            workoutsCount={workoutsTotalCount}
             followersCount={targetUser.followersCount}
             followingCount={targetUser.following?.length}
             isFollowing={isFollowing}

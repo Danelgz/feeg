@@ -14,10 +14,12 @@ import {
   DistributionChartSection,
   MonthlyReportSection,
   ExerciseStatsSection,
+  RecordsSection,
 } from "../components/statistics";
 
 const NAV_BUTTONS = [
   { key: 'overview', label: 'Resumen', description: 'Visión general de tu progreso' },
+  { key: 'records', label: 'Récords', description: 'Tus marcas personales y cuándo las batiste' },
   { key: 'muscleMap', label: 'Mapa muscular', description: 'Intensidad por músculo esta semana' },
   { key: 'seriesByGroup', label: 'Series por grupo', description: 'Distribución de series por músculo' },
   { key: 'distChart', label: 'Distribución', description: 'Gráfico de distribución muscular' },
@@ -252,6 +254,11 @@ export default function Statistics() {
 
       {activeView === 'overview' && (
         <OverviewSection isDark={isDark} isMobile={isMobile} workouts={filteredWorkouts} t={t} stats={stats} />
+      )}
+      {activeView === 'records' && (
+        // Al igual que el mapa muscular, ignora el filtro de periodo a propósito: un récord
+        // sigue vigente aunque se batiera fuera de los últimos 7/30/90 días.
+        <RecordsSection isDark={isDark} workouts={workouts} t={t} language={language} />
       )}
       {activeView === 'muscleMap' && (
         // El mapa (y su detalle) siempre miran a los últimos 7 días, independientemente del

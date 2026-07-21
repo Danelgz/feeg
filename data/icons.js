@@ -133,6 +133,10 @@ export const ICONS = {
     { tag: 'polyline', points: '22 7 13.5 15.5 8.5 10.5 2 17' },
     { tag: 'polyline', points: '16 7 22 7 22 13' },
   ],
+  award: [
+    { tag: 'circle', cx: 12, cy: 8, r: 7 },
+    { tag: 'polyline', points: '8.21 13.89 7 23 12 20 17 23 15.79 13.88' },
+  ],
   share: [
     { tag: 'circle', cx: 18, cy: 5, r: 3 },
     { tag: 'circle', cx: 6, cy: 12, r: 3 },

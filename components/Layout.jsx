@@ -307,9 +307,16 @@ export default function Layout({ children, hideBottomNav = false }) {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      padding: currentIsMobile ? "10px 14px" : "12px 20px",
-                      backgroundColor: tk.surface,
-                      borderBottom: `1px solid ${tk.border}`,
+                      padding: currentIsMobile ? "12px 14px" : "14px 20px",
+                      // Cristal translúcido en vez de un rectángulo sólido: el contenido de la
+                      // página se intuye debajo, y los botones (con su propio fondo opaco+sombra)
+                      // son lo único que de verdad "pesa" visualmente en la barra.
+                      background: isDark
+                        ? "linear-gradient(180deg, rgba(15,15,15,0.85) 0%, rgba(15,15,15,0.6) 100%)"
+                        : "linear-gradient(180deg, rgba(240,242,245,0.9) 0%, rgba(240,242,245,0.65) 100%)",
+                      backdropFilter: "blur(14px)",
+                      WebkitBackdropFilter: "blur(14px)",
+                      borderBottom: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}`,
                       flexShrink: 0,
                     }}
                   >
@@ -322,7 +329,7 @@ export default function Layout({ children, hideBottomNav = false }) {
                           width: currentIsMobile ? "34px" : "38px",
                           height: currentIsMobile ? "34px" : "38px",
                           borderRadius: tk.radius.full,
-                          backgroundColor: "transparent",
+                          backgroundColor: tk.surface,
                           border: `1.5px solid ${tk.accent}`,
                           color: tk.accent,
                           cursor: "pointer",
@@ -330,6 +337,7 @@ export default function Layout({ children, hideBottomNav = false }) {
                           justifyContent: "center",
                           alignItems: "center",
                           transition: tk.transition,
+                          boxShadow: tk.shadow.card,
                           flexShrink: 0,
                         }}
                         onMouseOver={(e) => {
@@ -337,7 +345,7 @@ export default function Layout({ children, hideBottomNav = false }) {
                           e.currentTarget.style.color = tk.onAccent;
                         }}
                         onMouseOut={(e) => {
-                          e.currentTarget.style.backgroundColor = "transparent";
+                          e.currentTarget.style.backgroundColor = tk.surface;
                           e.currentTarget.style.color = tk.accent;
                         }}
                       >
@@ -357,14 +365,15 @@ export default function Layout({ children, hideBottomNav = false }) {
                           width: currentIsMobile ? "34px" : "38px",
                           height: currentIsMobile ? "34px" : "38px",
                           borderRadius: tk.radius.full,
-                          backgroundColor: "transparent",
-                          border: `1.5px solid ${tk.border}`,
-                          color: tk.text,
+                          backgroundColor: tk.surface,
+                          border: `1.5px solid ${unreadNotificationsCount > 0 ? tk.accent : tk.border}`,
+                          color: unreadNotificationsCount > 0 ? tk.accent : tk.text,
                           cursor: "pointer",
                           display: "flex",
                           justifyContent: "center",
                           alignItems: "center",
                           transition: tk.transition,
+                          boxShadow: tk.shadow.card,
                           flexShrink: 0,
                         }}
                       >
@@ -387,6 +396,7 @@ export default function Layout({ children, hideBottomNav = false }) {
                               alignItems: "center",
                               justifyContent: "center",
                               border: `2px solid ${tk.surface}`,
+                              boxShadow: "0 0 0 1px rgba(0,0,0,0.15)",
                             }}
                           >
                             {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}

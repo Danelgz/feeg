@@ -225,6 +225,15 @@ export const PR_HISTORIC_THRESHOLD_PCT = 10;
 
 export type PRTier = "first" | "minor" | "major" | "historic";
 
+/** Único sitio que traduce "% de mejora del 1RM" a un nivel de récord — usado tanto por
+ * checkForNewPR (récord recién conseguido, en vivo) como por computePRTimeline (reconstrucción
+ * retroactiva del historial), para que ambos caminos asignen siempre el mismo tier. */
+function tierForOneRMDeltaPercent(pct: number | null): PRTier {
+  if (pct !== null && pct >= PR_HISTORIC_THRESHOLD_PCT) return "historic";
+  if (pct !== null && pct >= PR_MAJOR_THRESHOLD_PCT) return "major";
+  return "minor";
+}
+
 /**
  * Hasta 5 tipos de récord distintos que una sola serie puede disparar a la vez (p.ej. una serie
  * puede ser récord de peso Y de 1RM estimado en el mismo golpe). El 5º tipo, "workoutVolume", no
@@ -332,12 +341,7 @@ export function checkForNewPR(
   }
 
   const isPR = types.length > 0;
-  let tier: PRTier | null = null;
-  if (isPR) {
-    if (deltaOneRMPercent !== null && deltaOneRMPercent >= PR_HISTORIC_THRESHOLD_PCT) tier = "historic";
-    else if (deltaOneRMPercent !== null && deltaOneRMPercent >= PR_MAJOR_THRESHOLD_PCT) tier = "major";
-    else tier = "minor";
-  }
+  const tier: PRTier | null = isPR ? tierForOneRMDeltaPercent(deltaOneRMPercent) : null;
 
   return { isPR, isFirstEver: false, types, tier, deltaOneRMPercent };
 }
@@ -430,4 +434,87 @@ export function buildPRRecordsFromExercises(
   });
 
   return records;
+}
+
+export interface PRMilestone {
+  id: string;
+  date: string;
+  exerciseName: string;
+  weight: number;
+  reps: number;
+  oneRM: number;
+  tier: PRTier;
+  deltaOneRMPercent: number | null;
+}
+
+export interface PRTimelineResult {
+  /** Hitos en orden cronológico inverso (más reciente primero), limitados a `limitCount`. */
+  milestones: PRMilestone[];
+  /** El récord VIGENTE de cada ejercicio (su hito más reciente), ordenado por 1RM descendente. */
+  currentRecords: PRMilestone[];
+}
+
+/**
+ * Reconstruye retroactivamente CUÁNDO se batió cada récord de 1RM estimado. Los completedWorkouts
+ * guardados no llevan marca de "esto fue un PR" (empty.js/[id].js la descartan al persistir, ver
+ * su mapeo a exerciseDetails) — así que hay que recorrer el historial en orden cronológico y
+ * volver a jugar la misma lógica de checkForNewPR/computePersonalRecords serie a serie. Usa 1RM
+ * estimado como único criterio (en vez de los 4 tipos de checkForNewPR) porque para una línea de
+ * tiempo por ejercicio necesita un solo eje de "récord", no varios simultáneos.
+ */
+export function computePRTimeline(completedWorkouts: CompletedWorkout[], limitCount = 40): PRTimelineResult {
+  const sorted = [...(completedWorkouts || [])]
+    .filter((w) => w.completedAt)
+    .sort((a, b) => new Date(a.completedAt as string).getTime() - new Date(b.completedAt as string).getTime());
+
+  const map: PersonalRecordsMap = {};
+  const chronological: PRMilestone[] = [];
+  const currentByExercise: Record<string, PRMilestone> = {};
+
+  sorted.forEach((w) => {
+    const details = w.exerciseDetails || w.details || [];
+    details.forEach((detail) => {
+      const name = detail.name || detail.exercise;
+      if (!name || !Array.isArray(detail.series)) return;
+
+      if (!map[name]) map[name] = { byReps: {}, byWeight: {}, best1RM: 0, maxSingleSetVolume: 0 };
+      const record = map[name];
+
+      detail.series.forEach((s, idx) => {
+        const weight = toNumber(s.weight);
+        const reps = Math.round(toNumber(s.reps));
+        if (weight <= 0 || reps <= 0) return;
+
+        const oneRM = calculateOneRM(weight, reps);
+        const isFirstEver = record.best1RM <= 0;
+        const deltaOneRMPercent = record.best1RM > 0 ? ((oneRM - record.best1RM) / record.best1RM) * 100 : null;
+        const isPR = !isFirstEver && oneRM > record.best1RM;
+
+        if (isFirstEver || isPR) {
+          const milestone: PRMilestone = {
+            id: `${w.completedAt}_${name}_${idx}`,
+            date: w.completedAt as string,
+            exerciseName: name,
+            weight,
+            reps,
+            oneRM,
+            tier: isFirstEver ? "first" : tierForOneRMDeltaPercent(deltaOneRMPercent),
+            deltaOneRMPercent,
+          };
+          chronological.push(milestone);
+          currentByExercise[name] = milestone;
+        }
+
+        if (!record.byReps[reps] || record.byReps[reps] < weight) record.byReps[reps] = weight;
+        if (!record.byWeight[weight] || record.byWeight[weight] < reps) record.byWeight[weight] = reps;
+        record.best1RM = Math.max(record.best1RM, oneRM);
+        record.maxSingleSetVolume = Math.max(record.maxSingleSetVolume, weight * reps);
+      });
+    });
+  });
+
+  return {
+    milestones: chronological.slice(-limitCount).reverse(),
+    currentRecords: Object.values(currentByExercise).sort((a, b) => b.oneRM - a.oneRM),
+  };
 }

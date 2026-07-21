@@ -9,3 +9,4 @@ export { default as MuscleMapSection } from "./MuscleMapSection";
 export { default as MuscleDetailSection } from "./MuscleDetailSection";
 export { default as MonthlyReportSection } from "./MonthlyReportSection";
 export { default as ExerciseStatsSection } from "./ExerciseStatsSection";
+export { default as RecordsSection } from "./RecordsSection";

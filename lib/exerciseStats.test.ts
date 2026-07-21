@@ -7,6 +7,7 @@ import {
   checkWorkoutVolumePR,
   computeExerciseIndex,
   computePersonalRecords,
+  computePRTimeline,
   computeSeriesByGroup,
   computeWorkoutTotals,
   pickPrimaryPRType,
@@ -200,6 +201,56 @@ describe("buildPRRecordsFromExercises", () => {
     expect(records).toHaveLength(1);
     expect(records[0].tier).toBe("historic");
     expect(records[0].weight).toBe(35);
+  });
+});
+
+describe("computePRTimeline", () => {
+  it("marks the very first logged set for an exercise as tier 'first', not a PR over anything", () => {
+    const { milestones, currentRecords } = computePRTimeline([
+      { completedAt: "2026-01-01", exerciseDetails: [{ name: "Peso muerto convencional", series: [{ reps: 5, weight: 100 }] }] },
+    ]);
+    expect(milestones).toHaveLength(1);
+    expect(milestones[0].tier).toBe("first");
+    expect(currentRecords).toHaveLength(1);
+    expect(currentRecords[0].weight).toBe(100);
+  });
+
+  it("replays the history chronologically and assigns the same tiers checkForNewPR would, most-recent-first", () => {
+    const { milestones, currentRecords } = computePRTimeline([
+      // Orden de inserción deliberadamente invertido: debe reordenar por completedAt, no por
+      // el orden del array.
+      { completedAt: "2026-02-01", exerciseDetails: [{ name: "Peso muerto convencional", series: [{ reps: 5, weight: 115 }] }] },
+      { completedAt: "2026-01-01", exerciseDetails: [{ name: "Peso muerto convencional", series: [{ reps: 5, weight: 100 }] }] },
+    ]);
+
+    expect(milestones).toHaveLength(2);
+    // Más reciente primero.
+    expect(milestones[0].date).toBe("2026-02-01");
+    expect(milestones[0].tier).toBe("historic"); // mismo salto que en el test de checkForNewPR
+    expect(milestones[1].date).toBe("2026-01-01");
+    expect(milestones[1].tier).toBe("first");
+
+    // El récord vigente es el último cronológicamente, no el primero.
+    expect(currentRecords).toHaveLength(1);
+    expect(currentRecords[0].weight).toBe(115);
+    expect(currentRecords[0].date).toBe("2026-02-01");
+  });
+
+  it("does not record a milestone when a later set fails to beat the estimated 1RM", () => {
+    const { milestones } = computePRTimeline([
+      { completedAt: "2026-01-01", exerciseDetails: [{ name: "Press militar con barra", series: [{ reps: 8, weight: 40 }] }] },
+      { completedAt: "2026-01-08", exerciseDetails: [{ name: "Press militar con barra", series: [{ reps: 8, weight: 35 }] }] },
+    ]);
+    expect(milestones).toHaveLength(1);
+    expect(milestones[0].date).toBe("2026-01-01");
+  });
+
+  it("ignores workouts without completedAt and series with zero/missing weight or reps", () => {
+    const { milestones } = computePRTimeline([
+      { exerciseDetails: [{ name: "Sin fecha", series: [{ reps: 5, weight: 100 }] }] },
+      { completedAt: "2026-01-01", exerciseDetails: [{ name: "X", series: [{ reps: 0, weight: 50 }, { reps: 5, weight: 0 }] }] },
+    ]);
+    expect(milestones).toHaveLength(0);
   });
 });
 

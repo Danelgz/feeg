@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import Layout from "../../components/Layout";
 import { useUser } from "../../context/UserContext";
 import { getFromCloud, getUserWorkouts, getUserWorkoutsCount, getFollowersCount, getFollowersList, getFollowingList, likeWorkout, addWorkoutComment } from "../../lib/firebase";
+import { getTokens } from "../../lib/tokens";
 import { Spinner, EmptyState } from "../../components/ui";
 import {
   ProfileHeader,
@@ -23,7 +24,9 @@ import {
 export default function UserProfile() {
   const router = useRouter();
   const { uid } = router.query;
-  const { authUser, user: currentUser, isLoaded, isMobile, following, handleFollow, handleUnfollow, t, language, showNotification } = useUser();
+  const { authUser, user: currentUser, isLoaded, isMobile, following, handleFollow, handleUnfollow, t, language, theme, showNotification } = useUser();
+  const isDark = theme === "dark";
+  const tk = getTokens(isDark);
 
   const [targetUser, setTargetUser] = useState(null);
   const [workouts, setWorkouts] = useState([]);
@@ -133,7 +136,7 @@ export default function UserProfile() {
   if (!isLoaded || loading) {
     return (
       <Layout>
-        <Spinner isDark fullPage label={t("loading")} />
+        <Spinner isDark={isDark} fullPage label={t("loading")} />
       </Layout>
     );
   }
@@ -141,7 +144,7 @@ export default function UserProfile() {
   if (!targetUser) {
     return (
       <Layout>
-        <EmptyState isDark icon="user" title="Usuario no encontrado" />
+        <EmptyState isDark={isDark} icon="user" title="Usuario no encontrado" />
       </Layout>
     );
   }
@@ -151,8 +154,9 @@ export default function UserProfile() {
   return (
     <>
       <Layout>
-        <div style={{ backgroundColor: "#000", color: "#fff", minHeight: "100vh", padding: isMobile ? "10px" : "20px" }}>
+        <div style={{ backgroundColor: tk.bg, color: tk.text, minHeight: "100vh", padding: isMobile ? "10px" : "20px" }}>
           <ProfileHeader
+            isDark={isDark}
             user={targetUser}
             workoutsCount={workoutsTotalCount}
             followersCount={targetUser.followersCount}
@@ -164,9 +168,10 @@ export default function UserProfile() {
             onOpenFollowing={handleOpenFollowing}
           />
 
-          <ProfileActivityChart completedWorkouts={workouts} />
+          <ProfileActivityChart isDark={isDark} completedWorkouts={workouts} />
 
           <ProfileWorkoutsSection
+            isDark={isDark}
             completedWorkouts={workouts}
             onOpenDetail={(workout) => setViewingWorkoutDetail(workout)}
             hasMore={workoutsHasMore}
@@ -190,6 +195,7 @@ export default function UserProfile() {
 
       {(showFollowers || showFollowing) && (
         <ProfileFollowListModal
+          isDark={isDark}
           open
           title={showFollowers ? "Seguidores" : "Siguiendo"}
           users={showFollowers ? followersList : followingList}

@@ -1,11 +1,42 @@
 import { useState, useEffect } from "react";
+import { getAuth } from "firebase/auth";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { saveToCloud, getFromCloud } from "../lib/firebase";
 import { foodList } from "../data/foodList";
 
+/**
+ * Redimensiona/comprime la foto en el cliente antes de mandarla a /api/analyze-food: reduce el
+ * coste de la llamada a la IA (menos tokens de imagen) y evita chocar con el límite de payload
+ * de las funciones serverless de Vercel, que una foto de móvil sin comprimir supera fácilmente.
+ */
+function resizeImageForUpload(file, maxDim = 1024, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        if (width >= height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 export default function Food() {
-  const { theme, isMobile, authUser } = useUser();
+  const { theme, isMobile, authUser, showNotification } = useUser();
   const isDark = theme === 'dark';
   
   const [activeTab, setActiveTab] = useState("daily"); // daily, photo, manual, plan
@@ -171,73 +202,87 @@ export default function Food() {
     }, 800);
   };
 
-  const handleBarcodeScan = () => {
-    if (!barcodeInput.trim()) return;
+  const handleBarcodeScan = async () => {
+    const code = barcodeInput.trim();
+    if (!code) return;
     setIsAnalyzing(true);
-    
-    setTimeout(() => {
-      // Logic for barcode simulation
-      const codes = [
-        { code: "8412345678901", name: "Yogur Griego Natural", calories: 120, protein: 10, carbs: 4, fats: 8, rating: 9 },
-        { code: "8412345678902", name: "Atún en Lata al Natural", calories: 116, protein: 26, carbs: 0, fats: 1, rating: 10 },
-        { code: "8412345678903", name: "Pan de Centeno Integral", calories: 250, protein: 8, carbs: 45, fats: 2, rating: 8 },
-        { code: "8412345678904", name: "Cereal Fitness", calories: 370, protein: 9, carbs: 75, fats: 2, rating: 6 },
-        { code: "8412345678905", name: "Refresco de Cola", calories: 42, protein: 0, carbs: 10.6, fats: 0, rating: 1 }
-      ];
 
-      const found = codes.find(c => c.code === barcodeInput) || {
-        name: "Producto Desconocido", 
-        calories: 150, protein: 5, carbs: 20, fats: 5, rating: 5, code: barcodeInput
+    try {
+      // Open Food Facts: base de datos pública y sin API key de productos reales por código
+      // de barras — sustituye a la lista de 5 códigos hardcodeados que había antes.
+      const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json`);
+      const data = await response.json();
+
+      if (data.status !== 1 || !data.product) {
+        showNotification("Producto no encontrado en Open Food Facts.", "error");
+        return;
+      }
+
+      const p = data.product;
+      const n = p.nutriments || {};
+      const gradeToRating = { a: 10, b: 8, c: 6, d: 4, e: 2 };
+      const rating = gradeToRating[p.nutriscore_grade] ?? 5;
+
+      const found = {
+        code,
+        name: p.product_name || "Producto sin nombre",
+        calories: Math.round(n["energy-kcal_100g"] || 0),
+        protein: Math.round(n.proteins_100g || 0),
+        carbs: Math.round(n.carbohydrates_100g || 0),
+        fats: Math.round(n.fat_100g || 0),
+        rating,
       };
 
       if (!barcodes.find(b => b.code === found.code)) {
         setBarcodes([...barcodes, found]);
       }
 
-      setAnalysisResult({ 
-        items: [{ ...found, quantity: "1 unidad/pack" }], 
+      setAnalysisResult({
+        items: [{ ...found, quantity: "100g" }],
         feedback: `Calificación Nutricional: ${found.rating}/10. ${found.rating > 7 ? "Excelente opción!" : found.rating > 4 ? "Consumo moderado recomendado." : "Evitar si es posible."}`,
         isBarcode: true
       });
+      setActiveTab("photo");
+    } catch (error) {
+      console.error("Error consultando Open Food Facts:", error);
+      showNotification("No se pudo consultar el producto. Comprueba tu conexión.", "error");
+    } finally {
       setIsAnalyzing(false);
       setBarcodeInput("");
-      setActiveTab("photo");
-    }, 1500);
+    }
   };
 
-  const handlePhotoUpload = (e) => {
+  const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    e.target.value = "";
 
     setPhotoPreview(URL.createObjectURL(file));
     setIsAnalyzing(true);
     setAnalysisResult(null);
 
-    setTimeout(() => {
-      // Improved AI Analysis Logic - Searching specifically for items in our list
-      const scenarios = [
-        {
-          items: [
-            { name: "Pechuga de pollo", quantity: "200g", calories: 330, protein: 62, carbs: 0, fats: 7 },
-            { name: "Arroz integral", quantity: "150g", calories: 195, protein: 4, carbs: 42, fats: 0.5 },
-            { name: "Brócoli", quantity: "100g", calories: 34, protein: 3, carbs: 7, fats: 0.4 }
-          ],
-          feedback: "Análisis Visual IA: Detectado Pollo, Arroz y Brócoli. Excelente equilibrio de macros."
-        },
-        {
-          items: [
-            { name: "Salmón", quantity: "180g", calories: 370, protein: 36, carbs: 0, fats: 24 },
-            { name: "Patata", quantity: "200g", calories: 170, protein: 4, carbs: 38, fats: 0.2 },
-            { name: "Aguacate", quantity: "50g", calories: 80, protein: 1, carbs: 4, fats: 7 }
-          ],
-          feedback: "Análisis Visual IA: Detectado Salmón, Patata y Aguacate. Alto contenido en Omega-3."
-        }
-      ];
-      
-      const scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
-      setAnalysisResult(scenario);
+    try {
+      const resizedImage = await resizeImageForUpload(file);
+      const auth = getAuth();
+      const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : "";
+
+      const response = await fetch("/api/analyze-food", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ image: resizedImage }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Error analizando la foto");
+
+      setAnalysisResult(data);
+    } catch (error) {
+      console.error("Error analizando la foto:", error);
+      showNotification("No se pudo analizar la foto. Inténtalo de nuevo.", "error");
+      setPhotoPreview(null);
+    } finally {
       setIsAnalyzing(false);
-    }, 2500);
+    }
   };
 
   const confirmAnalysis = () => {
@@ -707,23 +752,27 @@ export default function Food() {
 
                 {photoPreview && <img src={photoPreview} alt="Preview" style={{ width: "100%", borderRadius: "10px", marginBottom: "20px", maxHeight: "200px", objectFit: "cover" }} />}
 
-                <div style={{ backgroundColor: isDark ? "#000" : "#f9f9f9", padding: "15px", borderRadius: "10px", marginBottom: "20px" }}>
-                  <h4 style={{ margin: "0 0 10px 0", color: accentColor }}>Alimentos Detectados:</h4>
-                  {analysisResult.items.map((item, idx) => (
-                    <div key={idx} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: idx === analysisResult.items.length - 1 ? "none" : `1px solid ${isDark ? "#222" : "#eee"}` }}>
-                      <span>{item.name} <span style={{ color: "#888", fontSize: "0.85rem" }}>({item.quantity})</span></span>
-                      <span style={{ fontWeight: "bold" }}>{item.calories} kcal</span>
-                    </div>
-                  ))}
-                </div>
+                {analysisResult.items.length > 0 && (
+                  <div style={{ backgroundColor: isDark ? "#000" : "#f9f9f9", padding: "15px", borderRadius: "10px", marginBottom: "20px" }}>
+                    <h4 style={{ margin: "0 0 10px 0", color: accentColor }}>Alimentos Detectados:</h4>
+                    {analysisResult.items.map((item, idx) => (
+                      <div key={idx} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: idx === analysisResult.items.length - 1 ? "none" : `1px solid ${isDark ? "#222" : "#eee"}` }}>
+                        <span>{item.name} <span style={{ color: "#888", fontSize: "0.85rem" }}>({item.quantity})</span></span>
+                        <span style={{ fontWeight: "bold" }}>{item.calories} kcal</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 <div style={{ backgroundColor: `${accentColor}11`, padding: "15px", borderRadius: "10px", borderLeft: `4px solid ${accentColor}`, marginBottom: "20px" }}>
                   <strong>Consejo Nutricional:</strong> {analysisResult.feedback}
                 </div>
 
-                <button onClick={confirmAnalysis} style={buttonStyle}>
-                  Confirmar y Añadir a Mi Día
-                </button>
+                {analysisResult.items.length > 0 && (
+                  <button onClick={confirmAnalysis} style={buttonStyle}>
+                    Confirmar y Añadir a Mi Día
+                  </button>
+                )}
               </div>
             )}
           </div>

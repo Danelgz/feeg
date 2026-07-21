@@ -4,6 +4,7 @@ import Layout from "../components/Layout";
 import RegisterForm from "../components/RegisterForm";
 import { useUser } from "../context/UserContext";
 import { getFollowersList, getFollowingList } from "../lib/firebase";
+import { getTokens } from "../lib/tokens";
 import {
   ProfileLoginPrompt,
   ProfileHeader,
@@ -44,6 +45,7 @@ export default function Profile() {
     language,
   } = useUser();
   const isDark = theme === "dark";
+  const tk = getTokens(isDark);
 
   const [isEditing, setIsEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -201,8 +203,8 @@ export default function Profile() {
     return (
       <Layout>
         <div style={{ padding: isMobile ? "0" : "20px" }}>
-          <h1 style={{ fontSize: isMobile ? "1.8rem" : "2rem", marginBottom: "1rem", color: isDark ? "#fff" : "#333" }}>{t("profile_title")}</h1>
-          <p style={{ color: isDark ? "#ccc" : "#666" }}>{isSyncing ? "Sincronizando datos con la nube..." : t("loading")}</p>
+          <h1 style={{ fontSize: isMobile ? "1.8rem" : "2rem", marginBottom: "1rem", color: tk.text }}>{t("profile_title")}</h1>
+          <p style={{ color: tk.textMuted }}>{isSyncing ? "Sincronizando datos con la nube..." : t("loading")}</p>
         </div>
       </Layout>
     );
@@ -240,8 +242,9 @@ export default function Profile() {
   return (
     <>
       <Layout>
-        <div style={{ backgroundColor: "#000", color: "#fff", minHeight: "100vh", padding: isMobile ? "10px" : "20px" }}>
+        <div style={{ backgroundColor: tk.bg, color: tk.text, minHeight: "100vh", padding: isMobile ? "10px" : "20px" }}>
           <ProfileHeader
+            isDark={isDark}
             user={user}
             workoutsCount={completedWorkouts?.length}
             followersCount={followers?.length}
@@ -253,11 +256,12 @@ export default function Profile() {
             onOpenFollowing={handleOpenFollowing}
           />
 
-          <ProfileActivityChart completedWorkouts={completedWorkouts} />
+          <ProfileActivityChart isDark={isDark} completedWorkouts={completedWorkouts} />
 
-          <ProfileInfoMenu />
+          <ProfileInfoMenu isDark={isDark} />
 
           <ProfileWorkoutsSection
+            isDark={isDark}
             completedWorkouts={completedWorkouts}
             onOpenDetail={(workout) => setViewingWorkoutDetail(workout)}
             onAddToRoutine={(id) => setAddingToRoutine(id)}
@@ -278,6 +282,7 @@ export default function Profile() {
       )}
 
       <ProfileConfirmModal
+        isDark={isDark}
         open={!!confirmDelete}
         title="¿Borrar entrenamiento?"
         message="Esta acción no se puede deshacer."
@@ -287,6 +292,7 @@ export default function Profile() {
       />
 
       <ProfileConfirmModal
+        isDark={isDark}
         open={confirmDeleteAll}
         title={t("confirm_delete_all_title")}
         message={t("confirm_delete_all_msg")}
@@ -303,6 +309,7 @@ export default function Profile() {
       />
 
       <ProfileAddToRoutineModal
+        isDark={isDark}
         open={!!addingToRoutine}
         routineName={routineName}
         onChangeRoutineName={setRoutineName}
@@ -314,6 +321,7 @@ export default function Profile() {
       />
 
       <ProfileEditModal
+        isDark={isDark}
         open={isEditing}
         editData={editData}
         setEditData={setEditData}
@@ -326,6 +334,7 @@ export default function Profile() {
 
       {(showFollowers || showFollowing) && (
         <ProfileFollowListModal
+          isDark={isDark}
           open
           title={showFollowers ? "Seguidores" : "Siguiendo"}
           users={showFollowers ? followersList : followingList}

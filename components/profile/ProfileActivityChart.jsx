@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { getTokens } from "../../lib/tokens";
 
 const SPANISH_MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 const BAR_WIDTH = 34;
@@ -72,7 +73,8 @@ const CHART_MODES = [
 ];
 
 /** Gráfico de barras semanal (duración/volumen/reps) de la sección de perfil — autocontenido. */
-export default function ProfileActivityChart({ completedWorkouts }) {
+export default function ProfileActivityChart({ isDark = true, completedWorkouts }) {
+  const tk = getTokens(isDark);
   const [chartFilter, setChartFilter] = useState("3_months");
   const [chartMode, setChartMode] = useState("duration");
   const [activeBar, setActiveBar] = useState(null);
@@ -97,23 +99,23 @@ export default function ProfileActivityChart({ completedWorkouts }) {
   return (
     <div style={{ marginBottom: "30px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px", flexWrap: "wrap", gap: "8px" }}>
-        <h2 style={{ fontSize: "1.1rem", margin: 0 }}>
-          Actividad semanal <span style={{ color: "#888", fontSize: "0.8rem", marginLeft: "5px" }}>{overallRange}</span>
+        <h2 style={{ fontSize: "1.1rem", margin: 0, color: tk.text }}>
+          Actividad semanal <span style={{ color: tk.textMuted, fontSize: "0.8rem", marginLeft: "5px" }}>{overallRange}</span>
         </h2>
         <select
           value={chartFilter}
           onChange={(e) => setChartFilter(e.target.value)}
-          style={{ background: "none", border: "none", color: "#1dd1a1", fontSize: "0.9rem", cursor: "pointer", outline: "none" }}
+          style={{ background: "none", border: "none", color: tk.accent, fontSize: "0.9rem", cursor: "pointer", outline: "none" }}
         >
-          <option value="3_months" style={{ backgroundColor: "#1a1a1a" }}>Últimos 3 meses</option>
-          <option value="6_months" style={{ backgroundColor: "#1a1a1a" }}>Últimos 6 meses</option>
-          <option value="1_year" style={{ backgroundColor: "#1a1a1a" }}>Último año</option>
-          <option value="always" style={{ backgroundColor: "#1a1a1a" }}>Siempre</option>
+          <option value="3_months" style={{ backgroundColor: tk.surfaceAlt, color: tk.text }}>Últimos 3 meses</option>
+          <option value="6_months" style={{ backgroundColor: tk.surfaceAlt, color: tk.text }}>Últimos 6 meses</option>
+          <option value="1_year" style={{ backgroundColor: tk.surfaceAlt, color: tk.text }}>Último año</option>
+          <option value="always" style={{ backgroundColor: tk.surfaceAlt, color: tk.text }}>Siempre</option>
         </select>
       </div>
 
       {chartData.length === 0 ? (
-        <div style={{ height: "150px", display: "flex", alignItems: "center", justifyContent: "center", color: "#444", backgroundColor: "#111", borderRadius: "12px" }}>
+        <div style={{ height: "150px", display: "flex", alignItems: "center", justifyContent: "center", color: tk.textFaint, backgroundColor: tk.surfaceAlt, borderRadius: "12px" }}>
           Sin datos suficientes
         </div>
       ) : (
@@ -151,8 +153,8 @@ export default function ProfileActivityChart({ completedWorkouts }) {
               <div
                 style={{
                   width: "100%",
-                  backgroundColor: activeBar?.i === i ? "#fff" : d[chartMode] > 0 ? "#1dd1a1" : "#1a1a1a",
-                  border: d[chartMode] === 0 ? "1px solid #333" : "none",
+                  backgroundColor: activeBar?.i === i ? tk.text : d[chartMode] > 0 ? tk.accent : tk.surfaceAlt,
+                  border: d[chartMode] === 0 ? `1px solid ${tk.border}` : "none",
                   height: `${Math.max(6, (d[chartMode] / maxVal) * 100)}%`,
                   borderRadius: "6px 6px 3px 3px",
                   transition: "all 0.2s ease",
@@ -164,7 +166,7 @@ export default function ProfileActivityChart({ completedWorkouts }) {
                   bottom: "calc(100% + 6px)",
                   left: "50%",
                   transform: "translateX(-50%)",
-                  color: "#555",
+                  color: tk.textFaint,
                   fontSize: "0.62rem",
                   whiteSpace: "nowrap",
                   fontWeight: "bold",
@@ -187,15 +189,15 @@ export default function ProfileActivityChart({ completedWorkouts }) {
             left: activeBar.x,
             top: activeBar.y - 12,
             transform: "translate(-50%, -100%)",
-            backgroundColor: "#fff",
-            color: "#000",
+            backgroundColor: tk.text,
+            color: tk.bg,
             padding: "6px 10px",
             borderRadius: "6px",
             fontSize: "0.8rem",
             whiteSpace: "nowrap",
             zIndex: 200,
             fontWeight: "bold",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+            boxShadow: tk.shadow.float,
             pointerEvents: "none",
           }}
         >
@@ -213,8 +215,8 @@ export default function ProfileActivityChart({ completedWorkouts }) {
               padding: "8px",
               borderRadius: "20px",
               border: "none",
-              backgroundColor: chartMode === m.id ? "#1dd1a1" : "#1a1a1a",
-              color: chartMode === m.id ? "#000" : "#fff",
+              backgroundColor: chartMode === m.id ? tk.accent : tk.surfaceAlt,
+              color: chartMode === m.id ? tk.onAccent : tk.text,
               fontSize: "0.9rem",
               fontWeight: "500",
               cursor: "pointer",

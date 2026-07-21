@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
+import { getTokens } from "../../lib/tokens";
 
 const MENU_ITEMS = [
   { label: "Estadísticas", path: "/statistics", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg> },
@@ -9,7 +10,8 @@ const MENU_ITEMS = [
 ];
 
 /** Botón desplegable con accesos rápidos a estadísticas/ejercicios/medidas/calendario — autocontenido. */
-export default function ProfileInfoMenu() {
+export default function ProfileInfoMenu({ isDark = true }) {
+  const tk = getTokens(isDark);
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
@@ -23,15 +25,15 @@ export default function ProfileInfoMenu() {
           justifyContent: "space-between",
           alignItems: "center",
           padding: "16px 20px",
-          backgroundColor: "#111",
-          color: "#fff",
-          border: `1px solid ${open ? "#1dd1a1" : "#333"}`,
+          backgroundColor: tk.surfaceAlt,
+          color: tk.text,
+          border: `1px solid ${open ? tk.accent : tk.border}`,
           borderRadius: "15px",
           fontSize: "1.1rem",
           fontWeight: "600",
           cursor: "pointer",
           transition: "all 0.3s ease",
-          boxShadow: open ? "0 4px 15px rgba(29, 209, 161, 0.15)" : "none",
+          boxShadow: open ? tk.shadow.accent : "none",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -40,11 +42,11 @@ export default function ProfileInfoMenu() {
               width: "36px",
               height: "36px",
               borderRadius: "10px",
-              backgroundColor: "rgba(29, 209, 161, 0.1)",
+              backgroundColor: tk.accentSoft,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#1dd1a1",
+              color: tk.accent,
             }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
@@ -56,7 +58,7 @@ export default function ProfileInfoMenu() {
           height="20"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#1dd1a1"
+          stroke={tk.accent}
           strokeWidth="3"
           style={{ transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.3s ease" }}
         >
@@ -77,9 +79,9 @@ export default function ProfileInfoMenu() {
                 justifyContent: "center",
                 gap: "10px",
                 padding: "20px 10px",
-                backgroundColor: "#1a1a1a",
-                color: "#fff",
-                border: "1px solid #333",
+                backgroundColor: tk.surfaceAlt,
+                color: tk.text,
+                border: `1px solid ${tk.border}`,
                 borderRadius: "15px",
                 fontSize: "0.9rem",
                 fontWeight: "600",
@@ -87,15 +89,15 @@ export default function ProfileInfoMenu() {
                 transition: "all 0.2s ease",
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = "#222";
-                e.currentTarget.style.borderColor = "#1dd1a1";
+                e.currentTarget.style.backgroundColor = tk.surfaceHover;
+                e.currentTarget.style.borderColor = tk.accent;
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = "#1a1a1a";
-                e.currentTarget.style.borderColor = "#333";
+                e.currentTarget.style.backgroundColor = tk.surfaceAlt;
+                e.currentTarget.style.borderColor = tk.border;
               }}
             >
-              <div style={{ color: "#1dd1a1" }}>{btn.icon}</div>
+              <div style={{ color: tk.accent }}>{btn.icon}</div>
               {btn.label}
             </button>
           ))}

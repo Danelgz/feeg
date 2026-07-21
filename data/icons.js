@@ -144,4 +144,30 @@ export const ICONS = {
     { tag: 'line', x1: 8.59, y1: 13.51, x2: 15.42, y2: 17.49 },
     { tag: 'line', x1: 15.41, y1: 6.51, x2: 8.59, y2: 10.49 },
   ],
+  // Badges de equipamiento (ExerciseThumb) — mismo estilo outline que el resto del set.
+  barbell: [
+    { tag: 'line', x1: 6, y1: 12, x2: 18, y2: 12 },
+    { tag: 'rect', x: 2, y: 6, width: 3, height: 12, rx: 1 },
+    { tag: 'rect', x: 19, y: 6, width: 3, height: 12, rx: 1 },
+  ],
+  machine: [
+    { tag: 'rect', x: 5, y: 3, width: 8, height: 18, rx: 1 },
+    { tag: 'line', x1: 6, y1: 8, x2: 12, y2: 8 },
+    { tag: 'line', x1: 6, y1: 12, x2: 12, y2: 12 },
+    { tag: 'line', x1: 6, y1: 16, x2: 12, y2: 16 },
+    { tag: 'line', x1: 16, y1: 12, x2: 20, y2: 12 },
+  ],
+  cable: [
+    { tag: 'circle', cx: 12, cy: 5, r: 3 },
+    { tag: 'line', x1: 12, y1: 8, x2: 12, y2: 18 },
+    { tag: 'line', x1: 8, y1: 18, x2: 16, y2: 18 },
+  ],
+  bodyweight: [
+    { tag: 'circle', cx: 12, cy: 4, r: 2 },
+    { tag: 'line', x1: 12, y1: 6, x2: 12, y2: 14 },
+    { tag: 'line', x1: 12, y1: 8, x2: 6, y2: 6 },
+    { tag: 'line', x1: 12, y1: 8, x2: 18, y2: 6 },
+    { tag: 'line', x1: 12, y1: 14, x2: 7, y2: 21 },
+    { tag: 'line', x1: 12, y1: 14, x2: 17, y2: 21 },
+  ],
 };

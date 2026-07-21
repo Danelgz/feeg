@@ -6,6 +6,7 @@ import { useUser } from "../context/UserContext";
 import { getTokens } from "../lib/tokens";
 import { translateExerciseName } from "../lib/exerciseTranslation";
 import { Icon, EmptyState, PageHeader, Badge } from "../components/ui";
+import { ExerciseThumb } from "../components/workout";
 
 function exerciseTypeLabel(exercise, t) {
   if (exercise.unit === "lastre") return t("exercise_type_lastre");
@@ -133,7 +134,10 @@ export default function Exercises() {
                       }}
                     >
                       <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
-                        <span>{translateExerciseName(exercise.name, language)}</span>
+                        <span style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+                          <ExerciseThumb name={exercise.name} size={34} />
+                          {translateExerciseName(exercise.name, language)}
+                        </span>
                         <Badge isDark={isDark} variant="neutral">{exerciseTypeLabel(exercise, t)}</Badge>
                       </span>
                     </li>

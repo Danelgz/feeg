@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useUser } from "../context/UserContext";
 import { exercisesList } from "../data/exercises";
 import CreateCustomExerciseModal from "./CreateCustomExerciseModal";
+import { ExerciseThumb } from "./workout";
 
 export default function ExerciseSelector({ onSelectExercise, onCancel }) {
   const [selectedGroup, setSelectedGroup] = useState(null);
@@ -241,19 +242,22 @@ export default function ExerciseSelector({ onSelectExercise, onCancel }) {
                       e.currentTarget.style.transform = "translateX(0)";
                     }}
                   >
-                    <div>
-                      <div style={exerciseNameStyle}>{exercise.name}</div>
-                      <div style={exerciseTypeStyle}>
-                        {exercise.type === "weight_reps" && "Peso + Reps"}
-                        {exercise.type === "reps" && "Solo Reps"}
-                        {exercise.type === "time" && "Tiempo"}
-                        {exercise.unit === "lastre" && " (con lastre)"}
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+                      <ExerciseThumb name={exercise.name} size={38} />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={exerciseNameStyle}>{exercise.name}</div>
+                        <div style={exerciseTypeStyle}>
+                          {exercise.type === "weight_reps" && "Peso + Reps"}
+                          {exercise.type === "reps" && "Solo Reps"}
+                          {exercise.type === "time" && "Tiempo"}
+                          {exercise.unit === "lastre" && " (con lastre)"}
+                        </div>
                       </div>
                     </div>
                     <span style={{ fontSize: "1.2rem" }}>→</span>
                   </div>
                 ))}
-                
+
                 {customExercises[selectedGroup]
                   ?.filter((exercise) =>
                     exercise.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -276,14 +280,17 @@ export default function ExerciseSelector({ onSelectExercise, onCancel }) {
                       e.currentTarget.style.transform = "translateX(0)";
                     }}
                   >
-                    <div>
-                      <div style={exerciseNameStyle}>{exercise.name}</div>
-                      <div style={exerciseTypeStyle}>
-                        {exercise.type === "weight_reps" && "Peso + Reps"}
-                        {exercise.type === "reps" && "Solo Reps"}
-                        {exercise.type === "time" && "Tiempo"}
-                        {exercise.type === "weight_bodyweight" && "Peso corporal + lastre"}
-                        <span style={{ marginLeft: "8px", fontStyle: "italic" }}>✓ Personalizado</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+                      <ExerciseThumb name={exercise.name} size={38} />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={exerciseNameStyle}>{exercise.name}</div>
+                        <div style={exerciseTypeStyle}>
+                          {exercise.type === "weight_reps" && "Peso + Reps"}
+                          {exercise.type === "reps" && "Solo Reps"}
+                          {exercise.type === "time" && "Tiempo"}
+                          {exercise.type === "weight_bodyweight" && "Peso corporal + lastre"}
+                          <span style={{ marginLeft: "8px", fontStyle: "italic" }}>✓ Personalizado</span>
+                        </div>
                       </div>
                     </div>
                     <span style={{ fontSize: "1.2rem" }}>→</span>

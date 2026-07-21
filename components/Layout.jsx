@@ -56,6 +56,9 @@ export default function Layout({ children, hideBottomNav = false }) {
   const workoutModePages = ["/routines/create", "/routines/[id]", "/routines/empty"];
   const isWorkoutMode = workoutModePages.includes(router.pathname);
 
+  const showBack = !isTopLevel && !isWorkoutMode;
+  const showBell = !!authUser && !isWorkoutMode;
+
   // Botón de retroceso inteligente: si no hay historial o la entrada es directa, ir a una ruta de respaldo
   const smartBack = () => {
     try {
@@ -289,112 +292,128 @@ export default function Layout({ children, hideBottomNav = false }) {
             <>
               <Sidebar />
 
-              {/* Botón de Retroceder */}
-              {!isTopLevel && (
-                <button
-                  onClick={smartBack}
-                  title="Atrás"
-                  aria-label="Atrás"
+              <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
+                {/* Barra superior: atrás + notificaciones EN el flujo del documento, no flotando
+                    encima del contenido — así nunca pueden taparlo, a diferencia de los dos
+                    botones fijos independientes que había antes (que sí lo hacían en páginas sin
+                    hueco reservado arriba, sobre todo en móvil). Solo se renderiza si hay algo
+                    que mostrar, para no dejar una tira vacía en páginas top-level sin sesión. */}
+                {!isWorkoutMode && (showBack || showBell) && (
+                  <header
+                    style={{
+                      position: "sticky",
+                      top: 0,
+                      zIndex: 500,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: currentIsMobile ? "10px 14px" : "12px 20px",
+                      backgroundColor: tk.surface,
+                      borderBottom: `1px solid ${tk.border}`,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {showBack ? (
+                      <button
+                        onClick={smartBack}
+                        title="Atrás"
+                        aria-label="Atrás"
+                        style={{
+                          width: currentIsMobile ? "34px" : "38px",
+                          height: currentIsMobile ? "34px" : "38px",
+                          borderRadius: tk.radius.full,
+                          backgroundColor: "transparent",
+                          border: `1.5px solid ${tk.accent}`,
+                          color: tk.accent,
+                          cursor: "pointer",
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          transition: tk.transition,
+                          flexShrink: 0,
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.backgroundColor = tk.accent;
+                          e.currentTarget.style.color = tk.onAccent;
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.backgroundColor = "transparent";
+                          e.currentTarget.style.color = tk.accent;
+                        }}
+                      >
+                        <Icon name="chevronLeft" size={currentIsMobile ? 18 : 20} />
+                      </button>
+                    ) : (
+                      <span />
+                    )}
+
+                    {showBell && (
+                      <button
+                        onClick={() => router.push("/notifications")}
+                        title={t("notifications")}
+                        aria-label={t("notifications")}
+                        style={{
+                          position: "relative",
+                          width: currentIsMobile ? "34px" : "38px",
+                          height: currentIsMobile ? "34px" : "38px",
+                          borderRadius: tk.radius.full,
+                          backgroundColor: "transparent",
+                          border: `1.5px solid ${tk.border}`,
+                          color: tk.text,
+                          cursor: "pointer",
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          transition: tk.transition,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Icon name="bell" size={currentIsMobile ? 16 : 18} />
+                        {unreadNotificationsCount > 0 && (
+                          <span
+                            style={{
+                              position: "absolute",
+                              top: "-4px",
+                              right: "-4px",
+                              minWidth: "17px",
+                              height: "17px",
+                              padding: "0 4px",
+                              borderRadius: tk.radius.full,
+                              backgroundColor: tk.danger,
+                              color: "#fff",
+                              fontSize: "0.62rem",
+                              fontWeight: 800,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              border: `2px solid ${tk.surface}`,
+                            }}
+                          >
+                            {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
+                          </span>
+                        )}
+                      </button>
+                    )}
+                  </header>
+                )}
+
+                <main
+                  key={router.asPath}
+                  className="page-transition"
                   style={{
-                    position: "fixed",
-                    top: "15px",
-                    left: currentIsMobile ? "15px" : "245px",
-                    zIndex: 2000,
-                    width: currentIsMobile ? "36px" : "42px",
-                    height: currentIsMobile ? "36px" : "42px",
-                    borderRadius: tk.radius.full,
-                    backgroundColor: tk.surface,
-                    border: `1.5px solid ${tk.accent}`,
-                    color: tk.accent,
-                    cursor: "pointer",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    boxShadow: tk.shadow.card,
-                    transition: tk.transition
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = tk.accent;
-                    e.currentTarget.style.color = tk.onAccent;
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = tk.surface;
-                    e.currentTarget.style.color = tk.accent;
+                    flex: 1,
+                    padding: currentIsMobile ? "0" : "20px",
+                    paddingBottom: currentIsMobile ? "80px" : "20px",
+                    backgroundColor: isDark ? "#0f0f0f" : "#f0f2f5",
+                    color: isDark ? "#fff" : "#333",
+                    transition: "background-color 0.3s ease",
+                    width: "100%",
+                    boxSizing: "border-box"
                   }}
                 >
-                  <Icon name="chevronLeft" size={currentIsMobile ? 18 : 20} />
-                </button>
-              )}
-
-              {/* Campana de notificaciones — flotante y global como el botón de atrás, en vez de
-                  competir por uno de los 3 huecos fijos de BottomNavigation en móvil. */}
-              {authUser && !isWorkoutMode && (
-                <button
-                  onClick={() => router.push("/notifications")}
-                  title={t("notifications")}
-                  aria-label={t("notifications")}
-                  style={{
-                    position: "fixed",
-                    top: "15px",
-                    right: "15px",
-                    zIndex: 2000,
-                    width: currentIsMobile ? "36px" : "42px",
-                    height: currentIsMobile ? "36px" : "42px",
-                    borderRadius: tk.radius.full,
-                    backgroundColor: tk.surface,
-                    border: `1.5px solid ${tk.border}`,
-                    color: tk.text,
-                    cursor: "pointer",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    boxShadow: tk.shadow.card,
-                    transition: tk.transition,
-                  }}
-                >
-                  <Icon name="bell" size={currentIsMobile ? 17 : 19} />
-                  {unreadNotificationsCount > 0 && (
-                    <span
-                      style={{
-                        position: "absolute",
-                        top: "-4px",
-                        right: "-4px",
-                        minWidth: "18px",
-                        height: "18px",
-                        padding: "0 4px",
-                        borderRadius: tk.radius.full,
-                        backgroundColor: tk.danger,
-                        color: "#fff",
-                        fontSize: "0.65rem",
-                        fontWeight: 800,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        border: `2px solid ${tk.bg}`,
-                      }}
-                    >
-                      {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
-                    </span>
-                  )}
-                </button>
-              )}
-
-              <main
-                key={router.asPath}
-                className="page-transition"
-                style={{
-                  flex: 1,
-                  padding: currentIsMobile ? "0" : "20px",
-                  paddingBottom: currentIsMobile ? "80px" : "20px",
-                  backgroundColor: isDark ? "#0f0f0f" : "#f0f2f5",
-                  color: isDark ? "#fff" : "#333",
-                  transition: "background-color 0.3s ease",
-                  width: "100%",
-                  boxSizing: "border-box"
-                }}
-              >
-                {children}
-              </main>
+                  {children}
+                </main>
+              </div>
 
               {/* Navegación Inferior para Móvil */}
               {currentIsMobile && !hideBottomNav && <BottomNavigation />}

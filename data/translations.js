@@ -48,6 +48,10 @@ export const translations = {
     // Exercises
     search_exercise: "Buscar ejercicio...",
     no_exercises_found: "No se encontraron ejercicios",
+    exercise_type_weight_reps: "Peso + reps",
+    exercise_type_reps: "Peso corporal",
+    exercise_type_time: "Tiempo",
+    exercise_type_lastre: "Lastrado / asistido",
     
     // Settings
     dark_mode: "Modo oscuro",
@@ -270,7 +274,7 @@ export const translations = {
     register: "Registrarse",
     google_account: "Cuenta de Google",
     no_pfp: "Sin foto",
-    please_login_to_import: "Inicia sesión para importar tus datos",
+    please_login_to_import: "Inicia sesión para exportar o importar tus datos",
 
     // Notificaciones
     notifications: "Notificaciones",
@@ -328,6 +332,10 @@ export const translations = {
     // Exercises
     search_exercise: "Ariketa bilatu...",
     no_exercises_found: "Ez da ariketarik aurkitu",
+    exercise_type_weight_reps: "Pisua + errepikapenak",
+    exercise_type_reps: "Gorputz-pisua",
+    exercise_type_time: "Denbora",
+    exercise_type_lastre: "Zama gehigarria / lagunduta",
     
     // Settings
     dark_mode: "Modu iluna",
@@ -549,7 +557,7 @@ export const translations = {
     register: "Erregistratu",
     google_account: "Google Kontua",
     no_pfp: "Argazkirik gabe",
-    please_login_to_import: "Hasi saioa zure datuak inportatzeko",
+    please_login_to_import: "Hasi saioa zure datuak esportatzeko edo inportatzeko",
 
     // Jakinarazpenak
     notifications: "Jakinarazpenak",

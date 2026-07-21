@@ -3,7 +3,7 @@ import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { useRouter } from "next/router";
 import { getTokens } from "../lib/tokens";
-import { Icon, Spinner, PageHeader } from "../components/ui";
+import { Spinner, PageHeader } from "../components/ui";
 
 export default function Calendar() {
   const router = useRouter();
@@ -150,14 +150,6 @@ export default function Calendar() {
         isMobile={isMobile}
         title="Calendario"
         subtitle="Tu constancia visualizada"
-        actions={
-          <button
-            onClick={() => router.back()}
-            style={{ background: tk.surface, border: `1px solid ${tk.border}`, color: tk.text, padding: "10px", borderRadius: tk.radius.full, cursor: "pointer", display: "flex" }}
-          >
-            <Icon name="chevronLeft" size={18} />
-          </button>
-        }
       />
 
       {/* Legend */}

@@ -36,15 +36,7 @@ export default function Recommended() {
         width: "100%",
         boxSizing: "border-box"
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "24px" }}>
-          <button
-            onClick={() => router.back()}
-            style={{ background: "none", border: "none", color: tk.text, cursor: "pointer", padding: "5px", display: "flex", alignItems: "center" }}
-          >
-            <Icon name="chevronLeft" size={22} />
-          </button>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", margin: 0, color: tk.text }}>Gente recomendada</h1>
-        </div>
+        <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", margin: "0 0 24px", color: tk.text }}>Gente recomendada</h1>
 
         <div style={{ backgroundColor: tk.surface, borderRadius: tk.radius.lg, border: `1px solid ${tk.border}`, overflow: "hidden" }}>
           {loadingUsers ? (

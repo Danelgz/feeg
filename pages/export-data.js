@@ -6,12 +6,34 @@ import { getTokens } from "../lib/tokens";
 import { Icon, Button, EmptyState, PageHeader } from "../components/ui";
 
 export default function ExportData() {
-  const { theme, t, bulkSaveWorkouts, bulkSaveMeasures, saveUser, user, authUser } = useUser();
+  const { theme, t, bulkSaveWorkouts, bulkSaveMeasures, saveUser, user, authUser, completedWorkouts, routines, measures } = useUser();
   const isDark = theme === 'dark';
   const tk = getTokens(isDark);
   const [isImporting, setIsImporting] = useState(false);
   const [importStatus, setImportStatus] = useState("");
   const [importedCount, setImportedCount] = useState(0);
+
+  // Backup personal completo en JSON — descarga directa en el cliente, sin pasar por un
+  // endpoint. Es la contraparte real de "Importar desde Hevy" más abajo: antes esta página se
+  // llamaba "Exportar datos" pero solo importaba, nunca exportaba nada.
+  const handleExportData = () => {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      profile: user,
+      completedWorkouts: completedWorkouts || [],
+      routines: routines || [],
+      measures: measures || [],
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `feeg-datos-${new Date().toISOString().split("T")[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const findMuscleGroup = (exerciseName) => {
     if (!exerciseName) return "Otros";
@@ -272,8 +294,26 @@ export default function ExportData() {
         <PageHeader
           isDark={isDark}
           title={t("exportar_datos")}
-          subtitle="Importa tu historial de entrenamientos desde la aplicación Hevy mediante un archivo CSV."
+          subtitle="Descarga una copia de tus datos, o importa tu historial desde Hevy."
         />
+
+        <div style={{
+          backgroundColor: tk.surface,
+          padding: "30px",
+          borderRadius: tk.radius.md,
+          border: `1px solid ${tk.border}`,
+          boxShadow: tk.shadow.card,
+          marginBottom: "24px"
+        }}>
+          <h2 style={{ fontSize: "1.2rem", marginBottom: "10px", color: tk.text }}>Exportar mis datos</h2>
+          <p style={{ color: tk.textMuted, lineHeight: "1.6", marginBottom: "20px" }}>
+            Descarga una copia de seguridad de todo tu historial — entrenamientos completados, rutinas, medidas
+            corporales y tu perfil — en un único archivo JSON que puedes guardar donde quieras.
+          </p>
+          <Button isDark={isDark} icon="download" onClick={handleExportData}>
+            Descargar mis datos (JSON)
+          </Button>
+        </div>
 
         <div style={{
           backgroundColor: tk.surface,

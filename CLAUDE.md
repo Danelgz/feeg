@@ -117,6 +117,10 @@ persist to `localStorage` via [lib/workoutStorage.ts](lib/workoutStorage.ts) und
 `workoutSessionSnapshot` (intentionally separate from the legacy `workoutTimerState` key used by
 not-yet-migrated screens — don't merge these without checking both call sites). [components/Layout.jsx](components/Layout.jsx)
 reads that snapshot read-only to show a live elapsed-time pill for the active routine from anywhere in the app.
+[hooks/useRoutineEditor.ts](hooks/useRoutineEditor.ts) drives the same reducer in "template" mode
+(`pages/routines/create.js`, editing an existing routine) — no timer, no localStorage snapshot, no PR
+detection — and hydrates from an async-loaded `routine` prop at most once per `editorId` so a background
+context refresh can't clobber in-progress edits.
 
 **Design tokens**: [lib/tokens.js](lib/tokens.js) exports `getTokens(isDark)` for normal screens and
 `getWorkoutTokens()` for the always-dark "workout mode" screens (create/empty/[id] routines — these
@@ -125,7 +129,8 @@ hardcoding new hex values; the file's comments explain past hex-drift bugs this 
 
 **Firebase**: client SDK in `lib/firebase.js` (Auth via Google popup, Firestore, Storage), guarded so
 the app degrades gracefully if env vars are missing. Firebase Admin (`pages/api/generate-routine.js`,
-`pages/api/chat.js`) verifies ID tokens server-side before calling OpenAI. Firestore security rules are
+`pages/api/chat.js`, `pages/api/analyze-food.js`) verifies ID tokens server-side before calling OpenAI.
+Firestore security rules are
 in [firestore.rules](firestore.rules); social/profile documents (`users/{uid}`, `usersPublic/{uid}`,
 `workouts/{id}`) are readable by anyone but writable only by their owner (with a carve-out for
 likes/comments on workouts and posts).

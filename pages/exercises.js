@@ -5,7 +5,14 @@ import { exercisesList } from "../data/exercises";
 import { useUser } from "../context/UserContext";
 import { getTokens } from "../lib/tokens";
 import { translateExerciseName } from "../lib/exerciseTranslation";
-import { Icon, EmptyState, PageHeader } from "../components/ui";
+import { Icon, EmptyState, PageHeader, Badge } from "../components/ui";
+
+function exerciseTypeLabel(exercise, t) {
+  if (exercise.unit === "lastre") return t("exercise_type_lastre");
+  if (exercise.type === "reps") return t("exercise_type_reps");
+  if (exercise.type === "time") return t("exercise_type_time");
+  return t("exercise_type_weight_reps");
+}
 
 export default function Exercises() {
   const [search, setSearch] = useState("");
@@ -125,7 +132,10 @@ export default function Exercises() {
                         e.currentTarget.style.transform = "translateX(0)";
                       }}
                     >
-                      {translateExerciseName(exercise.name, language)}
+                      <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
+                        <span>{translateExerciseName(exercise.name, language)}</span>
+                        <Badge isDark={isDark} variant="neutral">{exerciseTypeLabel(exercise, t)}</Badge>
+                      </span>
                     </li>
                   ))}
                 </ul>

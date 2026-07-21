@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
-import { useRouter } from "next/router";
 import { getTokens } from "../lib/tokens";
 import { Icon, Button, Spinner, EmptyState, PageHeader, ConfirmModal } from "../components/ui";
 
@@ -59,7 +58,6 @@ const DetailRow = ({ label, value, unit, tk }) => {
 };
 
 export default function Measures() {
-  const router = useRouter();
   const {
     user,
     saveUser,
@@ -241,14 +239,6 @@ export default function Measures() {
         isMobile={isMobile}
         title="Medidas"
         subtitle="Seguimiento de progreso corporal"
-        actions={
-          <button
-            onClick={() => router.back()}
-            style={{ background: tk.surface, border: `1px solid ${tk.border}`, color: tk.text, padding: "10px", borderRadius: tk.radius.full, cursor: "pointer", display: "flex" }}
-          >
-            <Icon name="chevronLeft" size={18} />
-          </button>
-        }
       />
 
       {/* Units Toggles */}

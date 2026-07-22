@@ -431,28 +431,39 @@ export function UserProvider({ children }) {
 
   const bulkSaveWorkouts = async (workouts) => {
     lastLocalUpdate.current = Date.now();
-    const newList = [...workouts, ...completedWorkouts];
-    // Sort by date descending
+    // Sustituye por id en vez de anteponer sin más: si el usuario reimporta el mismo CSV (p.ej.
+    // tras un fallo, o simplemente porque vuelve a probar), los entrenos importados tienen
+    // siempre el mismo id (Date.parse(completedAt) + índice, determinista para el mismo archivo)
+    // — sin este filtro se duplicaba el historial completo en cada reintento. Aparte de ensuciar
+    // las estadísticas (volumen/PRs contados dos veces), el documento de perfil en Firestore
+    // guarda completedWorkouts como un único array dentro de users/{uid} (límite de 1 MiB por
+    // documento) y varias reimportaciones duplicadas podían hacerlo crecer lo suficiente como
+    // para que la escritura a la nube empezara a fallar en silencio (ver el `return` de
+    // cloudSynced más abajo: ahora sí se informa de ese fallo en vez de tragárselo).
+    const incomingIds = new Set(workouts.map((w) => w.id));
+    const newList = [...workouts, ...completedWorkouts.filter((w) => !incomingIds.has(w.id))];
     newList.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
 
     setCompletedWorkouts(newList);
     localStorage.setItem('completedWorkouts', JSON.stringify(newList));
 
-    if (authUser) {
-      try {
-        // Publica en batches atómicos en vez de un setDoc por entrenamiento: con cientos de
-        // entrenos importados de golpe, cientos de escrituras concurrentes son poco fiables
-        // (compiten por conexión, se cortan si el usuario navega justo tras "importación
-        // completada"). Ver bulkSaveWorkoutsToCloud en lib/firebase.js.
-        await bulkSaveWorkoutsToCloud(
-          authUser.uid,
-          workouts,
-          { userName: user?.username || authUser.displayName, userPhoto: user?.photoURL || authUser.photoURL },
-          newList
-        );
-      } catch (error) {
-        console.error('[bulkSaveWorkouts] Fallo al guardar en la nube:', error);
-      }
+    if (!authUser) return null;
+
+    try {
+      // Publica en batches atómicos en vez de un setDoc por entrenamiento: con cientos de
+      // entrenos importados de golpe, cientos de escrituras concurrentes son poco fiables
+      // (compiten por conexión, se cortan si el usuario navega justo tras "importación
+      // completada"). Ver bulkSaveWorkoutsToCloud en lib/firebase.js.
+      await bulkSaveWorkoutsToCloud(
+        authUser.uid,
+        workouts,
+        { userName: user?.username || authUser.displayName, userPhoto: user?.photoURL || authUser.photoURL },
+        newList
+      );
+      return true;
+    } catch (error) {
+      console.error('[bulkSaveWorkouts] Fallo al guardar en la nube:', error);
+      return false;
     }
   };
 

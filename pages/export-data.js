@@ -15,6 +15,7 @@ export default function ExportData() {
   const tk = getTokens(isDark);
   const [isImporting, setIsImporting] = useState(false);
   const [importStatus, setImportStatus] = useState("");
+  const [importWarning, setImportWarning] = useState(false);
   const [importedCount, setImportedCount] = useState(0);
   // Cuando el matcher deja ejercicios ambiguos/sin conectar, el import se pausa aquí a la espera
   // de que ExerciseMatchReview resuelva cada uno (ver handleReviewComplete más abajo).
@@ -86,9 +87,15 @@ export default function ExportData() {
   const finalizeImport = async (workouts, weightMeasures, latestWeight) => {
     try {
       let statusMsg = "";
+      let cloudSyncFailed = false;
       if (workouts.length > 0) {
         setImportStatus(`Importando ${workouts.length} entrenamientos...`);
-        await bulkSaveWorkouts(workouts);
+        // bulkSaveWorkouts devuelve false si el guardado en local funcionó pero la nube lo
+        // rechazó (antes se tragaba el error en silencio: se veía "completado" aunque el
+        // historial nunca llegara a Firestore, y el siguiente refresco desde la nube — otra
+        // pestaña, otro dispositivo, o simplemente `refreshData()` pasados 5s — lo revertía).
+        const cloudSynced = await bulkSaveWorkouts(workouts);
+        if (cloudSynced === false) cloudSyncFailed = true;
         statusMsg += `${workouts.length} entrenamientos `;
       }
 
@@ -105,9 +112,15 @@ export default function ExportData() {
       }
 
       setImportedCount(workouts.length || weightMeasures.length);
-      setImportStatus(`¡Importación completada! Se han importado ${statusMsg}.`);
+      setImportWarning(cloudSyncFailed);
+      setImportStatus(
+        cloudSyncFailed
+          ? `Se han guardado ${statusMsg}en este dispositivo, pero no se pudieron sincronizar con la nube (posiblemente porque tu historial es muy grande). Vuelve a intentarlo con mejor conexión — si sigue fallando, puede que tengas demasiados entrenos para guardarlos todos en un único perfil; avísanos. Tus datos siguen a salvo en este dispositivo.`
+          : `¡Importación completada! Se han importado ${statusMsg}.`
+      );
     } catch (error) {
       console.error("Error importing CSV:", error);
+      setImportWarning(false);
       setImportStatus("Error al procesar el archivo CSV. Asegúrate de que sea un export de Hevy.");
     } finally {
       setIsImporting(false);
@@ -120,6 +133,7 @@ export default function ExportData() {
 
     setIsImporting(true);
     setImportStatus("Leyendo archivo...");
+    setImportWarning(false);
 
     const reader = new FileReader();
     reader.onload = async (event) => {
@@ -442,11 +456,11 @@ export default function ExportData() {
               marginTop: "20px",
               padding: "15px",
               borderRadius: tk.radius.sm,
-              backgroundColor: importStatus.includes("éxito") ? tk.accentSoft :
-                             importStatus.includes("Error") ? tk.dangerSoft :
+              backgroundColor: importWarning || importStatus.includes("Error") ? tk.dangerSoft :
+                             importStatus.includes("éxito") ? tk.accentSoft :
                              tk.surfaceAlt,
-              color: importStatus.includes("éxito") ? tk.accent :
-                     importStatus.includes("Error") ? tk.danger :
+              color: importWarning || importStatus.includes("Error") ? tk.danger :
+                     importStatus.includes("éxito") ? tk.accent :
                      tk.text,
               textAlign: "center",
               fontWeight: "500"

@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { getTokens } from "../lib/tokens";
-import { Icon, Button, Spinner, ConfirmModal } from "./ui";
+import { Icon, Button, LoadingOverlay, ConfirmModal } from "./ui";
 import { readLiveElapsedFromSnapshot } from "../lib/workoutStorage";
 
 export default function Layout({ children, hideBottomNav = false }) {
@@ -164,52 +164,7 @@ export default function Layout({ children, hideBottomNav = false }) {
       {isMounted && (
         <>
           {/* Pantalla de Carga / Sincronización */}
-          {isSyncing && (
-            <div style={{
-              position: "fixed",
-              top: 0, left: 0, right: 0, bottom: 0,
-              backgroundColor: "rgba(0, 0, 0, 0.75)",
-              backdropFilter: "blur(4px)",
-              WebkitBackdropFilter: "blur(4px)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 15000,
-              gap: "20px",
-              animation: "syncFadeIn 0.3s ease"
-            }}>
-              <style>{`
-                @keyframes syncFadeIn {
-                  from { opacity: 0; }
-                  to { opacity: 1; }
-                }
-                @keyframes syncPulse {
-                  0%, 100% { opacity: 0.6; }
-                  50% { opacity: 1; }
-                }
-              `}</style>
-              <Spinner isDark={true} size={56} />
-              <div style={{ textAlign: "center" }}>
-                <div style={{
-                  color: "#fff",
-                  fontSize: "1.05rem",
-                  fontWeight: "600",
-                  letterSpacing: "0.01em",
-                  animation: "syncPulse 1.8s ease-in-out infinite"
-                }}>
-                  Sincronizando tus datos…
-                </div>
-                <div style={{
-                  color: "rgba(255,255,255,0.45)",
-                  fontSize: "0.8rem",
-                  marginTop: "6px"
-                }}>
-                  Un momento, por favor
-                </div>
-              </div>
-            </div>
-          )}
+          {isSyncing && <LoadingOverlay label="Cargando" sublabel="Un momento, por favor" />}
 
           {notification && (
             <div style={{

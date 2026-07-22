@@ -8,3 +8,4 @@ export { default as PageHeader } from "./PageHeader";
 export { default as ConfirmModal } from "./ConfirmModal";
 export { default as Switch } from "./Switch";
 export { default as Avatar } from "./Avatar";
+export { default as LoadingOverlay } from "./LoadingOverlay";

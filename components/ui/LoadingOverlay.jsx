@@ -1,8 +1,11 @@
-// Overlay de carga a pantalla completa (sincronización con la nube, importaciones largas...).
-// Reemplaza el spinner simple + texto plano que había antes: doble anillo con estela de
-// degradado + constelación de partículas orbitando + halo pulsante + texto con shimmer. Siempre
-// sobre fondo oscuro independientemente del tema — es chrome flotante, no una pantalla del tema.
-export default function LoadingOverlay({ label = "Cargando", sublabel }) {
+// Overlay de carga a pantalla completa — usado tanto para la sincronización con la nube como para
+// el splash de apertura en móvil (ver components/Layout.jsx: antes eran dos overlays independientes
+// que podían coincidir en pantalla a la vez, con z-index distintos, y "parpadeaban" al pisarse uno a
+// otro; ahora Layout solo monta ESTE componente, nunca los dos a la vez). Doble anillo con estela de
+// degradado + constelación de partículas orbitando alrededor del logo + halo pulsante. Sin `label`
+// es un splash de marca puro (sin texto) — Layout solo pasa label/sublabel cuando de verdad hay una
+// sincronización de datos en curso. Siempre sobre fondo oscuro, independiente del tema del usuario.
+export default function LoadingOverlay({ label, sublabel }) {
   return (
     <div className="feeg-loading-overlay">
       <div className="feeg-loading-glow" />
@@ -28,22 +31,24 @@ export default function LoadingOverlay({ label = "Cargando", sublabel }) {
           <circle className="feeg-loading-arc-inner" cx="50" cy="50" r="27" />
         </svg>
 
-        <span className="feeg-loading-core" />
+        <img src="/logo.png" alt="FEEG" className="feeg-loading-logo" />
       </div>
 
-      <div className="feeg-loading-text">
-        <span className="feeg-loading-label">
-          {label}
-          <span className="feeg-loading-dots"><i /><i /><i /></span>
-        </span>
-        {sublabel && <span className="feeg-loading-sublabel">{sublabel}</span>}
-      </div>
+      {label && (
+        <div className="feeg-loading-text">
+          <span className="feeg-loading-label">
+            {label}
+            <span className="feeg-loading-dots"><i /><i /><i /></span>
+          </span>
+          {sublabel && <span className="feeg-loading-sublabel">{sublabel}</span>}
+        </div>
+      )}
 
       <style jsx>{`
         .feeg-loading-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(6, 8, 8, 0.82);
+          background: rgba(6, 8, 8, 0.88);
           backdrop-filter: blur(6px);
           -webkit-backdrop-filter: blur(6px);
           display: flex;
@@ -57,8 +62,8 @@ export default function LoadingOverlay({ label = "Cargando", sublabel }) {
 
         .feeg-loading-glow {
           position: absolute;
-          width: 260px;
-          height: 260px;
+          width: 380px;
+          height: 380px;
           border-radius: 50%;
           background: radial-gradient(circle, rgba(46, 230, 197, 0.32) 0%, rgba(46, 230, 197, 0) 70%);
           filter: blur(4px);
@@ -68,8 +73,8 @@ export default function LoadingOverlay({ label = "Cargando", sublabel }) {
 
         .feeg-loading-orbit {
           position: relative;
-          width: 92px;
-          height: 92px;
+          width: 260px;
+          height: 260px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -84,41 +89,40 @@ export default function LoadingOverlay({ label = "Cargando", sublabel }) {
           fill: none;
         }
         .feeg-loading-ring-outer {
-          animation: feegSpin 1.7s linear infinite;
+          animation: feegSpin 5.5s linear infinite;
         }
         .feeg-loading-ring-inner {
-          inset: 20px;
-          width: calc(100% - 40px);
-          height: calc(100% - 40px);
-          animation: feegSpinReverse 1.05s linear infinite;
+          inset: 26px;
+          width: calc(100% - 52px);
+          height: calc(100% - 52px);
+          animation: feegSpinReverse 3.8s linear infinite;
         }
 
         .feeg-loading-track {
           stroke: rgba(255, 255, 255, 0.08);
-          stroke-width: 5;
+          stroke-width: 2.5;
         }
         .feeg-loading-arc {
           stroke: url(#feegRingGradient);
-          stroke-width: 5;
+          stroke-width: 2.5;
           stroke-linecap: round;
           stroke-dasharray: 78 186;
         }
         .feeg-loading-arc-inner {
           stroke: #2ee6c5;
-          opacity: 0.55;
-          stroke-width: 4;
+          opacity: 0.5;
+          stroke-width: 2;
           stroke-linecap: round;
           stroke-dasharray: 34 136;
         }
 
-        .feeg-loading-core {
-          position: absolute;
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          background: #2ee6c5;
-          box-shadow: 0 0 14px 3px rgba(46, 230, 197, 0.65);
-          animation: feegCorePulse 1.7s ease-in-out infinite;
+        .feeg-loading-logo {
+          position: relative;
+          width: 148px;
+          height: auto;
+          animation:
+            feegLogoPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+            feegLogoBreathe 3.4s ease-in-out infinite 0.7s;
         }
 
         .feeg-loading-particle-wrap {
@@ -134,12 +138,12 @@ export default function LoadingOverlay({ label = "Cargando", sublabel }) {
           box-shadow: 0 0 6px rgba(124, 255, 232, 0.85);
           animation: feegParticlePulse ease-in-out infinite;
         }
-        .p1 { animation-duration: 2.4s; }
-        .p1 .feeg-loading-particle { top: 2px; width: 5px; height: 5px; margin-left: -2.5px; animation-duration: 1.2s; }
-        .p2 { animation-duration: 3.1s; animation-direction: reverse; }
-        .p2 .feeg-loading-particle { top: 8px; width: 4px; height: 4px; margin-left: -2px; animation-duration: 1.4s; animation-delay: 0.3s; }
-        .p3 { animation-duration: 3.8s; }
-        .p3 .feeg-loading-particle { top: -4px; width: 3.5px; height: 3.5px; margin-left: -1.75px; animation-duration: 1.6s; animation-delay: 0.6s; }
+        .p1 { animation-duration: 4.5s; }
+        .p1 .feeg-loading-particle { top: 10px; width: 7px; height: 7px; margin-left: -3.5px; animation-duration: 1.6s; }
+        .p2 { animation-duration: 6.2s; animation-direction: reverse; }
+        .p2 .feeg-loading-particle { top: 18px; width: 6px; height: 6px; margin-left: -3px; animation-duration: 1.9s; animation-delay: 0.3s; }
+        .p3 { animation-duration: 7.6s; }
+        .p3 .feeg-loading-particle { top: 2px; width: 5px; height: 5px; margin-left: -2.5px; animation-duration: 2.1s; animation-delay: 0.6s; }
 
         .feeg-loading-text {
           display: flex;
@@ -195,9 +199,13 @@ export default function LoadingOverlay({ label = "Cargando", sublabel }) {
         @keyframes feegSpinReverse {
           to { transform: rotate(-360deg); }
         }
-        @keyframes feegCorePulse {
-          0%, 100% { transform: scale(0.85); opacity: 0.75; }
-          50% { transform: scale(1.15); opacity: 1; }
+        @keyframes feegLogoPop {
+          0% { transform: scale(0.4) rotate(-8deg); opacity: 0; }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes feegLogoBreathe {
+          0%, 100% { transform: scale(1); filter: drop-shadow(0 0 12px rgba(46, 230, 197, 0.4)); }
+          50% { transform: scale(1.035); filter: drop-shadow(0 0 22px rgba(46, 230, 197, 0.6)); }
         }
         @keyframes feegParticlePulse {
           0%, 100% { opacity: 0.25; transform: scale(0.8); }

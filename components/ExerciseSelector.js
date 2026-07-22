@@ -48,7 +48,11 @@ export default function ExerciseSelector({ onSelectExercise, onCancel }) {
     backgroundColor: isDark ? "#0a0a0a" : "#f5f5f5",
     display: "flex",
     flexDirection: "column",
-    zIndex: 999,
+    // BottomNavigation.jsx usa zIndex 1000-1001 (barra fija en móvil) — con 999 aquí quedaba por
+    // DEBAJO de la barra inferior, así que los toques sobre los últimos ejercicios de la lista (o
+    // directamente todo si la lista era corta) le llegaban a la barra de navegación en vez de al
+    // selector. El resto de modales de la app usa 2000+; alineamos con esa convención.
+    zIndex: 3000,
     overflow: "hidden",
   };
 
@@ -71,6 +75,8 @@ export default function ExerciseSelector({ onSelectExercise, onCancel }) {
   const contentStyle = {
     flex: 1,
     overflowY: "auto",
+    WebkitOverflowScrolling: "touch",
+    overscrollBehavior: "contain",
     padding: "20px",
     display: "flex",
     flexDirection: "column",

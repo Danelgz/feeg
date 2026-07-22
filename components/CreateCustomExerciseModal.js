@@ -64,7 +64,10 @@ export default function CreateCustomExerciseModal({ onSave, onCancel, initialNam
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 1000,
+    // Por encima de ExerciseSelector (3000), que a veces lo abre como modal hijo — y muy por
+    // encima de BottomNavigation (1000-1001), que si no tapaba el botón "Crear ejercicio" en
+    // móvil (ver mismo fix en ExerciseSelector.js).
+    zIndex: 3100,
     padding: "20px",
   };
 
@@ -76,6 +79,7 @@ export default function CreateCustomExerciseModal({ onSave, onCancel, initialNam
     width: "100%",
     maxHeight: "90vh",
     overflowY: "auto",
+    WebkitOverflowScrolling: "touch",
     boxShadow: "0 10px 40px rgba(0, 0, 0, 0.3)",
   };
 

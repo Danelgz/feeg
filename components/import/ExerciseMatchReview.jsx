@@ -65,7 +65,11 @@ export default function ExerciseMatchReview({ pending, onComplete, onCancel }) {
         position: "fixed",
         inset: 0,
         backgroundColor: isDark ? "#0a0a0a" : "#f5f5f5",
-        zIndex: 950,
+        // Por debajo de ExerciseSelector (3000, se abre encima al pulsar "Conectar con otro") y
+        // muy por encima de BottomNavigation (1000-1001) — con 950 la barra de navegación móvil
+        // tapaba los botones "Cancelar"/"Continuar importación" del pie y los toques en la lista
+        // de ejercicios pendientes, dejando la importación atascada en móvil.
+        zIndex: 2800,
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
@@ -86,7 +90,7 @@ export default function ExerciseMatchReview({ pending, onComplete, onCancel }) {
         </p>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
+      <div style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain", padding: "16px 20px" }}>
         <div style={{ maxWidth: "700px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "12px" }}>
           {pending.map(({ foreignName, suggestion, occurrences }) => {
             const resolution = resolutions[foreignName];

@@ -127,9 +127,17 @@ export function UserProvider({ children }) {
           setUser(cloudData.profile);
           localStorage.setItem('userProfile', JSON.stringify(cloudData.profile));
           
-          // Asegurar que authUser también tenga la foto actualizada
+          // Asegurar que authUser también tenga la foto actualizada. OJO: el updater debe
+          // devolver la MISMA referencia si la foto no cambió — de lo contrario cualquier
+          // pantalla con `useEffect(() => refreshData(), [authUser])` (index.js, settings.js,
+          // profile.js, measures.js, routines/index.js) ve un authUser "nuevo" en cada
+          // sincronización y se re-dispara a sí misma sin parar: isSyncing entra en true/false
+          // continuo y la pantalla de carga parpadea sin fin en vez de desaparecer.
           if (cloudData.profile.photoURL) {
-            setAuthUser(prev => prev ? { ...prev, photoURL: cloudData.profile.photoURL } : prev);
+            setAuthUser(prev => {
+              if (!prev || prev.photoURL === cloudData.profile.photoURL) return prev;
+              return { ...prev, photoURL: cloudData.profile.photoURL };
+            });
           }
         }
         if (cloudData.completedWorkouts) {
@@ -261,7 +269,10 @@ export function UserProvider({ children }) {
     
     if (authUser) {
       if (userData?.photoURL) {
-        setAuthUser((prev) => (prev ? { ...prev, photoURL: userData.photoURL } : prev));
+        setAuthUser((prev) => {
+          if (!prev || prev.photoURL === userData.photoURL) return prev;
+          return { ...prev, photoURL: userData.photoURL };
+        });
       }
 
       // 2. Ejecutar guardados en la nube en paralelo (sin bloquear si no es necesario)

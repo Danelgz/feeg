@@ -163,20 +163,8 @@ export default function Layout({ children, hideBottomNav = false }) {
 
       {isMounted && (
         <>
-          {/* Splash de marca (solo móvil, primera visita de la sesión) + sincronización con la
-              nube comparten UN único overlay — antes eran dos divs independientes con z-index
-              distintos que podían coincidir en pantalla (el de sync tapando a golpes el del
-              splash a medio animar) y se veía como un parpadeo. Con un solo overlay eso es
-              estructuralmente imposible: solo hay uno que montar. Sin texto mientras es puro
-              splash de marca; con "Cargando" solo si de verdad hay una sincronización en curso. */}
-          {(showIntro || isSyncing) && (
-            <div style={{ opacity: isIntroExiting ? 0 : 1, transition: "opacity 0.4s ease" }}>
-              <LoadingOverlay
-                label={isSyncing ? "Cargando" : undefined}
-                sublabel={isSyncing ? "Un momento, por favor" : undefined}
-              />
-            </div>
-          )}
+          {/* Pantalla de Carga / Sincronización */}
+          {isSyncing && <LoadingOverlay label="Cargando" sublabel="Un momento, por favor" />}
 
           {notification && (
             <div style={{
@@ -208,6 +196,50 @@ export default function Layout({ children, hideBottomNav = false }) {
               `}</style>
               <Icon name={notification.type === 'error' ? "alertCircle" : "check"} size={18} />
               <span>{notification.message}</span>
+            </div>
+          )}
+
+          {/* Intro de Logo (Solo Móvil) */}
+          {showIntro && (
+            <div style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100vw",
+              height: "100vh",
+              backgroundColor: isDark ? "#0f0f0f" : "#f0f2f5",
+              zIndex: 10000,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              overflow: "hidden",
+              touchAction: "none",
+              pointerEvents: "all",
+              transition: "opacity 0.5s ease-in-out",
+              opacity: isIntroExiting ? 0 : 1
+            }}>
+              <img
+                src={isDark ? "/logo.png" : "/logo2.png"}
+                alt="FEEG Logo"
+                style={{
+                  width: "180px",
+                  height: "auto",
+                  animation: "logoPop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), pulseLogo 2s ease-in-out infinite 0.8s",
+                  transition: "transform 0.5s ease-in-out",
+                  transform: isIntroExiting ? "scale(1.2)" : "scale(1)"
+                }}
+              />
+              <style>{`
+                @keyframes logoPop {
+                  0% { transform: scale(0.5); opacity: 0; }
+                  100% { transform: scale(1); opacity: 1; }
+                }
+                @keyframes pulseLogo {
+                  0% { transform: scale(1); }
+                  50% { transform: scale(1.05); }
+                  100% { transform: scale(1); }
+                }
+              `}</style>
             </div>
           )}
 

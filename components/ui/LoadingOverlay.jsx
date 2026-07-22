@@ -1,10 +1,8 @@
-// Overlay de carga a pantalla completa — usado tanto para la sincronización con la nube como para
-// el splash de apertura en móvil (ver components/Layout.jsx: antes eran dos overlays independientes
-// que podían coincidir en pantalla a la vez, con z-index distintos, y "parpadeaban" al pisarse uno a
-// otro; ahora Layout solo monta ESTE componente, nunca los dos a la vez). Doble anillo con estela de
-// degradado + constelación de partículas orbitando alrededor del logo + halo pulsante. Sin `label`
-// es un splash de marca puro (sin texto) — Layout solo pasa label/sublabel cuando de verdad hay una
-// sincronización de datos en curso. Siempre sobre fondo oscuro, independiente del tema del usuario.
+// Overlay de carga a pantalla completa para la sincronización con la nube (ver isSyncing en
+// context/UserContext.js). Un único anillo con estela de degradado + constelación de partículas
+// orbitando alrededor del logo + halo pulsante — sin anillo interior: con el logo real (lockup
+// icono+wordmark, no un icono compacto) un segundo anillo pegado quedaba parcialmente tapado
+// detrás en vez de leerse como un halo.
 export default function LoadingOverlay({ label, sublabel }) {
   return (
     <div className="feeg-loading-overlay">
@@ -25,10 +23,6 @@ export default function LoadingOverlay({ label, sublabel }) {
           </defs>
           <circle className="feeg-loading-track" cx="50" cy="50" r="42" />
           <circle className="feeg-loading-arc" cx="50" cy="50" r="42" />
-        </svg>
-
-        <svg className="feeg-loading-ring-inner" viewBox="0 0 100 100">
-          <circle className="feeg-loading-arc-inner" cx="50" cy="50" r="27" />
         </svg>
 
         <img src="/logo.png" alt="FEEG" className="feeg-loading-logo" />
@@ -80,22 +74,13 @@ export default function LoadingOverlay({ label, sublabel }) {
           justify-content: center;
         }
 
-        .feeg-loading-ring-outer,
-        .feeg-loading-ring-inner {
+        .feeg-loading-ring-outer {
           position: absolute;
           inset: 0;
           width: 100%;
           height: 100%;
           fill: none;
-        }
-        .feeg-loading-ring-outer {
           animation: feegSpin 5.5s linear infinite;
-        }
-        .feeg-loading-ring-inner {
-          inset: 26px;
-          width: calc(100% - 52px);
-          height: calc(100% - 52px);
-          animation: feegSpinReverse 3.8s linear infinite;
         }
 
         .feeg-loading-track {
@@ -107,13 +92,6 @@ export default function LoadingOverlay({ label, sublabel }) {
           stroke-width: 2.5;
           stroke-linecap: round;
           stroke-dasharray: 78 186;
-        }
-        .feeg-loading-arc-inner {
-          stroke: #2ee6c5;
-          opacity: 0.5;
-          stroke-width: 2;
-          stroke-linecap: round;
-          stroke-dasharray: 34 136;
         }
 
         .feeg-loading-logo {
@@ -195,9 +173,6 @@ export default function LoadingOverlay({ label, sublabel }) {
         }
         @keyframes feegSpin {
           to { transform: rotate(360deg); }
-        }
-        @keyframes feegSpinReverse {
-          to { transform: rotate(-360deg); }
         }
         @keyframes feegLogoPop {
           0% { transform: scale(0.4) rotate(-8deg); opacity: 0; }

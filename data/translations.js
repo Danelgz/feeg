@@ -244,6 +244,7 @@ export const translations = {
     Abductor: "Abductor",
     Antebrazo: "Antebrazo",
     "Cuerpo Completo": "Cuerpo Completo",
+    Movilidad: "Movilidad",
     // Los nombres de ejercicio del catálogo predefinido ya no viven aquí — ver
     // data/exerciseTranslations.js y lib/exerciseTranslation.js (translateExerciseName).
     "Entrenamiento Vacío": "Entrenamiento Vacío",
@@ -527,6 +528,7 @@ export const translations = {
     Abductor: "Abduktorea",
     Antebrazo: "Aurrebesoa",
     "Cuerpo Completo": "Gorputz Osoa",
+    Movilidad: "Mugikortasuna",
     // Los nombres de ejercicio del catálogo predefinido ya no viven aquí — ver
     // data/exerciseTranslations.js y lib/exerciseTranslation.js (translateExerciseName).
     "Entrenamiento Vacío": "Entrenamendu hutsa",

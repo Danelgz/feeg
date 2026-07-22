@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useRouter } from "next/router";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { exercisesList } from "../data/exercises";
@@ -8,6 +9,7 @@ import { resolveExerciseNames } from "../lib/exerciseMatcher";
 import ExerciseMatchReview from "../components/import/ExerciseMatchReview";
 
 export default function ExportData() {
+  const router = useRouter();
   const { theme, t, bulkSaveWorkouts, bulkSaveMeasures, saveUser, user, authUser, completedWorkouts, routines, measures } = useUser();
   const isDark = theme === 'dark';
   const tk = getTokens(isDark);
@@ -455,7 +457,14 @@ export default function ExportData() {
 
           {importedCount > 0 && (
             <div style={{ marginTop: "20px", textAlign: "center" }}>
-              <Button isDark={isDark} onClick={() => window.location.href = "/profile"}>
+              {/* router.push, no window.location.href: una recarga completa tira el estado en
+                  memoria (ya correcto, recién importado) y fuerza una relectura desde la nube —
+                  si esa sincronización todavía no había terminado o falló en segundo plano (los
+                  mutators de UserContext no bloquean ni informan de errores de nube, por diseño),
+                  el perfil recargado se quedaba viendo el estado antiguo: 0 entrenamientos aunque
+                  la importación sí se había guardado. Navegación de cliente evita el problema
+                  entero al no volver a pedirle nada a la nube. */}
+              <Button isDark={isDark} onClick={() => router.push("/profile")}>
                 Ir a mi Perfil para ver los cambios
               </Button>
             </div>

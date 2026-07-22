@@ -7,9 +7,16 @@ import { useRouter } from "next/router";
 import { getTokens } from "../lib/tokens";
 import { Icon, Button, LoadingOverlay, ConfirmModal } from "./ui";
 import { readLiveElapsedFromSnapshot } from "../lib/workoutStorage";
+import { useMinDurationLoading } from "../hooks/useMinDurationLoading";
 
 export default function Layout({ children, hideBottomNav = false }) {
   const { theme, isMobile, activeRoutine, endRoutine, notification, isSyncing, t, authUser, unreadNotificationsCount } = useUser();
+  // refreshData() se dispara en cada página que la llama al montar (index, settings, profile,
+  // measures, routines) — al cambiar de apartado isSyncing se pone a true aunque la sincronización
+  // dure 150ms, y un overlay a pantalla completa que aparece y desaparece así de rápido se ve como
+  // un parpadeo. Con este hook: si termina antes de 300ms nunca llega a mostrarse; si de verdad
+  // hace falta mostrarlo, se queda al menos 3s (ver hooks/useMinDurationLoading.ts).
+  const showLoadingOverlay = useMinDurationLoading(isSyncing, { showDelayMs: 300, minVisibleMs: 3000 });
   const isDark = theme === 'dark';
   const tk = getTokens(isDark);
   const [isMounted, setIsMounted] = useState(false);
@@ -164,7 +171,7 @@ export default function Layout({ children, hideBottomNav = false }) {
       {isMounted && (
         <>
           {/* Pantalla de Carga / Sincronización */}
-          {isSyncing && <LoadingOverlay label="Cargando" sublabel="Un momento, por favor" />}
+          {showLoadingOverlay && <LoadingOverlay label="Cargando" sublabel="Un momento, por favor" />}
 
           {notification && (
             <div style={{

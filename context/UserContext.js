@@ -10,6 +10,7 @@ import {
   deleteFromCloud,
   getPublicWorkoutDocId,
   bulkSaveWorkoutsToCloud,
+  getAllUserWorkouts,
   deleteAllPublicWorkoutsForUser,
   followUser,
   unfollowUser,
@@ -111,9 +112,12 @@ export function UserProvider({ children }) {
     setIsSyncing(true);
     try {
       console.log(`[UserContext] Sincronizando datos desde la nube (force: ${force})...`);
-      // Las tres lecturas son independientes entre sí — en paralelo en vez de en serie, así el
-      // peor caso es ~1 timeout de red (lib/firebase.js) en vez de la suma de los tres, que es
-      // lo que dejaba la pantalla de "Sincronizando tus datos..." colgada tanto tiempo en móvil.
+      // Las cuatro lecturas son independientes entre sí — en paralelo en vez de en serie, así el
+      // peor caso es ~1 timeout de red (lib/firebase.js) en vez de la suma, que es lo que dejaba
+      // la pantalla de "Sincronizando tus datos..." colgada tanto tiempo en móvil. El historial
+      // de entrenos se maneja aparte (no en este Promise.all): getAllUserWorkouts puede fallar
+      // sin tirar abajo el resto de la sincronización, y si falla NO se toca completedWorkouts —
+      // mejor conservar el historial local que borrarlo por un hipo de red.
       const [cloudData, publicData, followersList] = await Promise.all([
         getFromCloud(`users/${authUser.uid}`),
         getFromCloud(`usersPublic/${authUser.uid}`),
@@ -121,6 +125,14 @@ export function UserProvider({ children }) {
       ]);
 
       setFollowers(followersList.map(u => u.id));
+
+      try {
+        const workouts = await getAllUserWorkouts(authUser.uid);
+        setCompletedWorkouts(workouts);
+        localStorage.setItem('completedWorkouts', JSON.stringify(workouts));
+      } catch (error) {
+        console.error("[UserContext] No se pudo cargar el historial de entrenos desde la nube, se conserva el local:", error);
+      }
 
       if (cloudData) {
         if (cloudData.profile) {
@@ -139,10 +151,6 @@ export function UserProvider({ children }) {
               return { ...prev, photoURL: cloudData.profile.photoURL };
             });
           }
-        }
-        if (cloudData.completedWorkouts) {
-          setCompletedWorkouts(cloudData.completedWorkouts);
-          localStorage.setItem('completedWorkouts', JSON.stringify(cloudData.completedWorkouts));
         }
         if (cloudData.routines) {
           setRoutines(cloudData.routines);
@@ -412,11 +420,14 @@ export function UserProvider({ children }) {
     setCompletedWorkouts(newList);
     localStorage.setItem('completedWorkouts', JSON.stringify(newList));
     if (authUser) {
-      await saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList });
-      // Guardar también en colección global para el feed (público por defecto). El id del
-      // documento lleva el uid delante (ver getPublicWorkoutDocId): el id local (Date.now())
-      // no tiene nada que lo distinga por usuario, así que sin el prefijo dos cuentas podrían
-      // generar el mismo id de documento y pisarse entre sí.
+      // Un único documento por entreno en `workouts/{uid}_{id}` es también la fuente de verdad
+      // para el propio historial del usuario (ver getAllUserWorkouts en refreshData) — ya NO se
+      // guarda además como array agregado en users/{uid}.completedWorkouts (ver nota extensa en
+      // bulkSaveWorkoutsToCloud, lib/firebase.js: ese único campo topaba con el límite de 1 MiB
+      // por documento de Firestore según crecía el historial). El id del documento lleva el uid
+      // delante (ver getPublicWorkoutDocId): el id local (Date.now()) no tiene nada que lo
+      // distinga por usuario, así que sin el prefijo dos cuentas podrían generar el mismo id de
+      // documento y pisarse entre sí.
       await saveToCloud(`workouts/${getPublicWorkoutDocId(authUser.uid, workout.id)}`, {
         ...workout,
         userId: authUser.uid,
@@ -434,12 +445,8 @@ export function UserProvider({ children }) {
     // Sustituye por id en vez de anteponer sin más: si el usuario reimporta el mismo CSV (p.ej.
     // tras un fallo, o simplemente porque vuelve a probar), los entrenos importados tienen
     // siempre el mismo id (Date.parse(completedAt) + índice, determinista para el mismo archivo)
-    // — sin este filtro se duplicaba el historial completo en cada reintento. Aparte de ensuciar
-    // las estadísticas (volumen/PRs contados dos veces), el documento de perfil en Firestore
-    // guarda completedWorkouts como un único array dentro de users/{uid} (límite de 1 MiB por
-    // documento) y varias reimportaciones duplicadas podían hacerlo crecer lo suficiente como
-    // para que la escritura a la nube empezara a fallar en silencio (ver el `return` de
-    // cloudSynced más abajo: ahora sí se informa de ese fallo en vez de tragárselo).
+    // — sin este filtro se duplicaba el historial completo en cada reintento, contando volumen y
+    // PRs dos veces en las estadísticas.
     const incomingIds = new Set(workouts.map((w) => w.id));
     const newList = [...workouts, ...completedWorkouts.filter((w) => !incomingIds.has(w.id))];
     newList.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
@@ -453,12 +460,13 @@ export function UserProvider({ children }) {
       // Publica en batches atómicos en vez de un setDoc por entrenamiento: con cientos de
       // entrenos importados de golpe, cientos de escrituras concurrentes son poco fiables
       // (compiten por conexión, se cortan si el usuario navega justo tras "importación
-      // completada"). Ver bulkSaveWorkoutsToCloud en lib/firebase.js.
+      // completada"). Ver bulkSaveWorkoutsToCloud en lib/firebase.js — ya no recibe ni escribe
+      // el array agregado, solo un documento por entreno, así que ya no hay ningún límite de
+      // tamaño que una importación grande (o repetida) pueda hacer saltar.
       await bulkSaveWorkoutsToCloud(
         authUser.uid,
         workouts,
-        { userName: user?.username || authUser.displayName, userPhoto: user?.photoURL || authUser.photoURL },
-        newList
+        { userName: user?.username || authUser.displayName, userPhoto: user?.photoURL || authUser.photoURL }
       );
       return true;
     } catch (error) {
@@ -482,21 +490,14 @@ export function UserProvider({ children }) {
     setCompletedWorkouts(newList);
     localStorage.setItem('completedWorkouts', JSON.stringify(newList));
     if (authUser) {
-      // En paralelo, no en serie: encadenar awaits seguidos aumenta la latencia percibida por
-      // quien pulsa "Borrar" (el modal de confirmación no se cierra hasta que esta función
-      // termina — ver handleDeleteWorkout en pages/profile.js).
-      const results = await Promise.allSettled([
-        saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList }),
-        // Sin esto, la copia pública en `workouts/{...}` (la que lee el feed y los perfiles de
-        // otros usuarios, con o sin cuenta) nunca se borraba: el entrenamiento seguía visible
-        // para todos aunque tú ya lo hubieras eliminado.
-        deleteFromCloud(`workouts/${getPublicWorkoutDocId(authUser.uid, id)}`),
-      ]);
-      results.forEach((r) => {
-        if (r.status === 'rejected') {
-          console.error('[deleteCompletedWorkout] Fallo al borrar en la nube:', r.reason);
-        }
-      });
+      // `workouts/{uid}_{id}` es la única copia en la nube (ver nota en saveCompletedWorkout) —
+      // borrar ese documento ya quita el entreno tanto del feed público como del propio
+      // historial del usuario, que se reconstruye consultando esta colección.
+      try {
+        await deleteFromCloud(`workouts/${getPublicWorkoutDocId(authUser.uid, id)}`);
+      } catch (error) {
+        console.error('[deleteCompletedWorkout] Fallo al borrar en la nube:', error);
+      }
     }
   };
 
@@ -508,15 +509,11 @@ export function UserProvider({ children }) {
       // deleteAllPublicWorkoutsForUser busca en Firestore por userId en vez de reconstruir ids
       // desde el estado local: así se limpian también los documentos que pudieran haber
       // quedado con esquemas de id de versiones anteriores, no solo los que el cliente conoce.
-      const results = await Promise.allSettled([
-        saveToCloud(`users/${authUser.uid}`, { completedWorkouts: [] }),
-        deleteAllPublicWorkoutsForUser(authUser.uid),
-      ]);
-      results.forEach((r) => {
-        if (r.status === 'rejected') {
-          console.error('[deleteAllWorkouts] Fallo al borrar del feed público:', r.reason);
-        }
-      });
+      try {
+        await deleteAllPublicWorkoutsForUser(authUser.uid);
+      } catch (error) {
+        console.error('[deleteAllWorkouts] Fallo al borrar del feed público:', error);
+      }
     }
   };
 
@@ -526,7 +523,6 @@ export function UserProvider({ children }) {
     setCompletedWorkouts(newList);
     localStorage.setItem('completedWorkouts', JSON.stringify(newList));
     if (authUser) {
-      await saveToCloud(`users/${authUser.uid}`, { completedWorkouts: newList });
       await saveToCloud(`workouts/${getPublicWorkoutDocId(authUser.uid, updatedWorkout.id)}`, updatedWorkout);
     }
   };

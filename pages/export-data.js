@@ -88,14 +88,20 @@ export default function ExportData() {
     try {
       let statusMsg = "";
       let cloudSyncFailed = false;
+      let cloudSyncErrorText = "";
       if (workouts.length > 0) {
         setImportStatus(`Importando ${workouts.length} entrenamientos...`);
-        // bulkSaveWorkouts devuelve false si el guardado en local funcionó pero la nube lo
-        // rechazó (antes se tragaba el error en silencio: se veía "completado" aunque el
-        // historial nunca llegara a Firestore, y el siguiente refresco desde la nube — otra
-        // pestaña, otro dispositivo, o simplemente `refreshData()` pasados 5s — lo revertía).
-        const cloudSynced = await bulkSaveWorkouts(workouts);
-        if (cloudSynced === false) cloudSyncFailed = true;
+        // bulkSaveWorkouts devuelve { ok: false, code, message } si el guardado en local
+        // funcionó pero la nube lo rechazó (antes se tragaba el error en silencio: se veía
+        // "completado" aunque el historial nunca llegara a Firestore, y el siguiente refresco
+        // desde la nube — otra pestaña, otro dispositivo, o simplemente `refreshData()` pasados
+        // 5s — lo revertía). Se muestra el código real en pantalla para poder diagnosticar sin
+        // depender de la consola del móvil.
+        const syncResult = await bulkSaveWorkouts(workouts);
+        if (syncResult && syncResult.ok === false) {
+          cloudSyncFailed = true;
+          cloudSyncErrorText = syncResult.code ? `${syncResult.code} — ${syncResult.message}` : syncResult.message;
+        }
         statusMsg += `${workouts.length} entrenamientos `;
       }
 
@@ -115,7 +121,7 @@ export default function ExportData() {
       setImportWarning(cloudSyncFailed);
       setImportStatus(
         cloudSyncFailed
-          ? `Se han guardado ${statusMsg}en este dispositivo, pero no se pudieron sincronizar con la nube (posiblemente porque tu historial es muy grande). Vuelve a intentarlo con mejor conexión — si sigue fallando, puede que tengas demasiados entrenos para guardarlos todos en un único perfil; avísanos. Tus datos siguen a salvo en este dispositivo.`
+          ? `Se han guardado ${statusMsg}en este dispositivo, pero no se pudieron sincronizar con la nube. Tus datos siguen a salvo en este dispositivo. Código de error (compártelo si nos avisas): ${cloudSyncErrorText || "desconocido"}`
           : `¡Importación completada! Se han importado ${statusMsg}.`
       );
     } catch (error) {

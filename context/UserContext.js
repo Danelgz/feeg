@@ -492,10 +492,13 @@ export function UserProvider({ children }) {
         workouts,
         { userName: user?.username || authUser.displayName, userPhoto: user?.photoURL || authUser.photoURL }
       );
-      return true;
+      return { ok: true };
     } catch (error) {
       console.error('[bulkSaveWorkouts] Fallo al guardar en la nube:', error);
-      return false;
+      // Se propaga el código/mensaje real hasta la UI (ver finalizeImport en pages/export-data.js)
+      // para poder diagnosticar sin depender de que alguien te pase la consola del móvil, donde
+      // acceder a devtools no es trivial.
+      return { ok: false, code: error.code || null, message: error.message || String(error) };
     }
   };
 

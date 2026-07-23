@@ -36,7 +36,13 @@ export default function ExerciseSelector({ onSelectExercise, onCancel }) {
   };
 
   const handleSelectExercise = (exercise) => {
-    onSelectExercise(exercise);
+    // Los ejercicios del catálogo (data/exercises.js) no llevan su grupo muscular como campo
+    // propio — el grupo es la CLAVE del objeto exercisesList, no una propiedad de cada entrada.
+    // Sin esto, cualquier caller que espere `exercise.muscleGroup` (p.ej. ExerciseMatchReview al
+    // "Conectar con otro" durante una importación) recibía undefined, y Firestore rechaza de
+    // forma síncrona cualquier escritura con un campo undefined — abortaba el lote entero de
+    // golpe, antes incluso de llegar al manejador de reintentos.
+    onSelectExercise({ ...exercise, muscleGroup: selectedGroup });
   };
 
   const modalStyle = {

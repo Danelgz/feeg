@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { db } from "../lib/firebase";
+import { db, ensureFreshAuthToken } from "../lib/firebase";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { exercisesList } from "../data/exercises";
@@ -26,29 +26,46 @@ export default function IA() {
   const [isLoadingChat, setIsLoadingChat] = useState(false);
   const chatEndRef = useRef(null);
 
-  // Load chat history from Firestore
+  // Load chat history from Firestore. ensureFreshAuthToken evita el permission-denied típico de
+  // una sesión "antigua" (móvil recién reactivado tras estar la pestaña en segundo plano) cuyo
+  // token está a punto de caducar sin que el refresco pasivo del SDK haya llegado a tiempo.
   useEffect(() => {
     if (!authUser || !authUser.uid) return;
 
-    const q = query(
-      collection(db, 'users', authUser.uid, 'messages'),
-      orderBy('createdAt', 'asc')
-    );
+    let cancelled = false;
+    let unsubscribe = () => {};
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          time: data.createdAt ? (typeof data.createdAt.toMillis === 'function' ? data.createdAt.toMillis() : 0) : Date.now()
-        };
-      });
-      msgs.sort((a, b) => a.time - b.time);
-      setMessages(msgs);
+    ensureFreshAuthToken().then(() => {
+      if (cancelled) return;
+      const q = query(
+        collection(db, 'users', authUser.uid, 'messages'),
+        orderBy('createdAt', 'asc')
+      );
+
+      unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          const msgs = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              ...data,
+              time: data.createdAt ? (typeof data.createdAt.toMillis === 'function' ? data.createdAt.toMillis() : 0) : Date.now()
+            };
+          });
+          msgs.sort((a, b) => a.time - b.time);
+          setMessages(msgs);
+        },
+        // Sin esto, cualquier error del listener (permission-denied residual, red...) subía
+        // como error no capturado en vez de quedarse simplemente sin cargar el chat.
+        (error) => console.error('[ia] Error en el listener de mensajes:', error.code || error.message)
+      );
     });
 
-    return () => unsubscribe();
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, [authUser]);
 
   // States for Technique

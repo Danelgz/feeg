@@ -5,6 +5,7 @@ import {
   signInWithGoogle,
   getGoogleRedirectResult,
   signOutUser,
+  ensureFreshAuthToken,
   saveToCloud,
   getFromCloud,
   deleteFromCloud,
@@ -112,6 +113,12 @@ export function UserProvider({ children }) {
     setIsSyncing(true);
     try {
       console.log(`[UserContext] Sincronizando datos desde la nube (force: ${force})...`);
+      // Sesiones que llevan un rato abiertas (móvil con la pantalla bloqueada o la pestaña en
+      // segundo plano) pueden tener el token de Auth a punto de caducar sin que el refresco
+      // pasivo del SDK haya llegado a tiempo — la primera lectura tras volver se rechazaba con
+      // permission-denied aunque la sesión fuera válida. Forzarlo aquí antes de leer nada evita
+      // esa ventana (ver ensureFreshAuthToken en lib/firebase.js).
+      await ensureFreshAuthToken();
       // Las cuatro lecturas son independientes entre sí — en paralelo en vez de en serie, así el
       // peor caso es ~1 timeout de red (lib/firebase.js) en vez de la suma, que es lo que dejaba
       // la pantalla de "Sincronizando tus datos..." colgada tanto tiempo en móvil. El historial
@@ -232,13 +239,25 @@ export function UserProvider({ children }) {
 
   // Notificaciones sociales (like/comentario/nuevo seguidor) en vivo — onSnapshot en vez de un
   // fetch puntual para que el contador de no leídas se actualice solo, sin recargar ni navegar.
+  // Un listener en vivo abierto justo con un token a punto de caducar (sesión "antigua" recién
+  // reactivada en móvil) fallaba con permission-denied — ensureFreshAuthToken evita esa ventana
+  // (ver la misma nota en refreshData, lib/firebase.js). `cancelled` evita suscribirse con un
+  // authUser que ya no es el actual si el efecto se re-disparó mientras el refresco estaba en curso.
   useEffect(() => {
     if (!authUser) {
       setNotifications([]);
       return;
     }
-    const unsub = subscribeToNotifications(authUser.uid, setNotifications);
-    return () => unsub();
+    let cancelled = false;
+    let unsub = () => {};
+    ensureFreshAuthToken().then(() => {
+      if (cancelled) return;
+      unsub = subscribeToNotifications(authUser.uid, setNotifications);
+    });
+    return () => {
+      cancelled = true;
+      unsub();
+    };
   }, [authUser]);
 
   const markNotificationsAsRead = async (notificationIds) => {
@@ -457,6 +476,11 @@ export function UserProvider({ children }) {
     if (!authUser) return null;
 
     try {
+      // Una importación es justo el tipo de operación que se dispara nada más volver a abrir la
+      // app tras un rato inactivo — el escenario exacto en el que el token de Auth puede estar a
+      // punto de caducar (ver nota en refreshData). Refrescarlo aquí antes de escribir cientos de
+      // entrenos evita perder toda la importación por un permission-denied evitable.
+      await ensureFreshAuthToken();
       // Publica en batches atómicos en vez de un setDoc por entrenamiento: con cientos de
       // entrenos importados de golpe, cientos de escrituras concurrentes son poco fiables
       // (compiten por conexión, se cortan si el usuario navega justo tras "importación

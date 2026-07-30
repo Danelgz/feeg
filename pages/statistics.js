@@ -219,6 +219,7 @@ export default function Statistics() {
           selectedMuscle ? (
             <MuscleDetailSection
               isDark={isDark}
+              isMobile={isNarrow}
               group={selectedMuscle}
               workouts={workouts}
               t={t}
@@ -231,7 +232,19 @@ export default function Statistics() {
         )}
 
         {activeView === 'ranks' && (
-          <RankMapSection isDark={isDark} isMobile={isNarrow} t={t} />
+          selectedMuscle ? (
+            <MuscleDetailSection
+              isDark={isDark}
+              isMobile={isNarrow}
+              group={selectedMuscle}
+              workouts={workouts}
+              t={t}
+              language={language}
+              onBack={() => setSelectedMuscle(null)}
+            />
+          ) : (
+            <RankMapSection isDark={isDark} isMobile={isNarrow} t={t} onSelectMuscle={setSelectedMuscle} />
+          )
         )}
 
         {activeView === 'seriesByGroup' && (

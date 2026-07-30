@@ -109,6 +109,109 @@ export const STRENGTH_STANDARDS: Record<string, StrengthStandard> = {
 
   // ── Antebrazo ────────────────────────────────────────────────────────────────────────────────
   'Curl de Muñeca Palmas Arriba (Barra)': { floor: 0.10, ceiling: 0.50, femaleFactor: 0.60 },
+
+  // ══════════════════════════════════════════════════════════════════════════════════════════════
+  // MÁQUINAS Y POLEAS
+  //
+  // Advertencia que conviene tener presente al leer estos números: la carga de una máquina NO es
+  // comparable entre gimnasios. Una prensa de piernas de una marca mueve una resistencia distinta
+  // que otra con el mismo disco por la geometría de las palancas, y un "50" de una polea depende de
+  // la relación de poleas del aparato. Estos baremos son necesariamente más aproximados que los de
+  // barra, donde 100 kg son 100 kg en cualquier sitio.
+  //
+  // Se incluyen igualmente porque mucha gente entrena casi exclusivamente en máquinas, y dejarles el
+  // sistema de rangos vacío es peor que dárselo con un margen de error. Los ejercicios donde la
+  // dispersión entre fabricantes es más salvaje (sentadilla péndulo, iso-laterales exóticos) se han
+  // dejado fuera a propósito.
+  // ══════════════════════════════════════════════════════════════════════════════════════════════
+
+  // ── Pecho ────────────────────────────────────────────────────────────────────────────────────
+  'Press de Banca (Máquina Smith)': { floor: 0.45, ceiling: 2.10, femaleFactor: 0.62 },
+  'Press de Banca Inclinado (Máquina Smith)': { floor: 0.35, ceiling: 1.75, femaleFactor: 0.62 },
+  'Press de Pecho (Máquina)': { floor: 0.35, ceiling: 1.80, femaleFactor: 0.62 },
+  'Press de Pecho Inclinado (Máquina)': { floor: 0.30, ceiling: 1.55, femaleFactor: 0.62 },
+  'Mariposa (Pec Deck)': { floor: 0.20, ceiling: 1.00, femaleFactor: 0.65 },
+  'Aperturas (Máquina)': { floor: 0.20, ceiling: 1.00, femaleFactor: 0.65 },
+  'Fondos en Máquina para Pecho': { floor: 0.30, ceiling: 1.60, femaleFactor: 0.65 },
+  'Cruce de Poleas (Cables Cruzados)': { floor: 0.10, ceiling: 0.50, femaleFactor: 0.65 },
+
+  // ── Espalda ──────────────────────────────────────────────────────────────────────────────────
+  'Jalón al Pecho (Cable)': { floor: 0.35, ceiling: 1.50, femaleFactor: 0.68 },
+  'Jalón al Pecho (Máquina)': { floor: 0.35, ceiling: 1.50, femaleFactor: 0.68 },
+  'Jalón al Pecho Agarre Cerrado (Cable)': { floor: 0.32, ceiling: 1.45, femaleFactor: 0.68 },
+  'Remo Sentado con Cable': { floor: 0.35, ceiling: 1.60, femaleFactor: 0.68 },
+  'Remo Sentado con Agarre en V (Cable)': { floor: 0.35, ceiling: 1.60, femaleFactor: 0.68 },
+  'Remo Sentado (Máquina)': { floor: 0.35, ceiling: 1.60, femaleFactor: 0.68 },
+  'Pullover (Máquina)': { floor: 0.20, ceiling: 0.90, femaleFactor: 0.65 },
+  'Encogimientos (Máquina)': { floor: 0.50, ceiling: 2.40, femaleFactor: 0.70 },
+  'Encogimiento de Hombros (Máquina Smith)': { floor: 0.50, ceiling: 2.50, femaleFactor: 0.70 },
+  'Encogimiento de Hombros (Cable)': { floor: 0.35, ceiling: 1.70, femaleFactor: 0.70 },
+
+  // ── Hombros ──────────────────────────────────────────────────────────────────────────────────
+  'Press de Hombros (Máquina Smith)': { floor: 0.25, ceiling: 1.15, femaleFactor: 0.60 },
+  'Press de Hombros Sentado (Máquina)': { floor: 0.25, ceiling: 1.10, femaleFactor: 0.60 },
+  'Press de Hombros (Máquina de Placas)': { floor: 0.20, ceiling: 1.00, femaleFactor: 0.60 },
+  'Elevación Lateral (Máquina)': { floor: 0.08, ceiling: 0.40, femaleFactor: 0.62 },
+  'Elevación Lateral (Cable)': { floor: 0.04, ceiling: 0.22, femaleFactor: 0.62 },
+  'Tirón a la Cara (Face Pull)': { floor: 0.10, ceiling: 0.50, femaleFactor: 0.68 },
+  'Vuelos Posteriores (Máquina)': { floor: 0.10, ceiling: 0.50, femaleFactor: 0.68 },
+  'Vuelos Posteriores (Cable)': { floor: 0.06, ceiling: 0.30, femaleFactor: 0.68 },
+
+  // ── Bíceps ───────────────────────────────────────────────────────────────────────────────────
+  'Curl de Bíceps (Cable)': { floor: 0.12, ceiling: 0.60, femaleFactor: 0.60 },
+  'Curl de Bíceps (Máquina)': { floor: 0.12, ceiling: 0.60, femaleFactor: 0.60 },
+  'Curl Predicador (Máquina)': { floor: 0.12, ceiling: 0.55, femaleFactor: 0.60 },
+  'Curl Martillo (Cable)': { floor: 0.10, ceiling: 0.50, femaleFactor: 0.62 },
+
+  // ── Tríceps ──────────────────────────────────────────────────────────────────────────────────
+  'Extensión de Tríceps (Cable)': { floor: 0.15, ceiling: 0.75, femaleFactor: 0.62 },
+  'Tríceps con Polea': { floor: 0.15, ceiling: 0.75, femaleFactor: 0.62 },
+  'Extensión de Tríceps en Polea con Cuerda': { floor: 0.12, ceiling: 0.60, femaleFactor: 0.62 },
+  'Extensión de Tríceps en Polea Alta (Barra)': { floor: 0.15, ceiling: 0.75, femaleFactor: 0.62 },
+  'Extensión de Tríceps Sobre la Cabeza (Cable)': { floor: 0.10, ceiling: 0.55, femaleFactor: 0.62 },
+  'Extensión de Tríceps (Máquina)': { floor: 0.15, ceiling: 0.80, femaleFactor: 0.62 },
+  'Tríceps Sentado (Máquina)': { floor: 0.15, ceiling: 0.80, femaleFactor: 0.62 },
+
+  // ── Cuádriceps ───────────────────────────────────────────────────────────────────────────────
+  // La prensa admite mucho más peso que una sentadilla: el asiento sostiene el tronco y el recorrido
+  // es más corto, así que su techo está muy por encima. Un techo de 2.5× la haría trivial de maxear.
+  'Prensa de Piernas': { floor: 1.00, ceiling: 4.50, femaleFactor: 0.78 },
+  'Prensa de Piernas Sentado': { floor: 0.90, ceiling: 4.00, femaleFactor: 0.78 },
+  'Sentadilla Hack (Máquina)': { floor: 0.60, ceiling: 2.80, femaleFactor: 0.75 },
+  'Sentadilla (Máquina Smith)': { floor: 0.50, ceiling: 2.40, femaleFactor: 0.72 },
+  'Sentadilla (Máquina)': { floor: 0.50, ceiling: 2.40, femaleFactor: 0.72 },
+  'Extensión de Pierna (Máquina)': { floor: 0.30, ceiling: 1.50, femaleFactor: 0.75 },
+  'Sentadilla con Cinturón (Belt Squat)': { floor: 0.45, ceiling: 2.20, femaleFactor: 0.75 },
+
+  // ── Femoral ──────────────────────────────────────────────────────────────────────────────────
+  'Curl de Piernas Acostado (Máquina)': { floor: 0.25, ceiling: 1.20, femaleFactor: 0.75 },
+  'Curl de Pierna Sentado (Máquina)': { floor: 0.30, ceiling: 1.40, femaleFactor: 0.75 },
+  'Curl de Piernas de Pie (Máquina)': { floor: 0.15, ceiling: 0.70, femaleFactor: 0.75 },
+
+  // ── Glúteos ──────────────────────────────────────────────────────────────────────────────────
+  'Impulso de Cadera (Máquina)': { floor: 0.60, ceiling: 3.00, femaleFactor: 0.85 },
+  'Hip Thrust (Máquina Smith)': { floor: 0.60, ceiling: 3.00, femaleFactor: 0.85 },
+  'Peso Muerto (Máquina Smith)': { floor: 0.60, ceiling: 2.90, femaleFactor: 0.72 },
+  'Tirón con Polea Entre las Piernas (Cable Pull-Through)': { floor: 0.25, ceiling: 1.20, femaleFactor: 0.80 },
+  'Patada de Glúteo con Cable': { floor: 0.10, ceiling: 0.55, femaleFactor: 0.85 },
+
+  // ── Gemelos ──────────────────────────────────────────────────────────────────────────────────
+  'Elevación de Gemelos de Pie (Máquina)': { floor: 0.60, ceiling: 2.60, femaleFactor: 0.80 },
+  'Elevación de Gemelos de Pie (Máquina Smith)': { floor: 0.55, ceiling: 2.50, femaleFactor: 0.80 },
+  'Elevación de Gemelos Sentado': { floor: 0.30, ceiling: 1.50, femaleFactor: 0.80 },
+  'Press de Pantorrilla (Máquina)': { floor: 0.80, ceiling: 3.50, femaleFactor: 0.80 },
+  'Extensión de Pantorrilla (Máquina)': { floor: 0.50, ceiling: 2.30, femaleFactor: 0.80 },
+
+  // ── Abdomen ──────────────────────────────────────────────────────────────────────────────────
+  // Los primeros abdominales puntuables: hasta ahora el grupo se quedaba siempre sin rango porque
+  // todo lo demás es peso corporal o tiempo.
+  'Crunch Corto con Cable': { floor: 0.15, ceiling: 0.80, femaleFactor: 0.70 },
+  'Crunch Corto (Máquina)': { floor: 0.20, ceiling: 1.00, femaleFactor: 0.70 },
+  'Press Pallof en Polea': { floor: 0.08, ceiling: 0.40, femaleFactor: 0.70 },
+
+  // ── Aductor / Abductor ───────────────────────────────────────────────────────────────────────
+  'Aducción de Caderas (Máquina)': { floor: 0.25, ceiling: 1.20, femaleFactor: 0.90 },
+  'Abducción de Caderas (Máquina)': { floor: 0.25, ceiling: 1.20, femaleFactor: 0.90 },
 };
 
 /** Cuántos ejercicios del catálogo tienen baremo. Útil en tests para detectar borrados accidentales. */

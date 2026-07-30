@@ -6,7 +6,9 @@ import {
   computeExerciseRanks,
   computeGroupRanks,
   computeOverallLevel,
+  nextLevelTarget,
   resolveStandard,
+  weightForLevel,
 } from './rankEngine';
 import { STRENGTH_STANDARDS } from '../data/strengthStandards';
 import { MAX_LEVEL } from '../data/ranks';
@@ -72,7 +74,8 @@ describe('computeExerciseLevel', () => {
   });
 
   it('devuelve null para ejercicios sin baremo', () => {
-    expect(computeExerciseLevel('Cruce de Poleas (Cables Cruzados)', { best1RM: 40 }, BW)).toBeNull();
+    // Ejercicios de peso corporal y de tiempo: no admiten 1RM, así que nunca serán puntuables.
+    expect(computeExerciseLevel('Flexiones', { best1RM: 40 }, BW)).toBeNull();
     expect(computeExerciseLevel('Plancha', { best1RM: 0 }, BW)).toBeNull();
   });
 
@@ -108,6 +111,71 @@ describe('computeExerciseLevel', () => {
       const rank = computeExerciseLevel('Dominada (Con Peso Añadido)', { best1RM: 20 }, BW, 'male')!;
       expect(rank.ratio).toBeCloseTo((BW + 20) / BW, 5);
     });
+  });
+});
+
+describe('weightForLevel / nextLevelTarget', () => {
+  it('es la inversa exacta de computeExerciseLevel', () => {
+    // La propiedad que garantiza que "te faltan N kg" no miente: si levantas justo ese peso,
+    // el motor tiene que devolverte justo ese nivel.
+    for (const level of [1, 7, 15, 23, 30]) {
+      const weight = weightForLevel('Press de Banca (Barra)', level, BW, 'male')!;
+      const back = computeExerciseLevel('Press de Banca (Barra)', { best1RM: weight }, BW, 'male')!;
+      expect(back.level, `nivel ${level}`).toBeCloseTo(level, 5);
+    }
+  });
+
+  it('devuelve el suelo y el techo del baremo en los extremos', () => {
+    expect(weightForLevel('Press de Banca (Barra)', 1, BW, 'male')).toBeCloseTo(32, 5);
+    expect(weightForLevel('Press de Banca (Barra)', 30, BW, 'male')).toBeCloseTo(160, 5);
+  });
+
+  it('resta el peso corporal en los lastrados, porque el usuario registra el lastre', () => {
+    // Nivel 1 de dominada = ratio 1.0 = mover el cuerpo, o sea 0 kg de lastre.
+    expect(weightForLevel('Dominada (Con Peso Añadido)', 1, BW, 'male')).toBeCloseTo(0, 5);
+  });
+
+  it('apunta al siguiente entero, no al nivel actual más uno', () => {
+    const current = computeExerciseLevel('Press de Banca (Barra)', { best1RM: 96 }, BW, 'male')!;
+    expect(current.level).toBeCloseTo(15.5, 5);
+    const target = nextLevelTarget('Press de Banca (Barra)', current.level, current.best1RM, BW, 'male')!;
+    expect(target.targetLevel).toBe(16);
+    expect(target.deltaKg).toBeGreaterThan(0);
+  });
+
+  it('marca isMaxed y no pide más kilos en el nivel máximo', () => {
+    const target = nextLevelTarget('Press de Banca (Barra)', 30, 160, BW, 'male')!;
+    expect(target.isMaxed).toBe(true);
+    expect(target.deltaKg).toBe(0);
+  });
+
+  it('nunca devuelve un delta negativo si ya se superó el objetivo', () => {
+    const target = nextLevelTarget('Press de Banca (Barra)', 15.5, 200, BW, 'male')!;
+    expect(target.deltaKg).toBe(0);
+  });
+
+  it('devuelve null para ejercicios sin baremo', () => {
+    expect(weightForLevel('Flexiones', 10, BW, 'male')).toBeNull();
+  });
+});
+
+describe('cobertura de baremos', () => {
+  it('cubre máquinas y poleas, no sólo peso libre', () => {
+    expect(STRENGTH_STANDARDS['Prensa de Piernas']).toBeDefined();
+    expect(STRENGTH_STANDARDS['Jalón al Pecho (Cable)']).toBeDefined();
+    expect(STRENGTH_STANDARDS['Extensión de Tríceps (Cable)']).toBeDefined();
+  });
+
+  it('da por fin rango puntuable al Abdomen', () => {
+    const ranks = computeGroupRanks({ 'Crunch Corto (Máquina)': { best1RM: 40 } }, BW, 'male');
+    expect(ranks.Abdomen).toBeDefined();
+  });
+
+  it('la prensa tiene un techo muy por encima de la sentadilla libre', () => {
+    // Si compartieran baremo, maxear la prensa sería trivial.
+    expect(STRENGTH_STANDARDS['Prensa de Piernas'].ceiling).toBeGreaterThan(
+      STRENGTH_STANDARDS['Sentadilla (Barra)'].ceiling
+    );
   });
 });
 
@@ -168,7 +236,7 @@ describe('computeGroupRanks', () => {
 
   it('ignora por completo los ejercicios sin baremo', () => {
     const ranks = computeGroupRanks(
-      { ...bench(96), 'Cruce de Poleas (Cables Cruzados)': { best1RM: 40 } },
+      { ...bench(96), Flexiones: { best1RM: 40 } },
       BW,
       'male'
     );

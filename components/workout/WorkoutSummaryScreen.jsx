@@ -1,7 +1,8 @@
 import { getWorkoutTokens } from "../../lib/tokens";
 import { pickPrimaryPRType } from "../../lib/exerciseStats";
-import { Icon, RankIcon } from "../ui";
+import { Icon, RankIcon, ExerciseRankList } from "../ui";
 import { useRankUps } from "../../hooks/useRankUps";
+import { useRanks } from "../../hooks/useRanks";
 import { getRankPosition } from "../../data/ranks";
 
 function formatDuration(seconds) {
@@ -70,6 +71,18 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
   const translate = t || ((s) => s);
 
   const rankUps = useRankUps();
+  const { available: ranksAvailable, exerciseRanks, bodyweightKg, sex } = useRanks();
+
+  // Sólo los ejercicios de ESTA sesión, en el orden en que se hicieron. `exerciseRanks` viene
+  // ordenado por nivel, que sirve para un ranking pero no para releer el entreno que acabas de
+  // hacer: aquí lo natural es reconocer la sesión, no ver una clasificación.
+  const sessionOrder = (workout?.exerciseDetails || workout?.details || [])
+    .map((d) => d?.name || d?.exercise)
+    .filter(Boolean);
+  const sessionRanks = sessionOrder
+    .map((name) => exerciseRanks.find((r) => r.exercise === name))
+    .filter(Boolean);
+
   const realRecords = prRecords.filter((r) => r.tier);
   const firstEverOnly = prRecords.filter((r) => !r.tier && r.isFirstEver);
   const hasRealRecords = realRecords.length > 0;
@@ -334,6 +347,33 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
         <p style={{ color: tk.textFaint, fontSize: "0.78rem", marginBottom: "36px", maxWidth: "360px", lineHeight: 1.5 }}>
           {translate("pr_summary_first_ever_prefix")} {firstEverOnly.map((r) => r.name).join(", ")}
         </p>
+      )}
+
+      {/* Rangos de los ejercicios de esta sesión. Va después de los PRs porque es lectura, no
+          celebración: los PRs y las subidas de rango son el momento, y esto es el estado en el que
+          te deja el entreno y qué te falta para el siguiente escalón. */}
+      {ranksAvailable && sessionRanks.length > 0 && (
+        <div style={{ width: "100%", maxWidth: "360px", marginBottom: "36px", textAlign: "left" }}>
+          <div
+            style={{
+              color: tk.textMuted,
+              fontSize: "0.72rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              fontWeight: 600,
+              marginBottom: "10px",
+            }}
+          >
+            Tus rangos tras este entreno
+          </div>
+          <ExerciseRankList
+            ranks={sessionRanks}
+            bodyweightKg={bodyweightKg}
+            sex={sex}
+            isDark
+            tokens={tk}
+          />
+        </div>
       )}
 
       <button

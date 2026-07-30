@@ -31,6 +31,9 @@ export interface ExerciseRank {
   level: number;
   /** Carga relativa alcanzada, en múltiplos del peso corporal. Es lo que se enseña al usuario. */
   ratio: number;
+  /** Marca que ha producido este nivel, en la unidad que el usuario registra. La necesita
+   *  `nextLevelTarget` para poder decir cuántos kilos faltan. */
+  best1RM: number;
 }
 
 export interface GroupRank {
@@ -94,7 +97,70 @@ export function computeExerciseLevel(
   const level = Math.max(UNRANKED_LEVEL, Math.min(MAX_LEVEL, raw));
 
   const info = getExerciseInfo(exerciseName);
-  return { exercise: exerciseName, group: info?.group || 'Otros', level, ratio };
+  return { exercise: exerciseName, group: info?.group || 'Otros', level, ratio, best1RM: input.best1RM };
+}
+
+export interface NextLevelTarget {
+  /** Nivel al que se llega, ya acotado a MAX_LEVEL. */
+  targetLevel: number;
+  /** Marca necesaria, EN EL NÚMERO QUE SE REGISTRA EN FEEG (lastre en los lastrados, no carga total). */
+  targetWeight: number;
+  /** Kilos que faltan sobre la marca actual. 0 si ya se ha alcanzado. */
+  deltaKg: number;
+  /** `true` si ya está en el nivel máximo y no hay nada más que perseguir. */
+  isMaxed: boolean;
+}
+
+/**
+ * Marca necesaria para alcanzar un nivel: la fórmula del nivel, despejada.
+ *
+ * Es lo que convierte el rango en un objetivo accionable. "Estás en Atleta II" es una etiqueta;
+ * "te faltan 4 kg en press de banca para Atleta III" es algo que se puede intentar el jueves.
+ *
+ * El peso devuelto está en la misma unidad que el usuario escribe en la app — en los ejercicios
+ * lastrados se resta el peso corporal, porque lo que teclea es el lastre, no la carga total.
+ */
+export function weightForLevel(
+  exerciseName: string,
+  level: number,
+  bodyweightKg: number,
+  sex: Sex = null
+): number | null {
+  const standard = STRENGTH_STANDARDS[exerciseName];
+  if (!standard || !Number.isFinite(bodyweightKg) || bodyweightKg <= 0) return null;
+
+  const { floor, ceiling } = resolveStandard(standard, sex);
+  const clamped = Math.max(UNRANKED_LEVEL, Math.min(MAX_LEVEL, level));
+  const ratio = floor + ((clamped - UNRANKED_LEVEL) / (MAX_LEVEL - UNRANKED_LEVEL)) * (ceiling - floor);
+  const totalLoad = ratio * bodyweightKg;
+
+  return standard.bodyweightLoaded ? totalLoad - bodyweightKg : totalLoad;
+}
+
+/** Qué falta para el siguiente escalón de un ejercicio concreto. */
+export function nextLevelTarget(
+  exerciseName: string,
+  currentLevel: number,
+  currentBest1RM: number,
+  bodyweightKg: number,
+  sex: Sex = null
+): NextLevelTarget | null {
+  if (currentLevel >= MAX_LEVEL) {
+    return { targetLevel: MAX_LEVEL, targetWeight: currentBest1RM, deltaKg: 0, isMaxed: true };
+  }
+
+  // El siguiente ENTERO, no el nivel actual más uno: estando en 12.4 lo que falta es llegar a 13,
+  // no a 13.4.
+  const targetLevel = Math.min(MAX_LEVEL, Math.floor(currentLevel) + 1);
+  const targetWeight = weightForLevel(exerciseName, targetLevel, bodyweightKg, sex);
+  if (targetWeight === null) return null;
+
+  return {
+    targetLevel,
+    targetWeight,
+    deltaKg: Math.max(0, targetWeight - currentBest1RM),
+    isMaxed: false,
+  };
 }
 
 /** Todos los ejercicios puntuables del historial, de mayor a menor nivel. */

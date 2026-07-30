@@ -14,3 +14,4 @@ export { default as ChipNav } from "./ChipNav";
 export { Skeleton, SkeletonPage } from "./Skeleton";
 export { default as RankIcon } from "./RankIcon";
 export { default as RankBadge } from "./RankBadge";
+export { default as ExerciseRankList } from "./ExerciseRankList";

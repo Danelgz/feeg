@@ -7,6 +7,7 @@ import {
   computeGroupRanks,
   computeOverallLevel,
   type ExerciseInput,
+  type ExerciseRank,
   type GroupRank,
   type Sex,
 } from '../lib/rankEngine';
@@ -28,6 +29,9 @@ export interface RanksResult {
   bodyweightKg: number | null;
   sex: Sex;
   groupRanks: Record<string, GroupRank>;
+  /** Todos los ejercicios puntuables, de mayor a menor nivel. Los consumidores filtran por grupo
+   *  (detalle muscular) o por sesión (resumen de fin de entreno). */
+  exerciseRanks: ExerciseRank[];
   overallLevel: number;
   prestigeLevels: number;
   /** Ejercicios puntuables con marca — para explicar al usuario por qué su rango es el que es. */
@@ -114,6 +118,7 @@ export function useRanks(): RanksResult {
         bodyweightKg,
         sex,
         groupRanks: {},
+        exerciseRanks: [],
         overallLevel: 1,
         prestigeLevels: 0,
         rankedExerciseCount: 0,
@@ -143,6 +148,7 @@ export function useRanks(): RanksResult {
       bodyweightKg,
       sex,
       groupRanks,
+      exerciseRanks,
       overallLevel,
       prestigeLevels,
       rankedExerciseCount: exerciseRanks.length,

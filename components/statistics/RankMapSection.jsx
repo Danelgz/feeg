@@ -6,7 +6,7 @@ import { getTokens } from "../../lib/tokens";
 import { useRanks } from "../../hooks/useRanks";
 import { RANKS, getRankPosition } from "../../data/ranks";
 
-export default function RankMapSection({ isDark, isMobile, t }) {
+export default function RankMapSection({ isDark, isMobile, t, onSelectMuscle }) {
   const tk = getTokens(isDark);
   const { available, groupRanks, overallLevel, prestigeLevels, rankedExerciseCount, sex } = useRanks();
 
@@ -91,7 +91,8 @@ export default function RankMapSection({ isDark, isMobile, t }) {
         isDark={isDark}
         labelForGroup={(group) => t(group) || group}
         colorForGroup={colorForGroup}
-        hint="Pasa por encima de un músculo para ver su rango."
+        onMuscleClick={onSelectMuscle}
+        hint="Toca un músculo para ver el rango de cada uno de sus ejercicios."
         ariaLabelForGroup={(group) => {
           const info = describeGroup(group);
           const label = t(group) || group;

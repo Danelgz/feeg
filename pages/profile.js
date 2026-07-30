@@ -66,6 +66,7 @@ export default function Profile() {
     firstName: "",
     description: "",
     photoURL: "",
+    sex: null,
     photoScale: 1,
     photoPosX: 0,
     photoPosY: 0,
@@ -85,6 +86,9 @@ export default function Profile() {
         firstName: user.firstName || "",
         description: user.description || "Sin descripción",
         photoURL: user.photoURL || authUser?.photoURL || "",
+        // `?? null` y no `|| null`: son valores válidos y distintos de vacío, y el usuario puede
+        // haber elegido explícitamente no declararlo.
+        sex: user.sex ?? null,
         photoScale: user.photoScale || 1,
         photoPosX: user.photoPosX || 0,
         photoPosY: user.photoPosY || 0,
@@ -181,6 +185,7 @@ export default function Profile() {
         username: editData.username,
         firstName: editData.firstName,
         description: editData.description,
+        sex: editData.sex ?? null,
         photoURL: finalPhotoURL,
         photoScale: 1,
         photoPosX: 0,

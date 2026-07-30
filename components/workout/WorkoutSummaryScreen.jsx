@@ -1,6 +1,8 @@
 import { getWorkoutTokens } from "../../lib/tokens";
 import { pickPrimaryPRType } from "../../lib/exerciseStats";
-import { Icon } from "../ui";
+import { Icon, RankIcon } from "../ui";
+import { useRankUps } from "../../hooks/useRankUps";
+import { getRankPosition } from "../../data/ranks";
 
 function formatDuration(seconds) {
   const m = Math.floor(seconds / 60);
@@ -67,6 +69,7 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
   const tk = getWorkoutTokens();
   const translate = t || ((s) => s);
 
+  const rankUps = useRankUps();
   const realRecords = prRecords.filter((r) => r.tier);
   const firstEverOnly = prRecords.filter((r) => !r.tier && r.isFirstEver);
   const hasRealRecords = realRecords.length > 0;
@@ -138,6 +141,58 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
           </div>
         ))}
       </div>
+
+      {/* Las subidas de rango van por delante de los PRs: un PR dice que hoy has levantado más que
+          nunca, y una subida de rango dice que has cambiado de categoría. Es el logro mayor, así que
+          es el que abre. Se muestran como mucho tres — con más, deja de ser un momento y pasa a ser
+          una lista. */}
+      {rankUps.slice(0, 3).map((up) => {
+        const position = getRankPosition(up.currentLevel);
+        return (
+          <div
+            key={up.group ?? "__overall__"}
+            style={{
+              width: "100%",
+              maxWidth: "360px",
+              marginBottom: "14px",
+              backgroundColor: tk.surface,
+              border: `1px solid ${position.rank.color}66`,
+              borderRadius: tk.radius.lg,
+              padding: "16px 20px",
+              textAlign: "left",
+              display: "flex",
+              alignItems: "center",
+              gap: "14px",
+              animation: "workout-summary-pr-rise 340ms cubic-bezier(0.16,1,0.3,1) both",
+            }}
+          >
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: tk.radius.full,
+                backgroundColor: `${position.rank.color}1f`,
+                border: `1px solid ${position.rank.color}59`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <RankIcon icon={position.rank.icon} color={position.rank.color} accent={position.rank.accent} size={22} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ color: tk.text, fontSize: "0.95rem", fontWeight: 700 }}>
+                {up.isNewRank ? "¡Rango nuevo!" : "Has subido de nivel"}
+              </div>
+              <div style={{ color: tk.textMuted, fontSize: "0.82rem", marginTop: "2px" }}>
+                {up.group ? `${up.group} · ` : "Nivel global · "}
+                <span style={{ color: position.rank.color, fontWeight: 600 }}>{position.label}</span>
+              </div>
+            </div>
+          </div>
+        );
+      })}
 
       {workoutVolumeRecord && (
         <div

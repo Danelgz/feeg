@@ -122,6 +122,46 @@ export default function ProfileEditModal({ isDark = true, open, editData, setEdi
             />
           </div>
 
+          {/* El sexo sólo se usa para los baremos de fuerza: la carga que marca un nivel dado no es
+              la misma, sobre todo en tren superior. Es opcional y así se dice — sin él los rangos se
+              calculan con una curva intermedia (ver resolveStandard en lib/rankEngine.ts). */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+            <label style={labelStyle}>Sexo (opcional)</label>
+            <div style={{ display: "flex", gap: "8px" }}>
+              {[
+                { key: "male", label: "Hombre" },
+                { key: "female", label: "Mujer" },
+                { key: null, label: "Prefiero no decirlo" },
+              ].map((option) => {
+                const active = (editData.sex ?? null) === option.key;
+                return (
+                  <button
+                    key={option.label}
+                    type="button"
+                    onClick={() => setEditData({ ...editData, sex: option.key })}
+                    style={{
+                      flex: 1,
+                      padding: "10px 8px",
+                      borderRadius: tk.radius.md,
+                      border: `1px solid ${active ? tk.accent : tk.border}`,
+                      backgroundColor: active ? tk.accentSoft : "transparent",
+                      color: active ? tk.accent : tk.textMuted,
+                      fontWeight: 600,
+                      fontSize: "0.78rem",
+                      cursor: "pointer",
+                      transition: tk.motion.css.fast,
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+            <span style={{ fontSize: "0.7rem", color: tk.textFaint }}>
+              Sólo se usa para calcular tus rangos de fuerza.
+            </span>
+          </div>
+
           <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
             <label style={labelStyle}>Descripción</label>
             <textarea

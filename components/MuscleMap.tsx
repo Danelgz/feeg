@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { getTokens } from '../lib/tokens';
 import {
@@ -21,6 +21,25 @@ export interface MuscleMapProps {
   thresholds?: [number, number, number, number];
   onMuscleClick?: (group: MuscleGroup) => void;
   labelForGroup?: (group: MuscleGroup) => string;
+  /**
+   * Color por grupo que sustituye a la rampa de intensidad. Es lo que permite reutilizar este mismo
+   * cuerpo para la vista de rangos sin duplicar el componente ni los 117 paths: la geometría y la
+   * interacción son idénticas, sólo cambia qué significa el color. Devolver `null` deja el grupo en
+   * el tono de "sin datos".
+   */
+  colorForGroup?: (group: MuscleGroup) => string | null;
+  /** Texto de la franja de lectura. Por defecto: series y nivel de intensidad. */
+  readoutForGroup?: (group: MuscleGroup, value: number) => ReactNode;
+  /** Leyenda inferior. Por defecto: la escala de intensidad de cuatro escalones. */
+  legend?: ReactNode;
+  /** Texto de la franja cuando no hay nada señalado. */
+  hint?: string;
+  /**
+   * Etiqueta accesible de cada región. Tiene que ir junto a `readoutForGroup`: si se cambia lo que
+   * el color significa pero no esto, un lector de pantalla sigue anunciando "12 series" sobre un
+   * cuerpo que ya está mostrando rangos.
+   */
+  ariaLabelForGroup?: (group: MuscleGroup, value: number) => string;
 }
 
 const DEFAULT_THRESHOLDS: [number, number, number, number] = [1, 4, 8, 12];
@@ -79,6 +98,11 @@ export default function MuscleMap({
   thresholds = DEFAULT_THRESHOLDS,
   onMuscleClick,
   labelForGroup,
+  colorForGroup,
+  readoutForGroup,
+  legend,
+  hint = 'Pasa por encima de un músculo, o tócalo para ver sus ejercicios.',
+  ariaLabelForGroup,
 }: MuscleMapProps) {
   const tk = getTokens(isDark);
   const prefersReducedMotion = useReducedMotion();
@@ -154,6 +178,8 @@ export default function MuscleMap({
                 const level = getIntensity(value, thresholds);
                 const isActive = active?.group === group;
                 const describe = level === 0 ? 'sin entrenar' : LEVEL_LABELS[level];
+                const overrideColor = colorForGroup?.(group);
+                const groupFill = colorForGroup ? overrideColor ?? restFill : colorForLevel(level);
 
                 const show = () => setActive({ group, value, level });
                 const clear = () => setActive(null);
@@ -163,7 +189,9 @@ export default function MuscleMap({
                     key={groupKey}
                     role="button"
                     tabIndex={0}
-                    aria-label={`${label(group)}: ${value} series, ${describe}`}
+                    aria-label={
+                      ariaLabelForGroup?.(group, value) ?? `${label(group)}: ${value} series, ${describe}`
+                    }
                     initial={prefersReducedMotion ? false : { opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{
@@ -188,8 +216,8 @@ export default function MuscleMap({
                       <path
                         key={i}
                         d={p.d}
-                        fill={colorForLevel(level)}
-                        stroke={isActive ? tk.text : level === 0 ? restStroke : trainedStroke}
+                        fill={groupFill}
+                        stroke={isActive ? tk.text : groupFill === restFill ? restStroke : trainedStroke}
                         // Los paths musculares no traen `stroke-width` propio (en el original no
                         // llevaban trazo). En un viewBox de 660 de ancho que se pinta a ~250px,
                         // 2 unidades quedan en algo menos de un píxel: define el borde sin que la
@@ -225,25 +253,27 @@ export default function MuscleMap({
         }}
       >
         {active ? (
-          <span style={{ fontSize: tk.fontSize.md, color: tk.text, fontWeight: tk.weight.medium }}>
-            {label(active.group)}
-            <span style={{ color: tk.textMuted, fontWeight: tk.weight.body }}> · </span>
-            <span style={{ color: active.level === 0 ? tk.textMuted : tk.accent, fontVariantNumeric: 'tabular-nums' }}>
-              {active.value} {active.value === 1 ? 'serie' : 'series'}
+          readoutForGroup ? (
+            readoutForGroup(active.group, active.value)
+          ) : (
+            <span style={{ fontSize: tk.fontSize.md, color: tk.text, fontWeight: tk.weight.medium }}>
+              {label(active.group)}
+              <span style={{ color: tk.textMuted, fontWeight: tk.weight.body }}> · </span>
+              <span style={{ color: active.level === 0 ? tk.textMuted : tk.accent, fontVariantNumeric: 'tabular-nums' }}>
+                {active.value} {active.value === 1 ? 'serie' : 'series'}
+              </span>
+              <span style={{ color: tk.textFaint, fontWeight: tk.weight.body, fontSize: tk.fontSize.sm }}>
+                {' '}· {active.level === 0 ? 'Sin entrenar' : LEVEL_LABELS[active.level]}
+              </span>
             </span>
-            <span style={{ color: tk.textFaint, fontWeight: tk.weight.body, fontSize: tk.fontSize.sm }}>
-              {' '}· {active.level === 0 ? 'Sin entrenar' : LEVEL_LABELS[active.level]}
-            </span>
-          </span>
+          )
         ) : (
-          <span style={{ fontSize: tk.fontSize.sm, color: tk.textFaint }}>
-            Pasa por encima de un músculo, o tócalo para ver sus ejercicios.
-          </span>
+          <span style={{ fontSize: tk.fontSize.sm, color: tk.textFaint }}>{hint}</span>
         )}
       </div>
 
       <div style={{ display: 'flex', gap: tk.space.md, flexWrap: 'wrap', justifyContent: 'center' }}>
-        {([1, 2, 3, 4] as const).map((level) => (
+        {legend ?? ([1, 2, 3, 4] as const).map((level) => (
           <div key={level} style={{ display: 'flex', alignItems: 'center', gap: tk.space.xs }}>
             <span
               style={{

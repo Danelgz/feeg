@@ -71,8 +71,9 @@ describe("pantalla de estadísticas", () => {
   it("presenta las vistas como chips accesibles, sin la rejilla de tarjetas con descripción", async () => {
     renderStats();
     const tabs = await screen.findAllByRole("tab");
-    // 7 vistas + 4 periodos (Resumen es la vista inicial y sí usa periodo).
-    expect(tabs).toHaveLength(11);
+    // 8 vistas + 4 periodos (Resumen es la vista inicial y sí usa periodo).
+    expect(tabs).toHaveLength(12);
+    expect(tab("Rangos")).toBeTruthy();
     expect(tab("Resumen").getAttribute("aria-selected")).toBe("true");
 
     // Las descripciones de las antiguas tarjetas de navegación ya no ocupan pantalla.

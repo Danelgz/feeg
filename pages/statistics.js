@@ -10,6 +10,7 @@ import {
   MiniStatCard,
   OverviewSection,
   MuscleMapSection,
+  RankMapSection,
   MuscleDetailSection,
   SeriesByGroupSection,
   DistributionChartSection,
@@ -28,6 +29,9 @@ const VIEWS = [
   { key: 'overview', label: 'Resumen', usesPeriod: true },
   { key: 'records', label: 'Récords', usesPeriod: false },
   { key: 'muscleMap', label: 'Mapa muscular', usesPeriod: false },
+  // Los rangos miran al histórico completo por definición: un récord que te subió de rango sigue
+  // valiendo aunque lo hicieras hace meses, así que el filtro de periodo no le aplica.
+  { key: 'ranks', label: 'Rangos', usesPeriod: false },
   { key: 'seriesByGroup', label: 'Series por grupo', usesPeriod: true },
   { key: 'distChart', label: 'Distribución', usesPeriod: true },
   { key: 'monthly', label: 'Mensual', usesPeriod: false },
@@ -224,6 +228,10 @@ export default function Statistics() {
           ) : (
             <MuscleMapSection isDark={isDark} isMobile={isNarrow} workouts={workouts} t={t} onSelectMuscle={setSelectedMuscle} />
           )
+        )}
+
+        {activeView === 'ranks' && (
+          <RankMapSection isDark={isDark} isMobile={isNarrow} t={t} />
         )}
 
         {activeView === 'seriesByGroup' && (

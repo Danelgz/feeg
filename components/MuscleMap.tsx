@@ -1,12 +1,15 @@
 import { useState } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
+import { getTokens } from '../lib/tokens';
 import {
-  DECORATIVE_SHAPES,
-  MUSCLE_REGIONS,
-  VIEW_BOX,
-  type BodyView,
-  type MuscleGroup,
-  type RegionShape,
-} from '../data/muscleMapRegions';
+  ANATOMY_VIEW_BOX,
+  BACK_MUSCLES,
+  BACK_SILHOUETTE,
+  FRONT_MUSCLES,
+  FRONT_SILHOUETTE,
+  type MusclePath,
+} from '../data/muscleMapPaths';
+import type { BodyView, MuscleGroup } from '../data/muscleMapRegions';
 
 export type IntensityLevel = 0 | 1 | 2 | 3 | 4;
 
@@ -22,20 +25,17 @@ export interface MuscleMapProps {
 
 const DEFAULT_THRESHOLDS: [number, number, number, number] = [1, 4, 8, 12];
 
-const LEVEL_COLORS: Record<IntensityLevel, string> = {
-  0: '', // se resuelve según tema
-  1: '#c4f5e7',
-  2: '#8dedce',
-  3: '#57e5b6',
-  4: '#1dd1a1',
-};
-
 const LEVEL_LABELS: Record<Exclude<IntensityLevel, 0>, string> = {
   1: 'Bajo',
   2: 'Moderado',
   3: 'Alto',
   4: 'Muy alto',
 };
+
+const VIEWS: { view: BodyView; caption: string; silhouette: MusclePath[]; muscles: Record<string, MusclePath[]> }[] = [
+  { view: 'front', caption: 'Frontal', silhouette: FRONT_SILHOUETTE, muscles: FRONT_MUSCLES },
+  { view: 'back', caption: 'Posterior', silhouette: BACK_SILHOUETTE, muscles: BACK_MUSCLES },
+];
 
 function getIntensity(value: number, thresholds: [number, number, number, number]): IntensityLevel {
   if (value <= 0) return 0;
@@ -47,20 +47,32 @@ function getIntensity(value: number, thresholds: [number, number, number, number
   return 0;
 }
 
-function shapeToSvgProps(shape: RegionShape) {
-  if (shape.kind === 'rect') {
-    return { x: shape.x, y: shape.y, width: shape.width, height: shape.height, rx: shape.rx };
-  }
-  return { cx: shape.cx, cy: shape.cy, rx: shape.rx, ry: shape.ry };
-}
-
-interface Tooltip {
-  x: number;
-  y: number;
+interface Active {
   group: MuscleGroup;
   value: number;
+  level: IntensityLevel;
 }
 
+/**
+ * Mapa muscular: silueta anatómica frontal y posterior con las regiones teñidas según cuánto se ha
+ * entrenado cada grupo.
+ *
+ * Sustituye al cuerpo esquemático de rectángulos y elipses. La geometría vive en
+ * `data/muscleMapPaths.ts` (generado desde `public/frontrear.html`), no aquí.
+ *
+ * Tres decisiones de UX que se apartan de la versión anterior:
+ *
+ * 1. **Las dos vistas se ven a la vez**, en vez de un conmutador frontal/posterior. El mapa
+ *    responde a "¿qué me estoy dejando sin entrenar?", y con un conmutador la mitad de la respuesta
+ *    siempre queda escondida detrás de un toque. Son dos figuras estrechas y altas: puestas en
+ *    paralelo el conjunto queda casi cuadrado y cabe igual en móvil.
+ * 2. **Sin tooltip flotante.** El anterior se posicionaba en las coordenadas del ratón con
+ *    `position: fixed` y sin acotar al viewport, así que en los músculos del lado derecho se salía
+ *    de pantalla; y dependía de `hover`, que en móvil no existe. Ahora hay una franja de lectura
+ *    fija bajo las figuras que se rellena al pasar por encima, al enfocar con teclado o al tocar.
+ * 3. **Navegable con teclado.** Cada grupo es un control enfocable con su etiqueta accesible; antes
+ *    sólo respondía al ratón, así que el mapa era invisible para quien no usa uno.
+ */
 export default function MuscleMap({
   seriesByMuscle,
   isDark = false,
@@ -68,126 +80,161 @@ export default function MuscleMap({
   onMuscleClick,
   labelForGroup,
 }: MuscleMapProps) {
-  const [view, setView] = useState<BodyView>('front');
-  const [tooltip, setTooltip] = useState<Tooltip | null>(null);
+  const tk = getTokens(isDark);
+  const prefersReducedMotion = useReducedMotion();
+  const [active, setActive] = useState<Active | null>(null);
 
-  const neutralFill = isDark ? '#2a2a2a' : '#e2e2e2';
-  const decorativeFill = isDark ? '#333' : '#d4d4d4';
-  const strokeColor = isDark ? '#0f0f0f' : '#fff';
+  const label = (group: MuscleGroup) => (labelForGroup ? labelForGroup(group) : group);
 
-  const colorForLevel = (level: IntensityLevel) => (level === 0 ? neutralFill : LEVEL_COLORS[level]);
+  // La silueta va un punto por encima del fondo de la tarjeta para que el cuerpo se lea como una
+  // figura y no como un recorte; los músculos sin trabajar quedan aún más apagados, de modo que
+  // "no entrenado" se perciba como hueco y no como un color más de la escala.
+  const silhouetteFill = isDark ? '#232323' : '#e8ebee';
+  const silhouetteStroke = isDark ? '#2f2f2f' : '#d2d7dc';
+  const restFill = isDark ? '#2c2c2c' : '#dbe0e5';
 
-  const regions = MUSCLE_REGIONS.filter((r) => r.view === view);
-  const decorative = DECORATIVE_SHAPES.filter((d) => d.view === view);
-
-  const handleEnter = (e: React.MouseEvent, group: MuscleGroup, value: number) => {
-    setTooltip({ x: e.clientX, y: e.clientY, group, value });
-  };
-  const handleMove = (e: React.MouseEvent) => {
-    setTooltip((prev) => (prev ? { ...prev, x: e.clientX, y: e.clientY } : prev));
-  };
-  const handleLeave = () => setTooltip(null);
+  const colorForLevel = (level: IntensityLevel) => (level === 0 ? restFill : tk.heat[level - 1]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', width: '100%' }}>
-      <div style={{ display: 'flex', gap: '10px' }}>
-        {(['front', 'back'] as BodyView[]).map((v) => (
-          <button
-            key={v}
-            onClick={() => setView(v)}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: view === v ? '#1dd1a1' : isDark ? '#1a1a1a' : '#fff',
-              border: `1px solid ${view === v ? '#1dd1a1' : isDark ? '#333' : '#ddd'}`,
-              borderRadius: '20px',
-              color: view === v ? '#000' : isDark ? '#fff' : '#333',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: tk.space.lg, width: '100%' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: tk.space.md,
+          width: '100%',
+          maxWidth: '520px',
+        }}
+      >
+        {VIEWS.map(({ view, caption, silhouette, muscles }, viewIndex) => (
+          <motion.figure
+            key={view}
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: tk.motion.duration.slow,
+              ease: tk.motion.ease.out,
+              delay: prefersReducedMotion ? 0 : viewIndex * 0.08,
             }}
+            style={{ margin: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: tk.space.sm }}
           >
-            {v === 'front' ? 'Vista Frontal' : 'Vista Posterior'}
-          </button>
+            <svg viewBox={ANATOMY_VIEW_BOX} style={{ width: '100%', height: 'auto', display: 'block' }}>
+              {silhouette.map((p, i) => (
+                <path
+                  key={`sil-${i}`}
+                  d={p.d}
+                  fill={p.fill === 'none' ? 'none' : silhouetteFill}
+                  stroke={p.stroke ? silhouetteStroke : undefined}
+                  strokeWidth={p.strokeWidth}
+                />
+              ))}
+
+              {Object.entries(muscles).map(([groupKey, paths], groupIndex) => {
+                const group = groupKey as MuscleGroup;
+                const value = seriesByMuscle[group] || 0;
+                const level = getIntensity(value, thresholds);
+                const isActive = active?.group === group;
+                const describe = level === 0 ? 'sin entrenar' : LEVEL_LABELS[level];
+
+                const show = () => setActive({ group, value, level });
+                const clear = () => setActive(null);
+
+                return (
+                  <motion.g
+                    key={groupKey}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${label(group)}: ${value} series, ${describe}`}
+                    initial={prefersReducedMotion ? false : { opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{
+                      duration: tk.motion.duration.base,
+                      ease: tk.motion.ease.out,
+                      delay: prefersReducedMotion ? 0 : 0.12 + groupIndex * tk.motion.stagger,
+                    }}
+                    onMouseEnter={show}
+                    onMouseLeave={clear}
+                    onFocus={show}
+                    onBlur={clear}
+                    onClick={() => onMuscleClick?.(group)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onMuscleClick?.(group);
+                      }
+                    }}
+                    style={{ cursor: onMuscleClick ? 'pointer' : 'default' }}
+                  >
+                    {paths.map((p, i) => (
+                      <path
+                        key={i}
+                        d={p.d}
+                        fill={colorForLevel(level)}
+                        stroke={isActive ? tk.text : silhouetteStroke}
+                        strokeWidth={isActive ? 2.5 : p.strokeWidth}
+                        style={{
+                          transition: `fill ${tk.motion.css.base}, stroke ${tk.motion.css.fast}`,
+                        }}
+                      />
+                    ))}
+                  </motion.g>
+                );
+              })}
+            </svg>
+            <figcaption style={{ fontSize: tk.fontSize.xs, color: tk.textMuted, fontWeight: tk.weight.medium }}>
+              {caption}
+            </figcaption>
+          </motion.figure>
         ))}
       </div>
 
-      <svg
-        viewBox={VIEW_BOX}
-        style={{ width: '100%', maxWidth: '260px', height: 'auto' }}
-        onMouseMove={handleMove}
+      {/* Franja de lectura. Reserva su alto siempre para que rellenarla al pasar por encima no
+          empuje la leyenda ni cambie la altura de la tarjeta. */}
+      <div
+        aria-live="polite"
+        style={{
+          minHeight: '44px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textAlign: 'center',
+          padding: `0 ${tk.space.md}`,
+        }}
       >
-        {decorative.map((d) => {
-          const props = shapeToSvgProps(d.shape);
-          return d.shape.kind === 'rect' ? (
-            <rect key={d.id} {...props} fill={decorativeFill} />
-          ) : (
-            <ellipse key={d.id} {...props} fill={decorativeFill} />
-          );
-        })}
+        {active ? (
+          <span style={{ fontSize: tk.fontSize.md, color: tk.text, fontWeight: tk.weight.medium }}>
+            {label(active.group)}
+            <span style={{ color: tk.textMuted, fontWeight: tk.weight.body }}> · </span>
+            <span style={{ color: active.level === 0 ? tk.textMuted : tk.accent, fontVariantNumeric: 'tabular-nums' }}>
+              {active.value} {active.value === 1 ? 'serie' : 'series'}
+            </span>
+            <span style={{ color: tk.textFaint, fontWeight: tk.weight.body, fontSize: tk.fontSize.sm }}>
+              {' '}· {active.level === 0 ? 'Sin entrenar' : LEVEL_LABELS[active.level]}
+            </span>
+          </span>
+        ) : (
+          <span style={{ fontSize: tk.fontSize.sm, color: tk.textFaint }}>
+            Pasa por encima de un músculo, o tócalo para ver sus ejercicios.
+          </span>
+        )}
+      </div>
 
-        {regions.map((region) => {
-          const value = seriesByMuscle[region.group] || 0;
-          const level = getIntensity(value, thresholds);
-          const fill = colorForLevel(level);
-          const props = shapeToSvgProps(region.shape);
-          const shared = {
-            fill,
-            stroke: strokeColor,
-            strokeWidth: 1.5,
-            style: { cursor: onMuscleClick ? 'pointer' : 'default', transition: 'fill 0.25s ease' },
-            onMouseEnter: (e: React.MouseEvent) => handleEnter(e, region.group, value),
-            onMouseLeave: handleLeave,
-            onClick: () => onMuscleClick?.(region.group),
-          };
-          return region.shape.kind === 'rect' ? (
-            <rect key={region.id} {...props} {...shared} />
-          ) : (
-            <ellipse key={region.id} {...props} {...shared} />
-          );
-        })}
-      </svg>
-
-      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+      <div style={{ display: 'flex', gap: tk.space.md, flexWrap: 'wrap', justifyContent: 'center' }}>
         {([1, 2, 3, 4] as const).map((level) => (
-          <div key={level} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div key={level} style={{ display: 'flex', alignItems: 'center', gap: tk.space.xs }}>
             <span
               style={{
                 width: '10px',
                 height: '10px',
                 borderRadius: '3px',
-                backgroundColor: LEVEL_COLORS[level],
+                backgroundColor: tk.heat[level - 1],
                 display: 'inline-block',
               }}
             />
-            <span style={{ fontSize: '0.75rem', color: isDark ? '#888' : '#666' }}>{LEVEL_LABELS[level]}</span>
+            <span style={{ fontSize: tk.fontSize.xs, color: tk.textMuted }}>{LEVEL_LABELS[level]}</span>
           </div>
         ))}
       </div>
-
-      {tooltip && (
-        <div
-          style={{
-            position: 'fixed',
-            left: tooltip.x + 12,
-            top: tooltip.y - 36,
-            backgroundColor: isDark ? '#1a1a1a' : '#333',
-            color: '#fff',
-            padding: '8px 16px',
-            borderRadius: '10px',
-            fontSize: '0.9rem',
-            fontWeight: 600,
-            pointerEvents: 'none',
-            zIndex: 9999,
-            border: '1px solid #1dd1a1',
-            whiteSpace: 'nowrap',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-          }}
-        >
-          {labelForGroup ? labelForGroup(tooltip.group) : tooltip.group}:{' '}
-          <span style={{ color: '#1dd1a1' }}>{tooltip.value} series</span>
-        </div>
-      )}
     </div>
   );
 }

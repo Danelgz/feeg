@@ -222,7 +222,7 @@ export default function Statistics() {
               onBack={() => setSelectedMuscle(null)}
             />
           ) : (
-            <MuscleMapSection isDark={isDark} workouts={workouts} t={t} onSelectMuscle={setSelectedMuscle} />
+            <MuscleMapSection isDark={isDark} isMobile={isNarrow} workouts={workouts} t={t} onSelectMuscle={setSelectedMuscle} />
           )
         )}
 

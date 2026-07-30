@@ -10,13 +10,16 @@ import { readLiveElapsedFromSnapshot } from "../lib/workoutStorage";
 import { useMinDurationLoading } from "../hooks/useMinDurationLoading";
 
 export default function Layout({ children, hideBottomNav = false }) {
-  const { theme, isMobile, activeRoutine, endRoutine, notification, isSyncing, t, authUser, unreadNotificationsCount } = useUser();
-  // refreshData() se dispara en cada página que la llama al montar (index, settings, profile,
-  // measures, routines) — al cambiar de apartado isSyncing se pone a true aunque la sincronización
-  // dure 150ms, y un overlay a pantalla completa que aparece y desaparece así de rápido se ve como
-  // un parpadeo. Con este hook: si termina antes de 300ms nunca llega a mostrarse; si de verdad
-  // hace falta mostrarlo, se queda al menos 3s (ver hooks/useMinDurationLoading.ts).
-  const showLoadingOverlay = useMinDurationLoading(isSyncing, { showDelayMs: 300, minVisibleMs: 3000 });
+  const { theme, isMobile, activeRoutine, endRoutine, notification, isSyncing, isInitialSync, t, authUser, unreadNotificationsCount } = useUser();
+  // El overlay a pantalla completa se reserva para la carga en frío: sincronizando SIN nada local
+  // que mostrar (ver isInitialSync en context/UserContext.js). Antes se mostraba para cualquier
+  // isSyncing, y como cada pestaña llama a refreshData() al montar, cambiar de apartado tapaba la
+  // app entera aunque los datos ya estuvieran en pantalla — y con minVisibleMs de 3s una
+  // sincronización de 350ms se convertía en 3 segundos de bloqueo.
+  const showLoadingOverlay = useMinDurationLoading(isInitialSync, { showDelayMs: 300, minVisibleMs: 900 });
+  // Revalidación en segundo plano (datos locales ya visibles): no bloquea nada, solo una barra fina
+  // arriba. Al no tapar contenido no necesita el margen anti-parpadeo largo del overlay.
+  const showSyncBar = useMinDurationLoading(isSyncing && !isInitialSync, { showDelayMs: 500, minVisibleMs: 600 });
   const isDark = theme === 'dark';
   const tk = getTokens(isDark);
   const [isMounted, setIsMounted] = useState(false);
@@ -165,13 +168,49 @@ export default function Layout({ children, hideBottomNav = false }) {
             animation: fadeInPage 0.3s ease both;
             will-change: opacity;
           }
+          /* Indicador de sincronización de fondo: por encima de la barra superior (z-index 500)
+             pero sin capturar clics ni desplazar el layout. */
+          .sync-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            z-index: 900;
+            overflow: hidden;
+            pointer-events: none;
+            animation: fadeInPage 0.25s ease both;
+          }
+          .sync-bar::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 38%;
+            background: linear-gradient(90deg, transparent 0%, ${tk.accent} 50%, transparent 100%);
+            animation: syncBarSweep 1.15s ease-in-out infinite;
+            will-change: transform;
+          }
+          @keyframes syncBarSweep {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(270%); }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .sync-bar::after {
+              animation: none;
+              width: 100%;
+              opacity: 0.5;
+            }
+          }
         `}</style>
       </Head>
 
       {isMounted && (
         <>
-          {/* Pantalla de Carga / Sincronización */}
+          {/* Pantalla de Carga (solo carga en frío) / Sincronización de fondo */}
           {showLoadingOverlay && <LoadingOverlay label="Cargando" sublabel="Un momento, por favor" />}
+          {showSyncBar && <div className="sync-bar" aria-hidden="true" />}
 
           {notification && (
             <div style={{

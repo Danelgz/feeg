@@ -131,20 +131,15 @@ export default function Routines() {
                 {routines.map((routine) => (
                   <div
                     key={routine.id}
+                    className="feeg-surface feeg-hover"
                     style={{
-                      padding: isMobile ? "12px" : "15px",
-                      backgroundColor: tk.surface,
-                      border: `1px solid ${tk.border}`,
+                      padding: isMobile ? tk.space.md : "15px",
                       borderRadius: tk.radius.sm,
                       marginBottom: isMobile ? "10px" : "15px",
-                      transition: tk.transition,
-                      boxShadow: tk.shadow.card
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.borderColor = tk.accent;
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.borderColor = tk.border;
+                      "--feeg-bg": tk.surface,
+                      "--feeg-border": tk.border,
+                      "--feeg-shadow": tk.shadow.card,
+                      "--feeg-hover-border": tk.accent,
                     }}
                   >
                     <h3 style={{ margin: "0 0 8px 0", color: tk.text }}>{routine.name}</h3>
@@ -190,21 +185,20 @@ export default function Routines() {
               <EmptyState isDark={isDark} icon="clock" title={t("no_completed_workouts")} />
             ) : (
               <div>
-                {completedWorkouts.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt)).map(workout => (
-                  <div key={workout.id} style={{
-                    backgroundColor: tk.surface,
-                    border: `1px solid ${tk.border}`,
+                {/* Copia antes de ordenar: `sort` muta el array recibido, así que ordenar
+                    `completedWorkouts` directamente reordenaba el estado de UserContext como efecto
+                    colateral de pintar esta lista. */}
+                {[...completedWorkouts].sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt)).map(workout => (
+                  <div key={workout.id}
+                  className="feeg-surface feeg-hover"
+                  style={{
                     borderRadius: tk.radius.md,
-                    padding: isMobile ? "15px" : "20px",
+                    padding: isMobile ? "15px" : tk.space.xl,
                     marginBottom: isMobile ? "10px" : "15px",
-                    transition: tk.transition,
-                    boxShadow: tk.shadow.card
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.borderColor = tk.accent;
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.borderColor = tk.border;
+                    "--feeg-bg": tk.surface,
+                    "--feeg-border": tk.border,
+                    "--feeg-shadow": tk.shadow.card,
+                    "--feeg-hover-border": tk.accent,
                   }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "15px" }}>
@@ -222,6 +216,8 @@ export default function Routines() {
                       </div>
                       <button
                         onClick={() => setConfirmDeleteWorkout(workout.id)}
+                        className="feeg-press"
+                        aria-label={t("delete")}
                         style={{
                           padding: "6px 10px",
                           backgroundColor: tk.dangerSoft,
@@ -229,7 +225,8 @@ export default function Routines() {
                           border: "none",
                           borderRadius: tk.radius.sm,
                           cursor: "pointer",
-                          display: "flex"
+                          display: "flex",
+                          "--feeg-press-scale": 0.9,
                         }}
                       >
                         <Icon name="trash" size={16} />

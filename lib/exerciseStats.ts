@@ -518,3 +518,40 @@ export function computePRTimeline(completedWorkouts: CompletedWorkout[], limitCo
     currentRecords: Object.values(currentByExercise).sort((a, b) => b.oneRM - a.oneRM),
   };
 }
+
+/**
+ * Racha más larga de días consecutivos con al menos un entreno.
+ *
+ * Vive aquí y no en la página porque el cálculo que había inline en pages/statistics.js era frágil:
+ * hacía `.map(...).reverse()` sobre la lista sin ordenarla, así que dependía de que el origen
+ * (getAllUserWorkouts) devolviera orden descendente para que las diferencias entre días salieran
+ * bien. Esto normaliza a medianoche local, deduplica días (dos entrenos el mismo día no cuentan
+ * como dos escalones) y ordena antes de recorrer.
+ */
+export function computeLongestStreak(workouts: CompletedWorkout[]): number {
+  if (!workouts || workouts.length === 0) return 0;
+
+  const days = [
+    ...new Set(
+      workouts
+        .filter((w) => w.completedAt)
+        .map((w) => new Date(w.completedAt as string).toDateString())
+    ),
+  ]
+    .map((d) => new Date(d).getTime())
+    .sort((a, b) => a - b);
+
+  let longest = 0;
+  let run = 0;
+  for (let i = 0; i < days.length; i++) {
+    if (i === 0) {
+      run = 1;
+    } else {
+      // Math.round absorbe los cambios de hora: un salto DST hace que la diferencia sea 23h o 25h.
+      const diffDays = Math.round((days[i] - days[i - 1]) / 86400000);
+      run = diffDays === 1 ? run + 1 : 1;
+    }
+    longest = Math.max(longest, run);
+  }
+  return longest;
+}

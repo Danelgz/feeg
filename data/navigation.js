@@ -6,7 +6,6 @@ export const NAV_ITEMS = [
   { key: "routines", href: "/routines", icon: "dumbbell" },
   { key: "exercises", href: "/exercises", icon: "list" },
   { key: "ia", href: "/ia", icon: "zap" },
-  { key: "food", href: "/food", icon: "utensils" },
   { key: "statistics", href: "/statistics", icon: "barChart" },
   { key: "profile", href: "/profile", icon: "user" },
   { key: "exportar_datos", href: "/export-data", icon: "download" },

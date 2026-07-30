@@ -1,5 +1,5 @@
 import MiniStat from "./MiniStat";
-import AchievementCard from "./AchievementCard";
+import { getTokens } from "../../lib/tokens";
 
 function getTimeAgo(completedAt) {
   if (!completedAt) return "";
@@ -19,17 +19,16 @@ function getTimeAgo(completedAt) {
   return Math.floor(seconds) + "s";
 }
 
-export default function OverviewSection({ isDark, isMobile, workouts, t, stats }) {
-  const items = workouts
+export default function OverviewSection({ isDark, isMobile, workouts, t }) {
+  const tk = getTokens(isDark);
+  // Copia antes de ordenar: `workouts` llega de un useMemo de la página, y `sort` muta el array que
+  // recibe — ordenarlo aquí reordenaba el valor memoizado que se reutiliza entre renders.
+  const items = [...workouts]
     .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
     .slice(0, 8);
 
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr',
-      gap: '20px'
-    }}>
+    <div>
       <section style={{
         backgroundColor: isDark ? '#1a1a1a' : '#fff',
         border: isDark ? '1px solid #333' : '1px solid #e0e0e0',
@@ -49,22 +48,15 @@ export default function OverviewSection({ isDark, isMobile, workouts, t, stats }
         ) : (
           <div style={{ maxHeight: '500px', overflowY: 'auto', WebkitOverflowScrolling: 'touch', paddingRight: '8px' }}>
             {items.map((w, index) => (
-              <div key={w.id} style={{
-                backgroundColor: isDark ? '#0f0f0f' : '#f9f9f9',
-                border: isDark ? '1px solid #2a2a2a' : '1px solid #eee',
-                borderRadius: '12px',
-                padding: isMobile ? '14px' : '16px',
-                marginBottom: '12px',
-                transition: 'all 0.2s ease',
-                cursor: 'pointer'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.borderColor = '#1dd1a1';
-                e.currentTarget.style.transform = 'translateX(4px)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.borderColor = isDark ? '#2a2a2a' : '#eee';
-                e.currentTarget.style.transform = 'translateX(0)';
+              <div key={w.id}
+              className="feeg-surface feeg-hover"
+              style={{
+                borderRadius: tk.radius.md,
+                padding: isMobile ? '14px' : tk.space.lg,
+                marginBottom: tk.space.md,
+                '--feeg-bg': tk.surfaceAlt,
+                '--feeg-border': tk.border,
+                '--feeg-hover-border': tk.accent,
               }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
@@ -99,41 +91,6 @@ export default function OverviewSection({ isDark, isMobile, workouts, t, stats }
             ))}
           </div>
         )}
-      </section>
-
-      <section style={{
-        backgroundColor: isDark ? '#1a1a1a' : '#fff',
-        border: isDark ? '1px solid #333' : '1px solid #e0e0e0',
-        borderRadius: '16px',
-        padding: '24px'
-      }}>
-        <h2 style={{ margin: 0, marginBottom: '20px', color: isDark ? '#fff' : '#333', fontSize: '1.3rem', fontWeight: 'bold' }}>Logros</h2>
-        <div style={{ display: 'grid', gap: '16px' }}>
-          <AchievementCard
-            title="Racha Actual"
-            value={`${stats.streak} días`}
-            description="Días consecutivos"
-            isDark={isDark}
-          />
-          <AchievementCard
-            title="Volumen Total"
-            value={`${stats.totalVolume.toLocaleString()} kg`}
-            description="Peso levantado"
-            isDark={isDark}
-          />
-          <AchievementCard
-            title="Tiempo Entrenado"
-            value={`${stats.totalTimeMin} min`}
-            description="En el gimnasio"
-            isDark={isDark}
-          />
-          <AchievementCard
-            title="Mejor Día"
-            value={stats.bestDay || 'N/A'}
-            description="Día más activo"
-            isDark={isDark}
-          />
-        </div>
       </section>
     </div>
   );

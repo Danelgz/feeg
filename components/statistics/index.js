@@ -1,7 +1,6 @@
-export { default as EnhancedStatCard } from "./EnhancedStatCard";
+export { default as HeroMetricCard } from "./HeroMetricCard";
 export { default as MiniStatCard } from "./MiniStatCard";
 export { default as MiniStat } from "./MiniStat";
-export { default as AchievementCard } from "./AchievementCard";
 export { default as OverviewSection } from "./OverviewSection";
 export { default as SeriesByGroupSection } from "./SeriesByGroupSection";
 export { default as DistributionChartSection } from "./DistributionChartSection";

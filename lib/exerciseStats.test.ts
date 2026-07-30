@@ -6,6 +6,7 @@ import {
   checkForNewPR,
   checkWorkoutVolumePR,
   computeExerciseIndex,
+  computeLongestStreak,
   computePersonalRecords,
   computePRTimeline,
   computeSeriesByGroup,
@@ -326,5 +327,43 @@ describe("computeExerciseIndex", () => {
     ];
     const index = computeExerciseIndex(workouts, (d) => d.muscleGroup === "Bíceps");
     expect(Object.keys(index)).toEqual(["Curl con barra recta"]);
+  });
+});
+
+describe("computeLongestStreak", () => {
+  const w = (date: string) => ({ completedAt: `${date}T10:00:00.000Z` });
+
+  it("returns 0 with no workouts", () => {
+    expect(computeLongestStreak([])).toBe(0);
+  });
+
+  it("counts consecutive days as one streak", () => {
+    expect(computeLongestStreak([w("2026-03-02"), w("2026-03-03"), w("2026-03-04")])).toBe(3);
+  });
+
+  it("does not depend on the input order (the old inline version did)", () => {
+    const ascending = [w("2026-03-02"), w("2026-03-03"), w("2026-03-04")];
+    const shuffled = [w("2026-03-04"), w("2026-03-02"), w("2026-03-03")];
+    expect(computeLongestStreak(shuffled)).toBe(computeLongestStreak(ascending));
+  });
+
+  it("counts two workouts on the same day as a single day", () => {
+    expect(computeLongestStreak([w("2026-03-02"), w("2026-03-02"), w("2026-03-03")])).toBe(2);
+  });
+
+  it("keeps the longest run when there is a gap", () => {
+    expect(
+      computeLongestStreak([
+        w("2026-03-01"),
+        w("2026-03-02"),
+        w("2026-03-03"),
+        w("2026-03-10"),
+        w("2026-03-11"),
+      ])
+    ).toBe(3);
+  });
+
+  it("ignores workouts without a date", () => {
+    expect(computeLongestStreak([w("2026-03-02"), {}, w("2026-03-03")])).toBe(2);
   });
 });

@@ -27,7 +27,6 @@ export default function Profile() {
     authUser,
     saveUser,
     isLoaded,
-    isSyncing,
     refreshData,
     theme,
     isMobile,
@@ -199,12 +198,15 @@ export default function Profile() {
     }
   };
 
-  if (!isLoaded || isSyncing) {
+  // Solo se vacía la pantalla si de verdad no hay perfil que pintar. Con `|| isSyncing` el perfil
+  // desaparecía en cada sincronización de fondo (una por cada vez que se entra al apartado), aunque
+  // los datos ya estuvieran en estado desde localStorage.
+  if (!isLoaded && !user) {
     return (
       <Layout>
         <div style={{ padding: isMobile ? "0" : "20px" }}>
           <h1 style={{ fontSize: isMobile ? "1.8rem" : "2rem", marginBottom: "1rem", color: tk.text }}>{t("profile_title")}</h1>
-          <p style={{ color: tk.textMuted }}>{isSyncing ? "Sincronizando datos con la nube..." : t("loading")}</p>
+          <p style={{ color: tk.textMuted }}>{t("loading")}</p>
         </div>
       </Layout>
     );

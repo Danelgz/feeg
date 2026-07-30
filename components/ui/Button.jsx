@@ -1,11 +1,10 @@
-import { useState } from "react";
 import { getTokens } from "../../lib/tokens";
 import Icon from "./Icon";
 
 const SIZES = {
-  sm: { padding: "8px 14px", fontSize: "0.8rem", radius: "8px", iconSize: 16 },
-  md: { padding: "12px 20px", fontSize: "0.9rem", radius: "10px", iconSize: 18 },
-  lg: { padding: "14px 24px", fontSize: "1rem", radius: "12px", iconSize: 20 },
+  sm: { padding: "8px 14px", fontSize: "0.8rem", radius: "8px", iconSize: 16, press: 0.94 },
+  md: { padding: "12px 20px", fontSize: "0.9rem", radius: "10px", iconSize: 18, press: 0.96 },
+  lg: { padding: "14px 24px", fontSize: "1rem", radius: "12px", iconSize: 20, press: 0.975 },
 };
 
 export default function Button({
@@ -20,28 +19,38 @@ export default function Button({
   onClick,
   children,
   style,
+  className = "",
   ...rest
 }) {
   const tk = getTokens(isDark);
-  const [hover, setHover] = useState(false);
   const dims = SIZES[size] || SIZES.md;
 
+  // Los colores se entregan como variables CSS, no como propiedades pintadas inline: un `style`
+  // inline gana siempre a una hoja de estilos, así que si `backgroundColor` se pusiera aquí, las
+  // reglas :hover/:active de InteractionStyles no podrían cambiarlo. Ver la nota de contrato ahí.
   const variants = {
     primary: {
-      base: { backgroundColor: tk.accent, color: tk.onAccent, border: "none" },
-      hover: { backgroundColor: tk.accentHover },
+      "--feeg-bg": tk.accent,
+      "--feeg-fg": tk.onAccent,
+      "--feeg-hover-bg": tk.accentHover,
     },
     secondary: {
-      base: { backgroundColor: "transparent", color: tk.text, border: `1px solid ${tk.border}` },
-      hover: { borderColor: tk.accent, color: tk.accent },
+      "--feeg-bg": "transparent",
+      "--feeg-fg": tk.text,
+      "--feeg-border": tk.border,
+      "--feeg-hover-fg": tk.accent,
+      "--feeg-hover-border": tk.accent,
     },
     danger: {
-      base: { backgroundColor: tk.danger, color: "#fff", border: "none" },
-      hover: { backgroundColor: tk.dangerHover },
+      "--feeg-bg": tk.danger,
+      "--feeg-fg": "#fff",
+      "--feeg-hover-bg": tk.dangerHover,
     },
     ghost: {
-      base: { backgroundColor: "transparent", color: tk.textMuted, border: "none" },
-      hover: { color: tk.accent, backgroundColor: tk.surfaceHover },
+      "--feeg-bg": "transparent",
+      "--feeg-fg": tk.textMuted,
+      "--feeg-hover-bg": tk.surfaceHover,
+      "--feeg-hover-fg": tk.accent,
     },
   };
 
@@ -60,24 +69,23 @@ export default function Button({
       type={type}
       disabled={disabled}
       onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      className={`feeg-surface feeg-press feeg-hover ${className}`.trim()}
       style={{
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: "8px",
+        gap: tk.space.sm,
         padding: dims.padding,
         fontSize: dims.fontSize,
         borderRadius: dims.radius,
-        fontWeight: 600,
+        fontWeight: tk.weight.medium,
         cursor: disabled ? "not-allowed" : "pointer",
         opacity: disabled ? 0.5 : 1,
         width: fullWidth ? "100%" : "auto",
-        transition: tk.transition,
         whiteSpace: "nowrap",
-        ...v.base,
-        ...(hover && !disabled ? v.hover : {}),
+        "--feeg-press-scale": dims.press,
+        "--feeg-border-width": variant === "secondary" ? "1px" : "0px",
+        ...v,
         ...style,
       }}
       {...rest}

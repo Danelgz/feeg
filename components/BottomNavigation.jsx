@@ -22,6 +22,8 @@ export default function BottomNavigation() {
 
   const primaryItems = MOBILE_PRIMARY_KEYS.map((key) => NAV_ITEMS.find((n) => n.key === key)).filter(Boolean);
 
+  // Es el elemento más pulsado de la app en móvil, así que es el que más nota el feedback de
+  // pulsación (.feeg-press). Escala más que una tarjeta porque es una superficie pequeña.
   const itemStyle = (active) => ({
     display: "flex",
     flexDirection: "column",
@@ -37,6 +39,7 @@ export default function BottomNavigation() {
     border: "none",
     background: "transparent",
     cursor: "pointer",
+    "--feeg-press-scale": 0.9,
   });
 
   return (
@@ -60,14 +63,14 @@ export default function BottomNavigation() {
       {primaryItems.map((item) => {
         const isActive = router.pathname === item.href;
         return (
-          <Link key={item.key} href={item.href} style={itemStyle(isActive)}>
+          <Link key={item.key} href={item.href} className="feeg-press" style={itemStyle(isActive)}>
             <Icon name={item.icon} size={22} />
             <span style={{ fontSize: "0.7rem", fontWeight: isActive ? 700 : 500 }}>{t(item.key)}</span>
           </Link>
         );
       })}
 
-      <button onClick={() => setShowMenu(!showMenu)} style={itemStyle(showMenu)}>
+      <button onClick={() => setShowMenu(!showMenu)} className="feeg-press" style={itemStyle(showMenu)}>
         <Icon name={showMenu ? "close" : "menu"} size={22} />
         <span style={{ fontSize: "0.7rem", fontWeight: showMenu ? 700 : 500 }}>{t("menu")}</span>
       </button>
@@ -92,6 +95,8 @@ export default function BottomNavigation() {
         >
           <button
             onClick={() => setShowMenu(false)}
+            className="feeg-press"
+            aria-label={t("close") || "Cerrar"}
             style={{
               position: "sticky",
               top: "20px",
@@ -145,19 +150,22 @@ export default function BottomNavigation() {
                     key={item.key}
                     href={item.href}
                     onClick={() => setShowMenu(false)}
+                    className="feeg-surface feeg-press feeg-hover"
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "14px",
+                      gap: tk.space.lg,
                       padding: "15px 18px",
-                      backgroundColor: isActive ? tk.accentSoft : tk.surfaceAlt,
-                      color: isActive ? tk.accent : tk.text,
                       textDecoration: "none",
                       borderRadius: tk.radius.md,
-                      border: `1.5px solid ${isActive ? tk.accent : tk.border}`,
-                      fontWeight: 600,
+                      fontWeight: tk.weight.medium,
                       fontSize: "0.98rem",
-                      transition: tk.transition,
+                      "--feeg-bg": isActive ? tk.accentSoft : tk.surfaceAlt,
+                      "--feeg-fg": isActive ? tk.accent : tk.text,
+                      "--feeg-border": isActive ? tk.accent : tk.border,
+                      "--feeg-border-width": "1.5px",
+                      "--feeg-hover-border": tk.accent,
+                      "--feeg-press-scale": 0.975,
                     }}
                   >
                     <Icon name={item.icon} size={20} />

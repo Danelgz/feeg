@@ -1,13 +1,29 @@
+import { getTokens } from "../../lib/tokens";
+
 export default function MiniStatCard({ label, value, isDark }) {
+  const tk = getTokens(isDark);
   return (
-    <div style={{
-      backgroundColor: isDark ? '#1a1a1a' : '#fff',
-      border: `1px solid ${isDark ? '#333' : '#e0e0e0'}`,
-      borderRadius: '12px',
-      padding: '16px'
-    }}>
-      <div style={{ fontSize: '0.7rem', color: isDark ? '#888' : '#666', textTransform: 'uppercase', marginBottom: '2px' }}>{label}</div>
-      <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: isDark ? '#fff' : '#333' }}>{value}</div>
+    <div
+      className="feeg-surface"
+      style={{
+        borderRadius: tk.radius.md,
+        padding: tk.space.lg,
+        "--feeg-bg": tk.surface,
+        "--feeg-border": tk.border,
+      }}
+    >
+      <div
+        style={{
+          fontSize: tk.fontSize.xs,
+          color: tk.textMuted,
+          textTransform: "uppercase",
+          letterSpacing: "0.04em",
+          marginBottom: "2px",
+        }}
+      >
+        {label}
+      </div>
+      <div style={{ fontSize: tk.fontSize.lg, fontWeight: tk.weight.bold, color: tk.text }}>{value}</div>
     </div>
   );
 }

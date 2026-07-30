@@ -25,12 +25,32 @@ import { clearSnapshot as clearWorkoutSessionSnapshot } from '../lib/workoutStor
 
 const UserContext = createContext();
 
+// Cambiar de apartado remonta la página, y cada pestaña llama a refreshData() al montar (index,
+// profile, measures, settings, routines/index) — sin esta ventana, ir Inicio → Rutinas → Perfil →
+// Inicio dispara cuatro sincronizaciones completas contra Firestore en cuestión de segundos, y con
+// ellas la pantalla de carga. La app es local-first: los datos ya están en localStorage al
+// instante, así que releer la nube en cada navegación no aporta nada. refreshData(true) se salta
+// esta ventana para lo que sí la necesita (login, cambio de cuenta, acciones explícitas).
+const SYNC_COOLDOWN_MS = 60000;
+
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null); // Perfil completado (datos adicionales)
   const [authUser, setAuthUser] = useState(null); // Usuario autenticado (Firebase)
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  // ¿Había datos en localStorage al arrancar? Decide si una sincronización puede permitirse tapar
+  // la app con la pantalla de carga o si ya hay algo que mostrar mientras se refresca de fondo.
+  const [hasCachedData, setHasCachedData] = useState(false);
   const lastLocalUpdate = useRef(0);
+  const lastSyncAt = useRef(0);
+  const syncPromise = useRef(null);
+
+  // Una sincronización solo justifica tapar la app con la pantalla de carga cuando no hay
+  // literalmente nada que mostrar: primera carga sin caché local, o cambio de cuenta (clearUser
+  // vacía la caché y isLoaded vuelve a false). Todas las demás — incluidas las que dispara cambiar
+  // de apartado — son revalidaciones en segundo plano sobre datos que ya están en pantalla, y se
+  // anuncian con la barra fina de Layout en vez de con un overlay.
+  const isInitialSync = isSyncing && !isLoaded && !hasCachedData;
   const [theme, setTheme] = useState('dark');
   const [themePreference, setThemePreferenceState] = useState('dark'); // 'dark' | 'light' | 'system'
   const [language, setLanguage] = useState('es');
@@ -90,6 +110,8 @@ export function UserProvider({ children }) {
     if (savedRoutines) try { setRoutines(JSON.parse(savedRoutines)); } catch (e) {}
     if (savedMeasures) try { setMeasures(JSON.parse(savedMeasures)); } catch (e) {}
     if (savedSoundEnabled !== null) setSoundEnabledState(savedSoundEnabled === 'true');
+
+    setHasCachedData(Boolean(savedUser || savedRoutines || savedWorkouts));
   }, []);
 
   const setSoundEnabled = (enabled) => {
@@ -97,19 +119,9 @@ export function UserProvider({ children }) {
     localStorage.setItem('soundEnabled', String(enabled));
   };
 
-  // Función para sincronizar datos desde la nube
-  const refreshData = async (force = false) => {
-    if (!authUser || isSyncing) return;
-    
-    // EVITAR REVERTIR SI ACABAMOS DE ACTUALIZAR LOCALMENTE
-    // Si hubo una actualización local hace menos de 5 segundos, 
-    // ignoramos la carga automática de la nube (a menos que sea forzada)
-    const now = Date.now();
-    if (!force && (now - lastLocalUpdate.current < 5000)) {
-      console.log("[UserContext] Ignorando sincronización automática para proteger cambios locales recientes");
-      return;
-    }
-
+  // Lectura real contra la nube. No llamar directamente: usar refreshData, que es quien aplica el
+  // deduplicado y las ventanas de protección.
+  const runCloudSync = async (force) => {
     setIsSyncing(true);
     try {
       console.log(`[UserContext] Sincronizando datos desde la nube (force: ${force})...`);
@@ -193,11 +205,49 @@ export function UserProvider({ children }) {
           }
         }
       }
+
+      // Solo se marca al terminar bien: si la lectura falló, no arrancamos la ventana de
+      // reutilización, para que la siguiente navegación pueda reintentarlo en vez de quedarse con
+      // los datos locales hasta un minuto después.
+      lastSyncAt.current = Date.now();
     } catch (error) {
       console.error("[UserContext] Error al sincronizar con la nube:", error);
     } finally {
       setIsSyncing(false);
     }
+  };
+
+  // Función para sincronizar datos desde la nube
+  const refreshData = (force = false) => {
+    if (!authUser) return Promise.resolve();
+
+    // Deduplicado por promesa, no con la guarda `isSyncing`: ese estado no se ha actualizado
+    // todavía dentro del mismo tick, así que la página (efecto hijo) y el efecto de auth del
+    // provider (efecto padre) lanzaban dos sincronizaciones completas en paralelo al detectar el
+    // usuario. Devolver la promesa en vuelo en vez de salir en seco es lo que permite que quien la
+    // espere (`refreshData(true).then(...)` para isLoaded) siga esperando la sincronización de verdad.
+    if (syncPromise.current) return syncPromise.current;
+
+    const now = Date.now();
+
+    // EVITAR REVERTIR SI ACABAMOS DE ACTUALIZAR LOCALMENTE
+    // Si hubo una actualización local hace menos de 5 segundos,
+    // ignoramos la carga automática de la nube (a menos que sea forzada)
+    if (!force && (now - lastLocalUpdate.current < 5000)) {
+      console.log("[UserContext] Ignorando sincronización automática para proteger cambios locales recientes");
+      return Promise.resolve();
+    }
+
+    // Ver SYNC_COOLDOWN_MS: cambiar de apartado no vuelve a leer la nube si acabamos de hacerlo.
+    if (!force && (now - lastSyncAt.current < SYNC_COOLDOWN_MS)) {
+      return Promise.resolve();
+    }
+
+    const promise = runCloudSync(force).finally(() => {
+      syncPromise.current = null;
+    });
+    syncPromise.current = promise;
+    return promise;
   };
 
   // Recoger el resultado de un signInWithRedirect pendiente (login con Google cuando el popup
@@ -351,6 +401,10 @@ export function UserProvider({ children }) {
     setFollowing([]);
     setFollowers([]);
     setNotifications([]);
+    // Ya no hay nada local que mostrar: la próxima sincronización sí es "en frío" y puede volver a
+    // mostrar la pantalla de carga completa (ver isInitialSync).
+    setHasCachedData(false);
+    lastSyncAt.current = 0;
   };
 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -644,8 +698,9 @@ export function UserProvider({ children }) {
       loginWithGoogle,
       isLoggingIn,
       logout,
-      isLoaded, 
+      isLoaded,
       isSyncing,
+      isInitialSync,
       refreshData,
       theme,
       themePreference,

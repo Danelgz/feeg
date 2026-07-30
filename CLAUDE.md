@@ -129,7 +129,7 @@ hardcoding new hex values; the file's comments explain past hex-drift bugs this 
 
 **Firebase**: client SDK in `lib/firebase.js` (Auth via Google popup, Firestore, Storage), guarded so
 the app degrades gracefully if env vars are missing. Firebase Admin (`pages/api/generate-routine.js`,
-`pages/api/chat.js`, `pages/api/analyze-food.js`) verifies ID tokens server-side before calling OpenAI.
+`pages/api/chat.js`) verifies ID tokens server-side before calling OpenAI.
 Firestore security rules are
 in [firestore.rules](firestore.rules); social/profile documents (`users/{uid}`, `usersPublic/{uid}`,
 `workouts/{id}`) are readable by anyone but writable only by their owner (with a carve-out for

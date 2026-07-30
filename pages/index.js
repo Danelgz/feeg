@@ -6,7 +6,7 @@ import { useRouter } from "next/router";
 import { getTokens } from "../lib/tokens";
 import { translateExerciseName } from "../lib/exerciseTranslation";
 import { ExerciseThumb } from "../components/workout";
-import { Icon, Button, Spinner, EmptyState, Avatar } from "../components/ui";
+import { Icon, Button, Spinner, EmptyState, Avatar, SkeletonPage } from "../components/ui";
 
 function formatFeedDuration(workout) {
   const totalSeconds = workout.elapsedTime || (workout.totalTime || 0) * 60;
@@ -198,7 +198,7 @@ export default function Home() {
     setExpandedSeriesFor((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  if (!isLoaded) return <Layout><Spinner isDark={isDark} fullPage label="Cargando..." /></Layout>;
+  if (!isLoaded) return <Layout><SkeletonPage isDark={isDark} isMobile={isMobile} /></Layout>;
 
   return (
     <Layout>

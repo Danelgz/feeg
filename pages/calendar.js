@@ -3,7 +3,7 @@ import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { useRouter } from "next/router";
 import { getTokens } from "../lib/tokens";
-import { Spinner, PageHeader } from "../components/ui";
+import { PageHeader, SkeletonPage } from "../components/ui";
 
 export default function Calendar() {
   const router = useRouter();
@@ -58,7 +58,7 @@ export default function Calendar() {
     return months;
   }, [completedWorkouts]);
 
-  if (!isLoaded) return <Layout><Spinner isDark={isDark} fullPage label="Cargando..." /></Layout>;
+  if (!isLoaded) return <Layout><SkeletonPage isDark={isDark} isMobile={isMobile} /></Layout>;
 
   const spanishMonths = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",

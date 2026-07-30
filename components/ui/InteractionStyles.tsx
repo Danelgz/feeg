@@ -77,6 +77,49 @@ export default function InteractionStyles() {
         box-shadow: var(--feeg-shadow, none);
       }
 
+      /* Brillo de los esqueletos de carga (ver components/ui/Skeleton.tsx). Anima background-position
+         y no width/left, para que corra en GPU sin provocar relayouts. */
+      .feeg-skeleton {
+        position: relative;
+        overflow: hidden;
+      }
+      .feeg-skeleton::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0) 0%,
+          rgba(255, 255, 255, 0.06) 50%,
+          rgba(255, 255, 255, 0) 100%
+        );
+        background-size: 200% 100%;
+        animation: feegShimmer 1.4s ease-in-out infinite;
+      }
+      @keyframes feegShimmer {
+        0% {
+          background-position: 150% 0;
+        }
+        100% {
+          background-position: -150% 0;
+        }
+      }
+
+      /* Grano de película sobre todo el lienzo. Un fondo plano y perfectamente uniforme es lo que
+         hace que una interfaz oscura se lea como "vector estéril"; un 2.5% de ruido le da textura
+         sin que se perciba como suciedad. Va en un pseudoelemento fijo con pointer-events: none, y a
+         z-index 1 para quedar por encima del contenido pero por debajo de toda la cromática de la app
+         (cabecera 500, nav 1000, modales y overlays 3000+). */
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        opacity: 0.025;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+
       @media (prefers-reduced-motion: reduce) {
         .feeg-press,
         .feeg-lift {

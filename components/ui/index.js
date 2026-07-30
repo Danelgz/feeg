@@ -11,3 +11,4 @@ export { default as Avatar } from "./Avatar";
 export { default as LoadingOverlay } from "./LoadingOverlay";
 export { default as InteractionStyles } from "./InteractionStyles";
 export { default as ChipNav } from "./ChipNav";
+export { Skeleton, SkeletonPage } from "./Skeleton";

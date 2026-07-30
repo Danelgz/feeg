@@ -4,7 +4,7 @@ import { useUser } from "../context/UserContext";
 import { searchUsers } from "../lib/firebase";
 import { useRouter } from "next/router";
 import { getTokens } from "../lib/tokens";
-import { Icon, Button, Spinner, EmptyState } from "../components/ui";
+import { Icon, Button, Spinner, EmptyState, SkeletonPage } from "../components/ui";
 
 export default function Recommended() {
   const { authUser, isLoaded, following, handleFollow, handleUnfollow, isMobile, theme } = useUser();
@@ -26,7 +26,7 @@ export default function Recommended() {
     loadUsers();
   }, [isLoaded]);
 
-  if (!isLoaded) return <Layout><Spinner isDark={isDark} fullPage label="Cargando..." /></Layout>;
+  if (!isLoaded) return <Layout><SkeletonPage isDark={isDark} isMobile={isMobile} /></Layout>;
 
   return (
     <Layout>

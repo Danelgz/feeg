@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { getTokens } from "../lib/tokens";
-import { Icon, Button, Spinner, EmptyState, PageHeader, ConfirmModal } from "../components/ui";
+import { Icon, Button, EmptyState, PageHeader, ConfirmModal, SkeletonPage } from "../components/ui";
 
 const MeasurementField = ({ label, value, name, unit, onChange, tk }) => (
   <div style={{ marginBottom: "15px" }}>
@@ -120,7 +120,7 @@ export default function Measures() {
     }
   }, [user]);
 
-  if (!isLoaded) return <Layout><Spinner isDark={isDark} fullPage label="Cargando..." /></Layout>;
+  if (!isLoaded) return <Layout><SkeletonPage isDark={isDark} isMobile={isMobile} /></Layout>;
 
   const updateUnits = async (type, val) => {
     if (units[type] === val) return;

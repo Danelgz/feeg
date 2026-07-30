@@ -555,3 +555,89 @@ export function computeLongestStreak(workouts: CompletedWorkout[]): number {
   }
   return longest;
 }
+
+/** Entrenos por semana que hay que cumplir para que la semana cuente en la racha. */
+export const DEFAULT_WEEKLY_GOAL = 3;
+
+export interface WeeklyStreakResult {
+  /** Semanas consecutivas cumpliendo el objetivo, hasta la de hoy. */
+  streak: number;
+  /** Entrenos hechos en la semana en curso. */
+  thisWeek: number;
+  goal: number;
+  /** La semana en curso ya cumple el objetivo. */
+  goalMet: boolean;
+  /** Mejor racha semanal de todo el histórico. */
+  best: number;
+}
+
+/** Lunes de la semana a la que pertenece la fecha, como clave 'YYYY-MM-DD'. */
+function weekStartKey(date: Date): string {
+  const d = new Date(date.getTime());
+  d.setHours(0, 0, 0, 0);
+  // getDay(): 0 = domingo. La semana empieza en lunes (convención europea).
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** Clave de la semana `weeksBack` semanas antes de la de `from`. */
+function shiftWeekKey(from: Date, weeksBack: number): string {
+  const d = new Date(from.getTime());
+  d.setDate(d.getDate() - weeksBack * 7);
+  return weekStartKey(d);
+}
+
+/**
+ * Racha por semanas cumplidas en vez de por días consecutivos.
+ *
+ * Los días consecutivos son una métrica equivocada para entrenar: nadie entrena 7 días seguidos, así
+ * que castiga justo al que descansa bien. Aquí una semana cuenta si alcanza `goal` entrenos, y lo que
+ * se encadena son semanas.
+ *
+ * La semana en curso NO puede romper la racha: si es martes y llevas 1 de 3, la semana está en
+ * progreso, no fallada. Solo suma cuando ya ha cumplido, y las anteriores se recorren hacia atrás.
+ * Sin esto la racha se caería a cero cada lunes por la mañana.
+ */
+export function computeWeeklyStreak(
+  workouts: CompletedWorkout[],
+  goal: number = DEFAULT_WEEKLY_GOAL,
+  now: Date = new Date()
+): WeeklyStreakResult {
+  const safeGoal = Math.max(1, Math.round(goal));
+  const perWeek: Record<string, number> = {};
+
+  (workouts || []).forEach((w) => {
+    if (!w.completedAt) return;
+    const date = new Date(w.completedAt);
+    if (Number.isNaN(date.getTime())) return;
+    const key = weekStartKey(date);
+    perWeek[key] = (perWeek[key] || 0) + 1;
+  });
+
+  const met = (key: string) => (perWeek[key] || 0) >= safeGoal;
+
+  const thisWeekKey = weekStartKey(now);
+  const thisWeek = perWeek[thisWeekKey] || 0;
+  const goalMet = thisWeek >= safeGoal;
+
+  let streak = goalMet ? 1 : 0;
+  for (let back = 1; met(shiftWeekKey(now, back)); back++) {
+    streak++;
+  }
+
+  // Mejor racha histórica: recorre las semanas cumplidas de la más antigua a la más reciente y mide
+  // las tiradas en las que cada semana es exactamente la siguiente de la anterior.
+  const metKeys = Object.keys(perWeek).filter(met).sort();
+  let best = 0;
+  let run = 0;
+  let expected: string | null = null;
+  metKeys.forEach((key) => {
+    run = expected === key ? run + 1 : 1;
+    best = Math.max(best, run);
+    const next = new Date(`${key}T00:00:00`);
+    next.setDate(next.getDate() + 7);
+    expected = weekStartKey(next);
+  });
+
+  return { streak, thisWeek, goal: safeGoal, goalMet, best: Math.max(best, streak) };
+}

@@ -1,4 +1,5 @@
 export { default as HeroMetricCard } from "./HeroMetricCard";
+export { default as WeeklyStreakCard } from "./WeeklyStreakCard";
 export { default as MiniStatCard } from "./MiniStatCard";
 export { default as MiniStat } from "./MiniStat";
 export { default as OverviewSection } from "./OverviewSection";

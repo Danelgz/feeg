@@ -107,23 +107,42 @@ describe("pantalla de estadísticas", () => {
 
   it("no repite los totales del periodo encima de las vistas de contenido histórico", async () => {
     renderStats();
-    expect(await screen.findByText("Mejor racha")).toBeTruthy();
+    expect(await screen.findByText("Racha semanal")).toBeTruthy();
 
     fireEvent.click(tab("Mapa muscular"));
     await waitFor(() => {
-      expect(screen.queryByText("Mejor racha")).toBeNull();
+      expect(screen.queryByText("Racha semanal")).toBeNull();
     });
     expect(screen.queryByText("Volumen medio")).toBeNull();
   });
 
-  it("calcula la racha sobre todo el histórico, no sobre el periodo elegido", async () => {
-    // Racha de 3 días hace un mes: fuera de cualquier ventana de 7 días, pero sigue siendo tu mejor
-    // racha. Antes el número bajaba solo por cambiar el filtro.
+  it("cuenta la racha por semanas cumplidas y no la altera el filtro de periodo", async () => {
+    // Tres entrenos hoy: siempre caen en la semana en curso, sea el día de la semana que sea cuando
+    // corra el test (por eso no se usan fechas relativas de días, que dependerían del calendario).
     localStorage.setItem(
       "completedWorkouts",
-      JSON.stringify([workout(30, 500, "x"), workout(31, 500, "y"), workout(32, 500, "z"), workout(1, 900, "hoy")])
+      JSON.stringify([workout(0, 500, "a"), workout(0, 500, "b"), workout(0, 500, "c"), workout(40, 900, "viejo")])
     );
     renderStats();
-    expect(await screen.findByText("3 días")).toBeTruthy();
+
+    expect(await screen.findByText("1 semana")).toBeTruthy();
+    expect(screen.getByText(/3 de 3 esta semana/)).toBeTruthy();
+
+    // Cambiar a "Todo" no toca la racha: se calcula siempre sobre el histórico completo.
+    fireEvent.click(tab("Todo"));
+    await waitFor(() => {
+      expect(screen.getByText("1 semana")).toBeTruthy();
+    });
+    expect(screen.getByText(/3 de 3 esta semana/)).toBeTruthy();
+  });
+
+  it("no rompe la racha por una semana en curso a medias", async () => {
+    // Un solo entreno hoy: 1 de 3, semana en progreso. No hay racha, pero tampoco un "0" acusador
+    // por una semana que aún no ha terminado.
+    localStorage.setItem("completedWorkouts", JSON.stringify([workout(0, 500, "a")]));
+    renderStats();
+
+    expect(await screen.findByText("Sin racha")).toBeTruthy();
+    expect(screen.getByText(/1 de 3 esta semana/)).toBeTruthy();
   });
 });

@@ -129,17 +129,36 @@ export default function Layout({ children, hideBottomNav = false }) {
       display: "flex",
       flexDirection: currentIsMobile ? "column" : "row",
       minHeight: "100vh",
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'",
+      // Fuente de la app (Outfit, ver pages/_app.js). El fallback mantiene la pila del sistema por si
+      // la variable no llega a resolverse.
+      fontFamily: "var(--font-feeg), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
       backgroundColor: isDark ? "#0f0f0f" : "#f0f2f5",
       color: isDark ? "#fff" : "#333",
       transition: "background-color 0.3s ease",
     }}>
       <Head>
-        <title>FEEG - Tu App de Entrenamiento</title>
+        <title>FEEG · Registra tus entrenos</title>
         <link rel="icon" href="/logo3.png" />
         <link rel="apple-touch-icon" href="/logo3.png" />
         <link rel="shortcut icon" href="/logo3.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+        {/* Sin esto, compartir un enlace de FEEG en WhatsApp o Twitter no muestra nada: ni título, ni
+            descripción, ni imagen. */}
+        <meta
+          name="description"
+          content="Registra tus entrenamientos, crea rutinas y sigue tu progreso con estadísticas, récords personales y mapa muscular. Gratis."
+        />
+        <meta property="og:title" content="FEEG · Registra tus entrenos" />
+        <meta
+          property="og:description"
+          content="Rutinas, récords personales, volumen por músculo y progreso real. Gratis."
+        />
+        <meta property="og:image" content="/logo3.png" />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary" />
+        {/* Tiñe la barra del navegador en móvil del color del fondo, para que la app no quede
+            enmarcada por una franja blanca. */}
+        <meta name="theme-color" content={isDark ? "#0f0f0f" : "#f0f2f5"} />
         <style>{`
           html, body {
             margin: 0;
@@ -148,10 +167,27 @@ export default function Layout({ children, hideBottomNav = false }) {
             transition: background-color 0.3s ease;
             height: 100%;
             width: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: var(--font-feeg), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            /* Los saltos con ancla dejan de teletransportar la vista. */
+            scroll-behavior: smooth;
           }
           * {
             font-family: inherit;
+          }
+          /* Cifras de ancho fijo en toda la app: sin esto los contadores en vivo (cronómetro de
+             serie, volumen, tiempo transcurrido) cambian de ancho a cada tick y el texto de al lado
+             se mueve. En una app de datos se nota constantemente. */
+          html {
+            font-variant-numeric: tabular-nums;
+          }
+          /* Titulares con presencia: tracking negativo a tamaño grande, que es lo que separa un
+             título tipografiado de un texto simplemente puesto en grande. */
+          h1, h2, h3 {
+            letter-spacing: -0.02em;
+            text-wrap: balance;
+          }
+          p {
+            text-wrap: pretty;
           }
           #__next {
             min-height: 100%;

@@ -7,6 +7,7 @@ import {
   checkWorkoutVolumePR,
   computeExerciseIndex,
   computeLongestStreak,
+  computeWeeklyStreak,
   computePersonalRecords,
   computePRTimeline,
   computeSeriesByGroup,
@@ -365,5 +366,68 @@ describe("computeLongestStreak", () => {
 
   it("ignores workouts without a date", () => {
     expect(computeLongestStreak([w("2026-03-02"), {}, w("2026-03-03")])).toBe(2);
+  });
+});
+
+describe("computeWeeklyStreak", () => {
+  // Miércoles 15 de julio de 2026. Semana en curso: lunes 13 → domingo 19.
+  const NOW = new Date("2026-07-15T12:00:00");
+  const on = (date: string) => ({ completedAt: `${date}T10:00:00` });
+
+  it("returns an empty streak with no workouts", () => {
+    const r = computeWeeklyStreak([], 3, NOW);
+    expect(r).toMatchObject({ streak: 0, thisWeek: 0, goal: 3, goalMet: false, best: 0 });
+  });
+
+  it("counts the current week only once the goal is met", () => {
+    const twoSoFar = [on("2026-07-13"), on("2026-07-14")];
+    expect(computeWeeklyStreak(twoSoFar, 3, NOW)).toMatchObject({ streak: 0, thisWeek: 2, goalMet: false });
+
+    const goalReached = [...twoSoFar, on("2026-07-15")];
+    expect(computeWeeklyStreak(goalReached, 3, NOW)).toMatchObject({ streak: 1, thisWeek: 3, goalMet: true });
+  });
+
+  it("does not let the in-progress week break an earlier streak", () => {
+    // Dos semanas anteriores cumplidas y la actual recién empezada con 1 de 3.
+    const workouts = [
+      on("2026-06-29"), on("2026-06-30"), on("2026-07-01"),
+      on("2026-07-06"), on("2026-07-07"), on("2026-07-08"),
+      on("2026-07-13"),
+    ];
+    const r = computeWeeklyStreak(workouts, 3, NOW);
+    expect(r.streak).toBe(2);
+    expect(r.thisWeek).toBe(1);
+    expect(r.goalMet).toBe(false);
+  });
+
+  it("breaks the streak on a completed week that missed the goal", () => {
+    const workouts = [
+      on("2026-06-29"), on("2026-06-30"), on("2026-07-01"), // cumplida
+      on("2026-07-06"),                                      // semana pasada: 1 de 3, falla
+      on("2026-07-13"), on("2026-07-14"), on("2026-07-15"),  // actual: cumplida
+    ];
+    expect(computeWeeklyStreak(workouts, 3, NOW).streak).toBe(1);
+  });
+
+  it("treats the week as Monday-to-Sunday", () => {
+    // Domingo 12 pertenece a la semana anterior, no a la de hoy.
+    const r = computeWeeklyStreak([on("2026-07-12"), on("2026-07-13")], 3, NOW);
+    expect(r.thisWeek).toBe(1);
+  });
+
+  it("remembers the best historical streak even after breaking it", () => {
+    const workouts = [
+      on("2026-04-06"), on("2026-04-07"), on("2026-04-08"),
+      on("2026-04-13"), on("2026-04-14"), on("2026-04-15"),
+      on("2026-04-20"), on("2026-04-21"), on("2026-04-22"),
+    ];
+    const r = computeWeeklyStreak(workouts, 3, NOW);
+    expect(r.best).toBe(3);
+    expect(r.streak).toBe(0); // se rompió hace meses
+  });
+
+  it("ignores invalid or missing dates", () => {
+    const workouts = [on("2026-07-13"), { completedAt: "no es una fecha" }, {}];
+    expect(computeWeeklyStreak(workouts, 1, NOW)).toMatchObject({ thisWeek: 1, streak: 1 });
   });
 });

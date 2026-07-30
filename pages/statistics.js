@@ -3,9 +3,10 @@ import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { getTokens } from "../lib/tokens";
 import { PageHeader, ChipNav } from "../components/ui";
-import { computeSeriesByGroup, computeLongestStreak } from "../lib/exerciseStats";
+import { computeSeriesByGroup, computeWeeklyStreak } from "../lib/exerciseStats";
 import {
   HeroMetricCard,
+  WeeklyStreakCard,
   MiniStatCard,
   OverviewSection,
   MuscleMapSection,
@@ -120,11 +121,12 @@ export default function Statistics() {
       bestDay,
       avgVolume: sessions > 0 ? Math.round(aggregate.totalVolume / sessions) : 0,
       avgTimeMin: sessions > 0 ? Math.round(aggregate.totalTimeMin / sessions) : 0,
-      // Sobre TODO el histórico, no sobre el periodo: una racha que baja porque has tocado un
-      // filtro no es una métrica, es un bug de percepción. Con "7 días" nunca podía pasar de 7.
-      bestStreak: computeLongestStreak(workouts || []),
     };
-  }, [filteredWorkouts, workouts]);
+  }, [filteredWorkouts]);
+
+  // Sobre TODO el histórico, no sobre el periodo: una racha que baja porque has tocado un filtro no
+  // es una métrica, es un bug de percepción.
+  const weeklyStreak = useMemo(() => computeWeeklyStreak(workouts || []), [workouts]);
 
   const seriesByGroup = useMemo(() => computeSeriesByGroup(filteredWorkouts), [filteredWorkouts]);
 
@@ -191,7 +193,7 @@ export default function Statistics() {
                 marginBottom: tk.space.xxl,
               }}
             >
-              <MiniStatCard label="Mejor racha" value={`${stats.bestStreak} días`} isDark={isDark} />
+              <WeeklyStreakCard streak={weeklyStreak} isDark={isDark} />
               <MiniStatCard label="Tiempo medio" value={`${stats.avgTimeMin} min`} isDark={isDark} />
               <MiniStatCard label="Volumen medio" value={`${stats.avgVolume.toLocaleString('es-ES')} kg`} isDark={isDark} />
               <MiniStatCard label="Mejor día" value={stats.bestDay || '—'} isDark={isDark} />

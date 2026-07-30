@@ -1,3 +1,5 @@
+export { default as StatSection } from "./StatSection";
+export { default as BarList } from "./BarList";
 export { default as HeroMetricCard } from "./HeroMetricCard";
 export { default as WeeklyStreakCard } from "./WeeklyStreakCard";
 export { default as MiniStatCard } from "./MiniStatCard";

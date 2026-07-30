@@ -199,7 +199,11 @@ export default function Statistics() {
               <MiniStatCard label="Mejor día" value={stats.bestDay || '—'} isDark={isDark} />
             </div>
 
-            <OverviewSection isDark={isDark} isMobile={isMobile} workouts={filteredWorkouts} t={t} stats={stats} />
+            {/* `isNarrow` y no el `isMobile` del contexto: el resto de la página (PageHeader,
+                HeroMetricCard, la rejilla de mini-tarjetas) decide su layout con `isNarrow`, así que
+                mezclar las dos señales hacía que esta sección cambiara de 4 a 2 columnas en un ancho
+                distinto al de la rejilla que tiene justo encima. */}
+            <OverviewSection isDark={isDark} isMobile={isNarrow} workouts={filteredWorkouts} t={t} stats={stats} />
           </>
         )}
 
@@ -223,11 +227,11 @@ export default function Statistics() {
         )}
 
         {activeView === 'seriesByGroup' && (
-          <SeriesByGroupSection isDark={isDark} seriesByGroup={seriesByGroup} t={t} />
+          <SeriesByGroupSection isDark={isDark} isMobile={isNarrow} seriesByGroup={seriesByGroup} t={t} />
         )}
 
         {activeView === 'distChart' && (
-          <DistributionChartSection isDark={isDark} seriesByGroup={seriesByGroup} t={t} />
+          <DistributionChartSection isDark={isDark} isMobile={isNarrow} seriesByGroup={seriesByGroup} t={t} />
         )}
 
         {activeView === 'monthly' && (

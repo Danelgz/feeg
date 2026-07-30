@@ -1,4 +1,7 @@
+import { motion, useReducedMotion } from "motion/react";
 import MiniStat from "./MiniStat";
+import StatSection from "./StatSection";
+import { EmptyState } from "../ui";
 import { getTokens } from "../../lib/tokens";
 
 function getTimeAgo(completedAt) {
@@ -21,6 +24,7 @@ function getTimeAgo(completedAt) {
 
 export default function OverviewSection({ isDark, isMobile, workouts, t }) {
   const tk = getTokens(isDark);
+  const prefersReducedMotion = useReducedMotion();
   // Copia antes de ordenar: `workouts` llega de un useMemo de la página, y `sort` muta el array que
   // recibe — ordenarlo aquí reordenaba el valor memoizado que se reutiliza entre renders.
   const items = [...workouts]
@@ -28,70 +32,119 @@ export default function OverviewSection({ isDark, isMobile, workouts, t }) {
     .slice(0, 8);
 
   return (
-    <div>
-      <section style={{
-        backgroundColor: isDark ? '#1a1a1a' : '#fff',
-        border: isDark ? '1px solid #333' : '1px solid #e0e0e0',
-        borderRadius: '16px',
-        padding: '24px'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 style={{ margin: 0, color: isDark ? '#fff' : '#333', fontSize: '1.3rem', fontWeight: 'bold' }}>Entrenamientos Recientes</h2>
-          <span style={{ fontSize: '0.85rem', color: '#1dd1a1', fontWeight: '600' }}>{items.length} registros</span>
-        </div>
-        {workouts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '16px' }}>📊</div>
-            <p style={{ color: isDark ? '#aaa' : '#666', fontSize: '1rem' }}>{t('stats_no_data')}</p>
-            <p style={{ color: isDark ? '#888' : '#999', fontSize: '0.85rem', marginTop: '8px' }}>Comienza tu entrenamiento para ver estadísticas</p>
-          </div>
-        ) : (
-          <div style={{ maxHeight: '500px', overflowY: 'auto', WebkitOverflowScrolling: 'touch', paddingRight: '8px' }}>
-            {items.map((w, index) => (
-              <div key={w.id}
+    <StatSection
+      title="Entrenamientos recientes"
+      meta={items.length > 0 ? `${items.length} registros` : undefined}
+      isDark={isDark}
+      isMobile={isMobile}
+    >
+      {workouts.length === 0 ? (
+        <EmptyState
+          isDark={isDark}
+          icon="dumbbell"
+          title={t("stats_no_data")}
+          description="Comienza tu entrenamiento para ver estadísticas."
+        />
+      ) : (
+        <div
+          style={{
+            maxHeight: "500px",
+            overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
+            paddingRight: tk.space.sm,
+            display: "grid",
+            gap: tk.space.md,
+          }}
+        >
+          {items.map((w, index) => (
+            <motion.div
+              key={w.id}
               className="feeg-surface feeg-hover"
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: tk.motion.duration.base,
+                ease: tk.motion.ease.out,
+                delay: prefersReducedMotion ? 0 : index * tk.motion.stagger,
+              }}
               style={{
                 borderRadius: tk.radius.md,
-                padding: isMobile ? '14px' : tk.space.lg,
-                marginBottom: tk.space.md,
-                '--feeg-bg': tk.surfaceAlt,
-                '--feeg-border': tk.border,
-                '--feeg-hover-border': tk.accent,
+                padding: isMobile ? tk.space.md : tk.space.lg,
+                "--feeg-bg": tk.surfaceAlt,
+                "--feeg-border": tk.border,
+                "--feeg-hover-border": tk.accent,
               }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: tk.space.md,
+                  marginBottom: tk.space.sm,
+                }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '50%',
-                      backgroundColor: 'rgba(29, 209, 161, 0.1)',
-                      color: '#1dd1a1',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 'bold',
-                      fontSize: '0.9rem'
-                    }}>
-                      {index + 1}
-                    </div>
-                    <strong style={{ color: isDark ? '#fff' : '#333', fontSize: '1rem' }}>{w.name}</strong>
+                <div style={{ display: "flex", alignItems: "center", gap: tk.space.md, minWidth: 0 }}>
+                  <div
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: tk.radius.full,
+                      backgroundColor: tk.accentSoft,
+                      color: tk.accent,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: tk.weight.bold,
+                      fontSize: tk.fontSize.sm,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {index + 1}
                   </div>
-                  <span style={{ color: isDark ? '#888' : '#666', fontSize: '0.8rem', backgroundColor: isDark ? '#1a1a1a' : '#f0f0f0', padding: '4px 10px', borderRadius: '12px' }}>
-                    {getTimeAgo(w.completedAt)}
-                  </span>
+                  <strong
+                    style={{
+                      color: tk.text,
+                      fontSize: tk.fontSize.md,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {w.name}
+                  </strong>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '10px' }}>
-                  <MiniStat label="Ejercicios" value={w.exercises} isDark={isDark} />
-                  <MiniStat label="Series" value={w.series} isDark={isDark} />
-                  <MiniStat label="Reps" value={w.totalReps} isDark={isDark} />
-                  <MiniStat label="Volumen" value={(w.totalVolume || 0).toLocaleString()} isDark={isDark} />
-                </div>
+                <span
+                  style={{
+                    color: tk.textMuted,
+                    fontSize: tk.fontSize.xs,
+                    backgroundColor: tk.surface,
+                    border: `1px solid ${tk.border}`,
+                    padding: `${tk.space.xs} ${tk.space.md}`,
+                    borderRadius: tk.radius.pill,
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                  }}
+                >
+                  {getTimeAgo(w.completedAt)}
+                </span>
               </div>
-            ))}
-          </div>
-        )}
-      </section>
-    </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
+                  gap: tk.space.md,
+                }}
+              >
+                <MiniStat label="Ejercicios" value={w.exercises} isDark={isDark} />
+                <MiniStat label="Series" value={w.series} isDark={isDark} />
+                <MiniStat label="Reps" value={w.totalReps} isDark={isDark} />
+                <MiniStat label="Volumen" value={(w.totalVolume || 0).toLocaleString()} isDark={isDark} />
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </StatSection>
   );
 }

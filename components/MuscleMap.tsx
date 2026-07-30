@@ -86,12 +86,27 @@ export default function MuscleMap({
 
   const label = (group: MuscleGroup) => (labelForGroup ? labelForGroup(group) : group);
 
-  // La silueta va un punto por encima del fondo de la tarjeta para que el cuerpo se lea como una
-  // figura y no como un recorte; los músculos sin trabajar quedan aún más apagados, de modo que
-  // "no entrenado" se perciba como hueco y no como un color más de la escala.
-  const silhouetteFill = isDark ? '#232323' : '#e8ebee';
-  const silhouetteStroke = isDark ? '#2f2f2f' : '#d2d7dc';
-  const restFill = isDark ? '#2c2c2c' : '#dbe0e5';
+  // En este SVG la definición muscular NO la dibuja ningún trazo: cada músculo es un path relleno
+  // independiente y las separaciones entre ellos son el cuerpo asomando por los huecos. Así que la
+  // anatomía se ve, o no se ve, según cuánto se separen estos dos rellenos.
+  //
+  // La primera versión los puso a '#232323' (cuerpo) y '#2c2c2c' (músculo en reposo), doce puntos
+  // de diferencia: las piernas entrenadas se leían porque el mint contrasta con todo, pero el tren
+  // superior sin entrenar se fundía en una mancha uniforme y había que pasar el ratón para saber
+  // dónde estaba cada grupo. El músculo en reposo va ahora claramente por encima del cuerpo, de modo
+  // que la anatomía se lee en reposo y el color solo añade la intensidad.
+  // El relleno y el trazo no hacen el mismo trabajo, y por eso no se suben juntos: aclarar el
+  // relleno ilumina toda la figura y le come protagonismo al mint del heatmap, mientras que aclarar
+  // el trazo dibuja la línea sin encender el cuerpo. El peso del trazo está calibrado a 3.34:1
+  // sobre la silueta, que es exactamente el contraste que ya tiene `textFaint` sobre el fondo de la
+  // app: un tono que aquí está demostrado que se lee sin gritar.
+  const silhouetteFill = isDark ? '#1c1c1c' : '#eaeef2';
+  const silhouetteStroke = isDark ? '#2e2e2e' : '#ccd4dc';
+  const restFill = isDark ? '#3a3a3a' : '#d5dbe2';
+  const restStroke = isDark ? '#6e6e6e' : '#78828f';
+  // Sobre el mint no sirve una línea clara: ahí la separación tiene que ser más oscura que el
+  // relleno. Un negro translúcido funciona en los cuatro escalones de la rampa y en ambos temas.
+  const trainedStroke = 'rgba(0, 0, 0, 0.35)';
 
   const colorForLevel = (level: IntensityLevel) => (level === 0 ? restFill : tk.heat[level - 1]);
 
@@ -170,8 +185,12 @@ export default function MuscleMap({
                         key={i}
                         d={p.d}
                         fill={colorForLevel(level)}
-                        stroke={isActive ? tk.text : silhouetteStroke}
-                        strokeWidth={isActive ? 2.5 : p.strokeWidth}
+                        stroke={isActive ? tk.text : level === 0 ? restStroke : trainedStroke}
+                        // Los paths musculares no traen `stroke-width` propio (en el original no
+                        // llevaban trazo). En un viewBox de 660 de ancho que se pinta a ~250px,
+                        // 2 unidades quedan en algo menos de un píxel: define el borde sin que la
+                        // figura parezca contorneada.
+                        strokeWidth={isActive ? 3 : 2}
                         style={{
                           transition: `fill ${tk.motion.css.base}, stroke ${tk.motion.css.fast}`,
                         }}

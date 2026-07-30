@@ -12,3 +12,5 @@ export { default as LoadingOverlay } from "./LoadingOverlay";
 export { default as InteractionStyles } from "./InteractionStyles";
 export { default as ChipNav } from "./ChipNav";
 export { Skeleton, SkeletonPage } from "./Skeleton";
+export { default as RankIcon } from "./RankIcon";
+export { default as RankBadge } from "./RankBadge";

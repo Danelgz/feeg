@@ -95,17 +95,21 @@ export default function MuscleMap({
   // superior sin entrenar se fundía en una mancha uniforme y había que pasar el ratón para saber
   // dónde estaba cada grupo. El músculo en reposo va ahora claramente por encima del cuerpo, de modo
   // que la anatomía se lee en reposo y el color solo añade la intensidad.
-  // El relleno y el trazo no hacen el mismo trabajo, y por eso no se suben juntos: aclarar el
-  // relleno ilumina toda la figura y le come protagonismo al mint del heatmap, mientras que aclarar
-  // el trazo dibuja la línea sin encender el cuerpo. El peso del trazo está calibrado a 3.34:1
-  // sobre la silueta, que es exactamente el contraste que ya tiene `textFaint` sobre el fondo de la
-  // app: un tono que aquí está demostrado que se lee sin gritar.
-  const silhouetteFill = isDark ? '#1c1c1c' : '#eaeef2';
-  const silhouetteStroke = isDark ? '#2e2e2e' : '#ccd4dc';
-  const restFill = isDark ? '#3a3a3a' : '#d5dbe2';
-  const restStroke = isDark ? '#6e6e6e' : '#78828f';
-  // Sobre el mint no sirve una línea clara: ahí la separación tiene que ser más oscura que el
-  // relleno. Un negro translúcido funciona en los cuatro escalones de la rampa y en ambos temas.
+  // Cuerpo blanco en los dos temas. En oscuro la figura recorta contra la tarjeta y es el elemento
+  // más claro de la pantalla; en claro hay que bajarla un punto, porque un blanco puro sobre una
+  // tarjeta blanca no sería una figura, sería nada.
+  //
+  // El relleno y el trazo no hacen el mismo trabajo, y por eso no se mueven juntos: el relleno
+  // distingue el músculo de la masa del cuerpo, y el trazo es el que dibuja la línea anatómica. El
+  // trazo está calibrado a 3.34:1 sobre la silueta, el mismo contraste que ya tiene `textFaint`
+  // sobre el fondo de la app — un peso que aquí está demostrado que se lee sin gritar.
+  const silhouetteFill = isDark ? '#f2f5f7' : '#e4e9ee';
+  const silhouetteStroke = isDark ? '#c9d2da' : '#c2cad3';
+  const restFill = isDark ? '#dde3ea' : '#cfd7e0';
+  const restStroke = isDark ? '#7c8794' : '#727d8a';
+  // Sobre los escalones claros de la rampa una línea clara no separaría nada, así que la
+  // separación entre músculos entrenados va en negro translúcido: funciona igual sobre el mint
+  // claro del nivel 1 que sobre el verde profundo del 4.
   const trainedStroke = 'rgba(0, 0, 0, 0.35)';
 
   const colorForLevel = (level: IntensityLevel) => (level === 0 ? restFill : tk.heat[level - 1]);

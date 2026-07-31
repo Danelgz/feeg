@@ -32,9 +32,18 @@ describe("calculateOneRM", () => {
     expect(calculateOneRM(80, 8)).toBeCloseTo(80 * (36 / 29), 5);
   });
 
-  it("falls back to the weight itself once reps reach the formula's degenerate range", () => {
-    expect(calculateOneRM(50, 37)).toBe(50);
-    expect(calculateOneRM(50, 50)).toBe(50);
+  it("satura a partir de doce repeticiones en vez de extrapolar", () => {
+    // Brzycki sólo es fiable hasta ~12 reps: a 25 multiplicaba por 3 y a 36 por 36, y ese disparate
+    // era lo que colaba series de aislamiento a repeticiones altas como 1RM de nivel máximo.
+    const ceiling = 50 * (36 / 25);
+    expect(calculateOneRM(50, 12)).toBeCloseTo(ceiling, 5);
+    expect(calculateOneRM(50, 25)).toBeCloseTo(ceiling, 5);
+    expect(calculateOneRM(50, 50)).toBeCloseTo(ceiling, 5);
+  });
+
+  it("no da un salto en el borde de la fórmula", () => {
+    // La versión anterior devolvía 36× el peso a 36 reps y el peso tal cual a 37: un acantilado.
+    expect(calculateOneRM(50, 36)).toBeCloseTo(calculateOneRM(50, 37), 5);
   });
 });
 

@@ -14,6 +14,36 @@ export type Sex = 'male' | 'female' | null;
 /** Cuántos ejercicios de un grupo entran en su media. */
 export const GROUP_TOP_N = 3;
 
+/**
+ * Curvatura de la escalera. 1 sería lineal entre el suelo y el techo del baremo.
+ *
+ * La primera versión era lineal y el resultado fue que casi cualquiera con unos meses de gimnasio
+ * salía por la mitad alta de la escalera, y con un par de aislamientos a repeticiones altas se
+ * plantaba en el máximo de todos los grupos. El problema es que lo lineal reparte los treinta
+ * niveles a partes iguales, cuando la dificultad real no se reparte así: pasar de 0.5× a 0.6× el
+ * peso corporal en banca son unas semanas, y de 1.9× a 2.0× puede ser un año.
+ *
+ * Con exponente 1.6 la mitad del baremo deja de ser el nivel 15 y pasa a ser el nivel 10, mientras
+ * que el techo sigue exigiendo exactamente lo mismo que antes. Es decir: no se han movido los
+ * anclajes de la tabla de baremos, se ha repartido el camino entre ellos como cuesta recorrerlo.
+ *
+ * Calibrado sobre press de banca con 80 kg de peso corporal: 80 kg → Aprendiz, 120 kg → Atleta,
+ * 140 kg → Élite, 160 kg → Leyenda.
+ */
+export const LEVEL_CURVE_EXPONENT = 1.6;
+
+/** Progreso [0,1] dentro del baremo → nivel 1-30, aplicando la curvatura. */
+function levelFromProgress(progress: number): number {
+  const p = Math.max(0, Math.min(1, progress));
+  return UNRANKED_LEVEL + (MAX_LEVEL - UNRANKED_LEVEL) * Math.pow(p, LEVEL_CURVE_EXPONENT);
+}
+
+/** Inversa de `levelFromProgress`: qué progreso del baremo hace falta para un nivel dado. */
+function progressForLevel(level: number): number {
+  const clamped = Math.max(UNRANKED_LEVEL, Math.min(MAX_LEVEL, level));
+  return Math.pow((clamped - UNRANKED_LEVEL) / (MAX_LEVEL - UNRANKED_LEVEL), 1 / LEVEL_CURVE_EXPONENT);
+}
+
 export interface ExerciseInput {
   /** 1RM estimado sobre el peso registrado, tal como lo calcula computePersonalRecords. */
   best1RM: number;
@@ -65,9 +95,9 @@ export function resolveStandard(standard: StrengthStandard, sex: Sex): { floor: 
 /**
  * Nivel de un ejercicio concreto, o `null` si no es puntuable.
  *
- * Es lineal entre el suelo y el techo del baremo. Lineal en múltiplos de peso corporal ya produce
- * por sí solo la desaceleración esperada — subir de 1.5× a 1.6× en banca cuesta mucho más que de
- * 0.5× a 0.6× —, así que no hace falta curvar nada encima.
+ * El progreso dentro del baremo se curva con LEVEL_CURVE_EXPONENT antes de convertirse en nivel: la
+ * mitad de la tabla no vale media escalera, porque la segunda mitad cuesta muchísimo más que la
+ * primera.
  */
 export function computeExerciseLevel(
   exerciseName: string,
@@ -94,8 +124,7 @@ export function computeExerciseLevel(
   const span = ceiling - floor;
   if (span <= 0) return null;
 
-  const raw = UNRANKED_LEVEL + (MAX_LEVEL - UNRANKED_LEVEL) * ((ratio - floor) / span);
-  const level = Math.max(UNRANKED_LEVEL, Math.min(MAX_LEVEL, raw));
+  const level = levelFromProgress((ratio - floor) / span);
 
   const info = getExerciseInfo(exerciseName);
   return { exercise: exerciseName, group: info?.group || 'Otros', level, ratio, best1RM: input.best1RM };
@@ -131,8 +160,7 @@ export function weightForLevel(
   if (!standard || !Number.isFinite(bodyweightKg) || bodyweightKg <= 0) return null;
 
   const { floor, ceiling } = resolveStandard(standard, sex);
-  const clamped = Math.max(UNRANKED_LEVEL, Math.min(MAX_LEVEL, level));
-  const ratio = floor + ((clamped - UNRANKED_LEVEL) / (MAX_LEVEL - UNRANKED_LEVEL)) * (ceiling - floor);
+  const ratio = floor + progressForLevel(level) * (ceiling - floor);
   const totalLoad = ratio * bodyweightKg;
 
   return standard.bodyweightLoaded ? totalLoad - bodyweightKg : totalLoad;

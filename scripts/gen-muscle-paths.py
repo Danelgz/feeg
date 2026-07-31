@@ -19,6 +19,7 @@ GROUP_MAP = {
     "traps": "Espalda",
     "traps-middle": "Espalda",
     "triceps": "Tríceps",
+    "biceps": "Bíceps",
     "forearms": "Antebrazo",
     "quads": "Cuádriceps",
     "hamstrings": "Femoral",
@@ -58,7 +59,15 @@ for idx, view in enumerate(views):
     if viewbox is None:
         viewbox = re.search(r'viewBox="([^"]+)"', chunk).group(1)
 
-    gs = [(m.start(), m.group(1)) for m in re.finditer(r'<g\s+id="([^"]+)"[^>]*>', chunk)]
+    # El `id` se busca en CUALQUIER posición del `<g>`, no solo pegado a la etiqueta. El asset mezcla
+    # los dos órdenes (`<g id="quads" class="...">` pero `<g class="..." id="biceps">`), y la versión
+    # anterior de esta regex exigía id primero: el bíceps no se reconocía como grupo y sus paths caían
+    # dentro del trozo del grupo anterior, así que el mapa pintaba el bíceps como si fuera antebrazo.
+    gs = []
+    for m in re.finditer(r"<g\b([^>]*)>", chunk):
+        gid = re.search(r'id="([^"]+)"', m.group(1))
+        if gid:
+            gs.append((m.start(), gid.group(1)))
     gs.append((len(chunk), None))
 
     silhouette = []
@@ -100,9 +109,12 @@ lines.append("// Geometría anatómica del mapa muscular: silueta + regiones por
 lines.append("// posterior. Sustituye a los rectángulos y elipses del mapa esquemático anterior, que vivían")
 lines.append("// en muscleMapRegions.ts.")
 lines.append("//")
-lines.append("// Dos grupos de MUSCLE_GROUPS no tienen región dibujable en este asset y por eso no aparecen:")
-lines.append("// 'Cuello' (el SVG no trae cuello) y 'Bíceps' (la vista frontal no incluye grupo de bíceps).")
-lines.append("// MuscleMap los omite del cuerpo; siguen contando en 'Series por grupo'.")
+lines.append("// El único grupo de MUSCLE_GROUPS que no tiene región dibujable en este asset es 'Cuello':")
+lines.append("// el SVG no trae cuello. MuscleMap lo omite del cuerpo; sigue contando en 'Series por grupo'.")
+lines.append("//")
+lines.append("// El bíceps SÍ está, aunque durante un tiempo no se vio: su <g> lleva el `id` detrás de la")
+lines.append("// `class` y la regex de extracción exigía el `id` pegado a la etiqueta, así que sus paths se")
+lines.append("// colaban en el grupo anterior y el mapa los pintaba como antebrazo.")
 lines.append("")
 lines.append("export interface MusclePath {")
 lines.append("  d: string;")

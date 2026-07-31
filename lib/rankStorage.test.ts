@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { diffRanks, type RankSnapshot } from './rankStorage';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { diffRanks, readRankSnapshot, writeRankSnapshot, type RankSnapshot } from './rankStorage';
 import { getRankPosition } from '../data/ranks';
 
 const rankOfLevel = (level: number) => getRankPosition(level).rank.index;
@@ -8,6 +8,29 @@ const snapshot = (overall: number, groups: Record<string, number> = {}): RankSna
   overall,
   groups,
   prestigeLevels: 0,
+});
+
+describe('lectura y escritura de la foto', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('devuelve lo que acaba de guardar', () => {
+    writeRankSnapshot(snapshot(12, { Pecho: 14 }));
+    expect(readRankSnapshot()).toEqual(snapshot(12, { Pecho: 14 }));
+  });
+
+  it('descarta una foto de una fórmula anterior', () => {
+    // Escenario real: al recalibrar la escalera los niveles bajaron, y quien tuviera un 30 guardado
+    // se habría quedado sin volver a ver un "has subido de rango" jamás, porque 30 ya no se alcanza.
+    localStorage.setItem(
+      'rankLevelsSnapshot',
+      JSON.stringify({ overall: 30, groups: { Pecho: 30 }, prestigeLevels: 0 })
+    );
+    expect(readRankSnapshot()).toBeNull();
+
+    // Y a partir del siguiente entreno vuelve a haber referencia con la que comparar.
+    writeRankSnapshot(snapshot(11));
+    expect(readRankSnapshot()?.overall).toBe(11);
+  });
 });
 
 describe('diffRanks', () => {

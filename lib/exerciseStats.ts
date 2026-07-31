@@ -124,12 +124,30 @@ export function weightUnitFor(exercise: { exerciseType?: string; unit?: string }
   return "kg";
 }
 
-/** 1RM estimado, fórmula de Brzycki (misma que ya usa pages/exercise-history.js). */
+/**
+ * Repeticiones a partir de las cuales Brzycki deja de estimar y empieza a inventar.
+ *
+ * La fórmula está validada hasta ~10-12 repeticiones. Por encima, el denominador `37 - reps` se
+ * acerca a cero y el resultado se dispara: 20 reps ya multiplican por 2.1, 30 reps por 5.1 y 36 reps
+ * por 36. Una serie de 50 kg × 25 en una extensión de cuádriceps salía como un 1RM de 150 kg, que es
+ * lo que estaba regalando el rango máximo a series de aislamiento a repeticiones altas.
+ */
+export const ONE_RM_MAX_REPS = 12;
+
+/**
+ * 1RM estimado, fórmula de Brzycki, saturada a ONE_RM_MAX_REPS.
+ *
+ * Saturar no es perder información: por encima de doce repeticiones lo que limita ya no es la fuerza
+ * máxima sino la resistencia, así que la estimación deja de responder a la pregunta. Se queda en el
+ * último valor que la fórmula sostiene en vez de extrapolar.
+ *
+ * Esto sustituye a un caso especial que además tenía un salto absurdo: a 36 repeticiones devolvía 36
+ * veces el peso y a 37 devolvía el peso tal cual.
+ */
 export function calculateOneRM(weight: number, reps: number): number {
   if (!weight || !reps) return 0;
   if (reps === 1) return weight;
-  if (reps >= 37) return weight; // fórmula degenera por encima de 36 reps, evita división por <=0
-  return weight * (36 / (37 - reps));
+  return weight * (36 / (37 - Math.min(reps, ONE_RM_MAX_REPS)));
 }
 
 const toNumber = (v: number | string | undefined): number => {

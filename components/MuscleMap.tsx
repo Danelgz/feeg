@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { getTokens } from '../lib/tokens';
+import { slugify } from '../lib/slug';
 import {
   ANATOMY_VIEW_BOX,
   BACK_MUSCLES,
@@ -12,6 +13,18 @@ import {
 import type { BodyView, MuscleGroup } from '../data/muscleMapRegions';
 
 export type IntensityLevel = 0 | 1 | 2 | 3 | 4;
+
+/** Relleno con volumen: `from` es la luz y `to` la sombra del mismo color. */
+export interface MuscleFill {
+  from: string;
+  to: string;
+}
+
+/** Id estable para el `<linearGradient>` de un grupo. Único por vista: hay dos SVG en la página y
+ *  un id repetido haría que el segundo cuerpo tirase del degradado del primero. */
+function gradientId(view: BodyView, group: string): string {
+  return `feeg-muscle-${view}-${slugify(group)}`;
+}
 
 export interface MuscleMapProps {
   /** Series entrenadas por grupo muscular (p. ej. en la última semana). */
@@ -26,8 +39,14 @@ export interface MuscleMapProps {
    * cuerpo para la vista de rangos sin duplicar el componente ni los 117 paths: la geometría y la
    * interacción son idénticas, sólo cambia qué significa el color. Devolver `null` deja el grupo en
    * el tono de "sin datos".
+   *
+   * Devolver un par `{ from, to }` en vez de un color plano tiñe el músculo con un degradado. No es
+   * decoración: sobre un cuerpo blanco, un relleno plano de un solo tono se lee apagado por mucha
+   * saturación que tenga, porque no hay ningún gradiente de luz que le dé volumen. Con dos tonos del
+   * mismo color el músculo se lee como un cuerpo iluminado y el color gana fuerza sin cambiar de
+   * paleta.
    */
-  colorForGroup?: (group: MuscleGroup) => string | null;
+  colorForGroup?: (group: MuscleGroup) => string | MuscleFill | null;
   /** Texto de la franja de lectura. Por defecto: series y nivel de intensidad. */
   readoutForGroup?: (group: MuscleGroup, value: number) => ReactNode;
   /** Leyenda inferior. Por defecto: la escala de intensidad de cuatro escalones. */
@@ -162,6 +181,22 @@ export default function MuscleMap({
             style={{ margin: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: tk.space.sm }}
           >
             <svg viewBox={ANATOMY_VIEW_BOX} style={{ width: '100%', height: 'auto', display: 'block' }}>
+              <defs>
+                {Object.keys(muscles).map((groupKey) => {
+                  const fill = colorForGroup?.(groupKey as MuscleGroup);
+                  if (!fill || typeof fill === 'string') return null;
+                  return (
+                    // Diagonal y no vertical: sigue la dirección en la que están dibujadas la
+                    // mayoría de las fibras, así que la luz cae a lo largo del músculo en vez de
+                    // cortarlo por la mitad.
+                    <linearGradient key={groupKey} id={gradientId(view, groupKey)} x1="0" y1="0" x2="0.7" y2="1">
+                      <stop offset="0%" stopColor={fill.from} />
+                      <stop offset="100%" stopColor={fill.to} />
+                    </linearGradient>
+                  );
+                })}
+              </defs>
+
               {silhouette.map((p, i) => (
                 <path
                   key={`sil-${i}`}
@@ -178,8 +213,15 @@ export default function MuscleMap({
                 const level = getIntensity(value, thresholds);
                 const isActive = active?.group === group;
                 const describe = level === 0 ? 'sin entrenar' : LEVEL_LABELS[level];
-                const overrideColor = colorForGroup?.(group);
+                const override = colorForGroup?.(group);
+                const overrideColor =
+                  override && typeof override !== 'string' ? `url(#${gradientId(view, group)})` : override;
                 const groupFill = colorForGroup ? overrideColor ?? restFill : colorForLevel(level);
+                // El trazo no puede tirar de `url(#...)`: sobre un degradado se dibujaría el mismo
+                // degradado en el borde y la separación entre músculos desaparecería. Se usa el tono
+                // de sombra del par, que es el que ya cierra la forma por abajo.
+                const groupStroke =
+                  override && typeof override !== 'string' ? override.to : groupFill;
 
                 const show = () => setActive({ group, value, level });
                 const clear = () => setActive(null);
@@ -217,7 +259,15 @@ export default function MuscleMap({
                         key={i}
                         d={p.d}
                         fill={groupFill}
-                        stroke={isActive ? tk.text : groupFill === restFill ? restStroke : trainedStroke}
+                        stroke={
+                          isActive
+                            ? tk.text
+                            : groupFill === restFill
+                              ? restStroke
+                              : groupStroke === groupFill
+                                ? trainedStroke
+                                : groupStroke
+                        }
                         // Los paths musculares no traen `stroke-width` propio (en el original no
                         // llevaban trazo). En un viewBox de 660 de ancho que se pinta a ~250px,
                         // 2 unidades quedan en algo menos de un píxel: define el borde sin que la

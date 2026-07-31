@@ -10,6 +10,21 @@
 
 const STORAGE_KEY = 'rankLevelsSnapshot';
 
+/**
+ * Versión de la fórmula que produjo los niveles guardados.
+ *
+ * Una foto sólo sirve para comparar contra niveles calculados de la MISMA manera. Al recalibrar la
+ * escalera (curva de dificultad, saturación del 1RM estimado) los niveles bajaron para todo el
+ * mundo, y una foto vieja convertía la detección de subidas en algo imposible de satisfacer: había
+ * gente con un 30 guardado que ya no se puede volver a alcanzar, así que no habría vuelto a ver un
+ * "has subido de rango" nunca más — sin ningún error, sin nada en consola.
+ *
+ * Al subir este número, la foto anterior se descarta y se trata como si no hubiera ninguna: se pierde
+ * el anuncio de UN entreno y a partir del siguiente todo vuelve a funcionar. Súbelo siempre que se
+ * toque cómo se calcula un nivel.
+ */
+const SNAPSHOT_VERSION = 2;
+
 export interface RankSnapshot {
   /** Nivel global en el momento de la foto. */
   overall: number;
@@ -35,6 +50,9 @@ export function readRankSnapshot(): RankSnapshot | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed.overall !== 'number') return null;
+    // Una foto de otra fórmula no es comparable. `undefined` cubre las anteriores a que esto
+    // existiera, que son justo las que guardaron los niveles inflados.
+    if (parsed.version !== SNAPSHOT_VERSION) return null;
     return { overall: parsed.overall, groups: parsed.groups || {}, prestigeLevels: parsed.prestigeLevels || 0 };
   } catch {
     return null;
@@ -44,7 +62,7 @@ export function readRankSnapshot(): RankSnapshot | null {
 export function writeRankSnapshot(snapshot: RankSnapshot): void {
   if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...snapshot, version: SNAPSHOT_VERSION }));
   } catch {
     // Cuota llena o almacenamiento bloqueado: perder la foto sólo significa no anunciar una subida,
     // así que no merece romper el final del entrenamiento.

@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { getTokens } from '../../lib/tokens';
 import { getRankPosition } from '../../data/ranks';
 import { getRankableGroups, type ExerciseRank, type GroupRank, type Sex } from '../../lib/rankEngine';
+import { slugify } from '../../lib/slug';
 import { ExerciseRankList, Icon, RankArt } from '../ui';
 
 interface MuscleRankListProps {
@@ -20,18 +21,10 @@ interface MuscleRankListProps {
 
 /**
  * Id del DOM de la fila de un grupo, para que quien la abra desde fuera pueda hacerle scroll.
- *
- * Los nombres llevan tilde ('Bíceps', 'Cuádriceps') y espacios ('Cuerpo Completo'), así que se
- * normalizan: un id con acentos es válido en HTML5 pero no sobrevive a `querySelector`, que lo
- * interpreta como selector CSS.
+ * Ver `slugify` para por qué el nombre no se usa tal cual.
  */
 export function muscleRankRowId(group: string): string {
-  const slug = group
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, '-')
-    .toLowerCase();
-  return `rank-row-${slug}`;
+  return `rank-row-${slugify(group)}`;
 }
 
 /**
@@ -40,7 +33,7 @@ export function muscleRankRowId(group: string): string {
  * Resuelve el agujero más grande que tenía la pantalla de rangos: hasta ahora la única forma de ver
  * el rango de un grupo era pasar el ratón por su región del mapa (en móvil, entrar y volver de una
  * pantalla de detalle) de uno en uno. Y había grupos con rango calculado que no se veían en NINGÚN
- * sitio, porque el asset anatómico no tiene región para ellos: Bíceps y Cuello no están dibujados, y
+ * sitio, porque el asset anatómico no tiene región para ellos: Cuello no está dibujado y
  * Aductor/Abductor ni siquiera son parte del mapa.
  *
  * Se despliega en el sitio en vez de navegar a una pantalla aparte: la pregunta "¿por qué mi espalda

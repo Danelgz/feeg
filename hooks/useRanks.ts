@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useUser } from '../context/UserContext';
-import { computePersonalRecords, type PersonalRecordsMap } from '../lib/exerciseStats';
+import { calculateOneRM, computePersonalRecords, type PersonalRecordsMap } from '../lib/exerciseStats';
 import {
   canComputeRanks,
   computeExerciseRanks,
@@ -81,8 +81,10 @@ function toEngineInputs(records: PersonalRecordsMap, bodyweightKg: number): Reco
       for (const [weightKey, reps] of Object.entries(record.byWeight)) {
         const weight = Number(weightKey);
         // Brzycki penaliza por repeticiones, así que una serie ligera a muchas reps puede ganar a
-        // una pesada a una sola; comparamos el resultado final, no la carga.
-        const score = (bodyweightKg + weight) * (36 / (37 - Math.min(36, reps)));
+        // una pesada a una sola; comparamos el resultado final, no la carga. Se usa la función
+        // compartida y no una copia de la fórmula: la copia clampaba a 36 repeticiones, donde
+        // Brzycki multiplica por 36, y elegía como "mejor serie" cualquier serie interminable.
+        const score = calculateOneRM(bodyweightKg + weight, reps);
         if (score > bestScore) {
           bestScore = score;
           best = { weight, reps };

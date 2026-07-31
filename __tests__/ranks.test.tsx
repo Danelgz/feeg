@@ -29,6 +29,7 @@ vi.mock("../lib/firebase", () => ({
 
 import { UserProvider } from "../context/UserContext";
 import Statistics from "../pages/statistics";
+import { FRONT_MUSCLES } from "../data/muscleMapPaths";
 
 const BODYWEIGHT = 80;
 
@@ -133,6 +134,27 @@ describe("estadísticas · rangos", () => {
 
     // Cuello no tiene ni un ejercicio puntuable: no es que falte entrenarlo, es que no puede subir.
     expect(within(list).queryByText("Cuello")).toBeNull();
+  });
+
+  it("dibuja el bíceps como grupo propio del cuerpo, no como parte del antebrazo", async () => {
+    renderRanks();
+    await screen.findByText("Tu cuerpo por rango");
+
+    // El <g> del bíceps lleva el `id` detrás de la `class` en el asset y la extracción lo perdía:
+    // sus paths acababan dentro del grupo anterior, así que el mapa lo pintaba como antebrazo.
+    expect(FRONT_MUSCLES["Bíceps"]?.length).toBeGreaterThan(0);
+    expect(await screen.findByRole("button", { name: /^Bíceps:/ })).toBeTruthy();
+  });
+
+  it("tiñe los músculos con volumen en lugar de un color plano", async () => {
+    renderRanks();
+    await screen.findByText("Tu cuerpo por rango");
+
+    // Sobre el cuerpo blanco un relleno de un solo tono se lee apagado; cada grupo con rango usa el
+    // par color/accent de su rango como degradado.
+    const region = await screen.findByRole("button", { name: /^Cuádriceps:/ });
+    const painted = region.querySelector("path");
+    expect(painted?.getAttribute("fill")).toMatch(/^url\(#feeg-muscle-(front|back)-cuadriceps\)$/);
   });
 
   it("manda a registrar el peso corporal cuando no hay con qué comparar", async () => {

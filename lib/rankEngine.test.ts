@@ -7,6 +7,7 @@ import {
   computeGroupRanks,
   computeOverallLevel,
   getRankableGroups,
+  LEVEL_CURVE_EXPONENT,
   nextLevelTarget,
   nextRankMilestone,
   resolveStandard,
@@ -57,11 +58,37 @@ describe('computeExerciseLevel', () => {
     expect(computeExerciseLevel('Press de Banca (Barra)', { best1RM: 160 }, BW, 'male')!.level).toBeCloseTo(MAX_LEVEL, 5);
   });
 
-  it('interpola linealmente entre suelo y techo', () => {
-    // Punto medio: 96 kg -> nivel 15.5
+  it('curva el camino: la mitad del baremo no es media escalera', () => {
+    // 96 kg es el punto medio exacto entre el suelo (32) y el techo (160). Con reparto lineal eso
+    // daba el nivel 15.5, que es la raíz de que casi cualquiera saliera por la mitad alta de la
+    // escalera. Con la curva cae al 10.6: sigue siendo la mitad del baremo, pero ya no la mitad de
+    // los rangos, porque la segunda mitad cuesta muchísimo más que la primera.
     const rank = computeExerciseLevel('Press de Banca (Barra)', { best1RM: 96 }, BW, 'male')!;
-    expect(rank.level).toBeCloseTo(15.5, 5);
     expect(rank.ratio).toBeCloseTo(1.2, 5);
+    expect(rank.level).toBeCloseTo(1 + 29 * Math.pow(0.5, LEVEL_CURVE_EXPONENT), 5);
+    expect(rank.level).toBeLessThan(15.5);
+  });
+
+  it('deja los rangos altos fuera del alcance de un levantamiento intermedio', () => {
+    // El síntoma que motivó la curva: gente de nivel intermedio con el rango máximo en todo.
+    // Un press de banca de 1× el peso corporal es un levantamiento decente de alguien que lleva unos
+    // meses entrenando, y tiene que salir en la primera mitad de la escalera, no en la segunda.
+    const intermedio = computeExerciseLevel('Press de Banca (Barra)', { best1RM: BW }, BW, 'male')!;
+    expect(intermedio.level).toBeLessThan(MAX_LEVEL / 2);
+
+    // Y el nivel 30 sigue costando exactamente lo mismo que antes: el techo del baremo. La curva
+    // reparte el camino, no mueve los anclajes.
+    const techo = computeExerciseLevel('Press de Banca (Barra)', { best1RM: 160 }, BW, 'male')!;
+    expect(techo.level).toBe(MAX_LEVEL);
+  });
+
+  it('nunca baja de nivel al levantar más', () => {
+    let previo = 0;
+    for (let kg = 32; kg <= 160; kg += 4) {
+      const nivel = computeExerciseLevel('Press de Banca (Barra)', { best1RM: kg }, BW, 'male')!.level;
+      expect(nivel, `${kg} kg`).toBeGreaterThanOrEqual(previo);
+      previo = nivel;
+    }
   });
 
   it('acota en vez de desbordar la escalera', () => {
@@ -139,9 +166,10 @@ describe('weightForLevel / nextLevelTarget', () => {
 
   it('apunta al siguiente entero, no al nivel actual más uno', () => {
     const current = computeExerciseLevel('Press de Banca (Barra)', { best1RM: 96 }, BW, 'male')!;
-    expect(current.level).toBeCloseTo(15.5, 5);
     const target = nextLevelTarget('Press de Banca (Barra)', current.level, current.best1RM, BW, 'male')!;
-    expect(target.targetLevel).toBe(16);
+    expect(current.level).toBeGreaterThan(10);
+    expect(current.level).toBeLessThan(11);
+    expect(target.targetLevel).toBe(11);
     expect(target.deltaKg).toBeGreaterThan(0);
   });
 
@@ -183,18 +211,19 @@ describe('cobertura de baremos', () => {
 
 describe('computeGroupRanks', () => {
   it('toma el nivel del mejor ejercicio, y expone la media de los N mejores aparte', () => {
-    const ranks = computeGroupRanks(
-      {
-        'Press de Banca (Barra)': { best1RM: 160 },              // nivel 30
-        'Press de Banca Inclinado (Barra)': { best1RM: 132 },    // nivel 30
-        'Press de Banca en Declive (Barra)': { best1RM: 96 },    // nivel ~15.5
-        'Press de Banca (Mancuerna)': { best1RM: 12 },           // nivel 1
-      },
-      BW,
-      'male'
-    );
+    const inputs = {
+      'Press de Banca (Barra)': { best1RM: 160 },              // techo del baremo -> nivel 30
+      'Press de Banca Inclinado (Barra)': { best1RM: 132 },    // techo del baremo -> nivel 30
+      'Press de Banca en Declive (Barra)': { best1RM: 96 },    // mitad del baremo
+      'Press de Banca (Mancuerna)': { best1RM: 12 },           // suelo del baremo -> nivel 1
+    };
+    const ranks = computeGroupRanks(inputs, BW, 'male');
+    // El nivel del tercero sale del propio motor y no de un número escrito a mano: así este test
+    // comprueba cómo se agrega el grupo, no cómo está calibrada la curva (que tiene los suyos).
+    const tercero = computeExerciseLevel('Press de Banca en Declive (Barra)', { best1RM: 96 }, BW, 'male')!;
+
     expect(ranks.Pecho.level).toBeCloseTo(30, 5);
-    expect(ranks.Pecho.averageTopN).toBeCloseTo((30 + 30 + 15.5) / 3, 5);
+    expect(ranks.Pecho.averageTopN).toBeCloseTo((30 + 30 + tercero.level) / 3, 5);
     expect(ranks.Pecho.countedExercises).toBe(GROUP_TOP_N);
     expect(ranks.Pecho.rankableExercises).toBe(4);
   });
@@ -230,10 +259,11 @@ describe('computeGroupRanks', () => {
   });
 
   it('usa el único ejercicio disponible cuando el grupo tiene uno solo', () => {
+    const solo = computeExerciseLevel('Press de Banca (Barra)', { best1RM: 96 }, BW, 'male')!;
     const ranks = computeGroupRanks(bench(96), BW, 'male');
     expect(ranks.Pecho.countedExercises).toBe(1);
-    expect(ranks.Pecho.level).toBeCloseTo(15.5, 5);
-    expect(ranks.Pecho.averageTopN).toBeCloseTo(15.5, 5);
+    expect(ranks.Pecho.level).toBeCloseTo(solo.level, 5);
+    expect(ranks.Pecho.averageTopN).toBeCloseTo(solo.level, 5);
   });
 
   it('ignora por completo los ejercicios sin baremo', () => {
@@ -325,14 +355,30 @@ describe('nextRankMilestone', () => {
   });
 
   it('elige por esfuerzo relativo, no por kilos absolutos', () => {
-    // Al curl le faltan 1.5 kg y a la sentadilla 3.0: en kilos gana el curl. Pero 1.5 kg sobre una
-    // marca de 39 es un 3.8% y 3 kg sobre 97.7 es un 3.1%, así que quien está de verdad más cerca
-    // es la sentadilla.
-    const milestone = milestoneFor({
-      'Sentadilla (Barra)': { best1RM: 97.6896551 },
-      'Curl de Bíceps (Barra)': { best1RM: 39.1896551 },
+    // Se colocan las dos marcas a una distancia conocida de su siguiente nivel, calculando el peso
+    // objetivo con el propio motor en vez de escribirlo a mano: así el test sobrevive a un cambio de
+    // calibración de la curva, que es exactamente lo que rompió la versión anterior.
+    const justBelow = (exercise: string, targetLevel: number, deltaKg: number) => ({
+      best1RM: weightForLevel(exercise, targetLevel, BW, 'male')! - deltaKg,
     });
 
+    const inputs = {
+      'Sentadilla (Barra)': justBelow('Sentadilla (Barra)', 12, 3),
+      'Curl de Bíceps (Barra)': justBelow('Curl de Bíceps (Barra)', 17, 1.3),
+    };
+
+    // Premisa del test, comprobada y no supuesta: en kilos el curl está más cerca...
+    const [squat, curl] = ['Sentadilla (Barra)', 'Curl de Bíceps (Barra)'].map((exercise) => {
+      const rank = computeExerciseLevel(exercise, inputs[exercise as keyof typeof inputs], BW, 'male')!;
+      return nextLevelTarget(exercise, rank.level, rank.best1RM, BW, 'male')!;
+    });
+    expect(curl.deltaKg).toBeLessThan(squat.deltaKg);
+    // ...pero en porcentaje sobre la marca actual, el que de verdad está a un paso es la sentadilla.
+    expect(curl.deltaKg / inputs['Curl de Bíceps (Barra)'].best1RM).toBeGreaterThan(
+      squat.deltaKg / inputs['Sentadilla (Barra)'].best1RM
+    );
+
+    const milestone = milestoneFor(inputs);
     expect(milestone?.exercise).toBe('Sentadilla (Barra)');
     expect(milestone?.group).toBe('Cuádriceps');
     expect(milestone?.deltaKg).toBeCloseTo(3, 2);

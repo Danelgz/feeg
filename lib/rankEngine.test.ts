@@ -6,7 +6,9 @@ import {
   computeExerciseRanks,
   computeGroupRanks,
   computeOverallLevel,
+  getRankableGroups,
   nextLevelTarget,
+  nextRankMilestone,
   resolveStandard,
   weightForLevel,
 } from './rankEngine';
@@ -283,5 +285,61 @@ describe('canComputeRanks', () => {
     expect(canComputeRanks(0)).toBe(false);
     expect(canComputeRanks(null)).toBe(false);
     expect(canComputeRanks(undefined)).toBe(false);
+  });
+});
+
+describe('getRankableGroups', () => {
+  it('incluye los grupos con baremo y deja fuera los que no lo tienen', () => {
+    const groups = getRankableGroups();
+    expect(groups).toContain('Pecho');
+    expect(groups).toContain('Abdomen');
+    // Cuello no tiene ni un solo ejercicio puntuable: no es que falte entrenarlo, es que su rango
+    // no existe. Enseñarlo como pendiente mandaría al usuario a perseguir algo inalcanzable.
+    expect(groups).not.toContain('Cuello');
+    expect(groups).not.toContain('Movilidad');
+  });
+});
+
+describe('nextRankMilestone', () => {
+  const milestoneFor = (inputs: Record<string, { best1RM: number }>) =>
+    nextRankMilestone(
+      computeExerciseRanks(inputs, BW, 'male'),
+      computeGroupRanks(inputs, BW, 'male'),
+      BW,
+      'male'
+    );
+
+  it('no devuelve nada sin ejercicios puntuables', () => {
+    expect(nextRankMilestone([], {}, BW, 'male')).toBeNull();
+  });
+
+  it('ignora los ejercicios que no mueven el nivel de su grupo', () => {
+    // Las dos son Cuádriceps. La goblet está a un nivel muy inferior, así que subirla no cambia el
+    // rango del grupo (que es su máximo) por barata que sea.
+    const milestone = milestoneFor({
+      'Sentadilla (Barra)': { best1RM: 170 },
+      'Sentadilla Goblet (Mancuerna)': { best1RM: 20 },
+    });
+
+    expect(milestone?.exercise).toBe('Sentadilla (Barra)');
+  });
+
+  it('elige por esfuerzo relativo, no por kilos absolutos', () => {
+    // Al curl le faltan 1.5 kg y a la sentadilla 3.0: en kilos gana el curl. Pero 1.5 kg sobre una
+    // marca de 39 es un 3.8% y 3 kg sobre 97.7 es un 3.1%, así que quien está de verdad más cerca
+    // es la sentadilla.
+    const milestone = milestoneFor({
+      'Sentadilla (Barra)': { best1RM: 97.6896551 },
+      'Curl de Bíceps (Barra)': { best1RM: 39.1896551 },
+    });
+
+    expect(milestone?.exercise).toBe('Sentadilla (Barra)');
+    expect(milestone?.group).toBe('Cuádriceps');
+    expect(milestone?.deltaKg).toBeCloseTo(3, 2);
+    expect(milestone?.groupTargetLevel).toBe(12);
+  });
+
+  it('no devuelve nada cuando todo está al máximo', () => {
+    expect(milestoneFor({ 'Sentadilla (Barra)': { best1RM: 250 } })).toBeNull();
   });
 });

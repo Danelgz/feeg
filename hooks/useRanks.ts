@@ -6,9 +6,11 @@ import {
   computeExerciseRanks,
   computeGroupRanks,
   computeOverallLevel,
+  nextRankMilestone,
   type ExerciseInput,
   type ExerciseRank,
   type GroupRank,
+  type RankMilestone,
   type Sex,
 } from '../lib/rankEngine';
 import { STRENGTH_STANDARDS } from '../data/strengthStandards';
@@ -36,6 +38,8 @@ export interface RanksResult {
   prestigeLevels: number;
   /** Ejercicios puntuables con marca — para explicar al usuario por qué su rango es el que es. */
   rankedExerciseCount: number;
+  /** La siguiente subida de rango al alcance, o null si no queda ninguna. */
+  milestone: RankMilestone | null;
 }
 
 /**
@@ -122,6 +126,7 @@ export function useRanks(): RanksResult {
         overallLevel: 1,
         prestigeLevels: 0,
         rankedExerciseCount: 0,
+        milestone: null,
       };
     }
 
@@ -152,6 +157,7 @@ export function useRanks(): RanksResult {
       overallLevel,
       prestigeLevels,
       rankedExerciseCount: exerciseRanks.length,
+      milestone: nextRankMilestone(exerciseRanks, groupRanks, bodyweightKg as number, sex),
     };
   }, [completedWorkouts, bodyweightKg, sex]);
 }

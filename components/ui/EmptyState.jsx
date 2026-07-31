@@ -1,6 +1,18 @@
 import { getTokens } from "../../lib/tokens";
 import Icon from "./Icon";
 
+/**
+ * Tipos en JSDoc por la misma razón que en Icon.jsx: sin anotar, `action` sale obligatoria para los
+ * consumidores .tsx y ningún estado vacío puede quedarse sin botón.
+ *
+ * @param {{
+ *   isDark: boolean,
+ *   icon?: string,
+ *   title: import("react").ReactNode,
+ *   description?: import("react").ReactNode,
+ *   action?: import("react").ReactNode,
+ * }} props
+ */
 export default function EmptyState({ isDark, icon = "search", title, description, action }) {
   const tk = getTokens(isDark);
 

@@ -246,20 +246,11 @@ export default function Statistics() {
           )
         )}
 
+        {/* Rangos no entra en MuscleDetailSection como hace el mapa muscular: su lista despliega los
+            ejercicios de cada grupo en el sitio, sin salir de la vista ni pagar el viaje de ida y
+            vuelta con un "Volver al mapa". */}
         {activeView === 'ranks' && (
-          selectedMuscle ? (
-            <MuscleDetailSection
-              isDark={isDark}
-              isMobile={isNarrow}
-              group={selectedMuscle}
-              workouts={workouts}
-              t={t}
-              language={language}
-              onBack={() => setSelectedMuscle(null)}
-            />
-          ) : (
-            <RankMapSection isDark={isDark} isMobile={isNarrow} t={t} onSelectMuscle={setSelectedMuscle} />
-          )
+          <RankMapSection isDark={isDark} isMobile={isNarrow} t={t} language={language} />
         )}
 
         {activeView === 'seriesByGroup' && (

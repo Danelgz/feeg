@@ -4,6 +4,7 @@
 // los baremos (cuánto hay que levantar) viven en data/; aquí sólo está el cálculo.
 
 import { calculateOneRM, getExerciseInfo } from './exerciseStats';
+import { exercisesList } from '../data/exercises';
 import { STRENGTH_STANDARDS, type StrengthStandard } from '../data/strengthStandards';
 import { MAX_LEVEL, UNRANKED_LEVEL } from '../data/ranks';
 
@@ -230,4 +231,90 @@ export function computeOverallLevel(groupRanks: Record<string, GroupRank>): numb
 /** ¿Se puede calcular algún rango? Sin peso corporal el sistema entero no tiene referencia. */
 export function canComputeRanks(bodyweightKg: number | null | undefined): boolean {
   return Number.isFinite(Number(bodyweightKg)) && Number(bodyweightKg) > 0;
+}
+
+/**
+ * Grupos musculares que PUEDEN tener rango: los que tienen al menos un ejercicio con baremo.
+ *
+ * Sirve para distinguir "este grupo aún no tiene rango porque no lo has entrenado" de "este grupo no
+ * puede tenerlo nunca". Cuello es el segundo caso: sus ejercicios no se puntúan, así que enseñarlo
+ * como pendiente sería mandar al usuario a perseguir algo que no existe.
+ *
+ * Se recorre el catálogo (que ya viene agrupado) y no las claves de STRENGTH_STANDARDS, porque eso
+ * obligaría a un getExerciseInfo por baremo — una búsqueda lineal sobre los 429 ejercicios cada vez.
+ * Así es un vistazo a una tabla hash por ejercicio.
+ */
+let rankableGroupsCache: string[] | null = null;
+
+export function getRankableGroups(): string[] {
+  if (rankableGroupsCache) return rankableGroupsCache;
+
+  const groups: string[] = [];
+  for (const [group, exercises] of Object.entries(exercisesList as Record<string, { name: string }[]>)) {
+    if (exercises.some((ex) => STRENGTH_STANDARDS[ex.name])) groups.push(group);
+  }
+
+  rankableGroupsCache = groups;
+  return groups;
+}
+
+export interface RankMilestone {
+  exercise: string;
+  group: string;
+  /** Kilos que faltan sobre la marca actual, en el número que el usuario registra en FEEG. */
+  deltaKg: number;
+  /** Marca a batir. */
+  targetWeight: number;
+  /** Nivel al que sube el GRUPO si se consigue (no el del ejercicio, que puede ir por detrás). */
+  groupTargetLevel: number;
+}
+
+/**
+ * La subida de rango más cercana que tiene el usuario a mano.
+ *
+ * Deliberadamente NO promete el siguiente rango GLOBAL. El nivel global es la media de los grupos,
+ * así que subir un grupo un escalón lo mueve 1/n: con ocho grupos puntuados, "te faltan 4 kg para
+ * Atleta I" sería sencillamente falso. Lo que sí es cierto y además es accionable es el siguiente
+ * peldaño concreto: qué levantamiento, cuántos kilos y qué grupo sube.
+ *
+ * Sólo entran los ejercicios que MUEVEN el nivel de su grupo. Mejorar un ejercicio que va por debajo
+ * del mejor de su grupo no cambia ningún rango (el nivel del grupo es su máximo), y ofrecerlo como
+ * objetivo sería mandar al usuario a hacer trabajo que no puntúa.
+ *
+ * Entre los candidatos gana el de menor esfuerzo RELATIVO, no el de menos kilos absolutos: 5 kg más
+ * en peso muerto son un 3% y 5 kg más en un curl son un 12%, y quien decide qué está "más cerca" es
+ * el porcentaje. Lo que se enseña siguen siendo los kilos, que es lo que se carga en la barra.
+ */
+export function nextRankMilestone(
+  exerciseRanks: ExerciseRank[],
+  groupRanks: Record<string, GroupRank>,
+  bodyweightKg: number,
+  sex: Sex = null
+): RankMilestone | null {
+  let best: RankMilestone | null = null;
+  let bestEffort = Infinity;
+
+  for (const rank of exerciseRanks) {
+    const target = nextLevelTarget(rank.exercise, rank.level, rank.best1RM, bodyweightKg, sex);
+    if (!target || target.isMaxed) continue;
+
+    const groupLevel = groupRanks[rank.group]?.level ?? UNRANKED_LEVEL;
+    if (target.targetLevel <= groupLevel) continue;
+
+    // Los lastrados registran el lastre, que puede ser 0: sin el suelo, dividir por la marca actual
+    // daría Infinity y el candidato quedaría siempre el último aunque fuera el más cercano.
+    const effort = target.deltaKg / Math.max(1, rank.best1RM);
+    if (effort >= bestEffort) continue;
+
+    bestEffort = effort;
+    best = {
+      exercise: rank.exercise,
+      group: rank.group,
+      deltaKg: target.deltaKg,
+      targetWeight: target.targetWeight,
+      groupTargetLevel: target.targetLevel,
+    };
+  }
+
+  return best;
 }

@@ -1,7 +1,7 @@
 import { useReducedMotion } from 'motion/react';
 import { getTokens } from '../../lib/tokens';
 import { getRankPosition } from '../../data/ranks';
-import RankIcon from './RankIcon';
+import RankArt from './RankArt';
 
 type BadgeSize = 'sm' | 'md' | 'lg';
 
@@ -61,13 +61,7 @@ export default function RankBadge({
           border: `1px solid ${rank.color}59`,
         }}
       >
-        <RankIcon
-          icon={rank.icon}
-          color={rank.color}
-          accent={rank.accent}
-          size={dims.icon}
-          animated={!prefersReducedMotion}
-        />
+        <RankArt rank={rank} tier={position.tier} size={dims.icon} animated={!prefersReducedMotion} />
       </div>
 
       <div style={{ minWidth: 0, flex: 1 }}>

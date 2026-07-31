@@ -9,10 +9,10 @@
 
 export type RankIconKey =
   | 'plate'
-  | 'dumbbell'
-  | 'arm'
+  | 'gem'
+  | 'crystalShield'
   | 'flame'
-  | 'shield'
+  | 'starShield'
   | 'medal'
   | 'crown'
   | 'diamond'
@@ -23,6 +23,11 @@ export interface RankDefinition {
   /** Orden en la escalera, 0 = Principiante. */
   index: number;
   name: string;
+  /**
+   * Identificador sin acentos ni mayúsculas para nombrar los archivos de arte:
+   * `public/ranks/<slug>-<escalón>.png`. Ver el README de esa carpeta.
+   */
+  slug: string;
   icon: RankIconKey;
   /** Color protagonista de la insignia y del perfil en ese rango. */
   color: string;
@@ -38,19 +43,24 @@ export interface RankDefinition {
 export const LEVELS_PER_RANK = 3;
 export const MAX_LEVEL = 30;
 
+// Los colores siguen la descripción del arte, no al revés: son los que tiñen el disco, el borde y
+// el nombre del rango por toda la interfaz, así que tienen que reconocerse como el mismo rango que
+// la insignia aunque aparezcan sin ella (en una fila de texto, en un gráfico).
 export const RANKS: RankDefinition[] = [
-  { index: 0, name: 'Principiante', icon: 'plate', color: '#8b939c', accent: '#5f676f', minLevel: 1 },
-  { index: 1, name: 'Novato', icon: 'dumbbell', color: '#3fbf6f', accent: '#248a4b', minLevel: 4 },
-  { index: 2, name: 'Aprendiz', icon: 'arm', color: '#4cc3e8', accent: '#2b8fb0', minLevel: 7 },
-  { index: 3, name: 'Constante', icon: 'flame', color: '#3b7dee', accent: '#1f4bb0', minLevel: 10 },
-  { index: 4, name: 'Disciplinado', icon: 'shield', color: '#9366f5', accent: '#6435c7', minLevel: 13 },
-  { index: 5, name: 'Atleta', icon: 'medal', color: '#e5484d', accent: '#a81f24', minLevel: 16 },
-  { index: 6, name: 'Avanzado', icon: 'crown', color: '#f5871f', accent: '#b85a05', minLevel: 19 },
-  { index: 7, name: 'Élite', icon: 'diamond', color: '#e8bd3a', accent: '#a37c0c', minLevel: 22 },
+  { index: 0, name: 'Principiante', slug: 'principiante', icon: 'plate', color: '#b3bcc5', accent: '#6d7680', minLevel: 1 },
+  { index: 1, name: 'Novato', slug: 'novato', icon: 'gem', color: '#2fd16b', accent: '#12813d', minLevel: 4 },
+  { index: 2, name: 'Aprendiz', slug: 'aprendiz', icon: 'crystalShield', color: '#4fb3f0', accent: '#1f6fae', minLevel: 7 },
+  { index: 3, name: 'Constante', slug: 'constante', icon: 'flame', color: '#22d3ee', accent: '#0e7f96', minLevel: 10 },
+  { index: 4, name: 'Disciplinado', slug: 'disciplinado', icon: 'starShield', color: '#a855f7', accent: '#6d28d9', minLevel: 13 },
+  { index: 5, name: 'Atleta', slug: 'atleta', icon: 'medal', color: '#e5484d', accent: '#c99a2e', minLevel: 16 },
+  { index: 6, name: 'Avanzado', slug: 'avanzado', icon: 'crown', color: '#f5941f', accent: '#a85c05', minLevel: 19 },
+  // Élite y Leyenda comparten oro y diamante azul a propósito (Leyenda «se parece a Élite pero más
+  // grande y luminoso»). Se separan por temperatura: Élite es oro cálido y Leyenda casi blanco.
+  { index: 7, name: 'Élite', slug: 'elite', icon: 'diamond', color: '#e8bd3a', accent: '#3fa9f5', minLevel: 22 },
   // Titán es el único cuyo color base es más oscuro que el fondo de la tarjeta: la insignia se
-  // define por el contorno y los detalles rojos, no por la masa de color.
-  { index: 8, name: 'Titán', icon: 'helmet', color: '#1e1e1e', accent: '#e5484d', minLevel: 25 },
-  { index: 9, name: 'Leyenda', icon: 'legendCrown', color: '#f2d16b', accent: '#7de8c8', minLevel: 28 },
+  // define por el contorno y las luces rojas, no por la masa de color.
+  { index: 8, name: 'Titán', slug: 'titan', icon: 'helmet', color: '#3a3a3d', accent: '#ff3b30', minLevel: 25 },
+  { index: 9, name: 'Leyenda', slug: 'leyenda', icon: 'legendCrown', color: '#f7e7a8', accent: '#4fb3f0', minLevel: 28 },
 ];
 
 /** Escalones de prestigio, una vez superado el nivel 30. */

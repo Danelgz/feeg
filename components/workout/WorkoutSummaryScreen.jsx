@@ -1,6 +1,6 @@
 import { getWorkoutTokens } from "../../lib/tokens";
 import { pickPrimaryPRType } from "../../lib/exerciseStats";
-import { Icon, RankIcon, ExerciseRankList } from "../ui";
+import { Icon, RankArt, ExerciseRankList } from "../ui";
 import { useRankUps } from "../../hooks/useRankUps";
 import { useRanks } from "../../hooks/useRanks";
 import { getRankPosition } from "../../data/ranks";
@@ -192,7 +192,7 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
                 flexShrink: 0,
               }}
             >
-              <RankIcon icon={position.rank.icon} color={position.rank.color} accent={position.rank.accent} size={22} />
+              <RankArt rank={position.rank} tier={position.tier} size={22} />
             </div>
             <div style={{ minWidth: 0 }}>
               <div style={{ color: tk.text, fontSize: "0.95rem", fontWeight: 700 }}>

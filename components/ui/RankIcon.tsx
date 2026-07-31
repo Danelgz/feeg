@@ -70,22 +70,20 @@ export default function RankIcon({
         <circle cx="17" cy="12" r="3.4" stroke={fill} strokeWidth="1.8" />
       </>
     ),
-    dumbbell: (
+    gem: (
       <>
-        <rect x="8.5" y="10.9" width="7" height="2.2" rx="1.1" fill={fill} />
-        <rect x="4.6" y="7.6" width="3.4" height="8.8" rx="1.4" fill={fill} />
-        <rect x="16" y="7.6" width="3.4" height="8.8" rx="1.4" fill={fill} />
-        <rect x="1.8" y="9.8" width="2.2" height="4.4" rx="1.1" fill={accent} />
-        <rect x="20" y="9.8" width="2.2" height="4.4" rx="1.1" fill={accent} />
+        {/* Novato: gema geométrica encajada en un marco hexagonal. */}
+        <path d="M12 1.8l8.6 5v10.4l-8.6 5-8.6-5V6.8l8.6-5z" fill={accent} />
+        <path d="M12 4.6l6.2 3.6v7.6L12 19.4l-6.2-3.6V8.2L12 4.6z" fill={fill} />
+        <path d="M12 7.4l3.6 2.1v4.4L12 16l-3.6-2.1V9.5L12 7.4z" fill="#ffffff" opacity="0.26" />
       </>
     ),
-    arm: (
+    crystalShield: (
       <>
-        {/* Brazo flexionado: antebrazo vertical, brazo horizontal y el bulto del bíceps. */}
-        <rect x="3.4" y="12.6" width="10.5" height="4.6" rx="2.3" fill={fill} />
-        <rect x="13.2" y="5.4" width="4.8" height="11.8" rx="2.4" fill={fill} />
-        <circle cx="8.6" cy="11.4" r="3.9" fill={fill} />
-        <circle cx="8.6" cy="11.1" r="1.5" fill={accent} opacity="0.55" />
+        {/* Aprendiz: escudo con un cristal frío en el centro. */}
+        <path d="M12 1.9l8 2.9v6.2c0 4.9-3.3 9.2-8 10.8-4.7-1.6-8-5.9-8-10.8V4.8l8-2.9z" fill={accent} />
+        <path d="M12 4.6l5.4 2v4.5c0 3.4-2.2 6.4-5.4 7.5-3.2-1.1-5.4-4.1-5.4-7.5V6.6l5.4-2z" fill={fill} />
+        <path d="M12 7.6l2.9 3.3-2.9 4.7-2.9-4.7L12 7.6z" fill="#ffffff" opacity="0.55" />
       </>
     ),
     flame: (
@@ -101,10 +99,17 @@ export default function RankIcon({
         />
       </>
     ),
-    shield: (
+    starShield: (
       <>
-        <path d="M12 2.2l7.6 2.8v5.9c0 4.7-3.1 8.8-7.6 10.3-4.5-1.5-7.6-5.6-7.6-10.3V5l7.6-2.8z" fill={fill} />
-        <path d="M12 6.1l4 1.5v3.4c0 2.6-1.6 4.9-4 5.8-2.4-.9-4-3.2-4-5.8V7.6l4-1.5z" fill={accent} opacity="0.5" />
+        {/* Disciplinado: escudo con estrella. Mismo casco de escudo que Aprendiz, distinto símbolo
+            interior y distinto color — que es exactamente cómo se distinguen en el arte. */}
+        <path d="M12 1.9l8 2.9v6.2c0 4.9-3.3 9.2-8 10.8-4.7-1.6-8-5.9-8-10.8V4.8l8-2.9z" fill={accent} />
+        <path d="M12 4.6l5.4 2v4.5c0 3.4-2.2 6.4-5.4 7.5-3.2-1.1-5.4-4.1-5.4-7.5V6.6l5.4-2z" fill={fill} />
+        <path
+          d="M12 7.5l1.4 2.9 3.2.5-2.3 2.2.5 3.2L12 14.8l-2.8 1.5.5-3.2-2.3-2.2 3.2-.5L12 7.5z"
+          fill="#ffffff"
+          opacity="0.78"
+        />
       </>
     ),
     medal: (
@@ -121,7 +126,9 @@ export default function RankIcon({
     ),
     crown: (
       <>
+        {/* Avanzado: corona con gema central. */}
         <path d="M2.6 7.4l4.7 3.3L12 4l4.7 6.7 4.7-3.3-1.8 10.1H4.4L2.6 7.4z" fill={fill} />
+        <path d="M12 10.5l2.4 2.8-2.4 3.5-2.4-3.5L12 10.5z" fill={accent} />
         <rect x="4.4" y="18.8" width="15.2" height="2.6" rx="1.1" fill={accent} />
       </>
     ),

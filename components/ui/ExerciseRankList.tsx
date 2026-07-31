@@ -1,7 +1,7 @@
 import { getTokens } from '../../lib/tokens';
 import { getRankPosition } from '../../data/ranks';
 import { nextLevelTarget, type ExerciseRank, type Sex } from '../../lib/rankEngine';
-import RankIcon from './RankIcon';
+import RankArt from './RankArt';
 
 interface ExerciseRankListProps {
   ranks: ExerciseRank[];
@@ -69,7 +69,7 @@ export default function ExerciseRankList({
                 flexShrink: 0,
               }}
             >
-              <RankIcon icon={position.rank.icon} color={position.rank.color} accent={position.rank.accent} size={19} />
+              <RankArt rank={position.rank} tier={position.tier} size={19} />
             </div>
 
             <div style={{ minWidth: 0, flex: 1 }}>

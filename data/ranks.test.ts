@@ -14,6 +14,28 @@ describe('escalera de rangos', () => {
     });
   });
 
+  it('usa slugs sin acentos ni mayúsculas, que son nombres de archivo', () => {
+    // De estos slugs salen las rutas de public/ranks/<slug>-<escalón>.png. Un acento o una
+    // mayúscula aquí no rompe nada visible: simplemente el arte no carga nunca y todos los rangos
+    // se quedan con el dibujo de respaldo, que es un fallo muy difícil de atribuir.
+    for (const rank of RANKS) {
+      expect(rank.slug, rank.name).toMatch(/^[a-z]+$/);
+    }
+  });
+
+  it('no repite ningún slug', () => {
+    const slugs = RANKS.map((r) => r.slug);
+    expect(new Set(slugs).size).toBe(slugs.length);
+  });
+
+  it('cada rango declara icono de respaldo y sus dos colores', () => {
+    for (const rank of RANKS) {
+      expect(rank.icon, rank.name).toBeTruthy();
+      expect(rank.color, rank.name).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(rank.accent, rank.name).toMatch(/^#[0-9a-f]{6}$/i);
+    }
+  });
+
   it('nombra los tres escalones de un rango en números romanos', () => {
     expect(getRankPosition(1).label).toBe('Principiante I');
     expect(getRankPosition(2).label).toBe('Principiante II');

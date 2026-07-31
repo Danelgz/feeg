@@ -1,7 +1,7 @@
 import Link from "next/link";
 import MuscleMap from "../MuscleMap";
 import StatSection from "./StatSection";
-import { EmptyState, RankBadge, RankIcon } from "../ui";
+import { EmptyState, RankArt, RankBadge } from "../ui";
 import { getTokens } from "../../lib/tokens";
 import { useRanks } from "../../hooks/useRanks";
 import { RANKS, getRankPosition } from "../../data/ranks";
@@ -111,7 +111,7 @@ export default function RankMapSection({ isDark, isMobile, t, onSelectMuscle }) 
           const { position, rank } = info;
           return (
             <span style={{ display: "inline-flex", alignItems: "center", gap: tk.space.sm, flexWrap: "wrap", justifyContent: "center" }}>
-              <RankIcon icon={position.rank.icon} color={position.rank.color} accent={position.rank.accent} size={18} />
+              <RankArt rank={position.rank} tier={position.tier} size={18} />
               <span style={{ fontSize: tk.fontSize.md, color: tk.text, fontWeight: tk.weight.medium }}>{label}</span>
               <span style={{ color: tk.textMuted }}>·</span>
               <span style={{ fontSize: tk.fontSize.md, color: position.rank.color, fontWeight: tk.weight.bold }}>

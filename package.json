@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check:ranks": "node scripts/check-rank-art.mjs"
+    "check:ranks": "node scripts/check-rank-art.mjs",
+    "prepare:ranks": "node scripts/prepare-rank-art.mjs"
   },
   "dependencies": {
     "firebase": "^12.9.0",

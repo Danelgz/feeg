@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { getTokens } from "../lib/tokens";
@@ -56,6 +57,7 @@ export default function Statistics() {
   const { t, theme, isMobile, language, completedWorkouts: workouts } = useUser();
   const isDark = theme === 'dark';
   const tk = getTokens(isDark);
+  const prefersReducedMotion = useReducedMotion();
   const [activeView, setActiveView] = useState('overview');
   const [isNarrow, setIsNarrow] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('7days');
@@ -169,7 +171,20 @@ export default function Statistics() {
         </div>
       )}
 
-      <div role="tabpanel" style={{ marginTop: currentView.usesPeriod ? 0 : tk.space.lg }}>
+      {/* `mode="wait"` para que la vista saliente termine antes de que entre la nueva: solapándolas,
+          dos secciones de alturas distintas conviven un instante y la página da un tirón. La clave
+          incluye el músculo seleccionado porque entrar al detalle de un grupo y volver al mapa es,
+          para el usuario, el mismo tipo de cambio que saltar de pestaña. */}
+      <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={`${activeView}:${selectedMuscle || ''}`}
+        role="tabpanel"
+        initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={prefersReducedMotion ? undefined : { opacity: 0, y: -6 }}
+        transition={{ duration: tk.motion.duration.fast, ease: tk.motion.ease.standard }}
+        style={{ marginTop: currentView.usesPeriod ? 0 : tk.space.lg }}
+      >
         {/* Los totales solo acompañan al Resumen. En las demás vistas eran ruido repetido siete
             veces por encima de un contenido que ya trae sus propios números. */}
         {activeView === 'overview' && (
@@ -212,7 +227,7 @@ export default function Statistics() {
         )}
 
         {activeView === 'records' && (
-          <RecordsSection isDark={isDark} workouts={workouts} t={t} language={language} />
+          <RecordsSection isDark={isDark} isMobile={isNarrow} workouts={workouts} t={t} language={language} />
         )}
 
         {activeView === 'muscleMap' && (
@@ -256,13 +271,14 @@ export default function Statistics() {
         )}
 
         {activeView === 'monthly' && (
-          <MonthlyReportSection isDark={isDark} workouts={workouts} t={t} />
+          <MonthlyReportSection isDark={isDark} isMobile={isNarrow} workouts={workouts} t={t} />
         )}
 
         {activeView === 'exerciseStats' && (
-          <ExerciseStatsSection isDark={isDark} workouts={workouts} t={t} language={language} />
+          <ExerciseStatsSection isDark={isDark} isMobile={isNarrow} workouts={workouts} t={t} language={language} />
         )}
-      </div>
+      </motion.div>
+      </AnimatePresence>
     </Layout>
   );
 }

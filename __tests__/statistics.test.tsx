@@ -81,6 +81,36 @@ describe("pantalla de estadísticas", () => {
     expect(screen.queryByText("Tus marcas personales y cuándo las batiste")).toBeNull();
   });
 
+  it("mantiene un único chip en el orden de tabulación (roving tabindex)", async () => {
+    renderStats();
+    await screen.findAllByRole("tab");
+    // Con doce chips, dejarlos todos tabulables obliga a pasar por los doce antes de llegar al
+    // contenido. El patrón de pestañas deja sólo el activo y se circula con las flechas.
+    const views = ["Resumen", "Récords", "Mapa muscular", "Rangos"];
+    expect(tab("Resumen").getAttribute("tabindex")).toBe("0");
+    for (const name of views.slice(1)) {
+      expect(tab(name).getAttribute("tabindex"), name).toBe("-1");
+    }
+  });
+
+  it("cambia de vista con las flechas del teclado", async () => {
+    renderStats();
+    await screen.findAllByRole("tab");
+
+    fireEvent.keyDown(tab("Resumen"), { key: "ArrowRight" });
+    await waitFor(() => expect(tab("Récords").getAttribute("aria-selected")).toBe("true"));
+
+    fireEvent.keyDown(tab("Récords"), { key: "ArrowLeft" });
+    await waitFor(() => expect(tab("Resumen").getAttribute("aria-selected")).toBe("true"));
+
+    // Da la vuelta en lugar de quedarse atascado en el primero.
+    fireEvent.keyDown(tab("Resumen"), { key: "ArrowLeft" });
+    await waitFor(() => expect(tab("Ejercicios").getAttribute("aria-selected")).toBe("true"));
+
+    fireEvent.keyDown(tab("Ejercicios"), { key: "Home" });
+    await waitFor(() => expect(tab("Resumen").getAttribute("aria-selected")).toBe("true"));
+  });
+
   it("muestra el volumen del periodo como métrica protagonista con su variación", async () => {
     renderStats();
     // 7200 + 4800 en los últimos 7 días, con separador de miles español.

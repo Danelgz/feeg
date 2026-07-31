@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { getTokens } from "../../lib/tokens";
 
 export interface ChipItem {
@@ -22,13 +23,54 @@ interface ChipNavProps {
  * con título y descripción que en móvil se apilaban en una columna, obligando a bajar tres
  * pantallas antes de ver un solo dato. Si un botón de navegación necesita un párrafo explicando
  * qué hace, el problema es el nombre del botón.
+ *
+ * Dos cosas que la fila necesita por ser a la vez desplazable y un `tablist`:
+ *
+ * - **El chip activo se trae a la vista.** Con ocho vistas la fila no cabe en pantalla, así que al
+ *   cambiar de una a otra —o al volver a la pantalla con una vista ya elegida— el chip
+ *   seleccionado puede quedar fuera del área visible y parecer que no hay nada activo.
+ * - **Navegación con flechas y tabulador único.** Al declarar `role="tablist"` se está prometiendo
+ *   el comportamiento estándar de pestañas: el tabulador entra y sale del grupo de una vez, y
+ *   dentro se circula con las flechas. Sin ello, tabular por esta pantalla obligaba a pasar por los
+ *   doce chips uno a uno antes de llegar al contenido.
  */
 export default function ChipNav({ items, activeKey, onChange, isDark, size = "md", ariaLabel }: ChipNavProps) {
   const tk = getTokens(isDark);
   const isSmall = size === "sm";
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const active = listRef.current?.querySelector<HTMLElement>('[aria-selected="true"]');
+    // Comprobación explícita en vez de `active?.scrollIntoView(...)`: jsdom no implementa este
+    // método, así que la llamada optimista rompía toda la suite de la pantalla. Y es un adorno —
+    // que no exista no debe tumbar el render.
+    if (typeof active?.scrollIntoView !== "function") return;
+    // `nearest` en los dos ejes: centrarlo movería también el scroll vertical de la página, que es
+    // justo lo que no se quiere al tocar un chip.
+    active.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+  }, [activeKey]);
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const index = items.findIndex((item) => item.key === activeKey);
+    if (index === -1) return;
+
+    let next = -1;
+    if (event.key === "ArrowRight") next = (index + 1) % items.length;
+    else if (event.key === "ArrowLeft") next = (index - 1 + items.length) % items.length;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = items.length - 1;
+    else return;
+
+    event.preventDefault();
+    onChange(items[next].key);
+    // El foco sigue a la selección, que es lo que espera el patrón de pestañas automáticas: sin
+    // esto la siguiente flecha se calcularía desde un chip que ya no está enfocado.
+    const buttons = listRef.current?.querySelectorAll<HTMLElement>('[role="tab"]');
+    buttons?.[next]?.focus();
+  };
 
   return (
-    <div className="chipnav" role="tablist" aria-label={ariaLabel}>
+    <div className="chipnav" role="tablist" aria-label={ariaLabel} ref={listRef} onKeyDown={handleKeyDown}>
       {items.map((item) => {
         const isActive = item.key === activeKey;
         return (
@@ -36,6 +78,9 @@ export default function ChipNav({ items, activeKey, onChange, isDark, size = "md
             key={item.key}
             role="tab"
             aria-selected={isActive}
+            // Tabulador único (roving tabindex): sólo el chip activo entra en el orden de
+            // tabulación; a los demás se llega con las flechas.
+            tabIndex={isActive ? 0 : -1}
             onClick={() => onChange(item.key)}
             className="feeg-surface feeg-press feeg-hover"
             style={{
@@ -78,6 +123,12 @@ export default function ChipNav({ items, activeKey, onChange, isDark, size = "md
         }
         .chipnav > :global(button) {
           scroll-snap-align: start;
+        }
+        /* Quien haya pedido menos movimiento no quiere que la fila se deslice sola bajo el dedo. */
+        @media (prefers-reduced-motion: reduce) {
+          .chipnav {
+            scroll-behavior: auto;
+          }
         }
       `}</style>
     </div>

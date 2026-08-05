@@ -36,7 +36,7 @@ export interface MuscleMapProps {
   labelForGroup?: (group: MuscleGroup) => string;
   /**
    * Color por grupo que sustituye a la rampa de intensidad. Es lo que permite reutilizar este mismo
-   * cuerpo para la vista de rangos sin duplicar el componente ni los 70 paths: la geometría y la
+   * cuerpo para la vista de rangos sin duplicar el componente ni los 65 paths: la geometría y la
    * interacción son idénticas, sólo cambia qué significa el color. Devolver `null` deja el grupo en
    * el tono de "sin datos".
    *
@@ -96,7 +96,7 @@ interface Active {
  * entrenado cada grupo.
  *
  * Sustituye al cuerpo esquemático de rectángulos y elipses. La geometría vive en
- * `data/muscleMapPaths.ts` (vectorizado de `public/MUSCLE MAP REFERENCE.png`), no aquí.
+ * `data/muscleMapPaths.ts` (vectorizado de `public/Referencia2.png`), no aquí.
  *
  * Tres decisiones de UX que se apartan de la versión anterior:
  *
@@ -135,9 +135,9 @@ export default function MuscleMap({
   // sale la geometría los separa mucho: cuerpo blanco, músculo gris medio.
   //
   // La versión anterior los tenía casi pegados ('#f2f5f7' contra '#dde3ea') y compensaba con un
-  // trazo por músculo. Con esta anatomía sobra: los huecos entre vientres ya son anchos y limpios,
-  // y un trazo por músculo sobre setenta paths convertía la figura en un dibujo de líneas. El
-  // contraste lo lleva ahora el relleno, que es como está pintada la lámina.
+  // trazo por músculo. Con esta anatomía sobra: cada vientre es una forma grande y limpia, y un
+  // trazo sobre sesenta y cinco paths convertía la figura en un dibujo de líneas. El contraste lo
+  // lleva ahora el relleno, que es como está pintada la lámina.
   //
   // En oscuro la silueta va blanca y recorta contra la tarjeta. En claro hay que bajarla, porque un
   // blanco puro sobre una tarjeta blanca no sería una figura, sería nada; y ahí sí hace falta un
@@ -162,7 +162,7 @@ export default function MuscleMap({
           gap: tk.space.md,
           width: '100%',
           // Estrechado desde 520px al cambiar de anatomía: la figura nueva es bastante más esbelta
-          // (viewBox 425x1000 frente a 660x1206), así que a 520px de ancho las dos vistas medían
+          // (viewBox 432x1000 frente a 660x1206), así que a 520px de ancho las dos vistas medían
           // ~600px de alto y la tarjeta ya no cabía de un vistazo en móvil.
           maxWidth: '440px',
         }}
@@ -225,9 +225,12 @@ export default function MuscleMap({
                     key={groupKey}
                     role="button"
                     tabIndex={0}
-                    aria-label={
+                    // La vista se añade aquí y no en `ariaLabelForGroup`: la mayoría de los grupos se
+                    // dibuja en las dos figuras, así que sin ella el lector de pantalla anuncia dos
+                    // controles con exactamente el mismo nombre y no hay forma de saber cuál es cuál.
+                    aria-label={`${
                       ariaLabelForGroup?.(group, value) ?? `${label(group)}: ${value} series, ${describe}`
-                    }
+                    } · ${caption}`}
                     initial={prefersReducedMotion ? false : { opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{
@@ -258,7 +261,7 @@ export default function MuscleMap({
                         // contorno que aparece al señalar es un cambio visible de verdad y no un
                         // engrosamiento de una línea que ya estaba.
                         stroke={isActive ? activeStroke : 'none'}
-                        // 1.8 unidades sobre un viewBox de 425 de ancho pintado a ~200px: algo menos
+                        // 1.8 unidades sobre un viewBox de 432 de ancho pintado a ~200px: algo menos
                         // de un píxel, suficiente para recortar el músculo sin contornearlo.
                         strokeWidth={isActive ? 1.8 : 0}
                         style={{

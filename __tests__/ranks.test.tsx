@@ -152,9 +152,13 @@ describe("estadísticas · rangos", () => {
 
     // Sobre el cuerpo blanco un relleno de un solo tono se lee apagado; cada grupo con rango usa el
     // par color/accent de su rango como degradado.
-    const region = await screen.findByRole("button", { name: /^Cuádriceps:/ });
+    //
+    // Se busca por vista y no sólo por grupo: casi todos los grupos se dibujan en las dos figuras, y
+    // el degradado de cada una tiene su propio id — dos <linearGradient> con el mismo id harían que
+    // el segundo cuerpo tirase del del primero.
+    const region = await screen.findByRole("button", { name: /^Cuádriceps:.* · Frontal$/ });
     const painted = region.querySelector("path");
-    expect(painted?.getAttribute("fill")).toMatch(/^url\(#feeg-muscle-(front|back)-cuadriceps\)$/);
+    expect(painted?.getAttribute("fill")).toBe("url(#feeg-muscle-front-cuadriceps)");
   });
 
   it("manda a registrar el peso corporal cuando no hay con qué comparar", async () => {

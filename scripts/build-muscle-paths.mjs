@@ -66,10 +66,10 @@ const lines = [];
 const q = (s) => JSON.stringify(s);
 
 lines.push('// GENERADO — no editar a mano.');
-lines.push('// Vectorizado de public/MUSCLE MAP REFERENCE.png con scripts/trace-muscle-map.mjs y agrupado');
+lines.push('// Vectorizado de public/Referencia2.png con scripts/trace-muscle-map.mjs y agrupado');
 lines.push('// con data/muscle-map-groups.json por scripts/build-muscle-paths.mjs. Para rehacerlo:');
 lines.push('//');
-lines.push('//   node scripts/trace-muscle-map.mjs "public/MUSCLE MAP REFERENCE.png" .muscle-trace');
+lines.push('//   node scripts/trace-muscle-map.mjs public/Referencia2.png .muscle-trace');
 lines.push('//   node scripts/build-muscle-paths.mjs .muscle-trace');
 lines.push('//');
 lines.push('// Geometría anatómica del mapa muscular: silueta + regiones por grupo, en vista frontal y');

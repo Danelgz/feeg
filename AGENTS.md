@@ -129,9 +129,9 @@ hardcoding new hex values; the file's comments explain past hex-drift bugs this 
 
 **Muscle map geometry**: [components/MuscleMap.tsx](components/MuscleMap.tsx) draws both body views for
 the Statistics *and* Ranks tabs — the only difference is what the color means (`colorForGroup`), so never
-fork the component to restyle one of them. Its ~70 paths are generated, not hand-written: `public/MUSCLE
-MAP REFERENCE.png` → [scripts/trace-muscle-map.mjs](scripts/trace-muscle-map.mjs) (segments each muscle,
-mirrors the plate for symmetry, traces contours) → `.muscle-trace/debug.png` (every piece numbered) →
+fork the component to restyle one of them. Its ~65 paths are generated, not hand-written: `public/Referencia2.png` → [scripts/trace-muscle-map.mjs](scripts/trace-muscle-map.mjs) (segments each muscle,
+mirrors the plate for symmetry, traces contours, and proposes a grouping from each blob's colour) →
+`.muscle-trace/debug.png` + `suggested.json` →
 [data/muscle-map-groups.json](data/muscle-map-groups.json) (which piece belongs to which of the 12 groups)
 → [scripts/build-muscle-paths.mjs](scripts/build-muscle-paths.mjs) → `data/muscleMapPaths.ts`. Edit the
 JSON to re-assign a muscle; re-run both scripts to change the artwork. Never edit `muscleMapPaths.ts` by
@@ -168,7 +168,8 @@ for consistency rather than introducing a second styling system.
   reformatting the muscle-map SVG/HTML assets under `public/` into a more readable line-per-tag form;
   they aren't part of the build and don't need maintaining. They — and the `public/cuerpo*.html`,
   `public/frontrear*.html`, `public/Cuerpo.png` assets they operate on — are now dead: the muscle map
-  is generated from `public/MUSCLE MAP REFERENCE.png` instead. Nothing imports them.
+  is generated from `public/Referencia2.png` instead. `public/MUSCLE MAP REFERENCE.png` — the plate the
+  map used before that one — is dead for the same reason. Nothing imports any of them.
 
 ## Reference docs
 

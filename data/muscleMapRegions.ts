@@ -6,10 +6,10 @@
 //
 // La geometría vivía también en este archivo, como rectángulos y elipses de un cuerpo esquemático.
 // Ahora el mapa se dibuja con la silueta anatómica real y esos datos se han movido a
-// `data/muscleMapPaths.ts`, vectorizado de `public/MUSCLE MAP REFERENCE.png`.
+// `data/muscleMapPaths.ts`, vectorizado de `public/Referencia2.png`.
 //
-// Los doce grupos tienen región dibujable en el cuerpo. 'Cuello' no la tenía con la lámina anterior
-// y sólo contaba en 'Series por grupo'; la actual sí lo dibuja, así que ya es clicable como el resto.
+// Los doce grupos tienen región dibujable en el cuerpo, 'Cuello' incluido — con el cuerpo esquemático
+// no la tenía y sólo contaba en 'Series por grupo'.
 
 export const MUSCLE_GROUPS = [
   'Cuello',

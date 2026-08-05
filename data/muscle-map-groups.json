@@ -1,0 +1,32 @@
+{
+  "_comment": [
+    "Qué pieza trazada pertenece a qué grupo muscular de FEEG (data/muscleMapRegions.ts).",
+    "Los índices son los que scripts/trace-muscle-map.mjs pinta sobre debug.png: para reasignar algo,",
+    "se mira esa imagen y se mueve el número de lista. Vive separado del trazado a propósito — así se",
+    "puede reajustar el mapeo sin volver a vectorizar, y volver a vectorizar sin rehacer el mapeo.",
+    "Las piezas van por pares espejo (la lámina se simetriza antes de trazar); las impares son las que",
+    "cruzan la línea media: el cuello y el recto abdominal inferior.",
+    "La lámina dibuja mucho más detalle del que la app distingue: el pectoral viene en tres haces y el",
+    "cuádriceps en cuatro vientres. No se pierde nada por agruparlos — cada haz sigue siendo un path",
+    "propio, así que el dibujo conserva toda su definición; lo único común es el color y el clic."
+  ],
+  "front": {
+    "Cuello": [0],
+    "Hombros": [3, 4],
+    "Pecho": [1, 2, 5, 6, 7, 8],
+    "Bíceps": [11, 12],
+    "Antebrazo": [17, 18, 21, 22],
+    "Abdomen": [9, 10, 13, 14, 15, 16, 19, 20, 23],
+    "Cuádriceps": [24, 25, 26, 27, 28, 29, 30, 31],
+    "Gemelos": [32, 33, 34, 35]
+  },
+  "back": {
+    "Hombros": [2, 3],
+    "Espalda": [0, 1, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15],
+    "Tríceps": [8, 9],
+    "Antebrazo": [16, 17],
+    "Glúteos": [18, 19, 20, 21, 22, 23],
+    "Femoral": [24, 25, 26, 27],
+    "Gemelos": [28, 29, 30, 31, 32, 33]
+  }
+}

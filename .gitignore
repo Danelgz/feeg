@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# salida intermedia del vectorizador del mapa muscular (scripts/trace-muscle-map.mjs).
+# Lo que se versiona es data/muscleMapPaths.ts, no el trazado en bruto ni la imagen de depuración.
+.muscle-trace/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -127,6 +127,16 @@ context refresh can't clobber in-progress edits.
 three intentionally ignore the user's theme preference). Always derive colors from these instead of
 hardcoding new hex values; the file's comments explain past hex-drift bugs this was built to prevent.
 
+**Muscle map geometry**: [components/MuscleMap.tsx](components/MuscleMap.tsx) draws both body views for
+the Statistics *and* Ranks tabs — the only difference is what the color means (`colorForGroup`), so never
+fork the component to restyle one of them. Its ~70 paths are generated, not hand-written: `public/MUSCLE
+MAP REFERENCE.png` → [scripts/trace-muscle-map.mjs](scripts/trace-muscle-map.mjs) (segments each muscle,
+mirrors the plate for symmetry, traces contours) → `.muscle-trace/debug.png` (every piece numbered) →
+[data/muscle-map-groups.json](data/muscle-map-groups.json) (which piece belongs to which of the 12 groups)
+→ [scripts/build-muscle-paths.mjs](scripts/build-muscle-paths.mjs) → `data/muscleMapPaths.ts`. Edit the
+JSON to re-assign a muscle; re-run both scripts to change the artwork. Never edit `muscleMapPaths.ts` by
+hand — it is overwritten. `data/muscleMapPaths.test.ts` guards against a group silently losing its paths.
+
 **Firebase**: client SDK in `lib/firebase.js` (Auth via Google popup, Firestore, Storage), guarded so
 the app degrades gracefully if env vars are missing. Firebase Admin (`pages/api/generate-routine.js`,
 `pages/api/chat.js`) verifies ID tokens server-side before calling OpenAI.
@@ -156,7 +166,9 @@ for consistency rather than introducing a second styling system.
   `.env.local`.
 - `split.py`, `split_svg.py`, `split_frontrear.py` at the repo root are one-off local scripts for
   reformatting the muscle-map SVG/HTML assets under `public/` into a more readable line-per-tag form;
-  they aren't part of the build and don't need maintaining.
+  they aren't part of the build and don't need maintaining. They — and the `public/cuerpo*.html`,
+  `public/frontrear*.html`, `public/Cuerpo.png` assets they operate on — are now dead: the muscle map
+  is generated from `public/MUSCLE MAP REFERENCE.png` instead. Nothing imports them.
 
 ## Reference docs
 

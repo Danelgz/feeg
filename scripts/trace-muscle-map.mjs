@@ -35,10 +35,17 @@ if (!SRC) {
 }
 
 // --- Parámetros de segmentación -------------------------------------------------------------
-// Umbrales sobre luminancia 0-255. La banda intermedia es "carne"; por encima, hueco o fondo; por
-// debajo, línea de contorno.
-const WHITE_MIN = Number(process.env.WHITE_MIN ?? 232);
-const DARK_MAX = Number(process.env.DARK_MAX ?? 105);
+// Umbrales sobre luminancia 0-255, calibrados con el histograma de la lámina de referencia:
+// contorno 0-40 · fondo 56-104 · músculo 128-136 · blanco (huecos, cara, manos, pies) 240+.
+//
+// El cuerpo NO se aísla buscando el fondo por su color: la lámina trae un degradado gris con halo,
+// así que "lo que se parece al fondo" no es un umbral estable. Se aísla por su contorno negro, que
+// es una curva cerrada y el único negro real de la imagen: se inunda desde el borde todo lo que no
+// sea contorno y lo que queda sin visitar es cuerpo. Funciona igual con fondo blanco, gris o con
+// degradado.
+const OUTLINE_MAX = Number(process.env.OUTLINE_MAX ?? 48);
+// Techo de la carne. Por encima es hueco entre músculos o zona sin músculo (cara, manos, pies).
+const FLESH_MAX = Number(process.env.FLESH_MAX ?? 200);
 // Erosión previa al etiquetado. Mata el halo de antialias de 1-2 px que hay a cada lado de cada
 // línea negra y que, sin esto, aparece como un músculo largísimo y finísimo bordeando el cuerpo.
 const ERODE = Number(process.env.ERODE ?? 2);
@@ -50,6 +57,8 @@ const MIN_AREA = Number(process.env.MIN_AREA ?? 400);
 const EPSILON = Number(process.env.EPSILON ?? 1.8);
 // Altura del cuerpo más alto en unidades del viewBox de salida.
 const TARGET_H = Number(process.env.TARGET_H ?? 1000);
+// Mitad de la lámina que se espeja sobre la otra: 'left', 'right' o 'none'.
+const SYMMETRIZE = process.env.SYMMETRIZE ?? 'left';
 
 // --- Utilidades de máscara -------------------------------------------------------------------
 
@@ -267,26 +276,24 @@ const W = info.width;
 const H = info.height;
 const CH = info.channels;
 
-const lum = new Uint8Array(W * H);
+let lum = new Uint8Array(W * H);
 for (let i = 0; i < W * H; i++) {
   const o = i * CH;
   lum[i] = (data[o] * 299 + data[o + 1] * 587 + data[o + 2] * 114) / 1000;
 }
 
-// Carne: ni hueco ni línea.
-const flesh = mask(W, H);
-for (let i = 0; i < W * H; i++) flesh.data[i] = lum[i] < WHITE_MIN && lum[i] > DARK_MAX ? 1 : 0;
-
-// Silueta: todo lo que el fondo no alcanza. El fondo es blanco y toca el borde de la lámina, así
-// que se propaga desde el borde por los píxeles claros; lo que queda sin visitar es cuerpo, incluidos
-// los huecos blancos entre músculos y el interior blanco de manos, pies y cara.
-const outside = mask(W, H);
-{
+/**
+ * Silueta: todo lo que no alcanza una inundación desde el borde de la lámina que no puede cruzar el
+ * contorno negro. Lo que queda sin visitar es cuerpo, incluidos los huecos blancos entre músculos y
+ * el interior blanco de manos, pies y cara.
+ */
+function segmentBodies(source) {
+  const outside = mask(W, H);
   const queue = new Int32Array(W * H);
   let head = 0;
   let tail = 0;
   const push = (i) => {
-    if (!outside.data[i] && lum[i] >= WHITE_MIN) {
+    if (!outside.data[i] && source[i] > OUTLINE_MAX) {
       outside.data[i] = 1;
       queue[tail++] = i;
     }
@@ -302,19 +309,12 @@ const outside = mask(W, H);
     if (y > 0) push(p - W);
     if (y < H - 1) push(p + W);
   }
+  const bodyMask = mask(W, H);
+  for (let i = 0; i < W * H; i++) bodyMask.data[i] = outside.data[i] ? 0 : 1;
+  return bodyMask;
 }
-const bodyMask = mask(W, H);
-for (let i = 0; i < W * H; i++) bodyMask.data[i] = outside.data[i] ? 0 : 1;
 
-// Cuerpos: las dos componentes grandes de la silueta.
-const bodies = label(bodyMask);
-const bodyIds = [...bodies.sizes.keys()]
-  .filter((id) => id > 0 && bodies.sizes[id] > (W * H) / 200)
-  .sort((a, b) => bodies.sizes[b] - bodies.sizes[a])
-  .slice(0, 2);
-if (bodyIds.length < 2) {
-  console.error(`Se esperaban 2 cuerpos, encontrados ${bodyIds.length}. Revisa WHITE_MIN.`);
-}
+let bodyMask = segmentBodies(lum);
 
 function bbox(pred) {
   let x0 = Infinity;
@@ -333,17 +333,98 @@ function bbox(pred) {
   return { x0, y0, x1, y1 };
 }
 
-const bodyBoxes = bodyIds.map((id) => bbox((x, y) => bodies.labels[y * W + x] === id));
-// La vista frontal es el cuerpo de la izquierda de la lámina.
-const order = bodyIds.map((id, i) => ({ id, box: bodyBoxes[i] })).sort((a, b) => a.box.x0 - b.box.x0);
-const VIEWS = [
-  { view: 'front', ...order[0] },
-  { view: 'back', ...order[1] },
-];
+/** Las dos componentes grandes de la silueta, ordenadas de izquierda a derecha de la lámina. */
+function findBodies(m) {
+  const bodies = label(m);
+  const ids = [...bodies.sizes.keys()]
+    .filter((id) => id > 0 && bodies.sizes[id] > (W * H) / 200)
+    .sort((a, b) => bodies.sizes[b] - bodies.sizes[a])
+    .slice(0, 2);
+  if (ids.length < 2) {
+    console.error(`Se esperaban 2 cuerpos, encontrados ${ids.length}. Revisa OUTLINE_MAX.`);
+  }
+  const boxed = ids
+    .map((id) => ({ id, box: bbox((x, y) => bodies.labels[y * W + x] === id) }))
+    .sort((a, b) => a.box.x0 - b.box.x0);
+  // La vista frontal es el cuerpo de la izquierda de la lámina.
+  return { bodies, views: [{ view: 'front', ...boxed[0] }, { view: 'back', ...boxed[1] }] };
+}
+
+let { bodies, views: VIEWS } = findBodies(bodyMask);
+
+// --- Simetrización ------------------------------------------------------------------------------
+// La lámina está generada por IA y los dos lados no son idénticos: el pectoral de un lado se dibujó
+// con tres haces y el del otro con dos, y en el brazo posterior un antebrazo salió partido en dos
+// trozos y el otro no. En una ilustración eso no se nota; en el mapa sí, porque al teñir "Pecho" de
+// un solo color lo único que queda visible de cada haz es la raya blanca que lo separa del vecino, y
+// un lado acaba con una raya que el otro no tiene. Se lee como defecto, no como estilo.
+//
+// Se espeja el ráster antes de trazar, no los paths después: así las dos mitades son el mismo píxel
+// y no hay ninguna posibilidad de que dos músculos que deberían ser gemelos difieran.
+if (SYMMETRIZE !== 'none') {
+  const next = new Uint8Array(lum);
+  for (const v of VIEWS) {
+    // Eje de simetría: el que hace coincidir mejor la silueta con su reflejo. Tomar el centro de la
+    // caja daría un eje sesgado, porque los brazos de la lámina no están exactamente igual de
+    // separados del tronco.
+    let bestAxis = (v.box.x0 + v.box.x1) / 2;
+    let bestScore = -1;
+    for (let a = (v.box.x0 + v.box.x1) / 2 - 24; a <= (v.box.x0 + v.box.x1) / 2 + 24; a += 0.5) {
+      let hit = 0;
+      let total = 0;
+      for (let y = v.box.y0; y <= v.box.y1; y += 2) {
+        for (let x = v.box.x0; x <= v.box.x1; x += 2) {
+          const mx = Math.round(2 * a - x);
+          if (mx < v.box.x0 || mx > v.box.x1) continue;
+          const p = bodyMask.data[y * W + x];
+          const q = bodyMask.data[y * W + mx];
+          if (p || q) total++;
+          if (p && q) hit++;
+        }
+      }
+      const score = total ? hit / total : 0;
+      if (score > bestScore) {
+        bestScore = score;
+        bestAxis = a;
+      }
+    }
+    // Eje en media unidad: así el reflejo lleva píxeles enteros a píxeles enteros y no aparece una
+    // costura de un píxel en la línea media.
+    const axis = Math.round(bestAxis * 2) / 2;
+    const keepLeft = SYMMETRIZE === 'left';
+    for (let y = v.box.y0 - 2; y <= v.box.y1 + 2; y++) {
+      if (y < 0 || y >= H) continue;
+      for (let x = v.box.x0 - 2; x <= v.box.x1 + 2; x++) {
+        if (x < 0 || x >= W) continue;
+        if (keepLeft ? x <= axis : x >= axis) continue;
+        const mx = Math.round(2 * axis - x);
+        if (mx < 0 || mx >= W) continue;
+        next[y * W + x] = lum[y * W + mx];
+      }
+    }
+    console.log(`${v.view}: eje x=${axis} (coincidencia ${(bestScore * 100).toFixed(1)}%)`);
+  }
+  lum = next;
+  bodyMask = segmentBodies(lum);
+  ({ bodies, views: VIEWS } = findBodies(bodyMask));
+}
+
+// Carne: dentro del cuerpo, ni hueco blanco ni línea de contorno. Se acota al cuerpo a propósito —
+// el gris del fondo y el gris del músculo casi coinciden en luminancia, así que fuera del cuerpo
+// este mismo umbral seleccionaría media lámina.
+const flesh = mask(W, H);
+for (let i = 0; i < W * H; i++) {
+  flesh.data[i] = bodyMask.data[i] && lum[i] > OUTLINE_MAX && lum[i] < FLESH_MAX ? 1 : 0;
+}
 
 // Escala común a las dos vistas: si cada cuerpo se normalizase a su propia caja, el más bajo se
 // estiraría y las dos figuras dejarían de medir lo mismo puestas una al lado de la otra.
-const scale = TARGET_H / Math.max(...VIEWS.map((v) => v.box.y1 - v.box.y0 + 1));
+// Margen arriba y abajo. Sin él la coronilla y los pies caen justo sobre el borde del viewBox, y como
+// las curvas se suavizan con Catmull-Rom algún punto de control se sale por encima y el SVG lo
+// recorta. Es poca cosa, pero es un recorte del dibujo, no un redondeo.
+const INSET = 0.012;
+const scale = (TARGET_H * (1 - 2 * INSET)) / Math.max(...VIEWS.map((v) => v.box.y1 - v.box.y0 + 1));
+const INSET_Y = TARGET_H * INSET;
 const boxW = Math.max(...VIEWS.map((v) => (v.box.x1 - v.box.x0 + 1) * scale));
 const VIEW_W = Math.round(boxW * 1.06);
 const VIEW_BOX = `0 0 ${VIEW_W} ${TARGET_H}`;
@@ -401,7 +482,7 @@ for (const s of stats.values()) {
       toBezier(
         rdp(chaikin(loop.map(([x, y]) => [x + wx0, y + wy0]), 2), EPSILON).map(([x, y]) => [
           (x - ox) * scale,
-          (y - oy) * scale,
+          (y - oy) * scale + INSET_Y,
         ]),
         1
       )
@@ -413,7 +494,7 @@ for (const s of stats.values()) {
     view: view.view,
     area: s.area,
     cx: Number((((cx - ox) * scale) / VIEW_W).toFixed(3)),
-    cy: Number((((cy - oy) * scale) / TARGET_H).toFixed(3)),
+    cy: Number((((cy - oy) * scale + INSET_Y) / TARGET_H).toFixed(3)),
     d,
   });
 }
@@ -436,7 +517,7 @@ for (const v of VIEWS) {
       toBezier(
         rdp(chaikin(loop.map(([x, y]) => [x + wx0, y + wy0]), 2), EPSILON).map(([x, y]) => [
           (x - ox) * scale,
-          (y - oy) * scale,
+          (y - oy) * scale + INSET_Y,
         ]),
         1
       )

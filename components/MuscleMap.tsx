@@ -36,7 +36,7 @@ export interface MuscleMapProps {
   labelForGroup?: (group: MuscleGroup) => string;
   /**
    * Color por grupo que sustituye a la rampa de intensidad. Es lo que permite reutilizar este mismo
-   * cuerpo para la vista de rangos sin duplicar el componente ni los 117 paths: la geometría y la
+   * cuerpo para la vista de rangos sin duplicar el componente ni los 70 paths: la geometría y la
    * interacción son idénticas, sólo cambia qué significa el color. Devolver `null` deja el grupo en
    * el tono de "sin datos".
    *
@@ -96,7 +96,7 @@ interface Active {
  * entrenado cada grupo.
  *
  * Sustituye al cuerpo esquemático de rectángulos y elipses. La geometría vive en
- * `data/muscleMapPaths.ts` (generado desde `public/frontrear.html`), no aquí.
+ * `data/muscleMapPaths.ts` (vectorizado de `public/MUSCLE MAP REFERENCE.png`), no aquí.
  *
  * Tres decisiones de UX que se apartan de la versión anterior:
  *
@@ -131,29 +131,25 @@ export default function MuscleMap({
 
   // En este SVG la definición muscular NO la dibuja ningún trazo: cada músculo es un path relleno
   // independiente y las separaciones entre ellos son el cuerpo asomando por los huecos. Así que la
-  // anatomía se ve, o no se ve, según cuánto se separen estos dos rellenos.
+  // anatomía se ve, o no se ve, según cuánto se separen estos dos rellenos — y la lámina de la que
+  // sale la geometría los separa mucho: cuerpo blanco, músculo gris medio.
   //
-  // La primera versión los puso a '#232323' (cuerpo) y '#2c2c2c' (músculo en reposo), doce puntos
-  // de diferencia: las piernas entrenadas se leían porque el mint contrasta con todo, pero el tren
-  // superior sin entrenar se fundía en una mancha uniforme y había que pasar el ratón para saber
-  // dónde estaba cada grupo. El músculo en reposo va ahora claramente por encima del cuerpo, de modo
-  // que la anatomía se lee en reposo y el color solo añade la intensidad.
-  // Cuerpo blanco en los dos temas. En oscuro la figura recorta contra la tarjeta y es el elemento
-  // más claro de la pantalla; en claro hay que bajarla un punto, porque un blanco puro sobre una
-  // tarjeta blanca no sería una figura, sería nada.
+  // La versión anterior los tenía casi pegados ('#f2f5f7' contra '#dde3ea') y compensaba con un
+  // trazo por músculo. Con esta anatomía sobra: los huecos entre vientres ya son anchos y limpios,
+  // y un trazo por músculo sobre setenta paths convertía la figura en un dibujo de líneas. El
+  // contraste lo lleva ahora el relleno, que es como está pintada la lámina.
   //
-  // El relleno y el trazo no hacen el mismo trabajo, y por eso no se mueven juntos: el relleno
-  // distingue el músculo de la masa del cuerpo, y el trazo es el que dibuja la línea anatómica. El
-  // trazo está calibrado a 3.34:1 sobre la silueta, el mismo contraste que ya tiene `textFaint`
-  // sobre el fondo de la app — un peso que aquí está demostrado que se lee sin gritar.
-  const silhouetteFill = isDark ? '#f2f5f7' : '#e4e9ee';
-  const silhouetteStroke = isDark ? '#c9d2da' : '#c2cad3';
-  const restFill = isDark ? '#dde3ea' : '#cfd7e0';
-  const restStroke = isDark ? '#7c8794' : '#727d8a';
-  // Sobre los escalones claros de la rampa una línea clara no separaría nada, así que la
-  // separación entre músculos entrenados va en negro translúcido: funciona igual sobre el mint
-  // claro del nivel 1 que sobre el verde profundo del 4.
-  const trainedStroke = 'rgba(0, 0, 0, 0.35)';
+  // En oscuro la silueta va blanca y recorta contra la tarjeta. En claro hay que bajarla, porque un
+  // blanco puro sobre una tarjeta blanca no sería una figura, sería nada; y ahí sí hace falta un
+  // trazo, pero en el contorno del cuerpo, no en cada músculo.
+  const silhouetteFill = isDark ? '#ffffff' : '#f6f8fa';
+  const silhouetteStroke = isDark ? null : '#d2dae2';
+  const restFill = isDark ? '#9aa3ad' : '#98a3b0';
+  // Realce al señalar un músculo. Va en casi negro y no en `tk.text`: con `tk.text` en tema oscuro
+  // el realce salía blanco, es decir, del mismo color que los huecos entre músculos, y en vez de
+  // recortar el músculo lo disolvía. Un contorno oscuro funciona sobre el gris del reposo, sobre
+  // los cuatro escalones de la rampa y sobre cualquier color de rango.
+  const activeStroke = 'rgba(12, 16, 20, 0.85)';
 
   const colorForLevel = (level: IntensityLevel) => (level === 0 ? restFill : tk.heat[level - 1]);
 
@@ -165,7 +161,10 @@ export default function MuscleMap({
           gridTemplateColumns: 'repeat(2, 1fr)',
           gap: tk.space.md,
           width: '100%',
-          maxWidth: '520px',
+          // Estrechado desde 520px al cambiar de anatomía: la figura nueva es bastante más esbelta
+          // (viewBox 425x1000 frente a 660x1206), así que a 520px de ancho las dos vistas medían
+          // ~600px de alto y la tarjeta ya no cabía de un vistazo en móvil.
+          maxWidth: '440px',
         }}
       >
         {VIEWS.map(({ view, caption, silhouette, muscles }, viewIndex) => (
@@ -202,8 +201,8 @@ export default function MuscleMap({
                   key={`sil-${i}`}
                   d={p.d}
                   fill={p.fill === 'none' ? 'none' : silhouetteFill}
-                  stroke={p.stroke ? silhouetteStroke : undefined}
-                  strokeWidth={p.strokeWidth}
+                  stroke={silhouetteStroke ?? undefined}
+                  strokeWidth={silhouetteStroke ? 1.4 : undefined}
                 />
               ))}
 
@@ -217,11 +216,6 @@ export default function MuscleMap({
                 const overrideColor =
                   override && typeof override !== 'string' ? `url(#${gradientId(view, group)})` : override;
                 const groupFill = colorForGroup ? overrideColor ?? restFill : colorForLevel(level);
-                // El trazo no puede tirar de `url(#...)`: sobre un degradado se dibujaría el mismo
-                // degradado en el borde y la separación entre músculos desaparecería. Se usa el tono
-                // de sombra del par, que es el que ya cierra la forma por abajo.
-                const groupStroke =
-                  override && typeof override !== 'string' ? override.to : groupFill;
 
                 const show = () => setActive({ group, value, level });
                 const clear = () => setActive(null);
@@ -259,20 +253,14 @@ export default function MuscleMap({
                         key={i}
                         d={p.d}
                         fill={groupFill}
-                        stroke={
-                          isActive
-                            ? tk.text
-                            : groupFill === restFill
-                              ? restStroke
-                              : groupStroke === groupFill
-                                ? trainedStroke
-                                : groupStroke
-                        }
-                        // Los paths musculares no traen `stroke-width` propio (en el original no
-                        // llevaban trazo). En un viewBox de 660 de ancho que se pinta a ~250px,
-                        // 2 unidades quedan en algo menos de un píxel: define el borde sin que la
-                        // figura parezca contorneada.
-                        strokeWidth={isActive ? 3 : 2}
+                        // Sólo el músculo señalado lleva trazo. En reposo no hay ninguno: los huecos
+                        // de la propia anatomía ya separan un vientre del siguiente, y así el
+                        // contorno que aparece al señalar es un cambio visible de verdad y no un
+                        // engrosamiento de una línea que ya estaba.
+                        stroke={isActive ? activeStroke : 'none'}
+                        // 1.8 unidades sobre un viewBox de 425 de ancho pintado a ~200px: algo menos
+                        // de un píxel, suficiente para recortar el músculo sin contornearlo.
+                        strokeWidth={isActive ? 1.8 : 0}
                         style={{
                           transition: `fill ${tk.motion.css.base}, stroke ${tk.motion.css.fast}`,
                         }}

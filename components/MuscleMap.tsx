@@ -2,14 +2,9 @@ import { useState, type ReactNode } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { getTokens } from '../lib/tokens';
 import { slugify } from '../lib/slug';
-import {
-  ANATOMY_VIEW_BOX,
-  BACK_MUSCLES,
-  BACK_SILHOUETTE,
-  FRONT_MUSCLES,
-  FRONT_SILHOUETTE,
-  type MusclePath,
-} from '../data/muscleMapPaths';
+import type { MusclePath } from '../data/muscleMapPaths';
+import * as MALE_BODY from '../data/muscleMapPaths';
+import * as FEMALE_BODY from '../data/muscleMapPathsFemale';
 import type { BodyView, MuscleGroup } from '../data/muscleMapRegions';
 
 export type IntensityLevel = 0 | 1 | 2 | 3 | 4;
@@ -30,6 +25,12 @@ export interface MuscleMapProps {
   /** Series entrenadas por grupo muscular (p. ej. en la última semana). */
   seriesByMuscle: Partial<Record<MuscleGroup, number>>;
   isDark?: boolean;
+  /**
+   * Cuerpo que se dibuja. Sale del perfil, que ya guarda el sexo para los baremos de fuerza — no se
+   * pregunta dos veces. Sin indicar, se dibuja el masculino: hay que elegir uno, y es el que ya
+   * estaba. Sólo cambia el dibujo; los grupos, los colores y la interacción son los mismos.
+   */
+  sex?: BodySex | null;
   /** Umbrales de series para pasar de un nivel a otro. Por defecto: [1, 4, 8, 12]. */
   thresholds?: [number, number, number, number];
   onMuscleClick?: (group: MuscleGroup) => void;
@@ -70,10 +71,44 @@ const LEVEL_LABELS: Record<Exclude<IntensityLevel, 0>, string> = {
   4: 'Muy alto',
 };
 
-const VIEWS: { view: BodyView; caption: string; silhouette: MusclePath[]; muscles: Record<string, MusclePath[]> }[] = [
-  { view: 'front', caption: 'Frontal', silhouette: FRONT_SILHOUETTE, muscles: FRONT_MUSCLES },
-  { view: 'back', caption: 'Posterior', silhouette: BACK_SILHOUETTE, muscles: BACK_MUSCLES },
-];
+/** Sexo del cuerpo que se dibuja. `null` (sin indicar en el perfil) cae en el masculino. */
+export type BodySex = 'male' | 'female';
+
+interface BodyView_ {
+  view: BodyView;
+  caption: string;
+  silhouette: MusclePath[];
+  muscles: Record<string, MusclePath[]>;
+}
+
+/**
+ * Los dos cuerpos. Son dos láminas dibujadas por separado, no una escalada desde la otra: cada una
+ * trae su propio viewBox porque forzarlas a una caja común deformaría a una de las dos.
+ *
+ * Las dos exportan los mismos nombres (las genera el mismo script), así que intercambiarlas es
+ * elegir módulo y nada más.
+ */
+const ANATOMY: Record<BodySex, { viewBox: string; views: BodyView_[] }> = {
+  male: {
+    viewBox: MALE_BODY.ANATOMY_VIEW_BOX,
+    views: [
+      { view: 'front', caption: 'Frontal', silhouette: MALE_BODY.FRONT_SILHOUETTE, muscles: MALE_BODY.FRONT_MUSCLES },
+      { view: 'back', caption: 'Posterior', silhouette: MALE_BODY.BACK_SILHOUETTE, muscles: MALE_BODY.BACK_MUSCLES },
+    ],
+  },
+  female: {
+    viewBox: FEMALE_BODY.ANATOMY_VIEW_BOX,
+    views: [
+      {
+        view: 'front',
+        caption: 'Frontal',
+        silhouette: FEMALE_BODY.FRONT_SILHOUETTE,
+        muscles: FEMALE_BODY.FRONT_MUSCLES,
+      },
+      { view: 'back', caption: 'Posterior', silhouette: FEMALE_BODY.BACK_SILHOUETTE, muscles: FEMALE_BODY.BACK_MUSCLES },
+    ],
+  },
+};
 
 function getIntensity(value: number, thresholds: [number, number, number, number]): IntensityLevel {
   if (value <= 0) return 0;
@@ -114,6 +149,7 @@ interface Active {
 export default function MuscleMap({
   seriesByMuscle,
   isDark = false,
+  sex = null,
   thresholds = DEFAULT_THRESHOLDS,
   onMuscleClick,
   labelForGroup,
@@ -126,6 +162,7 @@ export default function MuscleMap({
   const tk = getTokens(isDark);
   const prefersReducedMotion = useReducedMotion();
   const [active, setActive] = useState<Active | null>(null);
+  const anatomy = ANATOMY[sex === 'female' ? 'female' : 'male'];
 
   const label = (group: MuscleGroup) => (labelForGroup ? labelForGroup(group) : group);
 
@@ -145,11 +182,10 @@ export default function MuscleMap({
   const silhouetteFill = isDark ? '#ffffff' : '#f6f8fa';
   const silhouetteStroke = isDark ? null : '#d2dae2';
   const restFill = isDark ? '#9aa3ad' : '#98a3b0';
-  // Realce al señalar un músculo. Va en casi negro y no en `tk.text`: con `tk.text` en tema oscuro
-  // el realce salía blanco, es decir, del mismo color que los huecos entre músculos, y en vez de
-  // recortar el músculo lo disolvía. Un contorno oscuro funciona sobre el gris del reposo, sobre
-  // los cuatro escalones de la rampa y sobre cualquier color de rango.
-  const activeStroke = 'rgba(12, 16, 20, 0.85)';
+  // Los músculos no llevan trazo en ningún estado, tampoco al señalarlos: quien señala un músculo ya
+  // tiene la respuesta en la franja de lectura de abajo, que además dice CUÁL es y en qué nivel está
+  // — un contorno sólo dice "este". Y con el teclado el anillo de foco lo pone
+  // components/ui/InteractionStyles.tsx, así que quitarlo no deja a nadie sin saber dónde está.
 
   const colorForLevel = (level: IntensityLevel) => (level === 0 ? restFill : tk.heat[level - 1]);
 
@@ -167,7 +203,7 @@ export default function MuscleMap({
           maxWidth: '440px',
         }}
       >
-        {VIEWS.map(({ view, caption, silhouette, muscles }, viewIndex) => (
+        {anatomy.views.map(({ view, caption, silhouette, muscles }, viewIndex) => (
           <motion.figure
             key={view}
             initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
@@ -179,7 +215,7 @@ export default function MuscleMap({
             }}
             style={{ margin: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: tk.space.sm }}
           >
-            <svg viewBox={ANATOMY_VIEW_BOX} style={{ width: '100%', height: 'auto', display: 'block' }}>
+            <svg viewBox={anatomy.viewBox} style={{ width: '100%', height: 'auto', display: 'block' }}>
               <defs>
                 {Object.keys(muscles).map((groupKey) => {
                   const fill = colorForGroup?.(groupKey as MuscleGroup);
@@ -210,7 +246,6 @@ export default function MuscleMap({
                 const group = groupKey as MuscleGroup;
                 const value = seriesByMuscle[group] || 0;
                 const level = getIntensity(value, thresholds);
-                const isActive = active?.group === group;
                 const describe = level === 0 ? 'sin entrenar' : LEVEL_LABELS[level];
                 const override = colorForGroup?.(group);
                 const overrideColor =
@@ -256,17 +291,11 @@ export default function MuscleMap({
                         key={i}
                         d={p.d}
                         fill={groupFill}
-                        // Sólo el músculo señalado lleva trazo. En reposo no hay ninguno: los huecos
-                        // de la propia anatomía ya separan un vientre del siguiente, y así el
-                        // contorno que aparece al señalar es un cambio visible de verdad y no un
-                        // engrosamiento de una línea que ya estaba.
-                        stroke={isActive ? activeStroke : 'none'}
-                        // 1.8 unidades sobre un viewBox de 432 de ancho pintado a ~200px: algo menos
-                        // de un píxel, suficiente para recortar el músculo sin contornearlo.
-                        strokeWidth={isActive ? 1.8 : 0}
-                        style={{
-                          transition: `fill ${tk.motion.css.base}, stroke ${tk.motion.css.fast}`,
-                        }}
+                        // Sin trazo en ningún estado: los huecos de la propia anatomía ya separan un
+                        // vientre del siguiente, y el hueco es más limpio que una línea porque no
+                        // engorda la silueta ni compite con el color del grupo.
+                        stroke="none"
+                        style={{ transition: `fill ${tk.motion.css.base}` }}
                       />
                     ))}
                   </motion.g>

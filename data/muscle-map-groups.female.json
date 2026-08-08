@@ -1,0 +1,52 @@
+{
+  "_comment": [
+    "Mapeo pieza -> grupo del cuerpo FEMENINO, vectorizado de public/Ejemplochica.png.",
+    "El equivalente masculino es data/muscle-map-groups.json; ver ahí las notas generales sobre cómo",
+    "se leen los índices y por qué el generador contrasta cada asignación con el color de la mancha.",
+    "Las dos láminas son dibujos distintos: ni el número de piezas ni los índices se corresponden.",
+    "",
+    "Cuatro decisiones que el color por sí solo no resuelve, tres iguales que en el cuerpo masculino:",
+    "- front 9/10: cuñas grises bajo el pectoral = serrato, a Abdomen.",
+    "- front 29/30: las palas grises que bajan de la cadera a la ingle son los aductores. No hay grupo",
+    "  'Aductor' en el mapa, y de los doce el que se entrena con ellos es Cuádriceps.",
+    "- back 4/5: rojo anaranjado entre deltoide y dorsal = infraespinoso/redondo, a Espalda.",
+    "- back 16/17: cuña ámbar del borde externo del muslo posterior = vasto externo, a Cuádriceps.",
+    "",
+    "back 18/19 sí son isquios: son las palas ámbar del muslo interno, pegadas a la línea media, no",
+    "el borde externo."
+  ],
+  "exceptions": {
+    "front": {
+      "9": { "group": "Abdomen", "why": "Serrato. La lámina lo pinta gris, pero cuenta como Abdomen." },
+      "10": { "group": "Abdomen", "why": "Espejo de la pieza 9." },
+      "29": { "group": "Cuádriceps", "why": "Aductor. La lámina lo pinta gris; de los doce grupos del mapa, el que se entrena con él es Cuádriceps." },
+      "30": { "group": "Cuádriceps", "why": "Espejo de la pieza 29." }
+    },
+    "back": {
+      "4": { "group": "Espalda", "why": "Infraespinoso/redondo, no deltoide: la lámina le da un tono propio (13°) distinto del hombro (19°)." },
+      "5": { "group": "Espalda", "why": "Espejo de la pieza 4." },
+      "16": { "group": "Cuádriceps", "why": "Vasto externo asomando por detrás. La lámina lo pinta del color del isquio, pero es cuádriceps." },
+      "17": { "group": "Cuádriceps", "why": "Espejo de la pieza 16." }
+    }
+  },
+  "front": {
+    "Cuello": [0, 1, 2],
+    "Hombros": [3, 4],
+    "Pecho": [5, 6],
+    "Bíceps": [7, 8],
+    "Antebrazo": [21, 22, 23, 24],
+    "Abdomen": [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 26, 27, 28],
+    "Cuádriceps": [29, 30, 31, 32, 33, 34, 35, 36],
+    "Gemelos": [37, 38, 39, 40]
+  },
+  "back": {
+    "Hombros": [2, 3],
+    "Espalda": [0, 1, 4, 5, 8, 9, 10, 11],
+    "Tríceps": [6, 7],
+    "Antebrazo": [12, 13],
+    "Glúteos": [14, 15],
+    "Cuádriceps": [16, 17],
+    "Femoral": [18, 19, 20, 21],
+    "Gemelos": [22, 23]
+  }
+}

@@ -80,14 +80,18 @@ const COLOR_RULES = [
   { name: 'rojo', hue: [345, 15], front: 'Pecho', back: 'Glúteos' },
   {
     name: 'naranja',
-    hue: [15, 33],
+    // La frontera con el ámbar va en 37 y no en 33: en la lámina femenina un antebrazo salió a 34 y
+    // su gemelo del otro lado a 32, o sea que el corte anterior pasaba POR DENTRO del color del
+    // antebrazo y partía en dos un par que es el mismo dibujo espejado. Los naranjas medidos llegan
+    // a 34 y los ámbares empiezan en 41, así que 37 es el centro del hueco.
+    hue: [15, 37],
     // Deltoides y antebrazo comparten el naranja y sólo se distinguen a nueve grados de tono, que es
     // menos de lo que varía el propio degradado de una mancha. Se separan por altura: en la lámina el
     // hombro cae en cy 0.12 (frontal) y 0.22 (posterior), y el antebrazo en 0.28-0.41. El corte va en
     // 0.25, el punto más holgado entre los dos grupos — 0.03 por debajo del hombro más bajo.
     split: (c) => (c.cy < 0.25 ? 'Hombros' : 'Antebrazo'),
   },
-  { name: 'ámbar', hue: [33, 60], front: 'Cuádriceps', back: 'Femoral' },
+  { name: 'ámbar', hue: [37, 60], front: 'Cuádriceps', back: 'Femoral' },
   { name: 'verde', hue: [70, 150], front: 'Abdomen', back: 'Abdomen' },
   {
     name: 'teal',
@@ -387,26 +391,83 @@ function bbox(pred) {
   return { x0, y0, x1, y1 };
 }
 
-/** Silueta: todo lo que no es fondo. Se queda con las dos manchas grandes — así se cae solo el
- *  rótulo "Frontal"/"Posterior" que la lámina lleva impreso debajo de cada figura. */
+// Holgura (px) para decidir si una mancha suelta pertenece a un cuerpo: se compara su caja con la del
+// cuerpo, inflada esto. Basta con 4 — la cabeza y las orejas SOLAPAN la caja del cuerpo, mientras que
+// el rótulo impreso queda 50 px por debajo del pie.
+const ATTACH_TOL = Number(process.env.ATTACH_TOL ?? 4);
+
+/**
+ * Silueta: todo lo que no es fondo.
+ *
+ * Un cuerpo NO es una sola componente conexa. El contorno negro de la lámina es lo bastante oscuro
+ * como para contar de fondo, así que allí donde ese contorno cruza el cuerpo de lado a lado lo parte
+ * en dos: la mandíbula secciona el cuello y deja la cabeza suelta, y las orejas van sueltas en las dos
+ * vistas. Quedarse con "las dos manchas más grandes" dejaba al frontal sin cabeza.
+ *
+ * Tampoco vale subir un umbral de área: una oreja (≈270 px) pesa lo mismo que una letra del rótulo
+ * "Frontal"/"Posterior" que la lámina lleva impreso debajo (≈160-205 px). Lo que sí los separa es
+ * DÓNDE están — las piezas del cuerpo tocan su caja y el rótulo no. Así que se parte de las dos
+ * manchas grandes y se van pegando las que caen encima, repitiendo hasta que no se pega ninguna más
+ * (la oreja no toca el torso, toca la cabeza, que a su vez toca el torso).
+ */
 function segmentBodies(source) {
   const m = mask(W, H);
   for (let i = 0; i < W * H; i++) m.data[i] = hsvAt(source, i)[2] > BG_MAX_V ? 1 : 0;
   const bodies = label(m);
-  const ids = [...bodies.sizes.keys()]
-    .filter((id) => id > 0 && bodies.sizes[id] > (W * H) / 300)
-    .sort((a, b) => bodies.sizes[b] - bodies.sizes[a])
-    .slice(0, 2);
-  if (ids.length < 2) console.error(`Se esperaban 2 cuerpos, encontrados ${ids.length}. Revisa BG_MAX_V.`);
+
+  const boxes = new Map();
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const id = bodies.labels[y * W + x];
+      if (!id) continue;
+      const b = boxes.get(id);
+      if (!b) boxes.set(id, { x0: x, y0: y, x1: x, y1: y });
+      else {
+        if (x < b.x0) b.x0 = x;
+        if (x > b.x1) b.x1 = x;
+        if (y < b.y0) b.y0 = y;
+        if (y > b.y1) b.y1 = y;
+      }
+    }
+  }
+
+  const seeds = [...boxes.keys()].sort((a, b) => bodies.sizes[b] - bodies.sizes[a]).slice(0, 2);
+  if (seeds.length < 2) console.error(`Se esperaban 2 cuerpos, encontrados ${seeds.length}. Revisa BG_MAX_V.`);
+
+  const grow = (v) => (b) => ({ x0: b.x0 - v, y0: b.y0 - v, x1: b.x1 + v, y1: b.y1 + v });
+  const hits = (a, b) => a.x0 <= b.x1 && b.x0 <= a.x1 && a.y0 <= b.y1 && b.y0 <= a.y1;
+  const merge = (a, b) => ({
+    x0: Math.min(a.x0, b.x0), y0: Math.min(a.y0, b.y0),
+    x1: Math.max(a.x1, b.x1), y1: Math.max(a.y1, b.y1),
+  });
+
+  const parts = seeds.map((id) => ({ ids: new Set([id]), box: { ...boxes.get(id) } }));
+  const taken = new Set(seeds);
+  for (let changed = true; changed; ) {
+    changed = false;
+    for (const [id, box] of boxes) {
+      if (taken.has(id)) continue;
+      // Si una mancha tocase las dos cajas, gana aquella cuyo centro esté más cerca. Con dos figuras
+      // tan separadas no pasa, pero dejarlo al azar del orden del bucle sería una bomba de relojería.
+      const candidates = parts.filter((p) => hits(grow(ATTACH_TOL)(p.box), box));
+      if (!candidates.length) continue;
+      const cx = (box.x0 + box.x1) / 2;
+      const best = candidates.reduce((a, b) =>
+        Math.abs(cx - (a.box.x0 + a.box.x1) / 2) <= Math.abs(cx - (b.box.x0 + b.box.x1) / 2) ? a : b
+      );
+      best.ids.add(id);
+      best.box = merge(best.box, box);
+      taken.add(id);
+      changed = true;
+    }
+  }
 
   const bodyMask = mask(W, H);
-  for (let i = 0; i < W * H; i++) if (ids.includes(bodies.labels[i])) bodyMask.data[i] = 1;
+  for (let i = 0; i < W * H; i++) if (taken.has(bodies.labels[i])) bodyMask.data[i] = 1;
 
-  const boxed = ids
-    .map((id) => ({ id, box: bbox((x, y) => bodies.labels[y * W + x] === id) }))
-    .sort((a, b) => a.box.x0 - b.box.x0);
   // La vista frontal es el cuerpo de la izquierda de la lámina.
-  return { bodies, bodyMask, views: [{ view: 'front', ...boxed[0] }, { view: 'back', ...boxed[1] }] };
+  const ordered = parts.sort((a, b) => a.box.x0 - b.box.x0);
+  return { bodies, bodyMask, views: [{ view: 'front', ...ordered[0] }, { view: 'back', ...ordered[1] }] };
 }
 
 let { bodies, bodyMask, views: VIEWS } = segmentBodies(rgb);
@@ -599,7 +660,10 @@ components.sort((a, b) => (a.view === b.view ? a.cy - b.cy || a.cx - b.cx : a.vi
 // --- Siluetas -------------------------------------------------------------------------------------
 const silhouettes = {};
 for (const v of VIEWS) {
-  const { loops, wx0, wy0 } = traceRegion((x, y) => bodies.labels[y * W + x] === v.id, v.box);
+  // Todas las piezas del cuerpo (torso + cabeza + orejas) en un solo `d` con varios subtrazados: son
+  // regiones disjuntas y todas se recorren en el mismo sentido, así que el relleno por defecto las
+  // pinta las tres sin que ninguna agujeree a otra.
+  const { loops, wx0, wy0 } = traceRegion((x, y) => v.ids.has(bodies.labels[y * W + x]), v.box);
   silhouettes[v.view] = toPath(loops, wx0, wy0, originX(v), v.box.y0);
 }
 

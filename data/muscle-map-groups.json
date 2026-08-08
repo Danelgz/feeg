@@ -9,24 +9,35 @@
     "Las piezas van por pares espejo (la lámina se simetriza antes de trazar); las impares son las que",
     "cruzan la línea media: en esta lámina, sólo el cuello.",
     "",
-    "Tres decisiones que el color por sí solo no resuelve:",
-    "- front 7/8: las cuñas grises bajo el pectoral son el serrato. La lámina las pinta del gris del",
-    "  cuello, pero cuentan como Abdomen — es lo que el usuario pidió expresamente.",
-    "- front 1/2: los triángulos grises que van del cuello al hombro son trapecio superior. Se quedan",
-    "  en Cuello porque son la misma mancha gris que la uve del cuello y separarlos partiría en dos",
-    "  colores una forma que la lámina dibuja como una sola.",
-    "- back 4/5: el rojo anaranjado entre el deltoide y el dorsal es infraespinoso/redondo, no",
-    "  deltoide: la lámina le da un tono propio (11°) distinto del hombro (18°). Va a Espalda.",
-    "- back 16/17: la cuña ámbar del borde externo del muslo posterior es el vasto externo asomando",
-    "  por detrás. La lámina la pinta del color del isquio, pero es cuádriceps y así es como se pidió."
+    "OJO con el orden de los índices: van por altura y, a igual altura, de izquierda a derecha. Dos",
+    "grupos distintos a la misma altura quedan INTERCALADOS — el oblicuo y el antebrazo comparten la",
+    "fila cy=0.306, y dar por hecho que cada grupo ocupa índices seguidos ya coló una vez un oblicuo",
+    "en Antebrazo y un antebrazo en Abdomen. Por eso build-muscle-paths.mjs contrasta cada asignación",
+    "con el color de la mancha y aborta si no cuadra; lo que discrepa a propósito va en 'exceptions'.",
+    "",
+    "front 1/2 no son excepción aunque lo parezcan: los triángulos que van del cuello al hombro son",
+    "trapecio superior, pero la lámina los pinta del gris del cuello y ahí se quedan — separarlos",
+    "partiría en dos colores una forma que la lámina dibuja como una sola."
   ],
+  "exceptions": {
+    "front": {
+      "7": { "group": "Abdomen", "why": "Serrato. La lámina lo pinta del gris del cuello, pero cuenta como Abdomen: es lo que se pidió expresamente." },
+      "8": { "group": "Abdomen", "why": "Espejo de la pieza 7." }
+    },
+    "back": {
+      "4": { "group": "Espalda", "why": "Infraespinoso/redondo, no deltoide: la lámina le da un tono propio (12°) distinto del hombro (19°)." },
+      "5": { "group": "Espalda", "why": "Espejo de la pieza 4." },
+      "16": { "group": "Cuádriceps", "why": "Vasto externo asomando por detrás. La lámina lo pinta del color del isquio, pero es cuádriceps y así se pidió." },
+      "17": { "group": "Cuádriceps", "why": "Espejo de la pieza 16." }
+    }
+  },
   "front": {
     "Cuello": [0, 1, 2],
     "Hombros": [3, 4],
     "Pecho": [5, 6],
     "Bíceps": [9, 10],
-    "Antebrazo": [21, 22, 23, 24],
-    "Abdomen": [7, 8, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 26, 27, 28],
+    "Antebrazo": [21, 22, 23, 26],
+    "Abdomen": [7, 8, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 24, 25, 27, 28],
     "Cuádriceps": [29, 30, 31, 32, 33, 34, 35, 36],
     "Gemelos": [37, 38, 39, 40]
   },

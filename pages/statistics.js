@@ -54,7 +54,7 @@ function sumVolume(list) {
 }
 
 export default function Statistics() {
-  const { t, theme, isMobile, language, completedWorkouts: workouts } = useUser();
+  const { t, theme, isMobile, language, completedWorkouts: workouts, user } = useUser();
   const isDark = theme === 'dark';
   const tk = getTokens(isDark);
   const prefersReducedMotion = useReducedMotion();
@@ -242,7 +242,7 @@ export default function Statistics() {
               onBack={() => setSelectedMuscle(null)}
             />
           ) : (
-            <MuscleMapSection isDark={isDark} isMobile={isNarrow} workouts={workouts} t={t} onSelectMuscle={setSelectedMuscle} />
+            <MuscleMapSection isDark={isDark} isMobile={isNarrow} workouts={workouts} t={t} sex={user?.sex ?? null} onSelectMuscle={setSelectedMuscle} />
           )
         )}
 

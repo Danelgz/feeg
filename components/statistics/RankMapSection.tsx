@@ -140,6 +140,7 @@ export default function RankMapSection({ isDark, isMobile = false, t, language }
           <MuscleMap
             seriesByMuscle={{}}
             isDark={isDark}
+            sex={sex}
             labelForGroup={(group) => t(group) || group}
             // Par de tonos y no color plano: `accent` existe en data/ranks.ts precisamente para dar
             // volumen al degradado de cada rango, y hasta ahora sólo lo usaba el arte de la insignia.

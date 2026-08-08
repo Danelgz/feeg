@@ -129,13 +129,22 @@ hardcoding new hex values; the file's comments explain past hex-drift bugs this 
 
 **Muscle map geometry**: [components/MuscleMap.tsx](components/MuscleMap.tsx) draws both body views for
 the Statistics *and* Ranks tabs — the only difference is what the color means (`colorForGroup`), so never
-fork the component to restyle one of them. Its ~65 paths are generated, not hand-written: `public/Referencia2.png` → [scripts/trace-muscle-map.mjs](scripts/trace-muscle-map.mjs) (segments each muscle,
-mirrors the plate for symmetry, traces contours, and proposes a grouping from each blob's colour) →
-`.muscle-trace/debug.png` + `suggested.json` →
-[data/muscle-map-groups.json](data/muscle-map-groups.json) (which piece belongs to which of the 12 groups)
-→ [scripts/build-muscle-paths.mjs](scripts/build-muscle-paths.mjs) → `data/muscleMapPaths.ts`. Edit the
-JSON to re-assign a muscle; re-run both scripts to change the artwork. Never edit `muscleMapPaths.ts` by
-hand — it is overwritten. `data/muscleMapPaths.test.ts` guards against a group silently losing its paths.
+fork the component to restyle one of them. There are **two bodies**, one per sex, picked from `user.sex`
+(null falls back to male); they are separate drawings with different piece counts and viewBoxes, not one
+scaled copy, but they export the same names so swapping them is just picking a module.
+
+Their paths are generated, not hand-written. Per plate: `public/Referencia2.png` (male) /
+`public/Ejemplochica.png` (female) → [scripts/trace-muscle-map.mjs](scripts/trace-muscle-map.mjs) (segments
+each muscle, mirrors the plate for symmetry, traces contours, and proposes a grouping from each blob's
+colour) → `.muscle-trace*/debug.png` + `suggested.json` → `data/muscle-map-groups[.female].json` (which
+piece belongs to which of the 12 groups) → [scripts/build-muscle-paths.mjs](scripts/build-muscle-paths.mjs)
+→ `data/muscleMapPaths[Female].ts`. Re-tracing takes the plate and an out-dir; `build-muscle-paths.mjs`
+with no args rebuilds both bodies. Edit the JSON to re-assign a muscle; re-run both scripts to change the
+artwork. Never edit the generated `muscleMapPaths*.ts` by hand — they are overwritten. The builder cross-checks every assignment against the blob's colour in the plate
+and aborts on any disagreement not declared in the JSON's `exceptions` block: piece indices are ordered by
+height, so two groups sharing a row interleave and one number off puts an oblique in the forearm — which
+breaks nothing, fails no test, and only shows up by training that exact group and looking at the body.
+`data/muscleMapPaths.test.ts` additionally guards against a group silently losing its paths.
 
 **Firebase**: client SDK in `lib/firebase.js` (Auth via Google popup, Firestore, Storage), guarded so
 the app degrades gracefully if env vars are missing. Firebase Admin (`pages/api/generate-routine.js`,
@@ -168,8 +177,9 @@ for consistency rather than introducing a second styling system.
   reformatting the muscle-map SVG/HTML assets under `public/` into a more readable line-per-tag form;
   they aren't part of the build and don't need maintaining. They — and the `public/cuerpo*.html`,
   `public/frontrear*.html`, `public/Cuerpo.png` assets they operate on — are now dead: the muscle map
-  is generated from `public/Referencia2.png` instead. `public/MUSCLE MAP REFERENCE.png` — the plate the
-  map used before that one — is dead for the same reason. Nothing imports any of them.
+  is generated from `public/Referencia2.png` (male) and `public/Ejemplochica.png` (female) instead.
+  `public/MUSCLE MAP REFERENCE.png` — the plate the map used before those — is dead for the same reason.
+  Nothing imports any of them.
 
 ## Reference docs
 

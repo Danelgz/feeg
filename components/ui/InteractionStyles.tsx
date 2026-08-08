@@ -68,6 +68,16 @@ export default function InteractionStyles() {
         outline: 2px solid ${ACCENT};
         outline-offset: 2px;
       }
+      /* ...y quitar el del navegador cuando el foco llega con el ratón. Sin esta regla la de arriba
+         no basta: Chrome sólo se guarda su anillo para :focus-visible en los controles nativos, pero
+         en un elemento con tabindex — el <g> de cada músculo del mapa, sin ir más lejos — lo pinta en
+         :focus a secas. Así que al pulsar un músculo salía el recuadro negro de serie del navegador
+         encajonando el grupo, que además es lo contrario de lo que hace el mapa: el músculo ya se
+         recorta solo y la franja de lectura ya dice cuál es.
+         Las dos reglas son excluyentes (o hay :focus-visible o no), así que el orden da igual. */
+      :where(button, a, [role="button"], input, select, textarea, [tabindex]):focus:not(:focus-visible) {
+        outline: none;
+      }
 
       /* Superficie pintada por clase (no inline) para que los estados de arriba puedan cambiarla. */
       .feeg-surface {

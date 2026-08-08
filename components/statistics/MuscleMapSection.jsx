@@ -5,7 +5,7 @@ import { getTokens } from "../../lib/tokens";
 import { computeSeriesByGroup } from "../../lib/exerciseStats";
 import { MUSCLE_GROUPS } from "../../data/muscleMapRegions";
 
-export default function MuscleMapSection({ isDark, isMobile, workouts, t, onSelectMuscle }) {
+export default function MuscleMapSection({ isDark, isMobile, workouts, t, sex, onSelectMuscle }) {
   const tk = getTokens(isDark);
   // Siempre se calcula sobre los últimos 7 días, independientemente del filtro de periodo de la página.
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -34,6 +34,7 @@ export default function MuscleMapSection({ isDark, isMobile, workouts, t, onSele
           <MuscleMap
             seriesByMuscle={muscleSeriesCount}
             isDark={isDark}
+            sex={sex}
             onMuscleClick={onSelectMuscle}
             labelForGroup={(group) => t(group) || group}
           />

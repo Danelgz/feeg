@@ -1,15 +1,66 @@
-import { useState, useRef, useEffect } from "react";
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from "firebase/firestore";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { getAuth } from "firebase/auth";
-import { db, ensureFreshAuthToken } from "../lib/firebase";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
-import { exercisesList } from "../data/exercises";
+import { useVoice } from "../hooks/useVoice";
+import { getTokens } from "../lib/tokens";
+import { Icon, ConfirmModal } from "../components/ui";
+import {
+  subscribeAiConversations,
+  subscribeAiMessages,
+  createAiConversation,
+  addAiMessage,
+  deleteAiConversation,
+  titleFromMessage,
+} from "../lib/aiChat";
+import {
+  buildCreateRoutine,
+  buildQuickWorkoutRoutine,
+  buildModifyRoutine,
+  buildSubstituteExercise,
+  buildLogSetWorkout,
+  findTargetRoutine,
+} from "../lib/aiActions";
+
+const ACTION_TITLES = {
+  propose_create_routine: "Nueva rutina propuesta",
+  propose_quick_workout: "Sesión rápida propuesta",
+  propose_modify_routine: "Cambio de rutina propuesto",
+  propose_substitute_exercise: "Sustitución de ejercicio propuesta",
+  propose_log_set: "Registrar serie",
+};
+
+function actionTitle(type) {
+  return ACTION_TITLES[type] || "Cambio propuesto";
+}
+
+/** Resumen legible del payload de una propose_* para la tarjeta de confirmación del chat — no
+ * repite lo que ya dijo el modelo en texto, solo deja clara la acción exacta que se aplicaría. */
+function actionDescription(action) {
+  const p = action.payload || {};
+  switch (action.type) {
+    case 'propose_create_routine':
+    case 'propose_quick_workout':
+      return `"${p.name || 'Sin nombre'}" · ${(p.exercises || []).length} ejercicios: ${(p.exercises || []).map(e => e.name).join(', ')}`;
+    case 'propose_modify_routine':
+      return `${p.routineName ? `"${p.routineName}"` : 'La rutina'} pasará a tener ${(p.exercises || []).length} ejercicios: ${(p.exercises || []).map(e => e.name).join(', ')}`;
+    case 'propose_substitute_exercise':
+      return `Sustituir "${p.oldExerciseName}" por "${p.newExerciseName}" en ${p.routineName ? `"${p.routineName}"` : 'tu rutina'}.`;
+    case 'propose_log_set':
+      return `${p.exerciseName}: ${p.reps} reps${p.weight ? ` × ${p.weight} kg` : ''}.`;
+    default:
+      return 'Revisa los detalles y confirma si quieres aplicarlo.';
+  }
+}
 
 export default function IA() {
-  const { theme, isMobile, t, user, authUser, saveRoutine, showNotification } = useUser();
+  const {
+    theme, isMobile, t, user, authUser, routines, saveRoutine, updateRoutine, saveCompletedWorkout, showNotification,
+    aiVoiceEnabled, setAiVoiceEnabled, aiVoiceURI, aiVoiceRate, aiVoicePitch,
+  } = useUser();
   const isDark = theme === 'dark';
-  const [activeTab, setActiveTab] = useState("training"); // training, chat, technique
+  const tk = getTokens(isDark);
+  const [activeTab, setActiveTab] = useState("chat"); // chat, training, technique
 
   // States for Training Generator
   const [showTrainingForm, setShowTrainingForm] = useState(false);
@@ -19,60 +70,47 @@ export default function IA() {
   const [generatedRoutine, setGeneratedRoutine] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // States for Chat
+  // States for Chat — ahora sobre conversaciones independientes en vez de un único hilo.
+  const [conversations, setConversations] = useState([]);
+  const [activeConversationId, setActiveConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
-  const [selectedRoutine, setSelectedRoutine] = useState(null);
   const [isLoadingChat, setIsLoadingChat] = useState(false);
+  const [showHistory, setShowHistory] = useState(!isMobile);
+  const [conversationToDelete, setConversationToDelete] = useState(null);
+  // Propuesta de cambio pendiente de confirmar (crear/modificar rutina, sustituir ejercicio,
+  // sesión rápida, registrar serie) — ver lib/aiActions.ts. Vive solo en memoria: nunca se aplica
+  // sola, y si el usuario cambia de conversación o envía otro mensaje se descarta sin aplicar.
+  const [pendingAction, setPendingAction] = useState(null);
+  const [isApplyingAction, setIsApplyingAction] = useState(false);
   const chatEndRef = useRef(null);
 
-  // Load chat history from Firestore. ensureFreshAuthToken evita el permission-denied típico de
-  // una sesión "antigua" (móvil recién reactivado tras estar la pestaña en segundo plano) cuyo
-  // token está a punto de caducar sin que el refresco pasivo del SDK haya llegado a tiempo.
+  const voice = useVoice({ enabled: aiVoiceEnabled, voiceURI: aiVoiceURI, rate: aiVoiceRate, pitch: aiVoicePitch });
+
+  // Lista de conversaciones del usuario, más recientes primero.
   useEffect(() => {
-    if (!authUser || !authUser.uid) return;
-
-    let cancelled = false;
-    let unsubscribe = () => {};
-
-    ensureFreshAuthToken().then(() => {
-      if (cancelled) return;
-      const q = query(
-        collection(db, 'users', authUser.uid, 'messages'),
-        orderBy('createdAt', 'asc')
-      );
-
-      unsubscribe = onSnapshot(
-        q,
-        (snapshot) => {
-          const msgs = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-              id: doc.id,
-              ...data,
-              time: data.createdAt ? (typeof data.createdAt.toMillis === 'function' ? data.createdAt.toMillis() : 0) : Date.now()
-            };
-          });
-          msgs.sort((a, b) => a.time - b.time);
-          setMessages(msgs);
-        },
-        // Sin esto, cualquier error del listener (permission-denied residual, red...) subía
-        // como error no capturado en vez de quedarse simplemente sin cargar el chat.
-        (error) => console.error('[ia] Error en el listener de mensajes:', error.code || error.message)
-      );
-    });
-
-    return () => {
-      cancelled = true;
-      unsubscribe();
-    };
+    if (!authUser?.uid) { setConversations([]); return; }
+    const unsubscribe = subscribeAiConversations(
+      authUser.uid,
+      (list) => setConversations(list),
+      (error) => console.error('[ia] Error listando conversaciones:', error.code || error.message)
+    );
+    return unsubscribe;
   }, [authUser]);
 
-  // States for Technique
-  const [techniqueSearch, setTechniqueSearch] = useState("");
-  const [techniqueResult, setTechniqueResult] = useState(null);
+  // Mensajes de la conversación activa.
+  useEffect(() => {
+    if (!authUser?.uid || !activeConversationId) { setMessages([]); return; }
+    const unsubscribe = subscribeAiMessages(
+      authUser.uid,
+      activeConversationId,
+      (list) => setMessages(list),
+      (error) => console.error('[ia] Error en el listener de mensajes:', error.code || error.message)
+    );
+    return unsubscribe;
+  }, [authUser, activeConversationId]);
 
-  const accentColor = "#1dd1a1";
+  const accentColor = tk.accent;
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -110,32 +148,64 @@ export default function IA() {
       setIsGenerating(false);
     }
   };
-  // Replaced setTimeout with API call above
+
+  const handleNewConversation = () => {
+    setActiveConversationId(null);
+    setMessages([]);
+    setPendingAction(null);
+    voice.stopSpeaking();
+    if (isMobile) setShowHistory(false);
+  };
+
+  const handleSelectConversation = (id) => {
+    setActiveConversationId(id);
+    setPendingAction(null);
+    voice.stopSpeaking();
+    if (isMobile) setShowHistory(false);
+  };
+
+  const handleRequestDeleteConversation = (conv) => setConversationToDelete(conv);
+
+  const handleConfirmDeleteConversation = async () => {
+    if (!conversationToDelete || !authUser?.uid) return;
+    try {
+      await deleteAiConversation(authUser.uid, conversationToDelete.id);
+      if (activeConversationId === conversationToDelete.id) {
+        setActiveConversationId(null);
+        setMessages([]);
+      }
+    } catch (error) {
+      console.error('Error borrando conversación:', error);
+      showNotification("No se pudo borrar la conversación.", 'error');
+    } finally {
+      setConversationToDelete(null);
+    }
+  };
 
   const handleSendMessage = async () => {
-    if (!chatInput.trim() || !authUser || !authUser.uid) return;
+    const userMessage = chatInput.trim();
+    if (!userMessage || !authUser?.uid) return;
 
-    const userMessage = chatInput;
     setChatInput("");
+    setPendingAction(null);
     setIsLoadingChat(true);
 
     try {
-      // 1. Guardar pregunta en Firestore
-      await addDoc(collection(db, 'users', authUser.uid, 'messages'), {
-        role: 'user',
-        content: userMessage,
-        createdAt: serverTimestamp()
-      });
+      let conversationId = activeConversationId;
+      if (!conversationId) {
+        conversationId = await createAiConversation(authUser.uid, titleFromMessage(userMessage));
+        setActiveConversationId(conversationId);
+      }
 
-      // 2. Obtener el token de validación del usuario para seguridad
+      // Historial reciente para dar contexto a Gemini (últimos 10 mensajes + el nuevo).
+      const history = messages.slice(-10).map(m => ({ role: m.role, content: m.content }));
+
+      await addAiMessage(authUser.uid, conversationId, 'user', userMessage);
+
       const auth = getAuth();
       const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : "";
 
-      // 3. Preparar el historial (últimos 10 mensajes)
-      const history = messages.slice(-10).map(m => ({ role: m.role, content: m.content }));
-
-      // 4. Llamar al API seguro de Next.js
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/ai-chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -143,29 +213,20 @@ export default function IA() {
         },
         body: JSON.stringify({
           messages: [...history, { role: 'user', content: userMessage }],
-          routine: selectedRoutine,
-          userProfile: user // Pasamos el perfil del usuario para contexto dinámico
+          userProfile: user
         })
       });
 
       const data = await response.json();
+      const reply = response.ok
+        ? data.reply
+        : "Ha ocurrido un error contactando con mis servidores. Por favor, inténtalo de nuevo en unos segundos.";
 
-      if (response.ok) {
-        // 5. Guardar respuesta del asistente en Firestore
-        await addDoc(collection(db, 'users', authUser.uid, 'messages'), {
-          role: 'assistant',
-          content: data.reply,
-          createdAt: serverTimestamp()
-        });
-      } else {
-        console.error('Error del servidor:', data.error);
-        // Fallback info message
-        await addDoc(collection(db, 'users', authUser.uid, 'messages'), {
-          role: 'assistant',
-          content: "Ha ocurrido un error contactando con mis servidores. Por favor, asegúrate de que mi entorno está bien configurado.",
-          createdAt: serverTimestamp()
-        });
-      }
+      if (!response.ok) console.error('Error del servidor:', data.error);
+
+      await addAiMessage(authUser.uid, conversationId, 'assistant', reply);
+      if (response.ok && data.pendingAction) setPendingAction(data.pendingAction);
+      if (aiVoiceEnabled) voice.speak(reply);
 
     } catch (error) {
       console.error('Error enviando mensaje:', error);
@@ -175,9 +236,79 @@ export default function IA() {
     }
   };
 
+  // Aplica el cambio propuesto por el Coach IA usando los mismos mutators de UserContext que
+  // cualquier acción manual en la app (saveRoutine/updateRoutine/saveCompletedWorkout) — nunca se
+  // escribe directamente a Firestore desde aquí. Solo se ejecuta si el usuario pulsa "Confirmar".
+  const handleConfirmAction = async () => {
+    if (!pendingAction) return;
+    setIsApplyingAction(true);
+
+    try {
+      const { type, payload } = pendingAction;
+
+      switch (type) {
+        case 'propose_create_routine':
+          await saveRoutine(buildCreateRoutine(payload));
+          showNotification("¡Rutina creada! La tienes en Rutinas.", 'success');
+          break;
+
+        case 'propose_quick_workout':
+          await saveRoutine(buildQuickWorkoutRoutine(payload));
+          showNotification("¡Sesión creada! Puedes iniciarla desde Rutinas.", 'success');
+          break;
+
+        case 'propose_modify_routine': {
+          const target = findTargetRoutine(routines, payload);
+          if (!target) { showNotification("No he encontrado esa rutina — puede que ya no exista.", 'error'); break; }
+          await updateRoutine(buildModifyRoutine(target, payload));
+          showNotification("Rutina actualizada.", 'success');
+          break;
+        }
+
+        case 'propose_substitute_exercise': {
+          const target = findTargetRoutine(routines, payload);
+          if (!target) { showNotification("No he encontrado esa rutina — puede que ya no exista.", 'error'); break; }
+          await updateRoutine(buildSubstituteExercise(target, payload));
+          showNotification("Ejercicio sustituido.", 'success');
+          break;
+        }
+
+        case 'propose_log_set':
+          await saveCompletedWorkout(buildLogSetWorkout(payload));
+          showNotification("Serie registrada en tu historial.", 'success');
+          break;
+
+        default:
+          showNotification("No he reconocido esa acción.", 'error');
+      }
+    } catch (error) {
+      console.error('Error aplicando acción del Coach IA:', error);
+      showNotification("No se pudo aplicar el cambio. Inténtalo de nuevo.", 'error');
+    } finally {
+      setIsApplyingAction(false);
+      setPendingAction(null);
+    }
+  };
+
+  const handleDismissAction = () => setPendingAction(null);
+
+  const handleMicClick = useCallback(() => {
+    if (voice.isListening) {
+      voice.stopListening();
+      return;
+    }
+    if (!voice.sttSupported) {
+      showNotification(t("ai_mic_not_supported"), 'info');
+      return;
+    }
+    voice.startListening((text) => setChatInput((prev) => (prev ? `${prev} ${text}` : text)));
+  }, [voice, showNotification, t]);
+
+  // States for Technique
+  const [techniqueSearch, setTechniqueSearch] = useState("");
+  const [techniqueResult, setTechniqueResult] = useState(null);
+
   const handleSearchTechnique = () => {
-    const search = techniqueSearch.toLowerCase();
-    // Simulate finding technique info
     setTechniqueResult({
       name: techniqueSearch,
       position: "Mantén una postura erguida, pies a la anchura de los hombros y mirada al frente.",
@@ -228,19 +359,19 @@ export default function IA() {
 
   return (
     <Layout>
-      <div style={{ maxWidth: "800px", margin: "0 auto", padding: isMobile ? "10px" : "20px", color: isDark ? "#fff" : "#333" }}>
+      <div style={{ maxWidth: "900px", margin: "0 auto", padding: isMobile ? "10px" : "20px", color: isDark ? "#fff" : "#333" }}>
         <h1 style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "30px", fontSize: "2.2rem" }}>
           <span style={{ fontSize: "2.5rem", filter: "drop-shadow(0 2px 4px rgba(29,209,161,0.5))" }}>🤖</span>
           <span style={{ background: `linear-gradient(135deg, ${accentColor} 0%, #10ac84 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            Coach Inteligente
+            {t("ai_chat_title")}
           </span>
         </h1>
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: "10px", marginBottom: "20px", overflowX: "auto", paddingBottom: "10px" }}>
           {[
-            { id: "training", label: "Entrenamiento", icon: "🏋️‍♂️" },
             { id: "chat", label: "Chat Coach", icon: "🗣️" },
+            { id: "training", label: "Entrenamiento", icon: "🏋️‍♂️" },
             { id: "technique", label: "Técnica", icon: "🎥" }
           ].map(tab => (
             <button
@@ -265,6 +396,265 @@ export default function IA() {
             </button>
           ))}
         </div>
+
+        {/* Chat Coach Content */}
+        {activeTab === "chat" && (
+          <div style={{
+            display: "flex",
+            gap: "16px",
+            height: isMobile ? "75vh" : "68vh",
+          }}>
+            {/* Sidebar de conversaciones */}
+            {(showHistory || !isMobile) && (
+              <div style={{
+                width: isMobile ? "100%" : "260px",
+                flexShrink: 0,
+                display: "flex",
+                flexDirection: "column",
+                backgroundColor: tk.surface,
+                border: `1px solid ${tk.border}`,
+                borderRadius: tk.radius.lg,
+                overflow: "hidden",
+              }}>
+                <div style={{ padding: "12px", borderBottom: `1px solid ${tk.border}` }}>
+                  <button
+                    onClick={handleNewConversation}
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                      padding: "10px",
+                      borderRadius: tk.radius.md,
+                      border: `1.5px solid ${tk.accent}`,
+                      backgroundColor: tk.accentSoft,
+                      color: tk.accent,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      transition: tk.transition,
+                    }}
+                  >
+                    <Icon name="plus" size={16} />
+                    {t("ai_new_conversation")}
+                  </button>
+                </div>
+                <div style={{ flex: 1, overflowY: "auto", padding: "8px" }}>
+                  {conversations.length === 0 && (
+                    <div style={{ color: tk.textMuted, fontSize: "0.85rem", padding: "12px", textAlign: "center" }}>
+                      {t("ai_no_conversations")}
+                    </div>
+                  )}
+                  {conversations.map((conv) => (
+                    <div
+                      key={conv.id}
+                      onClick={() => handleSelectConversation(conv.id)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "6px",
+                        padding: "10px 12px",
+                        borderRadius: tk.radius.sm,
+                        cursor: "pointer",
+                        marginBottom: "4px",
+                        backgroundColor: conv.id === activeConversationId ? tk.accentSoft : "transparent",
+                        color: conv.id === activeConversationId ? tk.accent : tk.text,
+                        transition: tk.transition,
+                      }}
+                    >
+                      <span style={{ fontSize: "0.85rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {conv.title || t("ai_new_conversation")}
+                      </span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleRequestDeleteConversation(conv); }}
+                        aria-label={t("ai_delete_conversation")}
+                        style={{ background: "none", border: "none", color: tk.textFaint, cursor: "pointer", padding: "4px", display: "flex" }}
+                      >
+                        <Icon name="trash" size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Panel de chat */}
+            {(!showHistory || !isMobile) && (
+              <div style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                backgroundColor: tk.surface,
+                border: `1px solid ${tk.border}`,
+                borderRadius: tk.radius.lg,
+                overflow: "hidden",
+                minWidth: 0,
+              }}>
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "12px 16px",
+                  borderBottom: `1px solid ${tk.border}`,
+                }}>
+                  {isMobile && (
+                    <button
+                      onClick={() => setShowHistory(true)}
+                      style={{ background: "none", border: "none", color: tk.text, cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "0.85rem" }}
+                    >
+                      <Icon name="chevronLeft" size={16} />
+                      {t("ai_conversation_history")}
+                    </button>
+                  )}
+                  {!isMobile && <span style={{ color: tk.textMuted, fontSize: "0.85rem" }}>{t("ai_conversation_history")}</span>}
+                  <button
+                    onClick={() => setAiVoiceEnabled(!aiVoiceEnabled)}
+                    title={t("ai_voice_enable_label")}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: aiVoiceEnabled ? tk.accent : tk.textFaint,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    <Icon name={aiVoiceEnabled ? "volume2" : "volumeX"} size={18} />
+                  </button>
+                </div>
+
+                <div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {messages.length === 0 && (
+                    <div style={{ textAlign: 'center', color: tk.textMuted, marginTop: '20px' }}>
+                      {t("ai_chat_empty")}
+                    </div>
+                  )}
+                  {messages.map((msg, i) => (
+                    <div key={msg.id || i} style={{
+                      alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
+                      background: msg.role === "user"
+                        ? `linear-gradient(135deg, ${accentColor} 0%, #10ac84 100%)`
+                        : (isDark ? "linear-gradient(135deg, #333 0%, #222 100%)" : "linear-gradient(135deg, #fff 0%, #f0f0f0 100%)"),
+                      color: msg.role === "user" ? "#000" : (isDark ? "#fff" : "#333"),
+                      padding: "14px 18px",
+                      borderRadius: msg.role === "user" ? "20px 20px 4px 20px" : "20px 20px 20px 4px",
+                      maxWidth: "85%",
+                      fontSize: "1rem",
+                      boxShadow: msg.role === "user" ? "0 4px 15px rgba(29, 209, 161, 0.3)" : "0 4px 15px rgba(0,0,0,0.1)",
+                      border: msg.role === "user" ? "none" : `1px solid ${tk.border}`,
+                      lineHeight: "1.5",
+                      whiteSpace: "pre-wrap",
+                    }}>
+                      {msg.content}
+                    </div>
+                  ))}
+                  {isLoadingChat && (
+                    <div style={{ alignSelf: "flex-start", backgroundColor: isDark ? "#333" : "#eee", padding: "10px 15px", borderRadius: "15px 15px 15px 0", color: isDark ? "#fff" : "#333" }}>
+                      <span style={{ animation: "pulse 1.5s infinite" }}>{t("ai_thinking")}</span>
+                    </div>
+                  )}
+                  {voice.isSpeaking && (
+                    <button
+                      onClick={voice.stopSpeaking}
+                      style={{
+                        alignSelf: "flex-start",
+                        display: "flex", alignItems: "center", gap: "6px",
+                        background: "none", border: `1px solid ${tk.border}`, borderRadius: tk.radius.pill,
+                        padding: "6px 12px", color: tk.textMuted, fontSize: "0.8rem", cursor: "pointer",
+                      }}
+                    >
+                      <Icon name="volume2" size={14} /> {t("ai_stop_speaking")}
+                    </button>
+                  )}
+                  <div ref={chatEndRef} />
+                </div>
+
+                {pendingAction && (
+                  <div style={{
+                    margin: "0 16px 12px",
+                    padding: "14px 16px",
+                    borderRadius: tk.radius.md,
+                    border: `1.5px solid ${tk.accent}`,
+                    backgroundColor: tk.accentSoft,
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", color: tk.accent, fontWeight: 700, fontSize: "0.9rem" }}>
+                      <Icon name="zap" size={16} />
+                      {actionTitle(pendingAction.type)}
+                    </div>
+                    <div style={{ color: tk.text, fontSize: "0.9rem", lineHeight: 1.5, marginBottom: "12px" }}>
+                      {actionDescription(pendingAction)}
+                    </div>
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      <button
+                        onClick={handleConfirmAction}
+                        disabled={isApplyingAction}
+                        style={{
+                          flex: 1, padding: "10px", borderRadius: tk.radius.sm, border: "none",
+                          backgroundColor: tk.accent, color: tk.onAccent, fontWeight: 700, cursor: "pointer",
+                          opacity: isApplyingAction ? 0.7 : 1,
+                        }}
+                      >
+                        {isApplyingAction ? "Aplicando..." : "Confirmar"}
+                      </button>
+                      <button
+                        onClick={handleDismissAction}
+                        disabled={isApplyingAction}
+                        style={{
+                          flex: 1, padding: "10px", borderRadius: tk.radius.sm, border: `1px solid ${tk.border}`,
+                          backgroundColor: "transparent", color: tk.textMuted, fontWeight: 600, cursor: "pointer",
+                        }}
+                      >
+                        Descartar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ display: "flex", gap: "10px", padding: "12px 16px", borderTop: `1px solid ${tk.border}` }}>
+                  <button
+                    onClick={handleMicClick}
+                    title={voice.sttSupported ? t("ai_listening") : t("ai_mic_not_supported")}
+                    style={{
+                      background: voice.isListening ? tk.danger : tk.surfaceAlt,
+                      border: `1px solid ${voice.isListening ? tk.danger : tk.border}`,
+                      color: voice.isListening ? "#fff" : tk.text,
+                      borderRadius: tk.radius.md,
+                      width: "48px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                      transition: tk.transition,
+                    }}
+                  >
+                    <Icon name="mic" size={18} />
+                  </button>
+                  <input
+                    placeholder={voice.isListening ? t("ai_listening") : t("ai_chat_placeholder")}
+                    style={{ ...inputStyle, marginBottom: 0 }}
+                    value={chatInput}
+                    onChange={e => setChatInput(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
+                    disabled={isLoadingChat}
+                  />
+                  <button
+                    onClick={handleSendMessage}
+                    style={{
+                      ...buttonStyle, width: "auto", padding: "10px 22px", borderRadius: "12px",
+                      opacity: (isLoadingChat || !chatInput.trim()) ? 0.5 : 1,
+                    }}
+                    disabled={isLoadingChat || !chatInput.trim()}
+                  >
+                    <Icon name="send" size={18} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Training Generator Content */}
         {activeTab === "training" && (
@@ -371,84 +761,6 @@ export default function IA() {
           </div>
         )}
 
-        {/* Chat Coach Content */}
-        {activeTab === "chat" && (
-          <div style={{ ...cardStyle, display: "flex", flexDirection: "column", height: "60vh" }}>
-            {/* Routine Selectors */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '15px', overflowX: 'auto', paddingBottom: '10px' }}>
-              {["Piernas", "Pecho", "Espalda", "Full Body", "Core"].map(routine => (
-                <button
-                  key={routine}
-                  onClick={() => setSelectedRoutine(routine === selectedRoutine ? null : routine)}
-                  style={{
-                    padding: "6px 14px",
-                    borderRadius: "20px",
-                    fontSize: "0.85rem",
-                    border: `1px solid ${selectedRoutine === routine ? accentColor : (isDark ? "#444" : "#ccc")}`,
-                    backgroundColor: selectedRoutine === routine ? accentColor : "transparent",
-                    color: selectedRoutine === routine ? "#000" : (isDark ? "#fff" : "#333"),
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                    transition: "all 0.2s"
-                  }}
-                >
-                  {routine}
-                </button>
-              ))}
-            </div>
-
-            <div style={{ flex: 1, overflowY: "auto", padding: "10px", display: "flex", flexDirection: "column", gap: "10px" }}>
-              {messages.length === 0 && (
-                <div style={{ textAlign: 'center', color: '#888', marginTop: '20px' }}>
-                  Aún no hay mensajes. ¡Empieza la conversación!
-                </div>
-              )}
-              {messages.map((msg, i) => (
-                <div key={msg.id || i} style={{
-                  alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
-                  background: msg.role === "user"
-                    ? `linear-gradient(135deg, ${accentColor} 0%, #10ac84 100%)`
-                    : (isDark ? "linear-gradient(135deg, #333 0%, #222 100%)" : "linear-gradient(135deg, #fff 0%, #f0f0f0 100%)"),
-                  color: msg.role === "user" ? "#000" : (isDark ? "#fff" : "#333"),
-                  padding: "14px 18px",
-                  borderRadius: msg.role === "user" ? "20px 20px 4px 20px" : "20px 20px 20px 4px",
-                  maxWidth: "85%",
-                  fontSize: "1rem",
-                  boxShadow: msg.role === "user" ? "0 4px 15px rgba(29, 209, 161, 0.3)" : "0 4px 15px rgba(0,0,0,0.1)",
-                  border: msg.role === "user" ? "none" : `1px solid ${isDark ? "#444" : "#eee"}`,
-                  lineHeight: "1.5"
-                }}>
-                  {msg.content}
-                </div>
-              ))}
-              {isLoadingChat && (
-                <div style={{ alignSelf: "flex-start", backgroundColor: isDark ? "#333" : "#eee", padding: "10px 15px", borderRadius: "15px 15px 15px 0", color: isDark ? "#fff" : "#333" }}>
-                  <span style={{ animation: "pulse 1.5s infinite" }}>Escribiendo...</span>
-                </div>
-              )}
-              <div ref={chatEndRef} />
-            </div>
-
-            <div style={{ display: "flex", gap: "10px", marginTop: "10px", paddingTop: "10px", borderTop: `1px solid ${isDark ? "#333" : "#eee"}` }}>
-              <input
-                placeholder="Escribe tu duda..."
-                style={{ ...inputStyle, marginBottom: 0 }}
-                value={chatInput}
-                onChange={e => setChatInput(e.target.value)}
-                onKeyPress={e => e.key === "Enter" && handleSendMessage()}
-                disabled={isLoadingChat}
-              />
-              <button
-                onClick={handleSendMessage}
-                style={{ ...buttonStyle, width: "auto", opacity: (isLoadingChat || !chatInput.trim()) ? 0.5 : 1, padding: "10px 30px", borderRadius: "12px" }}
-                disabled={isLoadingChat || !chatInput.trim()}
-              >
-                Enviar 🚀
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Technique Content */}
         {activeTab === "technique" && (
           <div>
@@ -491,6 +803,17 @@ export default function IA() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isDark={isDark}
+        open={!!conversationToDelete}
+        title={t("ai_confirm_delete_conversation_title")}
+        description={t("ai_confirm_delete_conversation_msg")}
+        confirmLabel={t("ai_delete_conversation")}
+        danger
+        onConfirm={handleConfirmDeleteConversation}
+        onCancel={() => setConversationToDelete(null)}
+      />
     </Layout>
   );
 }

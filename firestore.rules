@@ -8,9 +8,22 @@ service cloud.firestore {
       allow read: if request.auth != null && request.auth.uid == userId;
       allow write: if request.auth != null && request.auth.uid == userId;
 
-      // Subcolección de mensajes del chat IA
+      // Legado: hilo único del chat IA anterior a las conversaciones separadas. Se deja de
+      // escribir desde el rediseño (ver aiConversations abajo) pero se mantiene legible/borrable
+      // por si algún cliente viejo en caché aún la usa.
       match /messages/{messageId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Conversaciones del Coach IA: users/{uid}/aiConversations/{id} + su subcolección de
+      // mensajes. Sustituye al hilo único de arriba — permite varias conversaciones, listarlas
+      // y borrarlas de forma independiente.
+      match /aiConversations/{conversationId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+
+        match /messages/{messageId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
       }
 
       // Notificaciones sociales (like/comentario/nuevo seguidor). El dueño es el único que lee,

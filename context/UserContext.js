@@ -65,6 +65,13 @@ export function UserProvider({ children }) {
   const [isMobile, setIsMobile] = useState(false);
   const [notification, setNotification] = useState(null);
   const [soundEnabled, setSoundEnabledState] = useState(true);
+  // Preferencias de voz del Coach IA — locales al dispositivo (como soundEnabled), no se
+  // sincronizan a la nube: la lista de voces disponibles depende del navegador/SO de cada
+  // dispositivo, así que un voiceURI guardado en la nube podría no existir en otro dispositivo.
+  const [aiVoiceEnabled, setAiVoiceEnabledState] = useState(false);
+  const [aiVoiceURI, setAiVoiceURIState] = useState(null);
+  const [aiVoiceRate, setAiVoiceRateState] = useState(1);
+  const [aiVoicePitch, setAiVoicePitchState] = useState(1);
 
   // Función para mostrar notificaciones personalizadas
   const showNotification = (message, type = 'info', duration = 4000) => {
@@ -100,6 +107,10 @@ export function UserProvider({ children }) {
     const savedRoutines = localStorage.getItem('routines');
     const savedMeasures = localStorage.getItem('measures');
     const savedSoundEnabled = localStorage.getItem('soundEnabled');
+    const savedAiVoiceEnabled = localStorage.getItem('aiVoiceEnabled');
+    const savedAiVoiceURI = localStorage.getItem('aiVoiceURI');
+    const savedAiVoiceRate = localStorage.getItem('aiVoiceRate');
+    const savedAiVoicePitch = localStorage.getItem('aiVoicePitch');
 
     if (savedUser) try { setUser(JSON.parse(savedUser)); } catch (e) {}
     if (savedTheme) setTheme(savedTheme);
@@ -110,6 +121,10 @@ export function UserProvider({ children }) {
     if (savedRoutines) try { setRoutines(JSON.parse(savedRoutines)); } catch (e) {}
     if (savedMeasures) try { setMeasures(JSON.parse(savedMeasures)); } catch (e) {}
     if (savedSoundEnabled !== null) setSoundEnabledState(savedSoundEnabled === 'true');
+    if (savedAiVoiceEnabled !== null) setAiVoiceEnabledState(savedAiVoiceEnabled === 'true');
+    if (savedAiVoiceURI) setAiVoiceURIState(savedAiVoiceURI);
+    if (savedAiVoiceRate) setAiVoiceRateState(parseFloat(savedAiVoiceRate));
+    if (savedAiVoicePitch) setAiVoicePitchState(parseFloat(savedAiVoicePitch));
 
     setHasCachedData(Boolean(savedUser || savedRoutines || savedWorkouts));
   }, []);
@@ -117,6 +132,26 @@ export function UserProvider({ children }) {
   const setSoundEnabled = (enabled) => {
     setSoundEnabledState(enabled);
     localStorage.setItem('soundEnabled', String(enabled));
+  };
+
+  const setAiVoiceEnabled = (enabled) => {
+    setAiVoiceEnabledState(enabled);
+    localStorage.setItem('aiVoiceEnabled', String(enabled));
+  };
+
+  const setAiVoiceURI = (uri) => {
+    setAiVoiceURIState(uri);
+    localStorage.setItem('aiVoiceURI', uri || '');
+  };
+
+  const setAiVoiceRate = (rate) => {
+    setAiVoiceRateState(rate);
+    localStorage.setItem('aiVoiceRate', String(rate));
+  };
+
+  const setAiVoicePitch = (pitch) => {
+    setAiVoicePitchState(pitch);
+    localStorage.setItem('aiVoicePitch', String(pitch));
   };
 
   // Lectura real contra la nube. No llamar directamente: usar refreshData, que es quien aplica el
@@ -709,6 +744,14 @@ export function UserProvider({ children }) {
       updateLanguage,
       soundEnabled,
       setSoundEnabled,
+      aiVoiceEnabled,
+      setAiVoiceEnabled,
+      aiVoiceURI,
+      setAiVoiceURI,
+      aiVoiceRate,
+      setAiVoiceRate,
+      aiVoicePitch,
+      setAiVoicePitch,
       activeRoutine,
       startRoutine,
       endRoutine,

@@ -53,6 +53,33 @@ function actionDescription(action) {
   }
 }
 
+function renderInlineMarkdown(text, keyPrefix) {
+  return String(text || '').split(/(\*\*[^*\n]+?\*\*)/g).map((part, index) => {
+    const boldMatch = part.match(/^\*\*(.+)\*\*$/);
+    return boldMatch
+      ? <strong key={`${keyPrefix}-bold-${index}`}>{boldMatch[1]}</strong>
+      : <span key={`${keyPrefix}-text-${index}`}>{part}</span>;
+  });
+}
+
+function renderMessageMarkdown(content) {
+  return String(content || '').split(/\r?\n/).map((line, index) => {
+    const bulletMatch = line.match(/^\s*[-*]\s+(.+)$/);
+    const lineContent = bulletMatch ? bulletMatch[1] : line;
+
+    return bulletMatch ? (
+      <div key={`line-${index}`} style={{ display: 'flex', gap: '8px' }}>
+        <span aria-hidden="true">•</span>
+        <span>{renderInlineMarkdown(lineContent, `line-${index}`)}</span>
+      </div>
+    ) : (
+      <div key={`line-${index}`} style={{ minHeight: line ? undefined : '0.75em' }}>
+        {renderInlineMarkdown(lineContent, `line-${index}`)}
+      </div>
+    );
+  });
+}
+
 export default function IA() {
   const {
     theme, isMobile, t, user, authUser, routines, saveRoutine, updateRoutine, saveCompletedWorkout, showNotification,
@@ -547,7 +574,7 @@ export default function IA() {
                       lineHeight: "1.5",
                       whiteSpace: "pre-wrap",
                     }}>
-                      {msg.content}
+                      {renderMessageMarkdown(msg.content)}
                     </div>
                   ))}
                   {isLoadingChat && (

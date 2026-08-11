@@ -4,7 +4,7 @@ import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { useVoice } from "../hooks/useVoice";
 import { getTokens } from "../lib/tokens";
-import { Icon, ConfirmModal } from "../components/ui";
+import { Icon, Button, Card, PageHeader, ConfirmModal, EmptyState, ChipNav } from "../components/ui";
 import {
   subscribeAiConversations,
   subscribeAiMessages,
@@ -80,6 +80,12 @@ function renderMessageMarkdown(content) {
   });
 }
 
+const TABS = [
+  { key: "chat", label: "Chat" },
+  { key: "training", label: "Entrenamiento" },
+  { key: "technique", label: "Técnica" },
+];
+
 export default function IA() {
   const {
     theme, isMobile, t, user, authUser, routines, saveRoutine, updateRoutine, saveCompletedWorkout, showNotification,
@@ -97,13 +103,16 @@ export default function IA() {
   const [generatedRoutine, setGeneratedRoutine] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // States for Chat — ahora sobre conversaciones independientes en vez de un único hilo.
+  // States for Chat — conversaciones independientes en vez de un único hilo.
   const [conversations, setConversations] = useState([]);
   const [activeConversationId, setActiveConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [isLoadingChat, setIsLoadingChat] = useState(false);
-  const [showHistory, setShowHistory] = useState(!isMobile);
+  // En móvil el historial vive en un overlay a pantalla completa (mismo patrón que
+  // ExerciseSelector) en vez de sustituir el panel de chat — así nunca hay que "volver" para
+  // seguir escribiendo, solo cerrar la capa de encima.
+  const [showHistoryOverlay, setShowHistoryOverlay] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState(null);
   // Propuesta de cambio pendiente de confirmar (crear/modificar rutina, sustituir ejercicio,
   // sesión rápida, registrar serie) — ver lib/aiActions.ts. Vive solo en memoria: nunca se aplica
@@ -136,8 +145,6 @@ export default function IA() {
     );
     return unsubscribe;
   }, [authUser, activeConversationId]);
-
-  const accentColor = tk.accent;
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -181,14 +188,14 @@ export default function IA() {
     setMessages([]);
     setPendingAction(null);
     voice.stopSpeaking();
-    if (isMobile) setShowHistory(false);
+    setShowHistoryOverlay(false);
   };
 
   const handleSelectConversation = (id) => {
     setActiveConversationId(id);
     setPendingAction(null);
     voice.stopSpeaking();
-    if (isMobile) setShowHistory(false);
+    setShowHistoryOverlay(false);
   };
 
   const handleRequestDeleteConversation = (conv) => setConversationToDelete(conv);
@@ -336,6 +343,7 @@ export default function IA() {
   const [techniqueResult, setTechniqueResult] = useState(null);
 
   const handleSearchTechnique = () => {
+    if (!techniqueSearch.trim()) return;
     setTechniqueResult({
       name: techniqueSearch,
       position: "Mantén una postura erguida, pies a la anchura de los hombros y mirada al frente.",
@@ -345,130 +353,68 @@ export default function IA() {
     });
   };
 
-  const cardStyle = {
-    background: isDark ? "linear-gradient(145deg, #1a1a1a 0%, #111111 100%)" : "linear-gradient(145deg, #ffffff 0%, #f9f9f9 100%)",
-    borderRadius: "20px",
-    padding: "25px",
-    marginBottom: "25px",
-    border: `1px solid ${isDark ? "#333" : "#eee"}`,
-    boxShadow: isDark ? "0 8px 30px rgba(0,0,0,0.5)" : "0 8px 30px rgba(0,0,0,0.05)",
-    transition: "transform 0.2s ease, box-shadow 0.2s ease"
+  // Estilo compartido de campos de formulario (Entrenamiento/Técnica), derivado de los tokens en
+  // vez de hex sueltos con ternarias de tema repetidas en cada input.
+  const fieldStyle = {
+    width: "100%",
+    padding: "13px 14px",
+    borderRadius: tk.radius.md,
+    border: `1.5px solid ${tk.border}`,
+    backgroundColor: tk.surfaceAlt,
+    color: tk.text,
+    fontSize: tk.fontSize.sm,
+    outline: "none",
+    boxSizing: "border-box",
+    transition: tk.transition,
+    fontFamily: "inherit",
   };
 
-  const inputStyle = {
-    width: "100%",
-    padding: "15px",
-    borderRadius: "12px",
-    border: `1px solid ${isDark ? "#444" : "#ccc"}`,
-    backgroundColor: isDark ? "#000" : "#fff",
-    color: isDark ? "#fff" : "#333",
-    marginBottom: "15px",
-    fontSize: "1rem",
-    boxShadow: "inset 0 2px 4px rgba(0,0,0,0.1)",
-    transition: "border-color 0.2s, box-shadow 0.2s"
-  };
-
-  const buttonStyle = {
-    background: `linear-gradient(135deg, ${accentColor} 0%, #10ac84 100%)`,
-    color: "#000",
-    border: "none",
-    padding: "15px 25px",
-    borderRadius: "12px",
-    fontWeight: "bold",
-    cursor: "pointer",
-    fontSize: "1.05rem",
-    width: "100%",
-    boxShadow: "0 4px 15px rgba(29, 209, 161, 0.4)",
-    transition: "transform 0.1s, box-shadow 0.1s",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px"
-  };
+  // Altura del panel de chat: en móvil se resta el hueco aproximado de la cabecera (campana) y la
+  // navegación inferior fija de Layout.jsx; en escritorio se deja un margen generoso con un techo
+  // para que no se estire sin límite en pantallas muy altas. No hay forma de medirlo con exactitud
+  // sin JS de layout — son valores ajustados a ojo contra el chrome real de la app.
+  const chatPanelHeight = isMobile ? "calc(100dvh - 250px)" : "min(700px, calc(100vh - 220px))";
+  const chatPanelMinHeight = isMobile ? "360px" : "460px";
 
   return (
     <Layout>
-      <div style={{ maxWidth: "900px", margin: "0 auto", padding: isMobile ? "10px" : "20px", color: isDark ? "#fff" : "#333" }}>
-        <h1 style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "30px", fontSize: "2.2rem" }}>
-          <span style={{ fontSize: "2.5rem", filter: "drop-shadow(0 2px 4px rgba(29,209,161,0.5))" }}>🤖</span>
-          <span style={{ background: `linear-gradient(135deg, ${accentColor} 0%, #10ac84 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            {t("ai_chat_title")}
-          </span>
-        </h1>
+      <div style={{ maxWidth: "900px", margin: "0 auto", padding: isMobile ? "12px 12px 0" : "20px" }}>
+        <PageHeader
+          isDark={isDark}
+          isMobile={isMobile}
+          title={t("ai_chat_title")}
+          subtitle={isMobile ? undefined : "Tu entrenador virtual, con acceso a tus datos reales."}
+        />
 
-        {/* Tabs */}
-        <div style={{ display: "flex", gap: "10px", marginBottom: "20px", overflowX: "auto", paddingBottom: "10px" }}>
-          {[
-            { id: "chat", label: "Chat Coach", icon: "🗣️" },
-            { id: "training", label: "Entrenamiento", icon: "🏋️‍♂️" },
-            { id: "technique", label: "Técnica", icon: "🎥" }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                padding: "10px 20px",
-                borderRadius: "20px",
-                border: "none",
-                backgroundColor: activeTab === tab.id ? accentColor : (isDark ? "#333" : "#e0e0e0"),
-                color: activeTab === tab.id ? "#000" : (isDark ? "#fff" : "#333"),
-                cursor: "pointer",
-                fontWeight: "bold",
-                whiteSpace: "nowrap",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                transition: "all 0.2s"
-              }}
-            >
-              <span>{tab.icon}</span> {tab.label}
-            </button>
-          ))}
+        <div style={{ marginBottom: isMobile ? "12px" : "18px" }}>
+          <ChipNav items={TABS} activeKey={activeTab} onChange={setActiveTab} isDark={isDark} ariaLabel="Secciones del Coach IA" />
         </div>
 
-        {/* Chat Coach Content */}
+        {/* Chat Coach */}
         {activeTab === "chat" && (
-          <div style={{
-            display: "flex",
-            gap: "16px",
-            height: isMobile ? "75vh" : "68vh",
-          }}>
-            {/* Sidebar de conversaciones */}
-            {(showHistory || !isMobile) && (
+          <div style={{ display: "flex", gap: "16px", height: chatPanelHeight, minHeight: chatPanelMinHeight }}>
+            {/* Sidebar de conversaciones — solo en escritorio, en móvil vive en el overlay de abajo */}
+            {!isMobile && (
               <div style={{
-                width: isMobile ? "100%" : "260px",
+                width: "260px",
                 flexShrink: 0,
                 display: "flex",
                 flexDirection: "column",
                 backgroundColor: tk.surface,
                 border: `1px solid ${tk.border}`,
                 borderRadius: tk.radius.lg,
+                boxShadow: tk.shadow.card,
                 overflow: "hidden",
               }}>
                 <div style={{ padding: "12px", borderBottom: `1px solid ${tk.border}` }}>
-                  <button
-                    onClick={handleNewConversation}
-                    style={{
-                      width: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "8px",
-                      padding: "10px",
-                      borderRadius: tk.radius.md,
-                      border: `1.5px solid ${tk.accent}`,
-                      backgroundColor: tk.accentSoft,
-                      color: tk.accent,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      transition: tk.transition,
-                    }}
-                  >
-                    <Icon name="plus" size={16} />
+                  <Button isDark={isDark} variant="secondary" icon="plus" fullWidth onClick={handleNewConversation}
+                    style={{ "--feeg-bg": tk.accentSoft, "--feeg-fg": tk.accent, "--feeg-border": tk.accent, "--feeg-border-width": "1.5px" }}>
                     {t("ai_new_conversation")}
-                  </button>
+                  </Button>
                 </div>
                 <div style={{ flex: 1, overflowY: "auto", padding: "8px" }}>
                   {conversations.length === 0 && (
-                    <div style={{ color: tk.textMuted, fontSize: "0.85rem", padding: "12px", textAlign: "center" }}>
+                    <div style={{ color: tk.textMuted, fontSize: tk.fontSize.xs, padding: "12px", textAlign: "center" }}>
                       {t("ai_no_conversations")}
                     </div>
                   )}
@@ -476,6 +422,7 @@ export default function IA() {
                     <div
                       key={conv.id}
                       onClick={() => handleSelectConversation(conv.id)}
+                      className="feeg-press feeg-hover"
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -488,15 +435,16 @@ export default function IA() {
                         backgroundColor: conv.id === activeConversationId ? tk.accentSoft : "transparent",
                         color: conv.id === activeConversationId ? tk.accent : tk.text,
                         transition: tk.transition,
+                        "--feeg-press-scale": 0.98,
                       }}
                     >
-                      <span style={{ fontSize: "0.85rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <span style={{ fontSize: tk.fontSize.xs, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {conv.title || t("ai_new_conversation")}
                       </span>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleRequestDeleteConversation(conv); }}
                         aria-label={t("ai_delete_conversation")}
-                        style={{ background: "none", border: "none", color: tk.textFaint, cursor: "pointer", padding: "4px", display: "flex" }}
+                        style={{ background: "none", border: "none", color: tk.textFaint, cursor: "pointer", padding: "4px", display: "flex", flexShrink: 0 }}
                       >
                         <Icon name="trash" size={14} />
                       </button>
@@ -507,329 +455,430 @@ export default function IA() {
             )}
 
             {/* Panel de chat */}
-            {(!showHistory || !isMobile) && (
+            <div style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              backgroundColor: tk.surface,
+              border: `1px solid ${tk.border}`,
+              borderRadius: tk.radius.lg,
+              boxShadow: tk.shadow.card,
+              overflow: "hidden",
+              minWidth: 0,
+            }}>
               <div style={{
-                flex: 1,
                 display: "flex",
-                flexDirection: "column",
-                backgroundColor: tk.surface,
-                border: `1px solid ${tk.border}`,
-                borderRadius: tk.radius.lg,
-                overflow: "hidden",
-                minWidth: 0,
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: isMobile ? "10px 12px" : "12px 16px",
+                borderBottom: `1px solid ${tk.border}`,
+                flexShrink: 0,
               }}>
-                <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "12px 16px",
-                  borderBottom: `1px solid ${tk.border}`,
-                }}>
-                  {isMobile && (
+                {isMobile ? (
+                  <div style={{ display: "flex", gap: "6px" }}>
                     <button
-                      onClick={() => setShowHistory(true)}
-                      style={{ background: "none", border: "none", color: tk.text, cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "0.85rem" }}
+                      onClick={() => setShowHistoryOverlay(true)}
+                      aria-label={t("ai_conversation_history")}
+                      style={{ ...iconButtonStyle(tk), color: tk.text }}
                     >
-                      <Icon name="chevronLeft" size={16} />
-                      {t("ai_conversation_history")}
+                      <Icon name="clock" size={18} />
                     </button>
-                  )}
-                  {!isMobile && <span style={{ color: tk.textMuted, fontSize: "0.85rem" }}>{t("ai_conversation_history")}</span>}
-                  <button
-                    onClick={() => setAiVoiceEnabled(!aiVoiceEnabled)}
-                    title={t("ai_voice_enable_label")}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: aiVoiceEnabled ? tk.accent : tk.textFaint,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                  >
-                    <Icon name={aiVoiceEnabled ? "volume2" : "volumeX"} size={18} />
-                  </button>
-                </div>
+                    <button
+                      onClick={handleNewConversation}
+                      aria-label={t("ai_new_conversation")}
+                      style={{ ...iconButtonStyle(tk), color: tk.text }}
+                    >
+                      <Icon name="plus" size={18} />
+                    </button>
+                  </div>
+                ) : (
+                  <span style={{ color: tk.textMuted, fontSize: tk.fontSize.xs, fontWeight: tk.weight.medium }}>
+                    {conversations.find((c) => c.id === activeConversationId)?.title || t("ai_new_conversation")}
+                  </span>
+                )}
+                <button
+                  onClick={() => setAiVoiceEnabled(!aiVoiceEnabled)}
+                  title={t("ai_voice_enable_label")}
+                  style={{ ...iconButtonStyle(tk), color: aiVoiceEnabled ? tk.accent : tk.textFaint }}
+                >
+                  <Icon name={aiVoiceEnabled ? "volume2" : "volumeX"} size={18} />
+                </button>
+              </div>
 
-                <div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                  {messages.length === 0 && (
-                    <div style={{ textAlign: 'center', color: tk.textMuted, marginTop: '20px' }}>
-                      {t("ai_chat_empty")}
-                    </div>
-                  )}
-                  {messages.map((msg, i) => (
-                    <div key={msg.id || i} style={{
-                      alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
+              <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "12px" : "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                {messages.length === 0 && (
+                  <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <EmptyState isDark={isDark} icon="message" title={t("ai_chat_empty")} />
+                  </div>
+                )}
+                {messages.map((msg, i) => (
+                  <div key={msg.id || i} style={{
+                    display: "flex",
+                    alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
+                    alignItems: "flex-end",
+                    gap: "8px",
+                    maxWidth: "88%",
+                  }}>
+                    {msg.role === "assistant" && (
+                      <div style={{
+                        width: "26px", height: "26px", borderRadius: tk.radius.full, flexShrink: 0,
+                        backgroundColor: tk.accentSoft, color: tk.accent,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <Icon name="zap" size={13} />
+                      </div>
+                    )}
+                    <div style={{
                       background: msg.role === "user"
-                        ? `linear-gradient(135deg, ${accentColor} 0%, #10ac84 100%)`
-                        : (isDark ? "linear-gradient(135deg, #333 0%, #222 100%)" : "linear-gradient(135deg, #fff 0%, #f0f0f0 100%)"),
-                      color: msg.role === "user" ? "#000" : (isDark ? "#fff" : "#333"),
-                      padding: "14px 18px",
-                      borderRadius: msg.role === "user" ? "20px 20px 4px 20px" : "20px 20px 20px 4px",
-                      maxWidth: "85%",
-                      fontSize: "1rem",
-                      boxShadow: msg.role === "user" ? "0 4px 15px rgba(29, 209, 161, 0.3)" : "0 4px 15px rgba(0,0,0,0.1)",
+                        ? `linear-gradient(135deg, ${tk.accent} 0%, ${tk.accentHover} 100%)`
+                        : tk.surfaceAlt,
+                      color: msg.role === "user" ? tk.onAccent : tk.text,
+                      padding: "12px 16px",
+                      borderRadius: msg.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                      fontSize: tk.fontSize.sm,
+                      boxShadow: msg.role === "user" ? tk.shadow.accent : "none",
                       border: msg.role === "user" ? "none" : `1px solid ${tk.border}`,
                       lineHeight: "1.5",
                       whiteSpace: "pre-wrap",
                     }}>
                       {renderMessageMarkdown(msg.content)}
                     </div>
-                  ))}
-                  {isLoadingChat && (
-                    <div style={{ alignSelf: "flex-start", backgroundColor: isDark ? "#333" : "#eee", padding: "10px 15px", borderRadius: "15px 15px 15px 0", color: isDark ? "#fff" : "#333" }}>
-                      <span style={{ animation: "pulse 1.5s infinite" }}>{t("ai_thinking")}</span>
+                  </div>
+                ))}
+                {isLoadingChat && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", alignSelf: "flex-start" }}>
+                    <div style={{
+                      width: "26px", height: "26px", borderRadius: tk.radius.full, flexShrink: 0,
+                      backgroundColor: tk.accentSoft, color: tk.accent,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <Icon name="zap" size={13} />
                     </div>
-                  )}
-                  {voice.isSpeaking && (
-                    <button
-                      onClick={voice.stopSpeaking}
-                      style={{
-                        alignSelf: "flex-start",
-                        display: "flex", alignItems: "center", gap: "6px",
-                        background: "none", border: `1px solid ${tk.border}`, borderRadius: tk.radius.pill,
-                        padding: "6px 12px", color: tk.textMuted, fontSize: "0.8rem", cursor: "pointer",
-                      }}
-                    >
-                      <Icon name="volume2" size={14} /> {t("ai_stop_speaking")}
-                    </button>
-                  )}
-                  <div ref={chatEndRef} />
-                </div>
-
-                {pendingAction && (
-                  <div style={{
-                    margin: "0 16px 12px",
-                    padding: "14px 16px",
-                    borderRadius: tk.radius.md,
-                    border: `1.5px solid ${tk.accent}`,
-                    backgroundColor: tk.accentSoft,
-                  }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", color: tk.accent, fontWeight: 700, fontSize: "0.9rem" }}>
-                      <Icon name="zap" size={16} />
-                      {actionTitle(pendingAction.type)}
-                    </div>
-                    <div style={{ color: tk.text, fontSize: "0.9rem", lineHeight: 1.5, marginBottom: "12px" }}>
-                      {actionDescription(pendingAction)}
-                    </div>
-                    <div style={{ display: "flex", gap: "10px" }}>
-                      <button
-                        onClick={handleConfirmAction}
-                        disabled={isApplyingAction}
-                        style={{
-                          flex: 1, padding: "10px", borderRadius: tk.radius.sm, border: "none",
-                          backgroundColor: tk.accent, color: tk.onAccent, fontWeight: 700, cursor: "pointer",
-                          opacity: isApplyingAction ? 0.7 : 1,
-                        }}
-                      >
-                        {isApplyingAction ? "Aplicando..." : "Confirmar"}
-                      </button>
-                      <button
-                        onClick={handleDismissAction}
-                        disabled={isApplyingAction}
-                        style={{
-                          flex: 1, padding: "10px", borderRadius: tk.radius.sm, border: `1px solid ${tk.border}`,
-                          backgroundColor: "transparent", color: tk.textMuted, fontWeight: 600, cursor: "pointer",
-                        }}
-                      >
-                        Descartar
-                      </button>
+                    <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, padding: "12px 16px", borderRadius: "18px 18px 18px 4px", display: "flex", gap: "4px" }}>
+                      <span className="ia-typing-dot" style={{ backgroundColor: tk.textFaint }} />
+                      <span className="ia-typing-dot" style={{ backgroundColor: tk.textFaint, animationDelay: "0.15s" }} />
+                      <span className="ia-typing-dot" style={{ backgroundColor: tk.textFaint, animationDelay: "0.3s" }} />
                     </div>
                   </div>
                 )}
-
-                <div style={{ display: "flex", gap: "10px", padding: "12px 16px", borderTop: `1px solid ${tk.border}` }}>
+                {voice.isSpeaking && (
                   <button
-                    onClick={handleMicClick}
-                    title={voice.sttSupported ? t("ai_listening") : t("ai_mic_not_supported")}
+                    onClick={voice.stopSpeaking}
                     style={{
-                      background: voice.isListening ? tk.danger : tk.surfaceAlt,
-                      border: `1px solid ${voice.isListening ? tk.danger : tk.border}`,
-                      color: voice.isListening ? "#fff" : tk.text,
-                      borderRadius: tk.radius.md,
-                      width: "48px",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                      transition: tk.transition,
+                      alignSelf: "flex-start",
+                      display: "flex", alignItems: "center", gap: "6px",
+                      background: "none", border: `1px solid ${tk.border}`, borderRadius: tk.radius.pill,
+                      padding: "6px 12px", color: tk.textMuted, fontSize: tk.fontSize.xs, cursor: "pointer",
                     }}
                   >
-                    <Icon name="mic" size={18} />
+                    <Icon name="volume2" size={14} /> {t("ai_stop_speaking")}
                   </button>
-                  <input
-                    placeholder={voice.isListening ? t("ai_listening") : t("ai_chat_placeholder")}
-                    style={{ ...inputStyle, marginBottom: 0 }}
-                    value={chatInput}
-                    onChange={e => setChatInput(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
-                    disabled={isLoadingChat}
-                  />
-                  <button
-                    onClick={handleSendMessage}
-                    style={{
-                      ...buttonStyle, width: "auto", padding: "10px 22px", borderRadius: "12px",
-                      opacity: (isLoadingChat || !chatInput.trim()) ? 0.5 : 1,
-                    }}
-                    disabled={isLoadingChat || !chatInput.trim()}
-                  >
-                    <Icon name="send" size={18} />
-                  </button>
-                </div>
+                )}
+                <div ref={chatEndRef} />
               </div>
-            )}
+
+              {pendingAction && (
+                <div style={{
+                  margin: isMobile ? "0 12px 10px" : "0 16px 12px",
+                  padding: "14px 16px",
+                  borderRadius: tk.radius.md,
+                  border: `1.5px solid ${tk.accent}`,
+                  backgroundColor: tk.accentSoft,
+                  flexShrink: 0,
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", color: tk.accent, fontWeight: tk.weight.bold, fontSize: tk.fontSize.sm }}>
+                    <Icon name="zap" size={16} />
+                    {actionTitle(pendingAction.type)}
+                  </div>
+                  <div style={{ color: tk.text, fontSize: tk.fontSize.sm, lineHeight: 1.5, marginBottom: "12px" }}>
+                    {actionDescription(pendingAction)}
+                  </div>
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    <Button isDark={isDark} onClick={handleConfirmAction} disabled={isApplyingAction} style={{ flex: 1 }}>
+                      {isApplyingAction ? "Aplicando..." : "Confirmar"}
+                    </Button>
+                    <Button isDark={isDark} variant="secondary" onClick={handleDismissAction} disabled={isApplyingAction} style={{ flex: 1 }}>
+                      Descartar
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: "8px", padding: isMobile ? "10px 12px" : "12px 16px", borderTop: `1px solid ${tk.border}`, flexShrink: 0 }}>
+                <button
+                  onClick={handleMicClick}
+                  title={voice.sttSupported ? t("ai_listening") : t("ai_mic_not_supported")}
+                  style={{
+                    background: voice.isListening ? tk.danger : tk.surfaceAlt,
+                    border: `1px solid ${voice.isListening ? tk.danger : tk.border}`,
+                    color: voice.isListening ? "#fff" : tk.text,
+                    borderRadius: tk.radius.md,
+                    width: "46px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    transition: tk.transition,
+                  }}
+                >
+                  <Icon name="mic" size={18} />
+                </button>
+                <input
+                  placeholder={voice.isListening ? t("ai_listening") : t("ai_chat_placeholder")}
+                  style={{ ...fieldStyle, flex: 1, padding: "12px 14px" }}
+                  value={chatInput}
+                  onChange={e => setChatInput(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
+                  disabled={isLoadingChat}
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={isLoadingChat || !chatInput.trim()}
+                  style={{
+                    background: `linear-gradient(135deg, ${tk.accent} 0%, ${tk.accentHover} 100%)`,
+                    color: tk.onAccent,
+                    border: "none",
+                    borderRadius: tk.radius.md,
+                    width: "46px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    opacity: (isLoadingChat || !chatInput.trim()) ? 0.5 : 1,
+                    boxShadow: tk.shadow.accent,
+                    transition: tk.transition,
+                  }}
+                >
+                  <Icon name="send" size={18} />
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Training Generator Content */}
+        {/* Training Generator */}
         {activeTab === "training" && (
           <div>
             {!showTrainingForm && !generatedRoutine && (
-              <div style={{ ...cardStyle, textAlign: "center" }}>
-                <h3>¿Necesitas un plan a tu medida?</h3>
-                <p>Nuestra IA analizará tus datos para crear la rutina perfecta para ti.</p>
-                <button onClick={() => setShowTrainingForm(true)} style={buttonStyle}>
+              <Card isDark={isDark} padding={isMobile ? "sm" : "lg"} style={{ textAlign: "center" }}>
+                <h3 style={{ margin: "0 0 8px", color: tk.text }}>¿Necesitas un plan a tu medida?</h3>
+                <p style={{ color: tk.textMuted, fontSize: tk.fontSize.sm, margin: "0 0 20px" }}>Nuestra IA analizará tus datos para crear la rutina perfecta para ti.</p>
+                <Button isDark={isDark} fullWidth onClick={() => setShowTrainingForm(true)}>
                   Crear entrenamiento personalizado
-                </button>
-              </div>
+                </Button>
+              </Card>
             )}
 
             {showTrainingForm && (
-              <div style={cardStyle}>
-                <h3>Cuéntame sobre ti</h3>
-                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "10px" }}>
-                  <input placeholder="Edad" type="number" style={inputStyle} value={trainingData.age} onChange={e => setTrainingData({ ...trainingData, age: e.target.value })} />
-                  <select style={inputStyle} value={trainingData.sex} onChange={e => setTrainingData({ ...trainingData, sex: e.target.value })}>
-                    <option value="">Sexo</option>
-                    <option value="hombre">Hombre</option>
-                    <option value="mujer">Mujer</option>
-                  </select>
-                  <input placeholder="Altura (cm)" type="number" style={inputStyle} value={trainingData.height} onChange={e => setTrainingData({ ...trainingData, height: e.target.value })} />
-                  <input placeholder="Peso (kg)" type="number" style={inputStyle} value={trainingData.weight} onChange={e => setTrainingData({ ...trainingData, weight: e.target.value })} />
-                </div>
-                <select style={inputStyle} value={trainingData.goal} onChange={e => setTrainingData({ ...trainingData, goal: e.target.value })}>
-                  <option value="">Objetivo</option>
-                  <option value="perder grasa">Perder grasa</option>
-                  <option value="ganar músculo">Ganar músculo</option>
-                  <option value="fuerza">Fuerza</option>
-                  <option value="mantenimiento">Mantenimiento</option>
-                </select>
-                <select style={inputStyle} value={trainingData.level} onChange={e => setTrainingData({ ...trainingData, level: e.target.value })}>
-                  <option value="">Nivel</option>
-                  <option value="principiante">Principiante</option>
-                  <option value="intermedio">Intermedio</option>
-                  <option value="avanzado">Avanzado</option>
-                </select>
-                <input placeholder="Días disponibles" type="number" style={inputStyle} value={trainingData.days} onChange={e => setTrainingData({ ...trainingData, days: e.target.value })} />
-                <input placeholder="Material (gym, casa, mancuernas...)" style={inputStyle} value={trainingData.material} onChange={e => setTrainingData({ ...trainingData, material: e.target.value })} />
-                <textarea placeholder="Lesiones o preferencias..." style={{ ...inputStyle, minHeight: "80px" }} value={trainingData.preferences} onChange={e => setTrainingData({ ...trainingData, preferences: e.target.value })} />
+              <Card isDark={isDark} padding={isMobile ? "sm" : "lg"}>
+                <h3 style={{ margin: "0 0 16px", color: tk.text }}>Cuéntame sobre ti</h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr 1fr", gap: "10px" }}>
+                    <input placeholder="Edad" type="number" style={fieldStyle} value={trainingData.age} onChange={e => setTrainingData({ ...trainingData, age: e.target.value })} />
+                    <select style={fieldStyle} value={trainingData.sex} onChange={e => setTrainingData({ ...trainingData, sex: e.target.value })}>
+                      <option value="">Sexo</option>
+                      <option value="hombre">Hombre</option>
+                      <option value="mujer">Mujer</option>
+                    </select>
+                    <input placeholder="Altura (cm)" type="number" style={fieldStyle} value={trainingData.height} onChange={e => setTrainingData({ ...trainingData, height: e.target.value })} />
+                    <input placeholder="Peso (kg)" type="number" style={fieldStyle} value={trainingData.weight} onChange={e => setTrainingData({ ...trainingData, weight: e.target.value })} />
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "10px" }}>
+                    <select style={fieldStyle} value={trainingData.goal} onChange={e => setTrainingData({ ...trainingData, goal: e.target.value })}>
+                      <option value="">Objetivo</option>
+                      <option value="perder grasa">Perder grasa</option>
+                      <option value="ganar músculo">Ganar músculo</option>
+                      <option value="fuerza">Fuerza</option>
+                      <option value="mantenimiento">Mantenimiento</option>
+                    </select>
+                    <select style={fieldStyle} value={trainingData.level} onChange={e => setTrainingData({ ...trainingData, level: e.target.value })}>
+                      <option value="">Nivel</option>
+                      <option value="principiante">Principiante</option>
+                      <option value="intermedio">Intermedio</option>
+                      <option value="avanzado">Avanzado</option>
+                    </select>
+                  </div>
+                  <input placeholder="Días disponibles por semana" type="number" style={fieldStyle} value={trainingData.days} onChange={e => setTrainingData({ ...trainingData, days: e.target.value })} />
+                  <input placeholder="Material (gym, casa, mancuernas...)" style={fieldStyle} value={trainingData.material} onChange={e => setTrainingData({ ...trainingData, material: e.target.value })} />
+                  <textarea placeholder="Lesiones o preferencias..." style={{ ...fieldStyle, minHeight: "80px", resize: "vertical" }} value={trainingData.preferences} onChange={e => setTrainingData({ ...trainingData, preferences: e.target.value })} />
 
-                <button onClick={handleGenerateTraining} disabled={isGenerating} style={{ ...buttonStyle, opacity: isGenerating ? 0.7 : 1 }}>
-                  {isGenerating ? "Generando plan..." : "Generar mi Plan"}
-                </button>
-              </div>
+                  <Button isDark={isDark} fullWidth onClick={handleGenerateTraining} disabled={isGenerating} style={{ marginTop: "6px" }}>
+                    {isGenerating ? "Generando plan..." : "Generar mi plan"}
+                  </Button>
+                </div>
+              </Card>
             )}
 
             {generatedRoutine && (
-              <div style={cardStyle}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                  <h2 style={{ color: accentColor, margin: 0 }}>{generatedRoutine.title}</h2>
-                  <div style={{ display: "flex", gap: "10px" }}>
-                    <button
-                      onClick={async () => {
-                        try {
-                          await saveRoutine({
-                            id: Date.now(),
-                            name: generatedRoutine.title,
-                            exercises: generatedRoutine.days.flatMap(day =>
-                              day.exercises.map(ex => ({
-                                name: ex.name,
-                                group: "Generado por IA",
-                                type: "weight_reps",
-                                rest: parseInt(ex.rest) || 90,
-                                series: Array.from({ length: parseInt(ex.sets) || 3 }).map(() => ({ reps: parseInt(ex.reps) || 10, weight: 0, type: "N" }))
-                              }))
-                            )
-                          });
-                          showNotification("¡Rutina guardada correctamente!", 'success');
-                        } catch (err) {
-                          console.error("Error guardando rutina", err);
-                          showNotification("Error al guardar rutina", 'error');
-                        }
-                      }}
-                      style={{ background: accentColor, border: "none", color: "#000", padding: "6px 12px", borderRadius: "15px", cursor: "pointer", fontWeight: "bold" }}>
+              <Card isDark={isDark} padding={isMobile ? "sm" : "lg"}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px", marginBottom: "16px" }}>
+                  <h2 style={{ color: tk.accent, margin: 0, fontSize: tk.fontSize.lg }}>{generatedRoutine.title}</h2>
+                  <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+                    <Button isDark={isDark} size="sm" onClick={async () => {
+                      try {
+                        await saveRoutine({
+                          id: Date.now(),
+                          name: generatedRoutine.title,
+                          exercises: generatedRoutine.days.flatMap(day =>
+                            day.exercises.map(ex => ({
+                              name: ex.name,
+                              group: "Generado por IA",
+                              type: "weight_reps",
+                              rest: parseInt(ex.rest) || 90,
+                              series: Array.from({ length: parseInt(ex.sets) || 3 }).map(() => ({ reps: parseInt(ex.reps) || 10, weight: 0, type: "N" }))
+                            }))
+                          )
+                        });
+                        showNotification("¡Rutina guardada correctamente!", 'success');
+                      } catch (err) {
+                        console.error("Error guardando rutina", err);
+                        showNotification("Error al guardar rutina", 'error');
+                      }
+                    }}>
                       Guardar
-                    </button>
-                    <button onClick={() => setGeneratedRoutine(null)} style={{ background: "none", border: "none", color: "#888", cursor: "pointer" }}>Volver</button>
+                    </Button>
+                    <Button isDark={isDark} variant="ghost" size="sm" onClick={() => setGeneratedRoutine(null)}>Volver</Button>
                   </div>
                 </div>
-                <p>{generatedRoutine.summary}</p>
+                <p style={{ color: tk.textMuted, fontSize: tk.fontSize.sm }}>{generatedRoutine.summary}</p>
 
                 {generatedRoutine.days.map((day, idx) => (
-                  <div key={idx} style={{ marginBottom: "20px", padding: "15px", backgroundColor: isDark ? "#000" : "#f9f9f9", borderRadius: "10px" }}>
-                    <h4 style={{ margin: "0 0 10px 0", color: accentColor }}>{day.name}</h4>
+                  <div key={idx} style={{ marginBottom: "16px", padding: "14px", backgroundColor: tk.surfaceAlt, borderRadius: tk.radius.md, border: `1px solid ${tk.border}` }}>
+                    <h4 style={{ margin: "0 0 10px 0", color: tk.accent, fontSize: tk.fontSize.sm }}>{day.name}</h4>
                     {day.exercises.map((ex, i) => (
-                      <div key={i} style={{ padding: "8px 0", borderBottom: i === day.exercises.length - 1 ? "none" : `1px solid ${isDark ? "#222" : "#eee"}` }}>
-                        <div style={{ fontWeight: "bold" }}>{ex.name}</div>
-                        <div style={{ fontSize: "0.9rem", color: "#888" }}>{ex.sets} series x {ex.reps} • Descanso: {ex.rest}</div>
-                        <div style={{ fontSize: "0.85rem", fontStyle: "italic", marginTop: "4px" }}>💡 {ex.note}</div>
+                      <div key={i} style={{ padding: "8px 0", borderBottom: i === day.exercises.length - 1 ? "none" : `1px solid ${tk.border}` }}>
+                        <div style={{ fontWeight: tk.weight.bold, color: tk.text, fontSize: tk.fontSize.sm }}>{ex.name}</div>
+                        <div style={{ fontSize: tk.fontSize.xs, color: tk.textMuted }}>{ex.sets} series x {ex.reps} • Descanso: {ex.rest}</div>
+                        <div style={{ fontSize: tk.fontSize.xs, fontStyle: "italic", marginTop: "4px", color: tk.textMuted }}>💡 {ex.note}</div>
                       </div>
                     ))}
                   </div>
                 ))}
 
-                <div style={{ backgroundColor: `${accentColor}22`, padding: "15px", borderRadius: "10px", borderLeft: `4px solid ${accentColor}` }}>
+                <div style={{ backgroundColor: tk.accentSoft, padding: "14px", borderRadius: tk.radius.md, borderLeft: `3px solid ${tk.accent}`, fontSize: tk.fontSize.sm, color: tk.text }}>
                   <strong>Consejo IA:</strong> {generatedRoutine.advice}
                 </div>
-              </div>
+              </Card>
             )}
           </div>
         )}
 
-        {/* Technique Content */}
+        {/* Technique */}
         {activeTab === "technique" && (
           <div>
-            <div style={cardStyle}>
-              <h3>Explorador de Técnica</h3>
-              <p>Busca cualquier ejercicio para recibir una explicación detallada.</p>
+            <Card isDark={isDark} padding={isMobile ? "sm" : "lg"}>
+              <h3 style={{ margin: "0 0 6px", color: tk.text }}>Explorador de Técnica</h3>
+              <p style={{ color: tk.textMuted, fontSize: tk.fontSize.sm, margin: "0 0 16px" }}>Busca cualquier ejercicio para recibir una explicación detallada.</p>
               <div style={{ display: "flex", gap: "10px" }}>
                 <input
                   placeholder="Ej: Sentadilla, Press Banca..."
-                  style={{ ...inputStyle, marginBottom: 0 }}
+                  style={fieldStyle}
                   value={techniqueSearch}
                   onChange={e => setTechniqueSearch(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handleSearchTechnique()}
                 />
-                <button onClick={handleSearchTechnique} style={{ ...buttonStyle, width: "auto" }}>Buscar</button>
+                <Button isDark={isDark} onClick={handleSearchTechnique} disabled={!techniqueSearch.trim()}>Buscar</Button>
               </div>
-            </div>
+            </Card>
 
             {techniqueResult && (
-              <div style={cardStyle}>
-                <h2 style={{ color: accentColor }}>{techniqueResult.name}</h2>
-                <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+              <Card isDark={isDark} padding={isMobile ? "sm" : "lg"} style={{ marginTop: "16px" }}>
+                <h2 style={{ color: tk.accent, margin: "0 0 16px", fontSize: tk.fontSize.lg }}>{techniqueResult.name}</h2>
+                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                   <div>
-                    <strong style={{ display: "block", color: accentColor }}>📍 Posición del cuerpo:</strong>
-                    <span>{techniqueResult.position}</span>
+                    <strong style={{ display: "block", color: tk.accent, fontSize: tk.fontSize.sm, marginBottom: "4px" }}>📍 Posición del cuerpo</strong>
+                    <span style={{ color: tk.text, fontSize: tk.fontSize.sm }}>{techniqueResult.position}</span>
                   </div>
                   <div>
-                    <strong style={{ display: "block", color: "#ff4d4d" }}>❌ Errores comunes:</strong>
-                    <span>{techniqueResult.errors}</span>
+                    <strong style={{ display: "block", color: tk.danger, fontSize: tk.fontSize.sm, marginBottom: "4px" }}>❌ Errores comunes</strong>
+                    <span style={{ color: tk.text, fontSize: tk.fontSize.sm }}>{techniqueResult.errors}</span>
                   </div>
                   <div>
-                    <strong style={{ display: "block", color: "#4d94ff" }}>💪 Músculos implicados:</strong>
-                    <span>{techniqueResult.muscles}</span>
+                    <strong style={{ display: "block", color: tk.accent, fontSize: tk.fontSize.sm, marginBottom: "4px" }}>💪 Músculos implicados</strong>
+                    <span style={{ color: tk.text, fontSize: tk.fontSize.sm }}>{techniqueResult.muscles}</span>
                   </div>
-                  <div style={{ backgroundColor: isDark ? "#000" : "#f0fdf4", padding: "10px", borderRadius: "8px", border: `1px dashed ${accentColor}` }}>
+                  <div style={{ backgroundColor: tk.accentSoft, padding: "12px", borderRadius: tk.radius.sm, border: `1px dashed ${tk.accent}`, fontSize: tk.fontSize.sm, color: tk.text }}>
                     <strong>💡 Tip Pro:</strong> {techniqueResult.tips}
                   </div>
                 </div>
-              </div>
+              </Card>
             )}
           </div>
         )}
       </div>
+
+      {/* Overlay de historial de conversaciones — solo móvil */}
+      {isMobile && showHistoryOverlay && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: tk.bg,
+          zIndex: 3000,
+          display: "flex",
+          flexDirection: "column",
+        }}>
+          <div style={{
+            padding: "14px 16px",
+            borderBottom: `1px solid ${tk.border}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexShrink: 0,
+          }}>
+            <span style={{ color: tk.text, fontWeight: tk.weight.bold, fontSize: tk.fontSize.lg }}>{t("ai_conversation_history")}</span>
+            <button onClick={() => setShowHistoryOverlay(false)} aria-label="Cerrar" style={{ ...iconButtonStyle(tk), color: tk.textMuted }}>
+              <Icon name="close" size={20} />
+            </button>
+          </div>
+
+          <div style={{ padding: "12px 16px" }}>
+            <Button isDark={isDark} icon="plus" fullWidth onClick={handleNewConversation}>
+              {t("ai_new_conversation")}
+            </Button>
+          </div>
+
+          <div style={{ flex: 1, overflowY: "auto", padding: "0 12px 16px" }}>
+            {conversations.length === 0 ? (
+              <EmptyState isDark={isDark} icon="message" title={t("ai_no_conversations")} />
+            ) : conversations.map((conv) => (
+              <div
+                key={conv.id}
+                onClick={() => handleSelectConversation(conv.id)}
+                className="feeg-press feeg-hover"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "10px",
+                  padding: "14px",
+                  borderRadius: tk.radius.md,
+                  cursor: "pointer",
+                  marginBottom: "8px",
+                  backgroundColor: conv.id === activeConversationId ? tk.accentSoft : tk.surface,
+                  border: `1px solid ${conv.id === activeConversationId ? tk.accent : tk.border}`,
+                  "--feeg-press-scale": 0.98,
+                }}
+              >
+                <span style={{
+                  color: conv.id === activeConversationId ? tk.accent : tk.text,
+                  fontSize: tk.fontSize.sm,
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                }}>
+                  {conv.title || t("ai_new_conversation")}
+                </span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleRequestDeleteConversation(conv); }}
+                  aria-label={t("ai_delete_conversation")}
+                  style={{ background: "none", border: "none", color: tk.textFaint, cursor: "pointer", padding: "6px", display: "flex", flexShrink: 0 }}
+                >
+                  <Icon name="trash" size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <ConfirmModal
         isDark={isDark}
@@ -841,6 +890,37 @@ export default function IA() {
         onConfirm={handleConfirmDeleteConversation}
         onCancel={() => setConversationToDelete(null)}
       />
+
+      <style jsx global>{`
+        .ia-typing-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          display: inline-block;
+          animation: ia-typing-bounce 1.1s infinite ease-in-out;
+        }
+        @keyframes ia-typing-bounce {
+          0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+          30% { transform: translateY(-4px); opacity: 1; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .ia-typing-dot { animation: none; opacity: 0.8; }
+        }
+      `}</style>
     </Layout>
   );
+}
+
+function iconButtonStyle(tk) {
+  return {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: "8px",
+    borderRadius: tk.radius.sm,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: tk.transition,
+  };
 }

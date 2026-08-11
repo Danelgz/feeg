@@ -58,7 +58,7 @@ export default function Layout({ children, hideBottomNav = false }) {
     return `${m}:${s}`;
   };
 
-  const topLevelPages = ["/", "/routines", "/exercises", "/statistics", "/profile", "/settings", "/routines/create", "/routines/[id]", "/routines/empty", "/user/[uid]", "/exercise-history"];
+  const topLevelPages = ["/", "/routines", "/exercises", "/ia", "/statistics", "/profile", "/settings", "/routines/create", "/routines/[id]", "/routines/empty", "/user/[uid]", "/exercise-history"];
   const isTopLevel = topLevelPages.includes(router.pathname) || topLevelPages.includes(router.asPath);
 
   // Las tres pantallas de "modo entreno" reducen el chrome a propósito (ver getWorkoutTokens en

@@ -341,16 +341,38 @@ export default function IA() {
   // States for Technique
   const [techniqueSearch, setTechniqueSearch] = useState("");
   const [techniqueResult, setTechniqueResult] = useState(null);
+  const [isSearchingTechnique, setIsSearchingTechnique] = useState(false);
 
-  const handleSearchTechnique = () => {
-    if (!techniqueSearch.trim()) return;
-    setTechniqueResult({
-      name: techniqueSearch,
-      position: "Mantén una postura erguida, pies a la anchura de los hombros y mirada al frente.",
-      errors: "Evita curvar la espalda y hacer movimientos bruscos o rebotes.",
-      muscles: "Involucra principalmente el grupo muscular trabajado y estabilizadores del core.",
-      tips: trainingData.level === "principiante" ? "Usa poco peso para masterizar el movimiento." : "Enfócate en la conexión mente-músculo."
-    });
+  const handleSearchTechnique = async () => {
+    const exerciseName = techniqueSearch.trim();
+    if (!exerciseName || !authUser?.uid || isSearchingTechnique) return;
+
+    setIsSearchingTechnique(true);
+    setTechniqueResult(null);
+
+    try {
+      const auth = getAuth();
+      const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : "";
+
+      const response = await fetch('/api/ai-technique', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ exerciseName })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Error consultando la técnica');
+
+      setTechniqueResult(data.result);
+    } catch (error) {
+      console.error('Error buscando técnica:', error);
+      showNotification("No se pudo consultar la técnica de ese ejercicio. Inténtalo de nuevo.", 'error');
+    } finally {
+      setIsSearchingTechnique(false);
+    }
   };
 
   // Estilo compartido de campos de formulario (Entrenamiento/Técnica), derivado de los tokens en
@@ -778,29 +800,64 @@ export default function IA() {
                   value={techniqueSearch}
                   onChange={e => setTechniqueSearch(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && handleSearchTechnique()}
+                  disabled={isSearchingTechnique}
                 />
-                <Button isDark={isDark} onClick={handleSearchTechnique} disabled={!techniqueSearch.trim()}>Buscar</Button>
+                <Button isDark={isDark} onClick={handleSearchTechnique} disabled={!techniqueSearch.trim() || isSearchingTechnique}>
+                  {isSearchingTechnique ? "Buscando..." : "Buscar"}
+                </Button>
               </div>
             </Card>
 
             {techniqueResult && (
               <Card isDark={isDark} padding={isMobile ? "sm" : "lg"} style={{ marginTop: "16px" }}>
-                <h2 style={{ color: tk.accent, margin: "0 0 16px", fontSize: tk.fontSize.lg }}>{techniqueResult.name}</h2>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
+                  <h2 style={{ color: tk.accent, margin: 0, fontSize: tk.fontSize.lg }}>{techniqueResult.name}</h2>
+                  {techniqueResult.muscleGroup && (
+                    <span style={{
+                      fontSize: tk.fontSize.xs, fontWeight: tk.weight.medium, color: tk.textMuted,
+                      backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.pill,
+                      padding: "3px 10px",
+                    }}>
+                      {techniqueResult.muscleGroup}
+                    </span>
+                  )}
+                </div>
+
+                {techniqueResult.recognized === false && (
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px",
+                    color: tk.danger, fontSize: tk.fontSize.xs, fontWeight: tk.weight.medium,
+                  }}>
+                    <Icon name="alertCircle" size={14} />
+                    No he reconocido este ejercicio con seguridad — tómalo con cautela.
+                  </div>
+                )}
+
                 <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                   <div>
-                    <strong style={{ display: "block", color: tk.accent, fontSize: tk.fontSize.sm, marginBottom: "4px" }}>📍 Posición del cuerpo</strong>
+                    <strong style={{ display: "block", color: tk.accent, fontSize: tk.fontSize.sm, marginBottom: "4px" }}>📍 Posición y ejecución</strong>
                     <span style={{ color: tk.text, fontSize: tk.fontSize.sm }}>{techniqueResult.position}</span>
                   </div>
                   <div>
                     <strong style={{ display: "block", color: tk.danger, fontSize: tk.fontSize.sm, marginBottom: "4px" }}>❌ Errores comunes</strong>
-                    <span style={{ color: tk.text, fontSize: tk.fontSize.sm }}>{techniqueResult.errors}</span>
+                    <span style={{ color: tk.text, fontSize: tk.fontSize.sm }}>{techniqueResult.commonMistakes}</span>
                   </div>
                   <div>
                     <strong style={{ display: "block", color: tk.accent, fontSize: tk.fontSize.sm, marginBottom: "4px" }}>💪 Músculos implicados</strong>
-                    <span style={{ color: tk.text, fontSize: tk.fontSize.sm }}>{techniqueResult.muscles}</span>
+                    <span style={{ color: tk.text, fontSize: tk.fontSize.sm }}>{techniqueResult.musclesInvolved}</span>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr", gap: "10px" }}>
+                    <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.md, padding: "10px 12px" }}>
+                      <div style={{ color: tk.textMuted, fontSize: tk.fontSize.xs, marginBottom: "2px" }}>Repeticiones</div>
+                      <div style={{ color: tk.text, fontSize: tk.fontSize.sm, fontWeight: tk.weight.medium }}>{techniqueResult.repRange}</div>
+                    </div>
+                    <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.md, padding: "10px 12px" }}>
+                      <div style={{ color: tk.textMuted, fontSize: tk.fontSize.xs, marginBottom: "2px" }}>Descanso</div>
+                      <div style={{ color: tk.text, fontSize: tk.fontSize.sm, fontWeight: tk.weight.medium }}>{techniqueResult.restAdvice}</div>
+                    </div>
                   </div>
                   <div style={{ backgroundColor: tk.accentSoft, padding: "12px", borderRadius: tk.radius.sm, border: `1px dashed ${tk.accent}`, fontSize: tk.fontSize.sm, color: tk.text }}>
-                    <strong>💡 Tip Pro:</strong> {techniqueResult.tips}
+                    <strong>💡 Tip:</strong> {techniqueResult.tip}
                   </div>
                 </div>
               </Card>

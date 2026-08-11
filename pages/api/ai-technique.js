@@ -18,7 +18,8 @@ function initAdmin() {
     }
 }
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+// Mantener la misma versión vigente que usa el Coach IA principal.
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 
 // Sin function calling aquí (a diferencia de ai-chat.js): es una única pregunta autocontenida,
 // así que se pide directamente salida JSON estructurada (responseSchema) en vez de montar el

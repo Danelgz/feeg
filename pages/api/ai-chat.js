@@ -149,7 +149,10 @@ export default async function handler(req, res) {
                 }
                 return { functionResponse: { name: fc.name, response: { result: runAiTool(fc.name, fc.args, toolCtx) } } };
             });
-            contents.push({ role: 'function', parts: functionResponseParts });
+            // Gemini espera las respuestas de las herramientas como un turno `user`;
+            // el rol `function` pertenece a otros formatos de function calling y devuelve
+            // INVALID_ARGUMENT en la API actual.
+            contents.push({ role: 'user', parts: functionResponseParts });
         }
 
         if (finalText === null) {

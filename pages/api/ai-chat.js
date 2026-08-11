@@ -18,10 +18,9 @@ function initAdmin() {
     }
 }
 
-// gemini-2.5-flash está en el plan gratuito de Google AI Studio (rate limits bajos, pero de
-// sobra para un asistente personal). Se lee de env por si algún día se quiere subir de modelo
-// sin tocar código.
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+// Usamos un modelo estable actualmente disponible para cuentas nuevas. Se lee de env por si
+// algún día se quiere cambiar de modelo sin tocar código.
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 // Límite de idas y vueltas modelo -> herramienta -> modelo por mensaje. Evita que una cadena de
 // llamadas a función mal encadenada deje la petición colgada o dispare coste sin fin.
 const MAX_TOOL_ROUNDS = 4;

@@ -117,6 +117,53 @@ describe('computeExerciseLevel', () => {
     expect(computeExerciseLevel('Sentadilla (Barra)', { best1RM: 100 }, BW)!.group).toBe('Cuádriceps');
   });
 
+  describe('EquipmentPrefs', () => {
+    // El baremo de mancuerna asume el peso de UNA sola. Quien registra la suma de las dos ratio
+    // dobla su carga real, y `dumbbellMode: 'combined'` corrige eso a la mitad.
+    it('a mitad de carga a quien registra la suma de las dos mancuernas', () => {
+      const perHand = computeExerciseLevel('Press de Banca (Mancuerna)', { best1RM: 30 }, BW, 'male')!;
+      const combined = computeExerciseLevel(
+        'Press de Banca (Mancuerna)',
+        { best1RM: 30 },
+        BW,
+        'male',
+        { dumbbellMode: 'combined' }
+      )!;
+      expect(combined.ratio).toBeCloseTo(perHand.ratio / 2, 5);
+    });
+
+    it('no toca ejercicios de barra aunque se declare dumbbellMode', () => {
+      const normal = computeExerciseLevel('Press de Banca (Barra)', { best1RM: 100 }, BW, 'male')!;
+      const withPrefs = computeExerciseLevel(
+        'Press de Banca (Barra)',
+        { best1RM: 100 },
+        BW,
+        'male',
+        { dumbbellMode: 'combined' }
+      )!;
+      expect(withPrefs.ratio).toBeCloseTo(normal.ratio, 5);
+    });
+
+    // Una polea que reduce el esfuerzo real: lo marcado no es lo que se tira.
+    it('a mitad de carga los ejercicios de polea cuando la máquina ayuda', () => {
+      const asShown = computeExerciseLevel('Cruce de Poleas (Cables Cruzados)', { best1RM: 20 }, BW, 'male')!;
+      const assisted = computeExerciseLevel(
+        'Cruce de Poleas (Cables Cruzados)',
+        { best1RM: 20 },
+        BW,
+        'male',
+        { pulleyMode: 'assisted' }
+      )!;
+      expect(assisted.ratio).toBeCloseTo(asShown.ratio / 2, 5);
+    });
+
+    it('weightForLevel es la inversa del multiplicador: pide el doble a quien registra en combinado', () => {
+      const perHand = weightForLevel('Press de Banca (Mancuerna)', 15, BW, 'male')!;
+      const combined = weightForLevel('Press de Banca (Mancuerna)', 15, BW, 'male', { dumbbellMode: 'combined' })!;
+      expect(combined).toBeCloseTo(perHand * 2, 5);
+    });
+  });
+
   describe('ejercicios lastrados', () => {
     it('suma el peso corporal a la carga', () => {
       // Dominada con 0 kg de lastre a 1 rep = ratio 1.0 = suelo del baremo.
@@ -165,7 +212,7 @@ describe('weightForLevel / nextLevelTarget', () => {
   });
 
   it('apunta al siguiente entero, no al nivel actual más uno', () => {
-    const current = computeExerciseLevel('Press de Banca (Barra)', { best1RM: 96 }, BW, 'male')!;
+    const current = computeExerciseLevel('Press de Banca (Barra)', { best1RM: 112 }, BW, 'male')!;
     const target = nextLevelTarget('Press de Banca (Barra)', current.level, current.best1RM, BW, 'male')!;
     expect(current.level).toBeGreaterThan(10);
     expect(current.level).toBeLessThan(11);
@@ -363,8 +410,8 @@ describe('nextRankMilestone', () => {
     });
 
     const inputs = {
-      'Sentadilla (Barra)': justBelow('Sentadilla (Barra)', 12, 3),
-      'Curl de Bíceps (Barra)': justBelow('Curl de Bíceps (Barra)', 17, 1.3),
+      'Sentadilla (Barra)': justBelow('Sentadilla (Barra)', 12, 2),
+      'Curl de Bíceps (Barra)': justBelow('Curl de Bíceps (Barra)', 17, 0.9),
     };
 
     // Premisa del test, comprobada y no supuesta: en kilos el curl está más cerca...
@@ -381,7 +428,7 @@ describe('nextRankMilestone', () => {
     const milestone = milestoneFor(inputs);
     expect(milestone?.exercise).toBe('Sentadilla (Barra)');
     expect(milestone?.group).toBe('Cuádriceps');
-    expect(milestone?.deltaKg).toBeCloseTo(3, 2);
+    expect(milestone?.deltaKg).toBeCloseTo(2, 2);
     expect(milestone?.groupTargetLevel).toBe(12);
   });
 

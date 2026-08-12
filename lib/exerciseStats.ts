@@ -9,6 +9,8 @@ export interface ExerciseCatalogInfo {
   type: "weight_reps" | "reps" | "time";
   unit?: string;
   group: string;
+  /** Herramienta con la que se hace el ejercicio: "barra" | "mancuerna" | "polea" | "maquina" | "corporal". */
+  equipment?: string;
 }
 
 export interface CompletedSeries {

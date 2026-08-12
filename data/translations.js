@@ -158,6 +158,21 @@ export const translations = {
     // Ajustes — sonido
     sound_pr_label: "Sonido de récord personal",
     sound_pr_desc: "Reproduce un tono breve al superar tu marca durante un entreno.",
+    // Ajustes — cómo registras tus pesos (afecta al cálculo de 1RM y rangos)
+    equipment_settings_title: "Cómo registras tus pesos",
+    equipment_settings_desc: "Dos gimnasios nunca son iguales. Ajusta esto para que tus marcas y tus rangos reflejen lo que de verdad levantas.",
+    dumbbell_mode_label: "Mancuernas",
+    dumbbell_mode_desc: "Cuando entrenas con dos mancuernas, ¿qué número apuntas en FEEG?",
+    dumbbell_mode_perhand: "El peso de una",
+    dumbbell_mode_perhand_example: "Dos de 20 kg → apuntas 20",
+    dumbbell_mode_combined: "El peso de las dos juntas",
+    dumbbell_mode_combined_example: "Dos de 20 kg → apuntas 40",
+    pulley_mode_label: "Poleas y cables",
+    pulley_mode_desc: "Algunas máquinas de polea te ayudan a mover más peso del que realmente cuesta tirar. ¿Es tu caso?",
+    pulley_mode_asshown: "No, es la carga real",
+    pulley_mode_asshown_example: "Lo que marca la máquina es, más o menos, lo que tiro",
+    pulley_mode_assisted: "Sí, me ayuda a tirar más",
+    pulley_mode_assisted_example: "Si marca 20 kg, en realidad muevo algo parecido a 10 kg",
     // Ajustes — voz del Coach IA
     ai_voice_section_title: "Voz del Coach IA",
     ai_voice_enable_label: "Leer respuestas en voz alta",
@@ -465,6 +480,21 @@ export const translations = {
     // Ezarpenak — soinua
     sound_pr_label: "Marka pertsonalaren soinua",
     sound_pr_desc: "Tonu labur bat jotzen du zure marka gainditzean entrenamendu batean.",
+    // Ezarpenak — nola apuntatzen dituzun zure pisuak (1RM eta mailen kalkuluari eragiten dio)
+    equipment_settings_title: "Nola apuntatzen dituzun zure pisuak",
+    equipment_settings_desc: "Gimnasio bakoitza desberdina da. Doitu hau zure markek eta mailek benetan altxatzen duzuna islatzeko.",
+    dumbbell_mode_label: "Mankernak",
+    dumbbell_mode_desc: "Bi mankernekin entrenatzean, zein zenbaki apuntatzen duzu FEEGen?",
+    dumbbell_mode_perhand: "Baten pisua",
+    dumbbell_mode_perhand_example: "20 kg-ko bi → 20 apuntatzen duzu",
+    dumbbell_mode_combined: "Bien pisua batera",
+    dumbbell_mode_combined_example: "20 kg-ko bi → 40 apuntatzen duzu",
+    pulley_mode_label: "Poleak eta kableak",
+    pulley_mode_desc: "Polea-makina batzuek benetan kostatzen dena baino pisu gehiago mugitzen laguntzen dizute. Zurea horrelakoa da?",
+    pulley_mode_asshown: "Ez, benetako karga da",
+    pulley_mode_asshown_example: "Makinak markatzen duena da, gutxi gorabehera, tira egiten dudana",
+    pulley_mode_assisted: "Bai, gehiago tiratzen laguntzen dit",
+    pulley_mode_assisted_example: "20 kg markatzen badu, benetan 10 kg antzeko zerbait mugitzen dut",
     // Ezarpenak — IA Entrenatzailearen ahotsa
     ai_voice_section_title: "IA Entrenatzailearen ahotsa",
     ai_voice_enable_label: "Erantzunak ozen irakurri",

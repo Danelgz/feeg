@@ -7,6 +7,7 @@ import {
   computeGroupRanks,
   computeOverallLevel,
   nextRankMilestone,
+  type EquipmentPrefs,
   type ExerciseInput,
   type ExerciseRank,
   type GroupRank,
@@ -117,6 +118,12 @@ export function useRanks(): RanksResult {
 
   const sex: Sex = user?.sex === 'male' || user?.sex === 'female' ? user.sex : null;
 
+  // Ver EquipmentPrefs en rankEngine.ts: corrige el rango cuando el usuario registra mancuernas
+  // como la suma de las dos, o entrena en poleas que reducen el esfuerzo real por debajo del
+  // número marcado. Sin ajustar en el perfil, ambos campos son `undefined` y el motor no corrige
+  // nada — el comportamiento de siempre.
+  const prefs: EquipmentPrefs = { dumbbellMode: user?.dumbbellMode, pulleyMode: user?.pulleyMode };
+
   return useMemo(() => {
     if (!canComputeRanks(bodyweightKg)) {
       return {
@@ -134,8 +141,8 @@ export function useRanks(): RanksResult {
 
     const records = computePersonalRecords(completedWorkouts || []);
     const inputs = toEngineInputs(records, bodyweightKg as number);
-    const exerciseRanks = computeExerciseRanks(inputs, bodyweightKg as number, sex);
-    const groupRanks = computeGroupRanks(inputs, bodyweightKg as number, sex);
+    const exerciseRanks = computeExerciseRanks(inputs, bodyweightKg as number, sex, prefs);
+    const groupRanks = computeGroupRanks(inputs, bodyweightKg as number, sex, prefs);
     const overallLevel = computeOverallLevel(groupRanks);
 
     // El prestigio sólo existe una vez dentro de Leyenda, y avanza según cuántos EJERCICIOS se
@@ -159,7 +166,9 @@ export function useRanks(): RanksResult {
       overallLevel,
       prestigeLevels,
       rankedExerciseCount: exerciseRanks.length,
-      milestone: nextRankMilestone(exerciseRanks, groupRanks, bodyweightKg as number, sex),
+      milestone: nextRankMilestone(exerciseRanks, groupRanks, bodyweightKg as number, sex, prefs),
     };
-  }, [completedWorkouts, bodyweightKg, sex]);
+    // `prefs` es un objeto nuevo cada render; se depende de sus dos campos primitivos (no de
+    // `prefs` en sí) para no invalidar la memo en cada pasada.
+  }, [completedWorkouts, bodyweightKg, sex, user?.dumbbellMode, user?.pulleyMode]);
 }

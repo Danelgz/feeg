@@ -11,6 +11,35 @@ import { MAX_LEVEL, UNRANKED_LEVEL } from '../data/ranks';
 /** `null` = sin especificar en el perfil: se usa una curva intermedia. */
 export type Sex = 'male' | 'female' | null;
 
+/**
+ * Cómo lee el motor lo que el usuario ha escrito en un ejercicio de mancuerna o de polea, porque
+ * los baremos de STRENGTH_STANDARDS asumen una única convención y no toda la gente registra igual.
+ *
+ * - `dumbbellMode: 'combined'`: el usuario apunta la suma de las dos mancuernas (p. ej. "40" al
+ *   entrenar con dos de 20 kg), no el peso de una sola. Los baremos de mancuerna están calibrados
+ *   sobre el peso de UNA, así que sin corregir esto el motor ve el doble de carga de la que hay.
+ * - `pulleyMode: 'assisted'`: sus máquinas de polea tienen un sistema que reduce el esfuerzo real
+ *   por debajo del número marcado (una polea compuesta, no la redirección simple 1:1 de un cable
+ *   normal). Sin corregirlo, un peso de polea que en realidad exige la mitad de fuerza puntúa como
+ *   si exigiera toda.
+ *
+ * Ambos casos aplican el mismo factor (0.5) porque en ambos la carga real es la mitad de la
+ * registrada; `null`/`undefined` en cualquier campo se trata como el valor por defecto (sin
+ * corrección), que es el comportamiento de siempre.
+ */
+export interface EquipmentPrefs {
+  dumbbellMode?: 'perHand' | 'combined' | null;
+  pulleyMode?: 'asShown' | 'assisted' | null;
+}
+
+/** Factor sobre la carga registrada para llegar a la carga real, según cómo la registre el usuario. */
+function equipmentMultiplier(exerciseName: string, prefs?: EquipmentPrefs): number {
+  const equipment = getExerciseInfo(exerciseName)?.equipment;
+  if (equipment === 'mancuerna' && prefs?.dumbbellMode === 'combined') return 0.5;
+  if (equipment === 'polea' && prefs?.pulleyMode === 'assisted') return 0.5;
+  return 1;
+}
+
 /** Cuántos ejercicios de un grupo entran en su media. */
 export const GROUP_TOP_N = 3;
 
@@ -27,10 +56,15 @@ export const GROUP_TOP_N = 3;
  * que el techo sigue exigiendo exactamente lo mismo que antes. Es decir: no se han movido los
  * anclajes de la tabla de baremos, se ha repartido el camino entre ellos como cuesta recorrerlo.
  *
- * Calibrado sobre press de banca con 80 kg de peso corporal: 80 kg → Aprendiz, 120 kg → Atleta,
- * 140 kg → Élite, 160 kg → Leyenda.
+ * Subido a 2.4: con 1.6 los rangos altos se alcanzaban con un nivel de fuerza intermedio-avanzado,
+ * no realmente excepcional. El techo del baremo (nivel 30) sigue costando lo mismo que costaba
+ * — eso lo fija la propia tabla de baremos, no el exponente — pero ahora hace falta acercarse mucho
+ * más a él para llegar a los rangos de arriba, en vez de sólo aproximarse.
+ *
+ * Calibrado sobre press de banca con 80 kg de peso corporal: ~98 kg → Aprendiz, ~129 kg → Atleta,
+ * ~144 kg → Élite, ~156 kg → Leyenda (el techo exacto, 160 kg, sigue siendo el nivel 30).
  */
-export const LEVEL_CURVE_EXPONENT = 1.6;
+export const LEVEL_CURVE_EXPONENT = 2.4;
 
 /** Progreso [0,1] dentro del baremo → nivel 1-30, aplicando la curvatura. */
 function levelFromProgress(progress: number): number {
@@ -103,7 +137,8 @@ export function computeExerciseLevel(
   exerciseName: string,
   input: ExerciseInput,
   bodyweightKg: number,
-  sex: Sex = null
+  sex: Sex = null,
+  prefs?: EquipmentPrefs
 ): ExerciseRank | null {
   const standard = STRENGTH_STANDARDS[exerciseName];
   if (!standard) return null;
@@ -119,7 +154,10 @@ export function computeExerciseLevel(
 
   if (!Number.isFinite(effective1RM) || effective1RM <= 0) return null;
 
-  const ratio = effective1RM / bodyweightKg;
+  // El multiplicador corrige la carga registrada a la carga real (ver EquipmentPrefs); los
+  // ejercicios lastrados son siempre de equipamiento "corporal", así que aquí vale 1 y no interfiere
+  // con el cálculo de arriba.
+  const ratio = (effective1RM * equipmentMultiplier(exerciseName, prefs)) / bodyweightKg;
   const { floor, ceiling } = resolveStandard(standard, sex);
   const span = ceiling - floor;
   if (span <= 0) return null;
@@ -154,7 +192,8 @@ export function weightForLevel(
   exerciseName: string,
   level: number,
   bodyweightKg: number,
-  sex: Sex = null
+  sex: Sex = null,
+  prefs?: EquipmentPrefs
 ): number | null {
   const standard = STRENGTH_STANDARDS[exerciseName];
   if (!standard || !Number.isFinite(bodyweightKg) || bodyweightKg <= 0) return null;
@@ -163,7 +202,11 @@ export function weightForLevel(
   const ratio = floor + progressForLevel(level) * (ceiling - floor);
   const totalLoad = ratio * bodyweightKg;
 
-  return standard.bodyweightLoaded ? totalLoad - bodyweightKg : totalLoad;
+  if (standard.bodyweightLoaded) return totalLoad - bodyweightKg;
+
+  // Inversa del multiplicador de computeExerciseLevel: `totalLoad` es la carga REAL que hace falta,
+  // y lo que se enseña es lo que hay que escribir en FEEG para llegar a ella.
+  return totalLoad / equipmentMultiplier(exerciseName, prefs);
 }
 
 /** Qué falta para el siguiente escalón de un ejercicio concreto. */
@@ -172,7 +215,8 @@ export function nextLevelTarget(
   currentLevel: number,
   currentBest1RM: number,
   bodyweightKg: number,
-  sex: Sex = null
+  sex: Sex = null,
+  prefs?: EquipmentPrefs
 ): NextLevelTarget | null {
   if (currentLevel >= MAX_LEVEL) {
     return { targetLevel: MAX_LEVEL, targetWeight: currentBest1RM, deltaKg: 0, isMaxed: true };
@@ -181,7 +225,7 @@ export function nextLevelTarget(
   // El siguiente ENTERO, no el nivel actual más uno: estando en 12.4 lo que falta es llegar a 13,
   // no a 13.4.
   const targetLevel = Math.min(MAX_LEVEL, Math.floor(currentLevel) + 1);
-  const targetWeight = weightForLevel(exerciseName, targetLevel, bodyweightKg, sex);
+  const targetWeight = weightForLevel(exerciseName, targetLevel, bodyweightKg, sex, prefs);
   if (targetWeight === null) return null;
 
   return {
@@ -196,10 +240,11 @@ export function nextLevelTarget(
 export function computeExerciseRanks(
   records: Record<string, ExerciseInput>,
   bodyweightKg: number,
-  sex: Sex = null
+  sex: Sex = null,
+  prefs?: EquipmentPrefs
 ): ExerciseRank[] {
   return Object.entries(records)
-    .map(([name, input]) => computeExerciseLevel(name, input, bodyweightKg, sex))
+    .map(([name, input]) => computeExerciseLevel(name, input, bodyweightKg, sex, prefs))
     .filter((r): r is ExerciseRank => r !== null)
     .sort((a, b) => b.level - a.level);
 }
@@ -221,10 +266,11 @@ export function computeExerciseRanks(
 export function computeGroupRanks(
   records: Record<string, ExerciseInput>,
   bodyweightKg: number,
-  sex: Sex = null
+  sex: Sex = null,
+  prefs?: EquipmentPrefs
 ): Record<string, GroupRank> {
   const byGroup: Record<string, number[]> = {};
-  for (const rank of computeExerciseRanks(records, bodyweightKg, sex)) {
+  for (const rank of computeExerciseRanks(records, bodyweightKg, sex, prefs)) {
     (byGroup[rank.group] ||= []).push(rank.level);
   }
 
@@ -317,13 +363,14 @@ export function nextRankMilestone(
   exerciseRanks: ExerciseRank[],
   groupRanks: Record<string, GroupRank>,
   bodyweightKg: number,
-  sex: Sex = null
+  sex: Sex = null,
+  prefs?: EquipmentPrefs
 ): RankMilestone | null {
   let best: RankMilestone | null = null;
   let bestEffort = Infinity;
 
   for (const rank of exerciseRanks) {
-    const target = nextLevelTarget(rank.exercise, rank.level, rank.best1RM, bodyweightKg, sex);
+    const target = nextLevelTarget(rank.exercise, rank.level, rank.best1RM, bodyweightKg, sex, prefs);
     if (!target || target.isMaxed) continue;
 
     const groupLevel = groupRanks[rank.group]?.level ?? UNRANKED_LEVEL;

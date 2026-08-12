@@ -4,7 +4,9 @@ import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { useVoice } from "../hooks/useVoice";
 import { getTokens } from "../lib/tokens";
-import { Icon, Button, Card, PageHeader, ConfirmModal, EmptyState, ChipNav } from "../components/ui";
+import { Icon, Button, PageHeader, ConfirmModal, EmptyState, ChipNav } from "../components/ui";
+import TrainingGenerator from "../components/ai/TrainingGenerator";
+import TechniqueExplorer from "../components/ai/TechniqueExplorer";
 import {
   subscribeAiConversations,
   subscribeAiMessages,
@@ -21,6 +23,16 @@ import {
   buildLogSetWorkout,
   findTargetRoutine,
 } from "../lib/aiActions";
+
+// Sugerencias de arranque del chat vacío: reducen la fricción de la hoja en blanco con un ejemplo
+// de lo que el Coach IA puede hacer de verdad (consultar datos reales, proponer cambios) en vez de
+// dejar que el usuario adivine qué preguntar.
+const QUICK_PROMPTS = [
+  "¿Cómo va mi progreso este mes?",
+  "Crea una rutina de empuje para hoy",
+  "¿En qué grupo muscular estoy más flojo?",
+  "Explícame la técnica del peso muerto",
+];
 
 const ACTION_TITLES = {
   propose_create_routine: "Nueva rutina propuesta",
@@ -95,14 +107,6 @@ export default function IA() {
   const tk = getTokens(isDark);
   const [activeTab, setActiveTab] = useState("chat"); // chat, training, technique
 
-  // States for Training Generator
-  const [showTrainingForm, setShowTrainingForm] = useState(false);
-  const [trainingData, setTrainingData] = useState({
-    age: "", sex: "", height: "", weight: "", goal: "", level: "", days: "", time: "", material: "", injuries: "", preferences: ""
-  });
-  const [generatedRoutine, setGeneratedRoutine] = useState(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-
   // States for Chat — conversaciones independientes en vez de un único hilo.
   const [conversations, setConversations] = useState([]);
   const [activeConversationId, setActiveConversationId] = useState(null);
@@ -152,37 +156,6 @@ export default function IA() {
     }
   }, [messages]);
 
-  const handleGenerateTraining = async () => {
-    setIsGenerating(true);
-
-    try {
-      const auth = getAuth();
-      const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : "";
-
-      const response = await fetch('/api/generate-routine', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
-        },
-        body: JSON.stringify({ trainingData })
-      });
-
-      if (!response.ok) {
-        throw new Error('Error generando la rutina');
-      }
-
-      const data = await response.json();
-      setGeneratedRoutine(data);
-      setShowTrainingForm(false);
-    } catch (error) {
-      console.error("Error al generar rutina:", error);
-      showNotification("Hubo un error al generar tu rutina. Inténtalo de nuevo.", 'error');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   const handleNewConversation = () => {
     setActiveConversationId(null);
     setMessages([]);
@@ -216,8 +189,8 @@ export default function IA() {
     }
   };
 
-  const handleSendMessage = async () => {
-    const userMessage = chatInput.trim();
+  const handleSendMessage = async (overrideText) => {
+    const userMessage = (overrideText ?? chatInput).trim();
     if (!userMessage || !authUser?.uid) return;
 
     setChatInput("");
@@ -338,45 +311,8 @@ export default function IA() {
     voice.startListening((text) => setChatInput((prev) => (prev ? `${prev} ${text}` : text)));
   }, [voice, showNotification, t]);
 
-  // States for Technique
-  const [techniqueSearch, setTechniqueSearch] = useState("");
-  const [techniqueResult, setTechniqueResult] = useState(null);
-  const [isSearchingTechnique, setIsSearchingTechnique] = useState(false);
-
-  const handleSearchTechnique = async () => {
-    const exerciseName = techniqueSearch.trim();
-    if (!exerciseName || !authUser?.uid || isSearchingTechnique) return;
-
-    setIsSearchingTechnique(true);
-    setTechniqueResult(null);
-
-    try {
-      const auth = getAuth();
-      const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : "";
-
-      const response = await fetch('/api/ai-technique', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
-        },
-        body: JSON.stringify({ exerciseName })
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Error consultando la técnica');
-
-      setTechniqueResult(data.result);
-    } catch (error) {
-      console.error('Error buscando técnica:', error);
-      showNotification("No se pudo consultar la técnica de ese ejercicio. Inténtalo de nuevo.", 'error');
-    } finally {
-      setIsSearchingTechnique(false);
-    }
-  };
-
-  // Estilo compartido de campos de formulario (Entrenamiento/Técnica), derivado de los tokens en
-  // vez de hex sueltos con ternarias de tema repetidas en cada input.
+  // Estilo compartido de campos de formulario del chat, derivado de los tokens en vez de hex
+  // sueltos con ternarias de tema repetidas.
   const fieldStyle = {
     width: "100%",
     padding: "13px 14px",
@@ -391,12 +327,31 @@ export default function IA() {
     fontFamily: "inherit",
   };
 
-  // Altura del panel de chat: en móvil se resta el hueco aproximado de la cabecera (campana) y la
-  // navegación inferior fija de Layout.jsx; en escritorio se deja un margen generoso con un techo
-  // para que no se estire sin límite en pantallas muy altas. No hay forma de medirlo con exactitud
-  // sin JS de layout — son valores ajustados a ojo contra el chrome real de la app.
-  const chatPanelHeight = isMobile ? "calc(100dvh - 250px)" : "min(700px, calc(100vh - 220px))";
-  const chatPanelMinHeight = isMobile ? "360px" : "460px";
+  // Altura del panel de chat: en móvil se resta el hueco real de la cabecera (campana, ~59px),
+  // el bloque de título+pestañas compacto (~46px+50px con sus márgenes) y el hueco reservado para
+  // la navegación inferior fija de Layout.jsx (80px) — 235px en total. En escritorio se deja un
+  // margen generoso con un techo para que no se estire sin límite en pantallas muy altas. No hay
+  // forma de medirlo con exactitud sin JS de layout, así que se deja algo de margen de seguridad.
+  const chatPanelHeight = isMobile ? "calc(100dvh - 235px)" : "min(700px, calc(100vh - 220px))";
+  const chatPanelMinHeight = isMobile ? "400px" : "460px";
+
+  // En móvil, el historial/nueva conversación/voz viven en la cabecera de la página en vez de en
+  // una fila propia dentro de la tarjeta de chat — dos cabeceras apiladas (título de página +
+  // barra de acciones del chat) es exactamente el chrome de sobra que hacía sentir la conversación
+  // pequeña. En escritorio esas acciones siguen donde estaban (la tarjeta ya tiene sitio de sobra).
+  const chatHeaderActions = isMobile && activeTab === "chat" ? (
+    <div style={{ display: "flex", gap: "6px" }}>
+      <button onClick={() => setShowHistoryOverlay(true)} aria-label={t("ai_conversation_history")} style={{ ...iconButtonStyle(tk), color: tk.text, backgroundColor: tk.surface, border: `1px solid ${tk.border}` }}>
+        <Icon name="clock" size={17} />
+      </button>
+      <button onClick={handleNewConversation} aria-label={t("ai_new_conversation")} style={{ ...iconButtonStyle(tk), color: tk.text, backgroundColor: tk.surface, border: `1px solid ${tk.border}` }}>
+        <Icon name="plus" size={17} />
+      </button>
+      <button onClick={() => setAiVoiceEnabled(!aiVoiceEnabled)} title={t("ai_voice_enable_label")} style={{ ...iconButtonStyle(tk), color: aiVoiceEnabled ? tk.accent : tk.textFaint, backgroundColor: tk.surface, border: `1px solid ${aiVoiceEnabled ? tk.accent : tk.border}` }}>
+        <Icon name={aiVoiceEnabled ? "volume2" : "volumeX"} size={17} />
+      </button>
+    </div>
+  ) : undefined;
 
   return (
     <Layout>
@@ -404,11 +359,13 @@ export default function IA() {
         <PageHeader
           isDark={isDark}
           isMobile={isMobile}
+          compact
           title={t("ai_chat_title")}
           subtitle={isMobile ? undefined : "Tu entrenador virtual, con acceso a tus datos reales."}
+          actions={chatHeaderActions}
         />
 
-        <div style={{ marginBottom: isMobile ? "12px" : "18px" }}>
+        <div style={{ marginBottom: isMobile ? "8px" : "18px" }}>
           <ChipNav items={TABS} activeKey={activeTab} onChange={setActiveTab} isDark={isDark} ariaLabel="Secciones del Coach IA" />
         </div>
 
@@ -488,49 +445,59 @@ export default function IA() {
               overflow: "hidden",
               minWidth: 0,
             }}>
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: isMobile ? "10px 12px" : "12px 16px",
-                borderBottom: `1px solid ${tk.border}`,
-                flexShrink: 0,
-              }}>
-                {isMobile ? (
-                  <div style={{ display: "flex", gap: "6px" }}>
-                    <button
-                      onClick={() => setShowHistoryOverlay(true)}
-                      aria-label={t("ai_conversation_history")}
-                      style={{ ...iconButtonStyle(tk), color: tk.text }}
-                    >
-                      <Icon name="clock" size={18} />
-                    </button>
-                    <button
-                      onClick={handleNewConversation}
-                      aria-label={t("ai_new_conversation")}
-                      style={{ ...iconButtonStyle(tk), color: tk.text }}
-                    >
-                      <Icon name="plus" size={18} />
-                    </button>
-                  </div>
-                ) : (
+              {/* En móvil estas mismas acciones viven en la cabecera de la página (ver
+                  chatHeaderActions) — repetirlas aquí sería la fila de sobra que se quitó. */}
+              {!isMobile && (
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "12px 16px",
+                  borderBottom: `1px solid ${tk.border}`,
+                  flexShrink: 0,
+                }}>
                   <span style={{ color: tk.textMuted, fontSize: tk.fontSize.xs, fontWeight: tk.weight.medium }}>
                     {conversations.find((c) => c.id === activeConversationId)?.title || t("ai_new_conversation")}
                   </span>
-                )}
-                <button
-                  onClick={() => setAiVoiceEnabled(!aiVoiceEnabled)}
-                  title={t("ai_voice_enable_label")}
-                  style={{ ...iconButtonStyle(tk), color: aiVoiceEnabled ? tk.accent : tk.textFaint }}
-                >
-                  <Icon name={aiVoiceEnabled ? "volume2" : "volumeX"} size={18} />
-                </button>
-              </div>
+                  <button
+                    onClick={() => setAiVoiceEnabled(!aiVoiceEnabled)}
+                    title={t("ai_voice_enable_label")}
+                    style={{ ...iconButtonStyle(tk), color: aiVoiceEnabled ? tk.accent : tk.textFaint }}
+                  >
+                    <Icon name={aiVoiceEnabled ? "volume2" : "volumeX"} size={18} />
+                  </button>
+                </div>
+              )}
 
               <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "12px" : "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
                 {messages.length === 0 && (
-                  <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "18px" }}>
                     <EmptyState isDark={isDark} icon="message" title={t("ai_chat_empty")} />
+                    <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "8px", maxWidth: "460px", padding: "0 12px" }}>
+                      {QUICK_PROMPTS.map((prompt) => (
+                        <button
+                          key={prompt}
+                          onClick={() => handleSendMessage(prompt)}
+                          disabled={isLoadingChat}
+                          className="feeg-surface feeg-press feeg-hover"
+                          style={{
+                            padding: "9px 14px",
+                            borderRadius: tk.radius.pill,
+                            fontSize: tk.fontSize.xs,
+                            cursor: "pointer",
+                            "--feeg-bg": tk.surfaceAlt,
+                            "--feeg-fg": tk.text,
+                            "--feeg-border": tk.border,
+                            "--feeg-hover-fg": tk.accent,
+                            "--feeg-hover-border": tk.accent,
+                            "--feeg-border-width": "1px",
+                            "--feeg-press-scale": 0.96,
+                          }}
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
                 {messages.map((msg, i) => (
@@ -626,7 +593,7 @@ export default function IA() {
                 </div>
               )}
 
-              <div style={{ display: "flex", gap: "8px", padding: isMobile ? "10px 12px" : "12px 16px", borderTop: `1px solid ${tk.border}`, flexShrink: 0 }}>
+              <div style={{ display: "flex", gap: "8px", padding: isMobile ? "8px 10px" : "12px 16px", borderTop: `1px solid ${tk.border}`, flexShrink: 0 }}>
                 <button
                   onClick={handleMicClick}
                   title={voice.sttSupported ? t("ai_listening") : t("ai_mic_not_supported")}
@@ -635,7 +602,7 @@ export default function IA() {
                     border: `1px solid ${voice.isListening ? tk.danger : tk.border}`,
                     color: voice.isListening ? "#fff" : tk.text,
                     borderRadius: tk.radius.md,
-                    width: "46px",
+                    width: isMobile ? "42px" : "46px",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
@@ -648,21 +615,21 @@ export default function IA() {
                 </button>
                 <input
                   placeholder={voice.isListening ? t("ai_listening") : t("ai_chat_placeholder")}
-                  style={{ ...fieldStyle, flex: 1, padding: "12px 14px" }}
+                  style={{ ...fieldStyle, flex: 1, padding: isMobile ? "10px 12px" : "12px 14px" }}
                   value={chatInput}
                   onChange={e => setChatInput(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
                   disabled={isLoadingChat}
                 />
                 <button
-                  onClick={handleSendMessage}
+                  onClick={() => handleSendMessage()}
                   disabled={isLoadingChat || !chatInput.trim()}
                   style={{
                     background: `linear-gradient(135deg, ${tk.accent} 0%, ${tk.accentHover} 100%)`,
                     color: tk.onAccent,
                     border: "none",
                     borderRadius: tk.radius.md,
-                    width: "46px",
+                    width: isMobile ? "42px" : "46px",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
@@ -680,189 +647,14 @@ export default function IA() {
           </div>
         )}
 
-        {/* Training Generator */}
+        {/* Generador de entrenamientos — cuestionario paso a paso, ver components/ai/TrainingGenerator */}
         {activeTab === "training" && (
-          <div>
-            {!showTrainingForm && !generatedRoutine && (
-              <Card isDark={isDark} padding={isMobile ? "sm" : "lg"} style={{ textAlign: "center" }}>
-                <h3 style={{ margin: "0 0 8px", color: tk.text }}>¿Necesitas un plan a tu medida?</h3>
-                <p style={{ color: tk.textMuted, fontSize: tk.fontSize.sm, margin: "0 0 20px" }}>Nuestra IA analizará tus datos para crear la rutina perfecta para ti.</p>
-                <Button isDark={isDark} fullWidth onClick={() => setShowTrainingForm(true)}>
-                  Crear entrenamiento personalizado
-                </Button>
-              </Card>
-            )}
-
-            {showTrainingForm && (
-              <Card isDark={isDark} padding={isMobile ? "sm" : "lg"}>
-                <h3 style={{ margin: "0 0 16px", color: tk.text }}>Cuéntame sobre ti</h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr 1fr", gap: "10px" }}>
-                    <input placeholder="Edad" type="number" style={fieldStyle} value={trainingData.age} onChange={e => setTrainingData({ ...trainingData, age: e.target.value })} />
-                    <select style={fieldStyle} value={trainingData.sex} onChange={e => setTrainingData({ ...trainingData, sex: e.target.value })}>
-                      <option value="">Sexo</option>
-                      <option value="hombre">Hombre</option>
-                      <option value="mujer">Mujer</option>
-                    </select>
-                    <input placeholder="Altura (cm)" type="number" style={fieldStyle} value={trainingData.height} onChange={e => setTrainingData({ ...trainingData, height: e.target.value })} />
-                    <input placeholder="Peso (kg)" type="number" style={fieldStyle} value={trainingData.weight} onChange={e => setTrainingData({ ...trainingData, weight: e.target.value })} />
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "10px" }}>
-                    <select style={fieldStyle} value={trainingData.goal} onChange={e => setTrainingData({ ...trainingData, goal: e.target.value })}>
-                      <option value="">Objetivo</option>
-                      <option value="perder grasa">Perder grasa</option>
-                      <option value="ganar músculo">Ganar músculo</option>
-                      <option value="fuerza">Fuerza</option>
-                      <option value="mantenimiento">Mantenimiento</option>
-                    </select>
-                    <select style={fieldStyle} value={trainingData.level} onChange={e => setTrainingData({ ...trainingData, level: e.target.value })}>
-                      <option value="">Nivel</option>
-                      <option value="principiante">Principiante</option>
-                      <option value="intermedio">Intermedio</option>
-                      <option value="avanzado">Avanzado</option>
-                    </select>
-                  </div>
-                  <input placeholder="Días disponibles por semana" type="number" style={fieldStyle} value={trainingData.days} onChange={e => setTrainingData({ ...trainingData, days: e.target.value })} />
-                  <input placeholder="Material (gym, casa, mancuernas...)" style={fieldStyle} value={trainingData.material} onChange={e => setTrainingData({ ...trainingData, material: e.target.value })} />
-                  <textarea placeholder="Lesiones o preferencias..." style={{ ...fieldStyle, minHeight: "80px", resize: "vertical" }} value={trainingData.preferences} onChange={e => setTrainingData({ ...trainingData, preferences: e.target.value })} />
-
-                  <Button isDark={isDark} fullWidth onClick={handleGenerateTraining} disabled={isGenerating} style={{ marginTop: "6px" }}>
-                    {isGenerating ? "Generando plan..." : "Generar mi plan"}
-                  </Button>
-                </div>
-              </Card>
-            )}
-
-            {generatedRoutine && (
-              <Card isDark={isDark} padding={isMobile ? "sm" : "lg"}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px", marginBottom: "16px" }}>
-                  <h2 style={{ color: tk.accent, margin: 0, fontSize: tk.fontSize.lg }}>{generatedRoutine.title}</h2>
-                  <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
-                    <Button isDark={isDark} size="sm" onClick={async () => {
-                      try {
-                        await saveRoutine({
-                          id: Date.now(),
-                          name: generatedRoutine.title,
-                          exercises: generatedRoutine.days.flatMap(day =>
-                            day.exercises.map(ex => ({
-                              name: ex.name,
-                              group: "Generado por IA",
-                              type: "weight_reps",
-                              rest: parseInt(ex.rest) || 90,
-                              series: Array.from({ length: parseInt(ex.sets) || 3 }).map(() => ({ reps: parseInt(ex.reps) || 10, weight: 0, type: "N" }))
-                            }))
-                          )
-                        });
-                        showNotification("¡Rutina guardada correctamente!", 'success');
-                      } catch (err) {
-                        console.error("Error guardando rutina", err);
-                        showNotification("Error al guardar rutina", 'error');
-                      }
-                    }}>
-                      Guardar
-                    </Button>
-                    <Button isDark={isDark} variant="ghost" size="sm" onClick={() => setGeneratedRoutine(null)}>Volver</Button>
-                  </div>
-                </div>
-                <p style={{ color: tk.textMuted, fontSize: tk.fontSize.sm }}>{generatedRoutine.summary}</p>
-
-                {generatedRoutine.days.map((day, idx) => (
-                  <div key={idx} style={{ marginBottom: "16px", padding: "14px", backgroundColor: tk.surfaceAlt, borderRadius: tk.radius.md, border: `1px solid ${tk.border}` }}>
-                    <h4 style={{ margin: "0 0 10px 0", color: tk.accent, fontSize: tk.fontSize.sm }}>{day.name}</h4>
-                    {day.exercises.map((ex, i) => (
-                      <div key={i} style={{ padding: "8px 0", borderBottom: i === day.exercises.length - 1 ? "none" : `1px solid ${tk.border}` }}>
-                        <div style={{ fontWeight: tk.weight.bold, color: tk.text, fontSize: tk.fontSize.sm }}>{ex.name}</div>
-                        <div style={{ fontSize: tk.fontSize.xs, color: tk.textMuted }}>{ex.sets} series x {ex.reps} • Descanso: {ex.rest}</div>
-                        <div style={{ fontSize: tk.fontSize.xs, fontStyle: "italic", marginTop: "4px", color: tk.textMuted }}>💡 {ex.note}</div>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-
-                <div style={{ backgroundColor: tk.accentSoft, padding: "14px", borderRadius: tk.radius.md, borderLeft: `3px solid ${tk.accent}`, fontSize: tk.fontSize.sm, color: tk.text }}>
-                  <strong>Consejo IA:</strong> {generatedRoutine.advice}
-                </div>
-              </Card>
-            )}
-          </div>
+          <TrainingGenerator isDark={isDark} isMobile={isMobile} onSaveRoutine={saveRoutine} showNotification={showNotification} />
         )}
 
-        {/* Technique */}
+        {/* Explorador de técnica — buscador + catálogo navegable, ver components/ai/TechniqueExplorer */}
         {activeTab === "technique" && (
-          <div>
-            <Card isDark={isDark} padding={isMobile ? "sm" : "lg"}>
-              <h3 style={{ margin: "0 0 6px", color: tk.text }}>Explorador de Técnica</h3>
-              <p style={{ color: tk.textMuted, fontSize: tk.fontSize.sm, margin: "0 0 16px" }}>Busca cualquier ejercicio para recibir una explicación detallada.</p>
-              <div style={{ display: "flex", gap: "10px" }}>
-                <input
-                  placeholder="Ej: Sentadilla, Press Banca..."
-                  style={fieldStyle}
-                  value={techniqueSearch}
-                  onChange={e => setTechniqueSearch(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && handleSearchTechnique()}
-                  disabled={isSearchingTechnique}
-                />
-                <Button isDark={isDark} onClick={handleSearchTechnique} disabled={!techniqueSearch.trim() || isSearchingTechnique}>
-                  {isSearchingTechnique ? "Buscando..." : "Buscar"}
-                </Button>
-              </div>
-            </Card>
-
-            {techniqueResult && (
-              <Card isDark={isDark} padding={isMobile ? "sm" : "lg"} style={{ marginTop: "16px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
-                  <h2 style={{ color: tk.accent, margin: 0, fontSize: tk.fontSize.lg }}>{techniqueResult.name}</h2>
-                  {techniqueResult.muscleGroup && (
-                    <span style={{
-                      fontSize: tk.fontSize.xs, fontWeight: tk.weight.medium, color: tk.textMuted,
-                      backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.pill,
-                      padding: "3px 10px",
-                    }}>
-                      {techniqueResult.muscleGroup}
-                    </span>
-                  )}
-                </div>
-
-                {techniqueResult.recognized === false && (
-                  <div style={{
-                    display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px",
-                    color: tk.danger, fontSize: tk.fontSize.xs, fontWeight: tk.weight.medium,
-                  }}>
-                    <Icon name="alertCircle" size={14} />
-                    No he reconocido este ejercicio con seguridad — tómalo con cautela.
-                  </div>
-                )}
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                  <div>
-                    <strong style={{ display: "block", color: tk.accent, fontSize: tk.fontSize.sm, marginBottom: "4px" }}>📍 Posición y ejecución</strong>
-                    <span style={{ color: tk.text, fontSize: tk.fontSize.sm }}>{techniqueResult.position}</span>
-                  </div>
-                  <div>
-                    <strong style={{ display: "block", color: tk.danger, fontSize: tk.fontSize.sm, marginBottom: "4px" }}>❌ Errores comunes</strong>
-                    <span style={{ color: tk.text, fontSize: tk.fontSize.sm }}>{techniqueResult.commonMistakes}</span>
-                  </div>
-                  <div>
-                    <strong style={{ display: "block", color: tk.accent, fontSize: tk.fontSize.sm, marginBottom: "4px" }}>💪 Músculos implicados</strong>
-                    <span style={{ color: tk.text, fontSize: tk.fontSize.sm }}>{techniqueResult.musclesInvolved}</span>
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr", gap: "10px" }}>
-                    <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.md, padding: "10px 12px" }}>
-                      <div style={{ color: tk.textMuted, fontSize: tk.fontSize.xs, marginBottom: "2px" }}>Repeticiones</div>
-                      <div style={{ color: tk.text, fontSize: tk.fontSize.sm, fontWeight: tk.weight.medium }}>{techniqueResult.repRange}</div>
-                    </div>
-                    <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.md, padding: "10px 12px" }}>
-                      <div style={{ color: tk.textMuted, fontSize: tk.fontSize.xs, marginBottom: "2px" }}>Descanso</div>
-                      <div style={{ color: tk.text, fontSize: tk.fontSize.sm, fontWeight: tk.weight.medium }}>{techniqueResult.restAdvice}</div>
-                    </div>
-                  </div>
-                  <div style={{ backgroundColor: tk.accentSoft, padding: "12px", borderRadius: tk.radius.sm, border: `1px dashed ${tk.accent}`, fontSize: tk.fontSize.sm, color: tk.text }}>
-                    <strong>💡 Tip:</strong> {techniqueResult.tip}
-                  </div>
-                </div>
-              </Card>
-            )}
-          </div>
+          <TechniqueExplorer isDark={isDark} isMobile={isMobile} showNotification={showNotification} />
         )}
       </div>
 

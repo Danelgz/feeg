@@ -7,6 +7,26 @@ const SIZES = {
   lg: { padding: "14px 24px", fontSize: "1rem", radius: "12px", iconSize: 20, press: 0.975 },
 };
 
+/**
+ * Tipos en JSDoc por la misma razón que en Icon.jsx: `icon` y `style` no tienen valor por
+ * defecto, así que sin anotar TypeScript los infiere OBLIGATORIOS para cualquier consumidor .tsx
+ * — un botón de solo texto sin icono dejaría de compilar.
+ *
+ * @param {{
+ *   isDark: boolean,
+ *   variant?: "primary" | "secondary" | "danger" | "ghost",
+ *   size?: "sm" | "md" | "lg",
+ *   fullWidth?: boolean,
+ *   disabled?: boolean,
+ *   icon?: string | import("react").ReactNode,
+ *   iconPosition?: "left" | "right",
+ *   type?: "button" | "submit" | "reset",
+ *   onClick?: (event: import("react").MouseEvent<HTMLButtonElement>) => void,
+ *   children?: import("react").ReactNode,
+ *   style?: import("react").CSSProperties,
+ *   className?: string,
+ * } & Record<string, any>} props
+ */
 export default function Button({
   isDark,
   variant = "primary",

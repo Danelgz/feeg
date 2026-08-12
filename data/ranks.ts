@@ -61,16 +61,21 @@ export const MAX_LEVEL = 30;
 // AHORA en Atleta". Calcular esto último de verdad requeriría trackear el histórico de rangos de
 // cada usuario, que hoy no se guarda.
 export const RANKS: RankDefinition[] = [
-  { index: 0, name: 'Principiante', slug: 'principiante', icon: 'plate', color: '#4778eb', accent: '#27469b', minLevel: 1, rarityPercent: 100 },
+  // Gris neutro y no azulado a propósito: `restFill` en MuscleMap.tsx (el tono de "sin rango
+  // todavía") es un gris CON tinte azul, así que un Principiante azulado se confundiría con un
+  // músculo sin entrenar. Este es más frío y más claro; se leen como dos cosas distintas uno al
+  // lado del otro.
+  { index: 0, name: 'Principiante', slug: 'principiante', icon: 'plate', color: '#9b9b9b', accent: '#5f5f5f', minLevel: 1, rarityPercent: 100 },
   { index: 1, name: 'Novato', slug: 'novato', icon: 'gem', color: '#00f566', accent: '#008539', minLevel: 4, rarityPercent: 55 },
   { index: 2, name: 'Aprendiz', slug: 'aprendiz', icon: 'crystalShield', color: '#14a5ff', accent: '#0967ae', minLevel: 7, rarityPercent: 30 },
   { index: 3, name: 'Constante', slug: 'constante', icon: 'flame', color: '#00d9ff', accent: '#047690', minLevel: 10, rarityPercent: 16 },
   { index: 4, name: 'Disciplinado', slug: 'disciplinado', icon: 'starShield', color: '#a033ff', accent: '#620bda', minLevel: 13, rarityPercent: 8 },
   { index: 5, name: 'Atleta', slug: 'atleta', icon: 'medal', color: '#ff1420', accent: '#d5920b', minLevel: 16, rarityPercent: 4 },
   { index: 6, name: 'Avanzado', slug: 'avanzado', icon: 'crown', color: '#ff8205', accent: '#a35200', minLevel: 19, rarityPercent: 1.8 },
-  // Élite y Leyenda comparten oro y diamante azul a propósito (Leyenda «se parece a Élite pero más
-  // grande y luminoso»). Se separan por temperatura: Élite es oro cálido y Leyenda casi blanco.
-  { index: 7, name: 'Élite', slug: 'elite', icon: 'diamond', color: '#ffbe0a', accent: '#1aa3ff', minLevel: 22, rarityPercent: 0.7 },
+  // Élite y Leyenda comparten familia amarillo/dorada y diamante azul a propósito (Leyenda «se
+  // parece a Élite pero más grande y luminoso»). Se separan por saturación: Élite es amarillo puro
+  // y Leyenda un dorado pálido, casi blanco.
+  { index: 7, name: 'Élite', slug: 'elite', icon: 'diamond', color: '#fffb00', accent: '#1aa3ff', minLevel: 22, rarityPercent: 0.7 },
   // Titán sigue siendo el más oscuro de la escalera, pero ya no es un marrón apagado: un granate
   // profundo tiene el mismo peso visual y encima combina con las luces rojas del contorno en vez
   // de competir con ellas.

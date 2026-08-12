@@ -146,19 +146,15 @@ describe("estadísticas · rangos", () => {
     expect(await screen.findByRole("button", { name: /^Bíceps:/ })).toBeTruthy();
   });
 
-  it("tiñe los músculos con volumen en lugar de un color plano", async () => {
+  it("tiñe cada grupo con el color plano de su rango", async () => {
     renderRanks();
     await screen.findByText("Tu cuerpo por rango");
 
-    // Sobre el cuerpo blanco un relleno de un solo tono se lee apagado; cada grupo con rango usa el
-    // par color/accent de su rango como degradado.
-    //
-    // Se busca por vista y no sólo por grupo: casi todos los grupos se dibujan en las dos figuras, y
-    // el degradado de cada una tiene su propio id — dos <linearGradient> con el mismo id harían que
-    // el segundo cuerpo tirase del del primero.
+    // Color plano y no degradado: el mismo `rank.color` que pinta la insignia de ese rango, para
+    // que el cuerpo se lea como "este músculo es de tal rango" de un vistazo.
     const region = await screen.findByRole("button", { name: /^Cuádriceps:.* · Frontal$/ });
     const painted = region.querySelector("path");
-    expect(painted?.getAttribute("fill")).toBe("url(#feeg-muscle-front-cuadriceps)");
+    expect(painted?.getAttribute("fill")).toMatch(/^#[0-9a-f]{6}$/i);
   });
 
   it("manda a registrar el peso corporal cuando no hay con qué comparar", async () => {

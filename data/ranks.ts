@@ -47,20 +47,20 @@ export const MAX_LEVEL = 30;
 // el nombre del rango por toda la interfaz, así que tienen que reconocerse como el mismo rango que
 // la insignia aunque aparezcan sin ella (en una fila de texto, en un gráfico).
 export const RANKS: RankDefinition[] = [
-  { index: 0, name: 'Principiante', slug: 'principiante', icon: 'plate', color: '#b3bcc5', accent: '#6d7680', minLevel: 1 },
-  { index: 1, name: 'Novato', slug: 'novato', icon: 'gem', color: '#2fd16b', accent: '#12813d', minLevel: 4 },
-  { index: 2, name: 'Aprendiz', slug: 'aprendiz', icon: 'crystalShield', color: '#4fb3f0', accent: '#1f6fae', minLevel: 7 },
-  { index: 3, name: 'Constante', slug: 'constante', icon: 'flame', color: '#22d3ee', accent: '#0e7f96', minLevel: 10 },
-  { index: 4, name: 'Disciplinado', slug: 'disciplinado', icon: 'starShield', color: '#a855f7', accent: '#6d28d9', minLevel: 13 },
-  { index: 5, name: 'Atleta', slug: 'atleta', icon: 'medal', color: '#e5484d', accent: '#c99a2e', minLevel: 16 },
-  { index: 6, name: 'Avanzado', slug: 'avanzado', icon: 'crown', color: '#f5941f', accent: '#a85c05', minLevel: 19 },
+  { index: 0, name: 'Principiante', slug: 'principiante', icon: 'plate', color: '#90adcb', accent: '#4f6a87', minLevel: 1 },
+  { index: 1, name: 'Novato', slug: 'novato', icon: 'gem', color: '#0fe65e', accent: '#0a7f38', minLevel: 4 },
+  { index: 2, name: 'Aprendiz', slug: 'aprendiz', icon: 'crystalShield', color: '#3bb0f7', accent: '#136aae', minLevel: 7 },
+  { index: 3, name: 'Constante', slug: 'constante', icon: 'flame', color: '#10daf9', accent: '#087e96', minLevel: 10 },
+  { index: 4, name: 'Disciplinado', slug: 'disciplinado', icon: 'starShield', color: '#a346fb', accent: '#6719e1', minLevel: 13 },
+  { index: 5, name: 'Atleta', slug: 'atleta', icon: 'medal', color: '#f63138', accent: '#d39a17', minLevel: 16 },
+  { index: 6, name: 'Avanzado', slug: 'avanzado', icon: 'crown', color: '#fb9213', accent: '#a65a03', minLevel: 19 },
   // Élite y Leyenda comparten oro y diamante azul a propósito (Leyenda «se parece a Élite pero más
   // grande y luminoso»). Se separan por temperatura: Élite es oro cálido y Leyenda casi blanco.
-  { index: 7, name: 'Élite', slug: 'elite', icon: 'diamond', color: '#e8bd3a', accent: '#3fa9f5', minLevel: 22 },
+  { index: 7, name: 'Élite', slug: 'elite', icon: 'diamond', color: '#f6c223', accent: '#2ea5fa', minLevel: 22 },
   // Titán es el único cuyo color base es más oscuro que el fondo de la tarjeta: la insignia se
   // define por el contorno y las luces rojas, no por la masa de color.
-  { index: 8, name: 'Titán', slug: 'titan', icon: 'helmet', color: '#3a3a3d', accent: '#ff3b30', minLevel: 25 },
-  { index: 9, name: 'Leyenda', slug: 'leyenda', icon: 'legendCrown', color: '#f7e7a8', accent: '#4fb3f0', minLevel: 28 },
+  { index: 8, name: 'Titán', slug: 'titan', icon: 'helmet', color: '#3f2e2c', accent: '#ff3b30', minLevel: 25 },
+  { index: 9, name: 'Leyenda', slug: 'leyenda', icon: 'legendCrown', color: '#fbe89d', accent: '#3bb0f7', minLevel: 28 },
 ];
 
 /** Escalones de prestigio, una vez superado el nivel 30. */

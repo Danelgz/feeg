@@ -72,10 +72,10 @@ export const RANKS: RankDefinition[] = [
   { index: 4, name: 'Disciplinado', slug: 'disciplinado', icon: 'starShield', color: '#a033ff', accent: '#620bda', minLevel: 13, rarityPercent: 8 },
   { index: 5, name: 'Atleta', slug: 'atleta', icon: 'medal', color: '#ff1420', accent: '#d5920b', minLevel: 16, rarityPercent: 4 },
   { index: 6, name: 'Avanzado', slug: 'avanzado', icon: 'crown', color: '#ff8205', accent: '#a35200', minLevel: 19, rarityPercent: 1.8 },
-  // Élite y Leyenda comparten familia amarillo/dorada y diamante azul a propósito (Leyenda «se
-  // parece a Élite pero más grande y luminoso»). Se separan por saturación: Élite es amarillo puro
-  // y Leyenda un dorado pálido, casi blanco.
-  { index: 7, name: 'Élite', slug: 'elite', icon: 'diamond', color: '#fffb00', accent: '#1aa3ff', minLevel: 22, rarityPercent: 0.7 },
+  // Élite y Leyenda comparten familia dorada y diamante azul a propósito (Leyenda «se parece a
+  // Élite pero más grande y luminoso»). Se separan por luminosidad: Élite es un dorado intenso y
+  // Leyenda su versión pálida, casi blanca.
+  { index: 7, name: 'Élite', slug: 'elite', icon: 'diamond', color: '#ffc400', accent: '#1aa3ff', minLevel: 22, rarityPercent: 0.7 },
   // Titán sigue siendo el más oscuro de la escalera, pero ya no es un marrón apagado: un granate
   // profundo tiene el mismo peso visual y encima combina con las luces rojas del contorno en vez
   // de competir con ellas.

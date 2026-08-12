@@ -136,14 +136,6 @@ export default function RankMapSection({ isDark, isMobile = false, t, language }
         translateExercise={(name) => translateExerciseName(name, language)}
       />
 
-      <div style={{ display: 'grid', gap: tk.space.lg, marginBottom: tk.space.lg }}>
-        <RankLadderSection
-          currentRank={getRankPosition(overallLevel, prestigeLevels).rank}
-          isDark={isDark}
-          isMobile={isMobile}
-        />
-      </div>
-
       <div style={{ display: 'grid', gap: tk.space.lg }}>
         <StatSection title="Tu cuerpo por rango" isDark={isDark} isMobile={isMobile}>
           <MuscleMap
@@ -260,6 +252,12 @@ export default function RankMapSection({ isDark, isMobile = false, t, language }
             </p>
           )}
         </StatSection>
+
+        <RankLadderSection
+          currentRank={getRankPosition(overallLevel, prestigeLevels).rank}
+          isDark={isDark}
+          isMobile={isMobile}
+        />
       </div>
     </>
   );

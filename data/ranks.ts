@@ -61,9 +61,9 @@ export const MAX_LEVEL = 30;
 // AHORA en Atleta". Calcular esto último de verdad requeriría trackear el histórico de rangos de
 // cada usuario, que hoy no se guarda.
 export const RANKS: RankDefinition[] = [
-  { index: 0, name: 'Principiante', slug: 'principiante', icon: 'plate', color: '#64a2d8', accent: '#35618d', minLevel: 1, rarityPercent: 100 },
-  { index: 1, name: 'Novato', slug: 'novato', icon: 'gem', color: '#00e654', accent: '#037c34', minLevel: 4, rarityPercent: 55 },
-  { index: 2, name: 'Aprendiz', slug: 'aprendiz', icon: 'crystalShield', color: '#1fa5ff', accent: '#0964ae', minLevel: 7, rarityPercent: 30 },
+  { index: 0, name: 'Principiante', slug: 'principiante', icon: 'plate', color: '#4778eb', accent: '#27469b', minLevel: 1, rarityPercent: 100 },
+  { index: 1, name: 'Novato', slug: 'novato', icon: 'gem', color: '#00f566', accent: '#008539', minLevel: 4, rarityPercent: 55 },
+  { index: 2, name: 'Aprendiz', slug: 'aprendiz', icon: 'crystalShield', color: '#14a5ff', accent: '#0967ae', minLevel: 7, rarityPercent: 30 },
   { index: 3, name: 'Constante', slug: 'constante', icon: 'flame', color: '#00d9ff', accent: '#047690', minLevel: 10, rarityPercent: 16 },
   { index: 4, name: 'Disciplinado', slug: 'disciplinado', icon: 'starShield', color: '#a033ff', accent: '#620bda', minLevel: 13, rarityPercent: 8 },
   { index: 5, name: 'Atleta', slug: 'atleta', icon: 'medal', color: '#ff1420', accent: '#d5920b', minLevel: 16, rarityPercent: 4 },
@@ -71,10 +71,11 @@ export const RANKS: RankDefinition[] = [
   // Élite y Leyenda comparten oro y diamante azul a propósito (Leyenda «se parece a Élite pero más
   // grande y luminoso»). Se separan por temperatura: Élite es oro cálido y Leyenda casi blanco.
   { index: 7, name: 'Élite', slug: 'elite', icon: 'diamond', color: '#ffbe0a', accent: '#1aa3ff', minLevel: 22, rarityPercent: 0.7 },
-  // Titán es el único cuyo color base es más oscuro que el fondo de la tarjeta: la insignia se
-  // define por el contorno y las luces rojas, no por la masa de color.
-  { index: 8, name: 'Titán', slug: 'titan', icon: 'helmet', color: '#3b1f16', accent: '#ff3b29', minLevel: 25, rarityPercent: 0.25 },
-  { index: 9, name: 'Leyenda', slug: 'leyenda', icon: 'legendCrown', color: '#ffe58f', accent: '#1fa5ff', minLevel: 28, rarityPercent: 0.08 },
+  // Titán sigue siendo el más oscuro de la escalera, pero ya no es un marrón apagado: un granate
+  // profundo tiene el mismo peso visual y encima combina con las luces rojas del contorno en vez
+  // de competir con ellas.
+  { index: 8, name: 'Titán', slug: 'titan', icon: 'helmet', color: '#601016', accent: '#ff3429', minLevel: 25, rarityPercent: 0.25 },
+  { index: 9, name: 'Leyenda', slug: 'leyenda', icon: 'legendCrown', color: '#ffdb66', accent: '#14a5ff', minLevel: 28, rarityPercent: 0.08 },
 ];
 
 /** Formatea `rarityPercent` para pantalla: "Top 4%", "Top 0.08%"... y el caso especial del 100%. */

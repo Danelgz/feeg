@@ -142,13 +142,10 @@ export default function RankMapSection({ isDark, isMobile = false, t, language }
             isDark={isDark}
             sex={sex}
             labelForGroup={(group) => t(group) || group}
-            // Par de tonos y no color plano: `accent` existe en data/ranks.ts precisamente para dar
-            // volumen al degradado de cada rango, y hasta ahora sólo lo usaba el arte de la insignia.
-            // Sobre el cuerpo blanco, un relleno plano se veía apagado por muy saturado que fuera.
-            colorForGroup={(group) => {
-              const rank = describeGroup(group)?.position.rank;
-              return rank ? { from: rank.color, to: rank.accent } : null;
-            }}
+            // Color plano y no degradado: el mismo `rank.color` que pinta el disco de la insignia en
+            // cada perfil de rango, para que el cuerpo se lea como "este músculo es Atleta" de un
+            // vistazo, sin que el volumen del degradado compita con el propio color del rango.
+            colorForGroup={(group) => describeGroup(group)?.position.rank.color ?? null}
             onMuscleClick={openFromMap}
             hint="Toca un músculo para desplegar sus ejercicios abajo."
             ariaLabelForGroup={(group) => {

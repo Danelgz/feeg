@@ -56,8 +56,11 @@ Datos del usuario:
 - Objetivo: ${trainingData.goal || 'General'}
 - Nivel: ${trainingData.level || 'Intermedio'}
 - Días disponibles a la semana: ${trainingData.days || 3}
+- Tiempo disponible por sesión: ${trainingData.time ? trainingData.time + ' minutos' : 'No especificado'}
 - Material disponible: ${trainingData.material || 'Gimnasio completo'}
 - Lesiones o preferencias: ${trainingData.preferences || 'Ninguna'}
+
+Ajusta el número de ejercicios por día para que quepan cómodamente en el tiempo disponible por sesión (contando calentamiento, series y descansos) — no lo ignores.
 
 DEBES devolver ÚNICAMENTE un objeto JSON válido con la siguiente estructura exacta:
 {

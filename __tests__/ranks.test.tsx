@@ -5,6 +5,11 @@ vi.mock("../components/Layout", () => ({
   default: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+const routerPush = vi.fn();
+vi.mock("next/router", () => ({
+  useRouter: () => ({ push: routerPush }),
+}));
+
 vi.mock("../lib/firebase", () => ({
   onAuthChange: () => () => {},
   signInWithGoogle: vi.fn(),
@@ -124,7 +129,7 @@ describe("estadísticas · rangos", () => {
     expect(row!.getAttribute("aria-expanded")).toBe("true");
   });
 
-  it("tocar un ejercicio dentro de un grupo salta a su ficha en la pestaña Ejercicios", async () => {
+  it("tocar un ejercicio dentro de un grupo lleva a su historial, el mismo sitio que 'Ver historial' en un entreno", async () => {
     renderRanks();
     await screen.findByText("Rankings musculares");
 
@@ -134,11 +139,12 @@ describe("estadísticas · rangos", () => {
 
     fireEvent.click(exerciseRow);
 
-    // La pestaña activa pasa a ser "Ejercicios" y el buscador ya trae ese ejercicio puesto, en vez
-    // de dejar al usuario buscarlo a mano entre el resto del historial.
-    expect(await screen.findByText("Estadísticas por ejercicio")).toBeTruthy();
-    expect((screen.getByLabelText("Buscar ejercicio") as HTMLInputElement).value).toBe("Sentadilla (Barra)");
-    expect(screen.queryByText("Rankings musculares")).toBeNull();
+    // Mismo destino y misma convención de query (`?exercise=<nombre del catálogo>`) que usan
+    // pages/routines/[id].js y empty.js al abrir el historial de un ejercicio en mitad de un
+    // entreno: un ejercicio no puede tener dos sitios distintos donde consultarlo.
+    expect(routerPush).toHaveBeenCalledWith(
+      `/exercise-history?exercise=${encodeURIComponent("Sentadilla (Barra)")}`
+    );
   });
 
   it("enseña como pendientes los grupos que pueden puntuar, y omite los que no", async () => {

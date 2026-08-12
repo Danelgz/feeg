@@ -17,7 +17,7 @@ interface MuscleRankListProps {
   onToggleGroup: (group: string) => void;
   translateGroup?: (group: string) => string;
   translateExercise?: (name: string) => string;
-  /** Ver ExerciseRankList: si se pasa, cada ejercicio despliega lleva al detalle de Estadísticas. */
+  /** Ver ExerciseRankList: si se pasa, cada ejercicio desplegado lleva a su historial (`/exercise-history`). */
   onExerciseClick?: (exercise: string) => void;
 }
 

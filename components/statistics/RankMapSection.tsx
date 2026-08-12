@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useReducedMotion } from 'motion/react';
 import MuscleMap from '../MuscleMap';
 import StatSection from './StatSection';
@@ -18,9 +19,6 @@ interface RankMapSectionProps {
   isMobile?: boolean;
   t: (key: string) => string;
   language?: string;
-  /** Ver ExerciseRankList: si se pasa, tocar un ejercicio en "Rankings musculares" lleva a su ficha
-   *  en la pestaña Ejercicios en vez de quedarse aquí. */
-  onExerciseClick?: (exercise: string) => void;
 }
 
 // La escalera como una sola tira continua, en vez de diez pastillas sueltas. Diez muestras de color
@@ -36,9 +34,17 @@ const RANK_SCALE = `linear-gradient(90deg, ${RANKS.map((r) => r.color).join(', '
  * rango de un grupo había que salir a una pantalla de detalle y volver. Ahora el mapa y la lista son
  * la misma vista: tocar un músculo abre su fila abajo en vez de navegar a otro sitio.
  */
-export default function RankMapSection({ isDark, isMobile = false, t, language, onExerciseClick }: RankMapSectionProps) {
+export default function RankMapSection({ isDark, isMobile = false, t, language }: RankMapSectionProps) {
   const tk = getTokens(isDark);
   const prefersReducedMotion = useReducedMotion();
+  const router = useRouter();
+  // Mismo destino que "Ver historial" en un ejercicio durante un entreno (pages/routines/[id].js,
+  // empty.js): esa pantalla ya sabe leer `?exercise=`, así que un ejercicio no tiene dos sitios
+  // distintos donde consultar su historial según desde dónde se llegue a él.
+  const goToExerciseHistory = useCallback(
+    (exercise: string) => router.push(`/exercise-history?exercise=${encodeURIComponent(exercise)}`),
+    [router]
+  );
   const {
     available,
     groupRanks,
@@ -239,7 +245,7 @@ export default function RankMapSection({ isDark, isMobile = false, t, language, 
             onToggleGroup={toggleGroup}
             translateGroup={(group) => t(group) || group}
             translateExercise={(name) => translateExerciseName(name, language)}
-            onExerciseClick={onExerciseClick}
+            onExerciseClick={goToExerciseHistory}
           />
 
           {sex === null && (

@@ -3,10 +3,15 @@ import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
 import { useUser } from '../context/UserContext';
 import { exercisesList } from '../data/exercises';
+import { useRanks } from '../hooks/useRanks';
+import { getRankPosition } from '../data/ranks';
+import { nextLevelTarget } from '../lib/rankEngine';
+import { RankArt } from '../components/ui';
 
 export default function ExerciseHistory() {
   const router = useRouter();
   const { theme, completedWorkouts, t } = useUser();
+  const { exerciseRanks, bodyweightKg, sex } = useRanks();
   const isDark = theme === 'dark';
   const mint = '#2EE6C5';
   const mintSoft = 'rgba(46, 230, 197, 0.12)';
@@ -117,6 +122,14 @@ export default function ExerciseHistory() {
   const info = getExerciseInfo(exerciseName);
   const unit = info?.type === 'time' ? 'm' : info?.unit === 'lastre' ? 'L' : 'kg';
   const metrics = calculateMetrics();
+
+  // Mismo motor y las mismas preferencias que la pestaña Rangos — este ejercicio no puede tener un
+  // rango aquí y otro distinto allí. `rank` sale `undefined` sin peso corporal registrado o si el
+  // ejercicio no tiene baremo (STRENGTH_STANDARDS), y entonces la tarjeta de abajo no se enseña:
+  // más vale nada que un rango a medias o inventado.
+  const rank = exerciseRanks.find((r) => r.exercise === exerciseName);
+  const rankPosition = rank ? getRankPosition(rank.level) : null;
+  const rankTarget = rank ? nextLevelTarget(exerciseName, rank.level, rank.best1RM, bodyweightKg, sex) : null;
 
   const w = isMobile ? 280 : 380;
   const h = isMobile ? 160 : 220;
@@ -256,6 +269,37 @@ export default function ExerciseHistory() {
               </p>
             </div>
           </div>
+
+          {rankPosition && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              backgroundColor: isDark ? '#1a1a1a' : '#fff',
+              borderRadius: '12px',
+              padding: isMobile ? '14px' : '18px',
+              marginBottom: '20px'
+            }}>
+              <RankArt rank={rankPosition.rank} tier={rankPosition.tier} size={isMobile ? 36 : 44} animated={false} />
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <p style={{ margin: 0, color: '#888', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.04em' }}>
+                  Tu rango en este ejercicio
+                </p>
+                <p style={{ margin: '4px 0 0', color: rankPosition.rank.color, fontSize: isMobile ? '1.1rem' : '1.35rem', fontWeight: 'bold' }}>
+                  {rankPosition.label}
+                </p>
+                <p style={{ margin: '4px 0 0', color: isDark ? '#aaa' : '#666', fontSize: '0.82rem' }}>
+                  {rank.ratio.toFixed(2)}× tu peso corporal
+                  {rankTarget && !rankTarget.isMaxed && rankTarget.deltaKg > 0 && (
+                    <> · faltan {rankTarget.deltaKg < 1 ? rankTarget.deltaKg.toFixed(1) : Math.ceil(rankTarget.deltaKg)} kg para{' '}
+                      {getRankPosition(rankTarget.targetLevel).label}
+                    </>
+                  )}
+                  {rankTarget?.isMaxed && <> · nivel máximo</>}
+                </p>
+              </div>
+            </div>
+          )}
 
           {graphContent}
         </div>

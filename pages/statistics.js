@@ -5,7 +5,6 @@ import { useUser } from "../context/UserContext";
 import { getTokens } from "../lib/tokens";
 import { PageHeader, ChipNav } from "../components/ui";
 import { computeSeriesByGroup, computeWeeklyStreak } from "../lib/exerciseStats";
-import { translateExerciseName } from "../lib/exerciseTranslation";
 import {
   HeroMetricCard,
   WeeklyStreakCard,
@@ -63,10 +62,6 @@ export default function Statistics() {
   const [isNarrow, setIsNarrow] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('7days');
   const [selectedMuscle, setSelectedMuscle] = useState(null);
-  // Nombre (ya traducido) del ejercicio al que hay que saltar al entrar en "Ejercicios" desde
-  // Rangos. Va en el nombre mostrado, no en el interno del catálogo: el buscador de esa pestaña
-  // filtra sobre el nombre traducido, así que comparar contra el español rompería en euskera.
-  const [focusExercise, setFocusExercise] = useState(null);
 
   const currentView = VIEWS.find((v) => v.key === activeView) || VIEWS[0];
   const period = PERIOD_OPTIONS.find((p) => p.key === selectedPeriod) || PERIOD_OPTIONS[0];
@@ -74,15 +69,6 @@ export default function Statistics() {
   const changeView = (view) => {
     setActiveView(view);
     setSelectedMuscle(null);
-  };
-
-  // Desde una fila de "Rankings musculares" en Rangos: la pregunta "¿por qué mi espalda es tal
-  // rango?" la contesta el desglose de ejercicios, pero "¿y este ejercicio en concreto, cómo va?"
-  // sólo la contesta la pestaña Ejercicios (historial, sesiones, volumen). Saltar allí ya filtrado
-  // ahorra tener que buscarlo a mano entre cientos.
-  const goToExerciseStats = (exerciseName) => {
-    setFocusExercise(translateExerciseName(exerciseName, language));
-    changeView('exerciseStats');
   };
 
   useEffect(() => {
@@ -264,13 +250,7 @@ export default function Statistics() {
             ejercicios de cada grupo en el sitio, sin salir de la vista ni pagar el viaje de ida y
             vuelta con un "Volver al mapa". */}
         {activeView === 'ranks' && (
-          <RankMapSection
-            isDark={isDark}
-            isMobile={isNarrow}
-            t={t}
-            language={language}
-            onExerciseClick={goToExerciseStats}
-          />
+          <RankMapSection isDark={isDark} isMobile={isNarrow} t={t} language={language} />
         )}
 
         {activeView === 'seriesByGroup' && (
@@ -286,14 +266,7 @@ export default function Statistics() {
         )}
 
         {activeView === 'exerciseStats' && (
-          <ExerciseStatsSection
-            isDark={isDark}
-            isMobile={isNarrow}
-            workouts={workouts}
-            t={t}
-            language={language}
-            initialQuery={focusExercise}
-          />
+          <ExerciseStatsSection isDark={isDark} isMobile={isNarrow} workouts={workouts} t={t} language={language} />
         )}
       </motion.div>
       </AnimatePresence>

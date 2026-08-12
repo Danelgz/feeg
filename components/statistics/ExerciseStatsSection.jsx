@@ -2,10 +2,12 @@ import { useMemo, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import MiniStat from "./MiniStat";
 import StatSection from "./StatSection";
-import { EmptyState, Icon } from "../ui";
+import { EmptyState, Icon, RankArt } from "../ui";
 import { getTokens } from "../../lib/tokens";
 import { computeExerciseIndex } from "../../lib/exerciseStats";
 import { translateExerciseName } from "../../lib/exerciseTranslation";
+import { useRanks } from "../../hooks/useRanks";
+import { getRankPosition } from "../../data/ranks";
 
 /** Cuántas filas se animan al entrar. Con listas de cientos de ejercicios, escalonarlas todas
  *  significa que la última aparece medio minuto después; a partir de aquí entran ya colocadas. */
@@ -20,6 +22,16 @@ export default function ExerciseStatsSection({ isDark, isMobile, workouts, t, la
   // El índice recorre TODO el historial: recalcularlo en cada pulsación del buscador era un barrido
   // completo por tecla. Ahora sólo se rehace cuando cambian los entrenos.
   const index = useMemo(() => computeExerciseIndex(workouts), [workouts]);
+
+  // Mismo motor y las mismas preferencias (peso corporal, sexo, mancuernas, poleas) que la pestaña
+  // Rangos — un ejercicio no puede tener un rango aquí y otro distinto allí. Sólo llegan los
+  // ejercicios puntuables con marca; el resto (series a peso corporal, tiempo...) no tiene entrada
+  // y simplemente no enseña insignia.
+  const { exerciseRanks } = useRanks();
+  const rankByExercise = useMemo(
+    () => Object.fromEntries(exerciseRanks.map((r) => [r.exercise, r])),
+    [exerciseRanks]
+  );
 
   const results = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -141,6 +153,32 @@ export default function ExerciseStatsSection({ isDark, isMobile, workouts, t, la
                   #{index + 1}
                 </span>
               </div>
+
+              {rankByExercise[entry.name] && (() => {
+                const rank = rankByExercise[entry.name];
+                const position = getRankPosition(rank.level);
+                return (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: tk.space.sm,
+                      marginBottom: tk.space.md,
+                      paddingBottom: tk.space.md,
+                      borderBottom: `1px solid ${tk.border}`,
+                    }}
+                  >
+                    <RankArt rank={position.rank} tier={position.tier} size={20} animated={false} />
+                    <span style={{ fontSize: tk.fontSize.sm, fontWeight: tk.weight.bold, color: position.rank.color }}>
+                      {position.label}
+                    </span>
+                    <span style={{ fontSize: tk.fontSize.xs, color: tk.textFaint }}>
+                      · {rank.ratio.toFixed(2)}× tu peso
+                    </span>
+                  </div>
+                );
+              })()}
+
               <div
                 style={{
                   display: 'grid',

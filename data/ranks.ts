@@ -38,6 +38,15 @@ export interface RankDefinition {
   accent: string;
   /** Nivel más bajo (1-30) que pertenece a este rango. */
   minLevel: number;
+  /**
+   * Estimación de qué porcentaje de la gente que entrena con pesas llega a este rango o más
+   * arriba. NO sale de datos reales de usuarios de FEEG: no hay (ni conviene montar con la base
+   * de usuarios actual, ver comentario más abajo) infraestructura para calcular eso. Es una curva
+   * diseñada a mano, coherente con lo exigente que es cada tramo del baremo (rankEngine curva la
+   * escalera con exponente 1.6 — la segunda mitad cuesta muchísimo más que la primera, y este
+   * porcentaje sigue esa misma forma).
+   */
+  rarityPercent: number;
 }
 
 export const LEVELS_PER_RANK = 3;
@@ -46,22 +55,34 @@ export const MAX_LEVEL = 30;
 // Los colores siguen la descripción del arte, no al revés: son los que tiñen el disco, el borde y
 // el nombre del rango por toda la interfaz, así que tienen que reconocerse como el mismo rango que
 // la insignia aunque aparezcan sin ella (en una fila de texto, en un gráfico).
+//
+// `rarityPercent` es cumulativo hacia arriba ("Atleta o más"), no el escalón exacto: es lo que se
+// enseña en una escalera ("a partir de aquí sólo llega un X%"), no una foto de "cuánta gente está
+// AHORA en Atleta". Calcular esto último de verdad requeriría trackear el histórico de rangos de
+// cada usuario, que hoy no se guarda.
 export const RANKS: RankDefinition[] = [
-  { index: 0, name: 'Principiante', slug: 'principiante', icon: 'plate', color: '#64a2d8', accent: '#35618d', minLevel: 1 },
-  { index: 1, name: 'Novato', slug: 'novato', icon: 'gem', color: '#00e654', accent: '#037c34', minLevel: 4 },
-  { index: 2, name: 'Aprendiz', slug: 'aprendiz', icon: 'crystalShield', color: '#1fa5ff', accent: '#0964ae', minLevel: 7 },
-  { index: 3, name: 'Constante', slug: 'constante', icon: 'flame', color: '#00d9ff', accent: '#047690', minLevel: 10 },
-  { index: 4, name: 'Disciplinado', slug: 'disciplinado', icon: 'starShield', color: '#a033ff', accent: '#620bda', minLevel: 13 },
-  { index: 5, name: 'Atleta', slug: 'atleta', icon: 'medal', color: '#ff1420', accent: '#d5920b', minLevel: 16 },
-  { index: 6, name: 'Avanzado', slug: 'avanzado', icon: 'crown', color: '#ff8205', accent: '#a35200', minLevel: 19 },
+  { index: 0, name: 'Principiante', slug: 'principiante', icon: 'plate', color: '#64a2d8', accent: '#35618d', minLevel: 1, rarityPercent: 100 },
+  { index: 1, name: 'Novato', slug: 'novato', icon: 'gem', color: '#00e654', accent: '#037c34', minLevel: 4, rarityPercent: 55 },
+  { index: 2, name: 'Aprendiz', slug: 'aprendiz', icon: 'crystalShield', color: '#1fa5ff', accent: '#0964ae', minLevel: 7, rarityPercent: 30 },
+  { index: 3, name: 'Constante', slug: 'constante', icon: 'flame', color: '#00d9ff', accent: '#047690', minLevel: 10, rarityPercent: 16 },
+  { index: 4, name: 'Disciplinado', slug: 'disciplinado', icon: 'starShield', color: '#a033ff', accent: '#620bda', minLevel: 13, rarityPercent: 8 },
+  { index: 5, name: 'Atleta', slug: 'atleta', icon: 'medal', color: '#ff1420', accent: '#d5920b', minLevel: 16, rarityPercent: 4 },
+  { index: 6, name: 'Avanzado', slug: 'avanzado', icon: 'crown', color: '#ff8205', accent: '#a35200', minLevel: 19, rarityPercent: 1.8 },
   // Élite y Leyenda comparten oro y diamante azul a propósito (Leyenda «se parece a Élite pero más
   // grande y luminoso»). Se separan por temperatura: Élite es oro cálido y Leyenda casi blanco.
-  { index: 7, name: 'Élite', slug: 'elite', icon: 'diamond', color: '#ffbe0a', accent: '#1aa3ff', minLevel: 22 },
+  { index: 7, name: 'Élite', slug: 'elite', icon: 'diamond', color: '#ffbe0a', accent: '#1aa3ff', minLevel: 22, rarityPercent: 0.7 },
   // Titán es el único cuyo color base es más oscuro que el fondo de la tarjeta: la insignia se
   // define por el contorno y las luces rojas, no por la masa de color.
-  { index: 8, name: 'Titán', slug: 'titan', icon: 'helmet', color: '#3b1f16', accent: '#ff3b29', minLevel: 25 },
-  { index: 9, name: 'Leyenda', slug: 'leyenda', icon: 'legendCrown', color: '#ffe58f', accent: '#1fa5ff', minLevel: 28 },
+  { index: 8, name: 'Titán', slug: 'titan', icon: 'helmet', color: '#3b1f16', accent: '#ff3b29', minLevel: 25, rarityPercent: 0.25 },
+  { index: 9, name: 'Leyenda', slug: 'leyenda', icon: 'legendCrown', color: '#ffe58f', accent: '#1fa5ff', minLevel: 28, rarityPercent: 0.08 },
 ];
+
+/** Formatea `rarityPercent` para pantalla: "Top 4%", "Top 0.08%"... y el caso especial del 100%. */
+export function formatRarity(rank: RankDefinition): string {
+  if (rank.rarityPercent >= 100) return 'Todo el mundo empieza aquí';
+  const value = rank.rarityPercent >= 1 ? rank.rarityPercent.toFixed(1).replace(/\.0$/, '') : rank.rarityPercent;
+  return `Top ${value}%`;
+}
 
 /** Escalones de prestigio, una vez superado el nivel 30. */
 export const PRESTIGE_TIERS = ['Leyenda ★', 'Leyenda ★★', 'Leyenda ★★★', 'Leyenda Suprema'] as const;

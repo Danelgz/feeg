@@ -4,6 +4,7 @@ import { useReducedMotion } from 'motion/react';
 import MuscleMap from '../MuscleMap';
 import StatSection from './StatSection';
 import RankHeroCard from './RankHeroCard';
+import RankLadderSection from './RankLadderSection';
 import MuscleRankList, { muscleRankRowId } from './MuscleRankList';
 import { EmptyState, RankArt } from '../ui';
 import { getTokens } from '../../lib/tokens';
@@ -134,6 +135,14 @@ export default function RankMapSection({ isDark, isMobile = false, t, language }
         translateGroup={(group) => t(group) || group}
         translateExercise={(name) => translateExerciseName(name, language)}
       />
+
+      <div style={{ display: 'grid', gap: tk.space.lg, marginBottom: tk.space.lg }}>
+        <RankLadderSection
+          currentRank={getRankPosition(overallLevel, prestigeLevels).rank}
+          isDark={isDark}
+          isMobile={isMobile}
+        />
+      </div>
 
       <div style={{ display: 'grid', gap: tk.space.lg }}>
         <StatSection title="Tu cuerpo por rango" isDark={isDark} isMobile={isMobile}>

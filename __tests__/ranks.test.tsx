@@ -157,6 +157,21 @@ describe("estadísticas · rangos", () => {
     expect(painted?.getAttribute("fill")).toMatch(/^#[0-9a-f]{6}$/i);
   });
 
+  it("muestra la escalera completa de rangos con el actual resaltado", async () => {
+    renderRanks();
+    await screen.findByText("Tu cuerpo por rango");
+
+    const section = (await screen.findByText("Escalera de rangos")).closest("section")!;
+    // Los diez rangos, de Leyenda a Principiante (orden descendente).
+    for (const name of ["Principiante", "Novato", "Aprendiz", "Constante", "Disciplinado", "Atleta", "Avanzado", "Élite", "Titán", "Leyenda"]) {
+      expect(within(section).getByText(name)).toBeTruthy();
+    }
+    // Principiante siempre está garantizado ("todo el mundo empieza aquí"); el resto lleva un "Top X%".
+    expect(within(section).getAllByText(/Top [\d.]+%/).length).toBe(9);
+    // Exactamente una fila se marca como la del usuario.
+    expect(within(section).getAllByText("Tú")).toHaveLength(1);
+  });
+
   it("manda a registrar el peso corporal cuando no hay con qué comparar", async () => {
     localStorage.removeItem("measures");
     renderRanks();
@@ -165,15 +180,16 @@ describe("estadísticas · rangos", () => {
     expect(screen.queryByText("Rango global")).toBeNull();
   });
 
-  it("no deja la escalera de rangos como diez muestras de color sueltas", async () => {
+  it("no deja la leyenda del mapa como diez muestras de color sueltas", async () => {
     renderRanks();
-    await screen.findByText("Tu cuerpo por rango");
+    const mapSection = (await screen.findByText("Tu cuerpo por rango")).closest("section")!;
 
-    // La leyenda es una tira continua con los dos extremos escritos, no una pastilla por rango.
+    // La leyenda BAJO EL MAPA es una tira continua con los dos extremos escritos, no una pastilla
+    // por rango — eso es justo lo que enseña de sobra la escalera completa de más abajo.
     await waitFor(() => {
-      expect(screen.getByText("Principiante")).toBeTruthy();
-      expect(screen.getByText("Leyenda")).toBeTruthy();
+      expect(within(mapSection).getByText("Principiante")).toBeTruthy();
+      expect(within(mapSection).getByText("Leyenda")).toBeTruthy();
     });
-    expect(screen.queryByText("Disciplinado")).toBeNull();
+    expect(within(mapSection).queryByText("Disciplinado")).toBeNull();
   });
 });

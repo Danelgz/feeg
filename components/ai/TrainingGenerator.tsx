@@ -11,6 +11,11 @@ import { Icon, Button } from "../ui";
  * pero de una en una, como lo haría un coach de verdad en la primera sesión: una decisión por
  * pantalla, con confirmación visual inmediata y avance automático en las preguntas de elección
  * única, para que construir el plan se sienta como una conversación corta y no como papeleo.
+ *
+ * La IA devuelve DOS planes distintos (ver pages/api/generate-routine.js) en vez de uno solo: un
+ * único plan generado es una imposición ("esto es lo que hay"), mientras que elegir entre dos
+ * enfoques válidos —tras poder explorar ambos a fondo— es lo que hace un entrenador real cuando
+ * hay más de un camino razonable hacia el mismo objetivo.
  */
 
 interface TrainingAnswers {
@@ -35,11 +40,26 @@ interface GeneratedDay {
   name: string;
   exercises: { name: string; sets: string; reps: string; rest: string; note: string }[];
 }
-interface GeneratedRoutine {
+interface GeneratedPlan {
   title: string;
+  tagline: string;
   summary: string;
   days: GeneratedDay[];
   advice: string;
+}
+
+// Forma mínima que espera saveRoutine (UserContext) — no existe un tipo Routine compartido en el
+// repo todavía, así que se tipa aquí solo lo que este componente realmente construye.
+interface NewRoutinePayload {
+  id: number;
+  name: string;
+  exercises: {
+    name: string;
+    group: string;
+    type: string;
+    rest: number;
+    series: { reps: number; weight: number; type: string }[];
+  }[];
 }
 
 const GOALS = [
@@ -232,21 +252,109 @@ function StepShell({ tk, isMobile, eyebrow, title, subtitle, onBack, progress, c
   );
 }
 
-const STEP_COUNT = 8; // 7 preguntas + resumen final
-
-// Forma mínima que espera saveRoutine (UserContext) — no existe un tipo Routine compartido en el
-// repo todavía, así que se tipa aquí solo lo que este componente realmente construye.
-interface NewRoutinePayload {
-  id: number;
-  name: string;
-  exercises: {
-    name: string;
-    group: string;
-    type: string;
-    rest: number;
-    series: { reps: number; weight: number; type: string }[];
-  }[];
+/** Bloque de días/ejercicios de un plan — se reutiliza tal cual dentro de la tarjeta expandida de
+ * "Elegir" y en la pantalla final, para no mantener dos veces el mismo layout. */
+function PlanDays({ tk, plan }: { tk: ReturnType<typeof getTokens>; plan: GeneratedPlan }) {
+  return (
+    <div>
+      {plan.days.map((day, idx) => (
+        <div key={idx} style={{ marginBottom: "14px", padding: "14px", backgroundColor: tk.surfaceAlt, borderRadius: tk.radius.md, border: `1px solid ${tk.border}` }}>
+          <h4 style={{ margin: "0 0 10px 0", color: tk.accent, fontSize: tk.fontSize.sm }}>{day.name}</h4>
+          {day.exercises.map((ex, i) => (
+            <div key={i} style={{ padding: "8px 0", borderBottom: i === day.exercises.length - 1 ? "none" : `1px solid ${tk.border}` }}>
+              <div style={{ fontWeight: tk.weight.bold, color: tk.text, fontSize: tk.fontSize.sm }}>{ex.name}</div>
+              <div style={{ fontSize: tk.fontSize.xs, color: tk.textMuted }}>{ex.sets} series x {ex.reps} • Descanso: {ex.rest}</div>
+              <div style={{ fontSize: tk.fontSize.xs, fontStyle: "italic", marginTop: "4px", color: tk.textMuted }}>💡 {ex.note}</div>
+            </div>
+          ))}
+        </div>
+      ))}
+      <div style={{ backgroundColor: tk.accentSoft, padding: "14px", borderRadius: tk.radius.md, borderLeft: `3px solid ${tk.accent}`, fontSize: tk.fontSize.sm, color: tk.text }}>
+        <strong>Consejo IA:</strong> {plan.advice}
+      </div>
+    </div>
+  );
 }
+
+interface PlanCardProps {
+  tk: ReturnType<typeof getTokens>;
+  isMobile: boolean;
+  plan: GeneratedPlan;
+  optionLabel: string;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+  onChoose: () => void;
+}
+
+function PlanCard({ tk, isMobile, plan, optionLabel, isExpanded, onToggleExpand, onChoose }: PlanCardProps) {
+  const totalExercises = plan.days.reduce((sum, d) => sum + d.exercises.length, 0);
+  return (
+    <div
+      className="feeg-surface"
+      style={{
+        borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "22px", display: "flex", flexDirection: "column", gap: "12px",
+        "--feeg-bg": tk.surface, "--feeg-border": isExpanded ? tk.accent : tk.border, "--feeg-border-width": isExpanded ? "1.5px" : "1px",
+        "--feeg-shadow": tk.shadow.card,
+      } as React.CSSProperties}
+    >
+      <div>
+        <span style={{
+          display: "inline-block", fontSize: tk.fontSize.xs, fontWeight: tk.weight.bold, color: tk.accent,
+          backgroundColor: tk.accentSoft, borderRadius: tk.radius.pill, padding: "3px 10px", marginBottom: "10px",
+        }}>
+          {optionLabel}
+        </span>
+        <h3 style={{ margin: 0, color: tk.text, fontSize: tk.fontSize.lg }}>{plan.title}</h3>
+        <p style={{ margin: "4px 0 0", color: tk.accent, fontSize: tk.fontSize.xs, fontWeight: tk.weight.medium }}>{plan.tagline}</p>
+        <p style={{ margin: "8px 0 0", color: tk.textMuted, fontSize: tk.fontSize.sm, lineHeight: 1.5 }}>{plan.summary}</p>
+      </div>
+
+      <div style={{ display: "flex", gap: "8px" }}>
+        <div style={{ flex: 1, backgroundColor: tk.surfaceAlt, borderRadius: tk.radius.sm, padding: "8px 10px", textAlign: "center" }}>
+          <div style={{ color: tk.text, fontWeight: tk.weight.bold, fontSize: tk.fontSize.sm }}>{plan.days.length}</div>
+          <div style={{ color: tk.textMuted, fontSize: tk.fontSize.xs }}>días</div>
+        </div>
+        <div style={{ flex: 1, backgroundColor: tk.surfaceAlt, borderRadius: tk.radius.sm, padding: "8px 10px", textAlign: "center" }}>
+          <div style={{ color: tk.text, fontWeight: tk.weight.bold, fontSize: tk.fontSize.sm }}>{totalExercises}</div>
+          <div style={{ color: tk.textMuted, fontSize: tk.fontSize.xs }}>ejercicios</div>
+        </div>
+      </div>
+
+      <button
+        onClick={onToggleExpand}
+        className="feeg-press feeg-hover"
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+          background: "none", border: "none", color: tk.textMuted, fontSize: tk.fontSize.xs, fontWeight: tk.weight.medium,
+          cursor: "pointer", padding: "6px",
+        }}
+      >
+        {isExpanded ? "Ocultar detalle" : "Ver plan completo"}
+        <Icon name="chevronRight" size={13} style={{ transform: isExpanded ? "rotate(-90deg)" : "rotate(90deg)", transition: "transform 0.2s ease" }} />
+      </button>
+
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: tk.motion.duration.base, ease: tk.motion.ease.standard }}
+            style={{ overflow: "hidden" }}
+          >
+            <PlanDays tk={tk} plan={plan} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <Button isDark={tk.isDark} fullWidth onClick={onChoose} style={{ marginTop: "auto" }}>
+        Elegir este plan
+      </Button>
+    </div>
+  );
+}
+
+const STEP_COUNT = 8; // 7 preguntas + resumen final
 
 export default function TrainingGenerator({
   isDark, isMobile, onSaveRoutine, showNotification,
@@ -259,12 +367,14 @@ export default function TrainingGenerator({
   const tk = getTokens(isDark);
   const prefersReducedMotion = useReducedMotion();
 
-  const [phase, setPhase] = useState<"intro" | "wizard" | "result">("intro");
+  const [phase, setPhase] = useState<"intro" | "wizard" | "choose" | "result">("intro");
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [answers, setAnswers] = useState<TrainingAnswers>(EMPTY_ANSWERS);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedRoutine, setGeneratedRoutine] = useState<GeneratedRoutine | null>(null);
+  const [plans, setPlans] = useState<GeneratedPlan[] | null>(null);
+  const [expandedPlanIndex, setExpandedPlanIndex] = useState<number | null>(null);
+  const [chosenPlanIndex, setChosenPlanIndex] = useState<number | null>(null);
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => { if (advanceTimer.current) clearTimeout(advanceTimer.current); }, []);
@@ -306,10 +416,14 @@ export default function TrainingGenerator({
           trainingData: { ...answers, material: answers.material.join(", ") },
         }),
       });
-      if (!response.ok) throw new Error("Error generando la rutina");
       const data = await response.json();
-      setGeneratedRoutine(data);
-      setPhase("result");
+      if (!response.ok) throw new Error(data.error || "Error generando la rutina");
+      if (!Array.isArray(data.plans) || data.plans.length < 2) throw new Error("Respuesta incompleta del generador");
+
+      setPlans(data.plans);
+      setExpandedPlanIndex(null);
+      setChosenPlanIndex(null);
+      setPhase("choose");
     } catch (error) {
       console.error("Error al generar rutina:", error);
       showNotification("Hubo un error al generar tu rutina. Inténtalo de nuevo.", "error");
@@ -318,13 +432,15 @@ export default function TrainingGenerator({
     }
   };
 
+  const chosenPlan = chosenPlanIndex !== null && plans ? plans[chosenPlanIndex] : null;
+
   const handleSave = async () => {
-    if (!generatedRoutine) return;
+    if (!chosenPlan) return;
     try {
       await onSaveRoutine({
         id: Date.now(),
-        name: generatedRoutine.title,
-        exercises: generatedRoutine.days.flatMap((day) =>
+        name: chosenPlan.title,
+        exercises: chosenPlan.days.flatMap((day) =>
           day.exercises.map((ex) => ({
             name: ex.name,
             group: "Generado por IA",
@@ -343,7 +459,9 @@ export default function TrainingGenerator({
 
   const restart = () => {
     setAnswers(EMPTY_ANSWERS);
-    setGeneratedRoutine(null);
+    setPlans(null);
+    setChosenPlanIndex(null);
+    setExpandedPlanIndex(null);
     setStep(0);
     setPhase("intro");
   };
@@ -374,7 +492,7 @@ export default function TrainingGenerator({
         </div>
         <h3 style={{ margin: "0 0 8px", color: tk.text, fontSize: isMobile ? "1.25rem" : "1.5rem" }}>¿Necesitas un plan a tu medida?</h3>
         <p style={{ color: tk.textMuted, fontSize: tk.fontSize.sm, margin: "0 auto 24px", maxWidth: "420px" }}>
-          Siete preguntas rápidas y tu Coach IA diseña una rutina completa, pensada solo para ti.
+          Siete preguntas rápidas y tu Coach IA te propone dos planes distintos para que elijas el que más te convenza.
         </p>
         <Button isDark={isDark} size="lg" onClick={() => setPhase("wizard")} style={{ margin: "0 auto" }}>
           Empezar
@@ -383,8 +501,51 @@ export default function TrainingGenerator({
     );
   }
 
+  // ---- Elegir entre los dos planes generados ----
+  if (phase === "choose" && plans) {
+    return (
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "18px" }}>
+          <button
+            onClick={() => setPhase("wizard")}
+            aria-label="Atrás"
+            className="feeg-surface feeg-press feeg-hover"
+            style={{
+              width: "32px", height: "32px", borderRadius: tk.radius.full, flexShrink: 0,
+              display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+              "--feeg-bg": tk.surface, "--feeg-fg": tk.textMuted, "--feeg-border": tk.border,
+              "--feeg-hover-fg": tk.accent, "--feeg-hover-border": tk.accent, "--feeg-border-width": "1px",
+              "--feeg-press-scale": 0.9,
+            } as React.CSSProperties}
+          >
+            <Icon name="chevronLeft" size={16} />
+          </button>
+          <div>
+            <div style={{ color: tk.accent, fontSize: tk.fontSize.xs, fontWeight: tk.weight.bold, textTransform: "uppercase", letterSpacing: "0.06em" }}>Tus dos opciones</div>
+            <h3 style={{ margin: "2px 0 0", color: tk.text, fontSize: isMobile ? "1.2rem" : "1.4rem", fontWeight: 800 }}>Elige el plan que más te convenza</h3>
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "14px", alignItems: "start" }}>
+          {plans.map((plan, i) => (
+            <PlanCard
+              key={i}
+              tk={tk}
+              isMobile={isMobile}
+              plan={plan}
+              optionLabel={`Opción ${i + 1}`}
+              isExpanded={expandedPlanIndex === i}
+              onToggleExpand={() => setExpandedPlanIndex(expandedPlanIndex === i ? null : i)}
+              onChoose={() => { setChosenPlanIndex(i); setPhase("result"); }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   // ---- Resultado ----
-  if (phase === "result" && generatedRoutine) {
+  if (phase === "result" && chosenPlan) {
     return (
       <div
         className="feeg-surface"
@@ -392,32 +553,26 @@ export default function TrainingGenerator({
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px", marginBottom: "8px" }}>
           <div>
-            <div style={{ color: tk.accent, fontSize: tk.fontSize.xs, fontWeight: tk.weight.bold, textTransform: "uppercase", letterSpacing: "0.06em" }}>Tu plan está listo</div>
-            <h2 style={{ color: tk.text, margin: "4px 0 0", fontSize: tk.fontSize.lg }}>{generatedRoutine.title}</h2>
+            <button
+              onClick={() => setPhase("choose")}
+              className="feeg-press"
+              style={{
+                display: "flex", alignItems: "center", gap: "4px", background: "none", border: "none", cursor: "pointer",
+                color: tk.textMuted, fontSize: tk.fontSize.xs, fontWeight: tk.weight.medium, padding: 0, marginBottom: "6px",
+              }}
+            >
+              <Icon name="chevronLeft" size={12} /> Ver la otra opción
+            </button>
+            <h2 style={{ color: tk.text, margin: 0, fontSize: tk.fontSize.lg }}>{chosenPlan.title}</h2>
           </div>
           <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
             <Button isDark={isDark} size="sm" icon="check" onClick={handleSave}>Guardar</Button>
             <Button isDark={isDark} variant="ghost" size="sm" onClick={restart}>Rehacer</Button>
           </div>
         </div>
-        <p style={{ color: tk.textMuted, fontSize: tk.fontSize.sm, margin: "0 0 16px" }}>{generatedRoutine.summary}</p>
+        <p style={{ color: tk.textMuted, fontSize: tk.fontSize.sm, margin: "0 0 16px" }}>{chosenPlan.summary}</p>
 
-        {generatedRoutine.days.map((day, idx) => (
-          <div key={idx} style={{ marginBottom: "14px", padding: "14px", backgroundColor: tk.surfaceAlt, borderRadius: tk.radius.md, border: `1px solid ${tk.border}` }}>
-            <h4 style={{ margin: "0 0 10px 0", color: tk.accent, fontSize: tk.fontSize.sm }}>{day.name}</h4>
-            {day.exercises.map((ex, i) => (
-              <div key={i} style={{ padding: "8px 0", borderBottom: i === day.exercises.length - 1 ? "none" : `1px solid ${tk.border}` }}>
-                <div style={{ fontWeight: tk.weight.bold, color: tk.text, fontSize: tk.fontSize.sm }}>{ex.name}</div>
-                <div style={{ fontSize: tk.fontSize.xs, color: tk.textMuted }}>{ex.sets} series x {ex.reps} • Descanso: {ex.rest}</div>
-                <div style={{ fontSize: tk.fontSize.xs, fontStyle: "italic", marginTop: "4px", color: tk.textMuted }}>💡 {ex.note}</div>
-              </div>
-            ))}
-          </div>
-        ))}
-
-        <div style={{ backgroundColor: tk.accentSoft, padding: "14px", borderRadius: tk.radius.md, borderLeft: `3px solid ${tk.accent}`, fontSize: tk.fontSize.sm, color: tk.text }}>
-          <strong>Consejo IA:</strong> {generatedRoutine.advice}
-        </div>
+        <PlanDays tk={tk} plan={chosenPlan} />
       </div>
     );
   }
@@ -595,7 +750,7 @@ export default function TrainingGenerator({
 
         <div style={{ marginTop: "18px" }}>
           <Button isDark={isDark} fullWidth size="lg" icon="zap" onClick={handleGenerate} disabled={isGenerating}>
-            {isGenerating ? "Generando tu plan..." : "Generar mi plan"}
+            {isGenerating ? "Generando tus dos planes..." : "Generar mis planes"}
           </Button>
         </div>
       </StepShell>

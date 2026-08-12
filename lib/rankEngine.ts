@@ -32,11 +32,36 @@ export interface EquipmentPrefs {
   pulleyMode?: 'asShown' | 'assisted' | null;
 }
 
+/**
+ * Jalón y remo en polea son, en la inmensa mayoría de gimnasios, una máquina de pila de pesas de
+ * recorrido fijo: lo que marca la máquina es lo que se tira, igual que en cualquier otra máquina.
+ * `pulleyMode` está pensado para la polea suelta de verdad (bíceps, tríceps, laterales, cruces,
+ * face pull...), donde sí es habitual que el anclaje o el propio cable reduzcan el esfuerzo por
+ * debajo del número marcado. Comparten la etiqueta `equipment: 'polea'` del catálogo —esa etiqueta
+ * es sobre la familia de aparato, no sobre si su carga puede estar desajustada—, así que quedan
+ * fuera aquí, a mano, en vez de tocar esa etiqueta y arrastrar el cambio a los iconos del selector
+ * de ejercicios.
+ */
+const PULLEY_MACHINE_EXERCISES = new Set([
+  'Jalón al Pecho (Cable)',
+  'Jalón al Pecho Agarre Cerrado (Cable)',
+  'Jalón Lateral Agarre Invertido (Cable)',
+  'Jalón con Cuerda a Brazos Rectos (Cable)',
+  'Jalón de Remo a Un Brazo (Cable)',
+  'Jalón al Pecho a Un Brazo (Cable)',
+  'Jalón con Cuerda a Brazos Rectos de Pie (Cable)',
+  'Remo Sentado con Cable',
+  'Remo Sentado con Cable Agarre Abierto',
+  'Remo Sentado con Agarre en V (Cable)',
+]);
+
 /** Factor sobre la carga registrada para llegar a la carga real, según cómo la registre el usuario. */
 function equipmentMultiplier(exerciseName: string, prefs?: EquipmentPrefs): number {
   const equipment = getExerciseInfo(exerciseName)?.equipment;
   if (equipment === 'mancuerna' && prefs?.dumbbellMode === 'combined') return 0.5;
-  if (equipment === 'polea' && prefs?.pulleyMode === 'assisted') return 0.5;
+  if (equipment === 'polea' && prefs?.pulleyMode === 'assisted' && !PULLEY_MACHINE_EXERCISES.has(exerciseName)) {
+    return 0.5;
+  }
   return 1;
 }
 
@@ -103,9 +128,11 @@ export interface ExerciseRank {
 
 export interface GroupRank {
   group: string;
-  /** Nivel oficial del grupo: el de su mejor ejercicio. Ver computeGroupRanks. */
+  /** Nivel oficial del grupo: la media de sus GROUP_TOP_N mejores ejercicios. Ver computeGroupRanks. */
   level: number;
-  /** Media de los GROUP_TOP_N mejores. Informativo — NO es el nivel del grupo. */
+  /** Misma media que `level`, expuesta aparte porque nació como dato informativo antes de ser
+   *  también el nivel oficial — algún consumidor puede querer sólo la media sin depender del
+   *  nombre `level`. */
   averageTopN: number;
   /** Ejercicios que entran en `averageTopN` (como mucho GROUP_TOP_N). */
   countedExercises: number;
@@ -252,16 +279,17 @@ export function computeExerciseRanks(
 /**
  * Nivel por grupo muscular: el de su mejor ejercicio puntuable.
  *
- * La primera versión promediaba los tres mejores, para que un aislamiento flojo no hundiera el
- * grupo. No funciona, y el test `añadir un aislamiento flojo no baja el rango del grupo` lo
- * demuestra: con un solo ejercicio a nivel 30 la media es 30, y al añadir uno de nivel 1 pasa a
- * 15.5. Recortar a los tres mejores no arregla nada, porque una media SIEMPRE baja al incorporar un
- * valor menor. El problema no era cuántos se promedian, sino promediar.
+ * Antes el nivel del grupo era el del MEJOR ejercicio, con la media de los tres mejores calculada
+ * aparte sólo como dato informativo. Se cambió a propósito: un solo levantamiento fuerte llevando
+ * todo un grupo muscular a rangos altos (mientras el resto de movimientos del grupo se quedan muy
+ * por detrás) es justo el tipo de rango fácil que no debería premiarse. Exigir la media de los
+ * GROUP_TOP_N (3) mejores obliga a estar fuerte en varios movimientos del grupo, no en uno solo.
  *
- * Un máximo sí es monótono: añadir ejercicios nunca puede bajar el rango, que era justo el
- * requisito — nadie debe perder rango por ampliar su rutina. La media de los mejores se sigue
- * calculando y se expone como `averageTopN`, porque es un dato interesante para enseñar al lado
- * (indica si el grupo está sostenido por un solo levantamiento o por varios), pero no manda.
+ * El coste de este cambio: se pierde la garantía de que "ningún grupo baja al ampliar la rutina".
+ * Con GROUP_TOP_N o más ejercicios ya registrados, sigue siendo monótono — un ejercicio nuevo como
+ * mucho desplaza al peor de los tres contados, nunca lo empeora. Pero con menos de GROUP_TOP_N (un
+ * grupo recién estrenado, con uno o dos movimientos), añadir uno flojo SÍ puede bajar la media: es
+ * la misma media, sólo que con menos datos para amortiguarla.
  */
 export function computeGroupRanks(
   records: Record<string, ExerciseInput>,
@@ -278,10 +306,11 @@ export function computeGroupRanks(
   for (const [group, levels] of Object.entries(byGroup)) {
     // computeExerciseRanks ya viene ordenado descendente, así que los primeros son los mejores.
     const top = levels.slice(0, GROUP_TOP_N);
+    const averageTopN = top.reduce((sum, l) => sum + l, 0) / top.length;
     result[group] = {
       group,
-      level: levels[0],
-      averageTopN: top.reduce((sum, l) => sum + l, 0) / top.length,
+      level: averageTopN,
+      averageTopN,
       countedExercises: top.length,
       rankableExercises: levels.length,
     };

@@ -49,7 +49,7 @@ describe("ajustes · cómo se registran mancuernas y poleas", () => {
 
     expect(await screen.findByText("Cómo registras tus pesos")).toBeTruthy();
     const perHand = screen.getByRole("button", { name: /El peso de una/ });
-    const asShown = screen.getByRole("button", { name: /Normal \(lo de siempre\)/ });
+    const asShown = screen.getByRole("button", { name: /No, es la carga real/ });
     expect(perHand.getAttribute("aria-pressed")).toBe("true");
     expect(asShown.getAttribute("aria-pressed")).toBe("true");
   });
@@ -74,7 +74,7 @@ describe("ajustes · cómo se registran mancuernas y poleas", () => {
     renderSettings();
     await screen.findByText("Cómo registras tus pesos");
 
-    fireEvent.click(screen.getByRole("button", { name: /Me ayuda a tirar más/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Sí, me ayuda a tirar más/ }));
 
     const stored = JSON.parse(localStorage.getItem("userProfile") || "{}");
     expect(stored.pulleyMode).toBe("assisted");

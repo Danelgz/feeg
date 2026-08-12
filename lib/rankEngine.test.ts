@@ -157,6 +157,31 @@ describe('computeExerciseLevel', () => {
       expect(assisted.ratio).toBeCloseTo(asShown.ratio / 2, 5);
     });
 
+    // Jalón y remo en polea son, en la práctica, una máquina de pila de pesas de recorrido fijo:
+    // lo que marca es lo que se tira. `pulleyMode` es para la polea suelta (bíceps, tríceps,
+    // laterales, cruces...), no para estas — aunque compartan la etiqueta `equipment: 'polea'`.
+    it('no aplica el ajuste de polea a jalones ni remos, aunque el catálogo los etiquete como polea', () => {
+      const asShown = computeExerciseLevel('Jalón al Pecho (Cable)', { best1RM: 60 }, BW, 'male')!;
+      const assisted = computeExerciseLevel(
+        'Jalón al Pecho (Cable)',
+        { best1RM: 60 },
+        BW,
+        'male',
+        { pulleyMode: 'assisted' }
+      )!;
+      expect(assisted.ratio).toBeCloseTo(asShown.ratio, 5);
+
+      const remoAsShown = computeExerciseLevel('Remo Sentado con Cable', { best1RM: 50 }, BW, 'male')!;
+      const remoAssisted = computeExerciseLevel(
+        'Remo Sentado con Cable',
+        { best1RM: 50 },
+        BW,
+        'male',
+        { pulleyMode: 'assisted' }
+      )!;
+      expect(remoAssisted.ratio).toBeCloseTo(remoAsShown.ratio, 5);
+    });
+
     it('weightForLevel es la inversa del multiplicador: pide el doble a quien registra en combinado', () => {
       const perHand = weightForLevel('Press de Banca (Mancuerna)', 15, BW, 'male')!;
       const combined = weightForLevel('Press de Banca (Mancuerna)', 15, BW, 'male', { dumbbellMode: 'combined' })!;
@@ -257,7 +282,7 @@ describe('cobertura de baremos', () => {
 });
 
 describe('computeGroupRanks', () => {
-  it('toma el nivel del mejor ejercicio, y expone la media de los N mejores aparte', () => {
+  it('el nivel del grupo es la media de sus GROUP_TOP_N mejores, no el del mejor suelto', () => {
     const inputs = {
       'Press de Banca (Barra)': { best1RM: 160 },              // techo del baremo -> nivel 30
       'Press de Banca Inclinado (Barra)': { best1RM: 132 },    // techo del baremo -> nivel 30
@@ -268,14 +293,20 @@ describe('computeGroupRanks', () => {
     // El nivel del tercero sale del propio motor y no de un número escrito a mano: así este test
     // comprueba cómo se agrega el grupo, no cómo está calibrada la curva (que tiene los suyos).
     const tercero = computeExerciseLevel('Press de Banca en Declive (Barra)', { best1RM: 96 }, BW, 'male')!;
+    const media = (30 + 30 + tercero.level) / 3;
 
-    expect(ranks.Pecho.level).toBeCloseTo(30, 5);
-    expect(ranks.Pecho.averageTopN).toBeCloseTo((30 + 30 + tercero.level) / 3, 5);
+    // `level` y `averageTopN` son la misma cifra: el cuarto ejercicio (nivel 1) no entra porque el
+    // grupo sólo cuenta los GROUP_TOP_N mejores.
+    expect(ranks.Pecho.level).toBeCloseTo(media, 5);
+    expect(ranks.Pecho.averageTopN).toBeCloseTo(media, 5);
     expect(ranks.Pecho.countedExercises).toBe(GROUP_TOP_N);
     expect(ranks.Pecho.rankableExercises).toBe(4);
   });
 
-  it('añadir un aislamiento flojo no baja el rango del grupo', () => {
+  it('añadir un aislamiento flojo SÍ baja la media si el grupo tiene menos de GROUP_TOP_N ejercicios', () => {
+    // Coste asumido a propósito: un rango de grupo alto tiene que exigir estar fuerte en varios
+    // movimientos, no en uno solo — ver el comentario de computeGroupRanks. Con un único ejercicio
+    // ya registrado, sumar uno mucho más flojo diluye la media en vez de dejarla intacta.
     const strong = { 'Press de Banca (Barra)': { best1RM: 160 } };
     const before = computeGroupRanks(strong, BW, 'male').Pecho.level;
     const after = computeGroupRanks(
@@ -283,20 +314,23 @@ describe('computeGroupRanks', () => {
       BW,
       'male'
     ).Pecho.level;
-    expect(after).toBeGreaterThanOrEqual(before);
+    expect(after).toBeLessThan(before);
   });
 
-  it('es monótono: ningún grupo baja al ir sumando ejercicios uno a uno', () => {
-    // La propiedad que define el sistema — nadie puede perder rango por ampliar su rutina.
+  it('es monótono en cuanto el grupo ya tiene GROUP_TOP_N ejercicios contados', () => {
+    // Con los tres mejores ya ocupados, un ejercicio más sólo puede desplazar al peor de los tres
+    // (si lo supera) o quedarse fuera (si no) — nunca empeora la media.
+    const records: Record<string, { best1RM: number }> = {
+      'Press de Banca (Barra)': { best1RM: 160 },
+      'Press de Banca Inclinado (Barra)': { best1RM: 100 },
+      'Press de Banca en Declive (Barra)': { best1RM: 80 },
+    };
+    let previous = computeGroupRanks(records, BW, 'male').Pecho.level;
+
     const additions: [string, number][] = [
-      ['Press de Banca (Barra)', 160],
-      ['Press de Banca (Mancuerna)', 12],
-      ['Press de Banca Inclinado (Barra)', 40],
-      ['Press de Banca en Declive (Barra)', 150],
-      ['Press de Suelo (Barra)', 30],
+      ['Press de Suelo (Barra)', 30],   // mucho más flojo que los tres ya contados: no entra.
+      ['Press de Banca (Mancuerna)', 60], // mejor que el peor de los tres: lo desplaza, sube la media.
     ];
-    const records: Record<string, { best1RM: number }> = {};
-    let previous = 0;
     for (const [name, best1RM] of additions) {
       records[name] = { best1RM };
       const level = computeGroupRanks(records, BW, 'male').Pecho.level;

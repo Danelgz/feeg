@@ -187,6 +187,28 @@ describe('computeExerciseLevel', () => {
       const combined = weightForLevel('Press de Banca (Mancuerna)', 15, BW, 'male', { dumbbellMode: 'combined' })!;
       expect(combined).toBeCloseTo(perHand * 2, 5);
     });
+
+    // Sin preferencia que valga: toda máquina descuenta un 20% del ratio, siempre, porque el
+    // problema no es cómo registra el usuario sino que "50 kg" en una máquina no es la misma
+    // resistencia en dos gimnasios distintos.
+    it('descuenta un 20% el ratio de cualquier ejercicio de máquina, sin necesidad de preferencia', () => {
+      const machine = computeExerciseLevel('Press de Pecho (Máquina)', { best1RM: 60 }, BW, 'male')!;
+      // Mismo baremo que un ejercicio de barra equivalente, para aislar el efecto del descuento.
+      const barbellEquivalentRatio = 60 / BW;
+      expect(machine.ratio).toBeCloseTo(barbellEquivalentRatio * 0.8, 5);
+    });
+
+    it('weightForLevel pide un 25% más de peso en máquina para compensar el descuento', () => {
+      const machine = weightForLevel('Press de Pecho (Máquina)', 15, BW, 'male')!;
+      // Sin descontar: floor 0.35, ceiling 1.80 de ese baremo, con la misma curva del motor.
+      const undiscounted = (0.35 + Math.pow(14 / 29, 1 / LEVEL_CURVE_EXPONENT) * (1.8 - 0.35)) * BW;
+      expect(machine).toBeCloseTo(undiscounted / 0.8, 5);
+    });
+
+    it('no descuenta jalón/remo en polea aunque tampoco reciban el ajuste de polea asistida', () => {
+      const rank = computeExerciseLevel('Jalón al Pecho (Cable)', { best1RM: 60 }, BW, 'male')!;
+      expect(rank.ratio).toBeCloseTo(60 / BW, 5);
+    });
   });
 
   describe('ejercicios lastrados', () => {

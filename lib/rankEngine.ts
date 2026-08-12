@@ -55,6 +55,20 @@ const PULLEY_MACHINE_EXERCISES = new Set([
   'Remo Sentado con Agarre en V (Cable)',
 ]);
 
+/**
+ * Descuento fijo para toda máquina (equipment: 'maquina'), a diferencia de mancuerna/polea que
+ * sólo se corrigen si el usuario lo pide: aquí no hay ajuste de perfil que valga, porque el
+ * problema no es cómo registra ESTE usuario, es que "50 kg" en una prensa de piernas no es la misma
+ * resistencia en dos gimnasios distintos — la palanca, el recorrido y la calibración de la pila
+ * cambian de una marca a otra, y STRENGTH_STANDARDS sólo puede calibrar el caso típico, no el
+ * aparato exacto que hay debajo de cada usuario. Sin este descuento, el gimnasio con la máquina más
+ * generosa determina quién llega a rango alto, en vez de la fuerza real.
+ *
+ * No aplica a jalón/remo en polea (ver PULLEY_MACHINE_EXERCISES): esas ya se tratan como máquina en
+ * todo menos en la etiqueta del catálogo, y llevan aparte su propio ajuste opcional.
+ */
+const MACHINE_DISCOUNT = 0.8;
+
 /** Factor sobre la carga registrada para llegar a la carga real, según cómo la registre el usuario. */
 function equipmentMultiplier(exerciseName: string, prefs?: EquipmentPrefs): number {
   const equipment = getExerciseInfo(exerciseName)?.equipment;
@@ -62,6 +76,7 @@ function equipmentMultiplier(exerciseName: string, prefs?: EquipmentPrefs): numb
   if (equipment === 'polea' && prefs?.pulleyMode === 'assisted' && !PULLEY_MACHINE_EXERCISES.has(exerciseName)) {
     return 0.5;
   }
+  if (equipment === 'maquina') return MACHINE_DISCOUNT;
   return 1;
 }
 

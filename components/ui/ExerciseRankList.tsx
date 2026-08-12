@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { getTokens } from '../../lib/tokens';
 import { getRankPosition } from '../../data/ranks';
 import { nextLevelTarget, type ExerciseRank, type Sex } from '../../lib/rankEngine';
@@ -12,6 +13,13 @@ interface ExerciseRankListProps {
   translateExercise?: (name: string) => string;
   /** Tokens de la pantalla de entrenamiento, que ignora el tema del usuario. */
   tokens?: ReturnType<typeof getTokens>;
+  /**
+   * Si se pasa, cada fila se vuelve pulsable y lleva al detalle de ese ejercicio (nombre interno
+   * del catálogo, no el traducido). Sin ella la lista es de solo lectura — el resumen de fin de
+   * entreno la usa así a propósito: no tiene sentido salir de la pantalla de celebración hacia
+   * Estadísticas en mitad del resumen.
+   */
+  onExerciseClick?: (exercise: string) => void;
 }
 
 /**
@@ -31,6 +39,7 @@ export default function ExerciseRankList({
   isDark,
   translateExercise,
   tokens,
+  onExerciseClick,
 }: ExerciseRankListProps) {
   const tk = tokens ?? getTokens(isDark);
 
@@ -46,6 +55,20 @@ export default function ExerciseRankList({
         return (
           <li
             key={rank.exercise}
+            className={onExerciseClick ? 'feeg-press feeg-hover' : undefined}
+            onClick={onExerciseClick ? () => onExerciseClick(rank.exercise) : undefined}
+            role={onExerciseClick ? 'button' : undefined}
+            tabIndex={onExerciseClick ? 0 : undefined}
+            onKeyDown={
+              onExerciseClick
+                ? (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onExerciseClick(rank.exercise);
+                    }
+                  }
+                : undefined
+            }
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -54,6 +77,10 @@ export default function ExerciseRankList({
               borderRadius: tk.radius.md,
               backgroundColor: tk.surfaceAlt,
               border: `1px solid ${tk.border}`,
+              cursor: onExerciseClick ? 'pointer' : undefined,
+              ...(onExerciseClick
+                ? ({ '--feeg-bg': tk.surfaceAlt, '--feeg-hover-bg': tk.surfaceHover, '--feeg-press-scale': 0.985 } as CSSProperties)
+                : null),
             }}
           >
             <div

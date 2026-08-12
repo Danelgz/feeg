@@ -178,10 +178,15 @@ export const STRENGTH_STANDARDS: Record<string, StrengthStandard> = {
   'Prensa de Piernas': { floor: 1.00, ceiling: 4.50, femaleFactor: 0.78 },
   'Prensa de Piernas Sentado': { floor: 0.90, ceiling: 4.00, femaleFactor: 0.78 },
   'Sentadilla Hack (Máquina)': { floor: 0.60, ceiling: 2.80, femaleFactor: 0.75 },
-  'Sentadilla (Máquina Smith)': { floor: 0.50, ceiling: 2.40, femaleFactor: 0.72 },
-  'Sentadilla (Máquina)': { floor: 0.50, ceiling: 2.40, femaleFactor: 0.72 },
+  // Antes su techo (2.40) quedaba POR DEBAJO del de la sentadilla libre (2.50), al revés de lo que
+  // tiene sentido: el recorrido guiado del Smith y el asiento/respaldo de la máquina quitan trabajo
+  // de estabilización, así que a igualdad de fuerza de piernas se mueve más peso, no menos.
+  'Sentadilla (Máquina Smith)': { floor: 0.50, ceiling: 2.60, femaleFactor: 0.72 },
+  'Sentadilla (Máquina)': { floor: 0.50, ceiling: 2.60, femaleFactor: 0.72 },
   'Extensión de Pierna (Máquina)': { floor: 0.30, ceiling: 1.50, femaleFactor: 0.75 },
-  'Sentadilla con Cinturón (Belt Squat)': { floor: 0.45, ceiling: 2.20, femaleFactor: 0.75 },
+  // Mismo caso: sin la barra cargando la columna, el cinturón deja mover más peso que una sentadilla
+  // libre a igualdad de piernas, no menos — su techo (2.20) también estaba por debajo del de barra.
+  'Sentadilla con Cinturón (Belt Squat)': { floor: 0.45, ceiling: 2.50, femaleFactor: 0.75 },
 
   // ── Femoral ──────────────────────────────────────────────────────────────────────────────────
   'Curl de Piernas Acostado (Máquina)': { floor: 0.25, ceiling: 1.20, femaleFactor: 0.75 },

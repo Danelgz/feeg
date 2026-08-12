@@ -17,6 +17,8 @@ interface MuscleRankListProps {
   onToggleGroup: (group: string) => void;
   translateGroup?: (group: string) => string;
   translateExercise?: (name: string) => string;
+  /** Ver ExerciseRankList: si se pasa, cada ejercicio despliega lleva al detalle de Estadísticas. */
+  onExerciseClick?: (exercise: string) => void;
 }
 
 /**
@@ -54,6 +56,7 @@ export default function MuscleRankList({
   onToggleGroup,
   translateGroup,
   translateExercise,
+  onExerciseClick,
 }: MuscleRankListProps) {
   const tk = getTokens(isDark);
   const prefersReducedMotion = useReducedMotion();
@@ -211,11 +214,13 @@ export default function MuscleRankList({
                       sex={sex}
                       isDark={isDark}
                       translateExercise={translateExercise}
+                      onExerciseClick={onExerciseClick}
                     />
                     {groupRank.rankableExercises > 1 && (
                       <p style={{ margin: `${tk.space.md} 0 0`, fontSize: tk.fontSize.xs, color: tk.textFaint }}>
-                        El rango del grupo es el de su mejor ejercicio, así que añadir otros nunca te
-                        baja.
+                        {groupRank.countedExercises >= 3
+                          ? 'El rango del grupo es la media de tus 3 mejores ejercicios: entrenar más nunca te baja.'
+                          : `El rango del grupo es la media de tus mejores ejercicios (hasta 3). Con sólo ${groupRank.countedExercises}, uno flojo todavía puede bajarla.`}
                       </p>
                     )}
                   </div>

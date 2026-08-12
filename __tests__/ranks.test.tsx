@@ -124,6 +124,23 @@ describe("estadísticas · rangos", () => {
     expect(row!.getAttribute("aria-expanded")).toBe("true");
   });
 
+  it("tocar un ejercicio dentro de un grupo salta a su ficha en la pestaña Ejercicios", async () => {
+    renderRanks();
+    await screen.findByText("Rankings musculares");
+
+    const row = screen.getAllByRole("button", { expanded: false }).find((b) => b.textContent?.startsWith("Cuádriceps"));
+    fireEvent.click(row!);
+    const exerciseRow = await screen.findByRole("button", { name: /^Sentadilla \(Barra\)/ });
+
+    fireEvent.click(exerciseRow);
+
+    // La pestaña activa pasa a ser "Ejercicios" y el buscador ya trae ese ejercicio puesto, en vez
+    // de dejar al usuario buscarlo a mano entre el resto del historial.
+    expect(await screen.findByText("Estadísticas por ejercicio")).toBeTruthy();
+    expect((screen.getByLabelText("Buscar ejercicio") as HTMLInputElement).value).toBe("Sentadilla (Barra)");
+    expect(screen.queryByText("Rankings musculares")).toBeNull();
+  });
+
   it("enseña como pendientes los grupos que pueden puntuar, y omite los que no", async () => {
     renderRanks();
     const list = (await screen.findByText("Rankings musculares")).closest("section")!;

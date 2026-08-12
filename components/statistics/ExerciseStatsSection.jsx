@@ -13,10 +13,13 @@ import { getRankPosition } from "../../data/ranks";
  *  significa que la última aparece medio minuto después; a partir de aquí entran ya colocadas. */
 const ANIMATED_ROWS = 12;
 
-export default function ExerciseStatsSection({ isDark, isMobile, workouts, t, language }) {
+export default function ExerciseStatsSection({ isDark, isMobile, workouts, t, language, initialQuery }) {
   const tk = getTokens(isDark);
   const prefersReducedMotion = useReducedMotion();
-  const [query, setQuery] = useState('');
+  // `initialQuery` llega desde "Rankings musculares" en Rangos (ver goToExerciseStats en
+  // pages/statistics.js): esta sección se desmonta al cambiar de pestaña, así que leerlo sólo en
+  // el estado inicial basta — no hace falta sincronizarlo después con un efecto.
+  const [query, setQuery] = useState(initialQuery || '');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   // El índice recorre TODO el historial: recalcularlo en cada pulsación del buscador era un barrido

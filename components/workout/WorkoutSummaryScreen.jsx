@@ -399,9 +399,11 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
               </div>
               <Icon name="award" size={20} color={tk.accent} />
             </div>
-            {/* layout="grid": en fin de entreno el ancho disponible es el de toda la tarjeta, no
-                una columna estrecha como en el detalle de un grupo muscular — con una sola fila
-                por ejercicio esa anchura se quedaba casi vacía entre el nombre y la barra. */}
+            {/* layout="grid": filas a todo el ancho sin caja/borde propio (solo una línea
+                divisoria), con una barra de progreso horizontal — en vez de la tarjeta con borde
+                y la barra vertical de 3px pensadas para la columna estrecha del detalle de un
+                grupo muscular, que aquí dejaban la fila leyéndose como un cuadro suelto y con
+                mucho hueco vacío sin usar. */}
             <ExerciseRankList ranks={sessionRanks} bodyweightKg={bodyweightKg} sex={sex} isDark tokens={tk} layout="grid" />
           </motion.section>
         )}

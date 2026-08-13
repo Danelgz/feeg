@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { getTokens } from '../../lib/tokens';
 import { getRankPosition } from '../../data/ranks';
 import { nextLevelTarget, type ExerciseRank, type Sex } from '../../lib/rankEngine';
@@ -57,39 +57,116 @@ export default function ExerciseRankList({
 
   if (ranks.length === 0) return null;
 
+  const isFlat = layout === 'grid';
+
   return (
-    <ul
-      style={{
-        listStyle: 'none',
-        margin: 0,
-        padding: 0,
-        display: 'grid',
-        gap: tk.space.sm,
-        ...(layout === 'grid' ? { gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))' } : null),
-      }}
-    >
-      {ranks.map((rank) => {
+    <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: isFlat ? 0 : tk.space.sm }}>
+      {ranks.map((rank, index) => {
         const position = getRankPosition(rank.level);
         const target = nextLevelTarget(rank.exercise, rank.level, rank.best1RM, bodyweightKg, sex);
         const name = translateExercise ? translateExercise(rank.exercise) : rank.exercise;
+        const isLast = index === ranks.length - 1;
+
+        const rowProps = {
+          key: rank.exercise,
+          className: onExerciseClick ? 'feeg-press feeg-hover' : undefined,
+          onClick: onExerciseClick ? () => onExerciseClick(rank.exercise) : undefined,
+          role: onExerciseClick ? 'button' : undefined,
+          tabIndex: onExerciseClick ? 0 : undefined,
+          onKeyDown: onExerciseClick
+            ? (e: ReactKeyboardEvent) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onExerciseClick(rank.exercise);
+                }
+              }
+            : undefined,
+        };
+
+        // 'grid' (mejor nombre sería "flat"): fila a todo el ancho sin caja propia — solo una
+        // línea divisoria fina entre ejercicios, como el resto de listas de la app — con una
+        // barra de progreso horizontal que sí usa el ancho disponible, en vez de la cajita con
+        // borde y la barra vertical de 3px pensadas para una columna estrecha (ver 'list' abajo).
+        if (isFlat) {
+          return (
+            <li
+              {...rowProps}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: tk.space.md,
+                padding: `${tk.space.sm} 2px`,
+                borderBottom: isLast ? 'none' : `1px solid ${tk.border}`,
+                cursor: onExerciseClick ? 'pointer' : undefined,
+                ...(onExerciseClick
+                  ? ({ '--feeg-bg': 'transparent', '--feeg-hover-bg': tk.surfaceAlt, '--feeg-press-scale': 0.99 } as CSSProperties)
+                  : null),
+              }}
+            >
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: tk.radius.full,
+                  backgroundColor: `${position.rank.color}1f`,
+                  border: `1px solid ${position.rank.color}59`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <RankArt rank={position.rank} tier={position.tier} size={18} />
+              </div>
+
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: tk.space.sm }}>
+                  <span
+                    style={{
+                      color: tk.text,
+                      fontSize: tk.fontSize.sm,
+                      fontWeight: tk.weight.medium,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {name}
+                  </span>
+                  <span style={{ flexShrink: 0, color: position.rank.color, fontWeight: tk.weight.bold, fontSize: tk.fontSize.xs }}>
+                    {position.label}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: tk.space.sm, marginTop: '6px' }}>
+                  <div
+                    aria-hidden="true"
+                    style={{ flex: 1, height: '4px', borderRadius: tk.radius.pill, backgroundColor: tk.border, overflow: 'hidden' }}
+                  >
+                    <div
+                      style={{
+                        width: `${Math.round(position.progressToNext * 100)}%`,
+                        height: '100%',
+                        backgroundColor: position.rank.color,
+                        borderRadius: 'inherit',
+                      }}
+                    />
+                  </div>
+                  <span style={{ flexShrink: 0, fontSize: tk.fontSize.xs, color: tk.textFaint, fontVariantNumeric: 'tabular-nums' }}>
+                    {target?.isMaxed
+                      ? 'al máximo'
+                      : target && target.deltaKg > 0
+                        ? `-${target.deltaKg < 1 ? target.deltaKg.toFixed(1) : Math.ceil(target.deltaKg)}kg`
+                        : ''}
+                  </span>
+                </div>
+              </div>
+            </li>
+          );
+        }
 
         return (
           <li
-            key={rank.exercise}
-            className={onExerciseClick ? 'feeg-press feeg-hover' : undefined}
-            onClick={onExerciseClick ? () => onExerciseClick(rank.exercise) : undefined}
-            role={onExerciseClick ? 'button' : undefined}
-            tabIndex={onExerciseClick ? 0 : undefined}
-            onKeyDown={
-              onExerciseClick
-                ? (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onExerciseClick(rank.exercise);
-                    }
-                  }
-                : undefined
-            }
+            {...rowProps}
             style={{
               display: 'flex',
               alignItems: 'center',

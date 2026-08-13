@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useRef, useState } from "react";
 import { getWorkoutTokens } from "../../lib/tokens";
 import { weightUnitFor } from "../../lib/exerciseStats";
 import { getSetRecommendation } from "../../lib/workoutRecommendations";
@@ -46,6 +46,8 @@ function ExerciseCard({
   const [typeModalSerieUid, setTypeModalSerieUid] = useState(null);
   const [confirmDeleteExercise, setConfirmDeleteExercise] = useState(false);
   const [confirmDeleteSerieUid, setConfirmDeleteSerieUid] = useState(null);
+  const [appliedRecommendationUids, setAppliedRecommendationUids] = useState(() => new Set());
+  const seriesRowRefs = useRef({});
 
   const weightUnit = weightUnitFor(exercise);
   const isTimeBased = exercise.exerciseType === "time";
@@ -60,16 +62,35 @@ function ExerciseCard({
     }
     return normalCount;
   });
-  const recommendations = exercise.series.map((serie, idx) =>
-    getSetRecommendation(previousSeries?.[idx], serie.reps, exercise.exerciseType)
-  );
+  const recommendations = exercise.series.map((serie, idx) => {
+    const isNormalSeries = serie.type === "N" || !serie.type;
+    if (!isNormalSeries || serie.completed || appliedRecommendationUids.has(serie.uid)) return null;
+    return getSetRecommendation(previousSeries?.[idx], serie.reps, exercise.exerciseType);
+  });
   const firstRecommendationIndex = recommendations.findIndex(Boolean);
   const primaryRecommendation = firstRecommendationIndex >= 0 ? recommendations[firstRecommendationIndex] : null;
   const primarySerie = firstRecommendationIndex >= 0 ? exercise.series[firstRecommendationIndex] : null;
   const applyRecommendation = (serie, recommendation) => {
     if (!serie || !recommendation) return;
+    if (serie.type && serie.type !== "N") return;
     if (recommendation.weight !== null && recommendation.weight !== undefined) onUpdateField(serie.uid, "weight", recommendation.weight);
     if (recommendation.reps !== null && recommendation.reps !== undefined) onUpdateField(serie.uid, "reps", recommendation.reps);
+    setAppliedRecommendationUids((previous) => {
+      const next = new Set(previous);
+      next.add(serie.uid);
+      return next;
+    });
+
+    const currentIndex = exercise.series.findIndex((candidate) => candidate.uid === serie.uid);
+    const nextSerie = exercise.series.slice(currentIndex + 1).find((candidate) => {
+      const isNormalSeries = candidate.type === "N" || !candidate.type;
+      return isNormalSeries && !candidate.completed;
+    });
+    if (nextSerie && typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        seriesRowRefs.current[nextSerie.uid]?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+      });
+    }
   };
 
   return (
@@ -190,22 +211,22 @@ function ExerciseCard({
         </div>
 
         {exercise.series.map((serie, idx) => (
-          <SeriesRow
-            key={serie.uid}
-            serie={serie}
-            effectiveIndex={effectiveIndexes[idx]}
-            previous={previousSeries?.[idx] || null}
-            recommendation={recommendations[idx]}
-            recommendationLabel={recommendations[idx] ? t(`recommendation_${recommendations[idx].decision}`) : ""}
-            recommendationActionLabel={t("recommendation_apply")}
-            mode={mode}
-            weightUnit={weightUnit}
-            onFieldChange={(field, value) => onUpdateField(serie.uid, field, value)}
-            onRirChange={(value) => onRirChange?.(serie.uid, value)}
-            onToggleComplete={() => onToggleComplete(serie.uid)}
-            onOpenType={() => setTypeModalSerieUid(serie.uid)}
-            onApplyRecommendation={recommendations[idx] ? () => applyRecommendation(serie, recommendations[idx]) : undefined}
-          />
+            <SeriesRow
+              key={serie.uid}
+              rowRef={(node) => {
+                if (node) seriesRowRefs.current[serie.uid] = node;
+                else delete seriesRowRefs.current[serie.uid];
+              }}
+              serie={serie}
+              effectiveIndex={effectiveIndexes[idx]}
+              previous={previousSeries?.[idx] || null}
+              mode={mode}
+              weightUnit={weightUnit}
+              onFieldChange={(field, value) => onUpdateField(serie.uid, field, value)}
+              onRirChange={(value) => onRirChange?.(serie.uid, value)}
+              onToggleComplete={() => onToggleComplete(serie.uid)}
+              onOpenType={() => setTypeModalSerieUid(serie.uid)}
+            />
         ))}
       </div>
 

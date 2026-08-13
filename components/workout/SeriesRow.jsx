@@ -10,16 +10,17 @@ function SeriesRow({
   serie,
   effectiveIndex,
   previous,
+  rowRef,
   recommendation,
   recommendationLabel,
   recommendationActionLabel,
+  onApplyRecommendation,
   mode,
   weightUnit,
   onFieldChange,
   onRirChange,
   onToggleComplete,
   onOpenType,
-  onApplyRecommendation,
 }) {
   const tk = getWorkoutTokens();
   const isPR = serie.isPR;
@@ -57,14 +58,15 @@ function SeriesRow({
   const badgeLabel = serie.type === "W" ? "W" : serie.type === "D" ? "D" : String(effectiveIndex);
   const badgeColor = serie.type === "W" ? tk.accent : serie.type === "D" ? tk.warning : tk.text;
   const previousLabel = previous ? `${previous.weight}${weightUnit} × ${previous.reps}` : "—";
-  const recommendationColor = recommendation?.decision === "decrease" ? tk.warning : recommendation?.decision === "maintain" ? tk.textMuted : tk.accent;
-  const recommendationBackground = recommendation?.decision === "decrease" ? tk.warningSoft : recommendation?.decision === "maintain" ? "rgba(255,255,255,0.06)" : tk.accentSoft;
   const recommendationTarget = recommendation
     ? `${recommendation.weight !== null && recommendation.weight !== undefined ? `${recommendation.weight}${weightUnit}` : ""}${recommendation.reps !== null && recommendation.reps !== undefined ? ` × ${recommendation.reps}` : ""}`.trim()
     : "";
 
+  const recommendationColor = recommendation?.decision === "decrease" ? tk.warning : recommendation?.decision === "maintain" ? tk.textMuted : tk.accent;
+  const recommendationBackground = recommendation?.decision === "decrease" ? tk.warningSoft : recommendation?.decision === "maintain" ? "rgba(255,255,255,0.06)" : tk.accentSoft;
   return (
     <div
+      ref={rowRef}
       style={{
         display: "grid",
         gridTemplateColumns: mode === "live" ? "40px minmax(92px, 1fr) 62px 62px 52px 38px" : "40px 1fr 70px 70px 45px",

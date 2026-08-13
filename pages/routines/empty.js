@@ -289,7 +289,6 @@ export default function EmptyRoutine() {
 
         <WorkoutExercisePager
           exercises={state.exercises}
-          previousLabel={t("previous_exercise")}
           lastAction={
             <button
               type="button"

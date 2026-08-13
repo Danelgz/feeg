@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { getWorkoutTokens } from "../../lib/tokens";
-import { Icon } from "../ui";
 
 interface PagerItem {
   uid?: string | number;
@@ -9,7 +8,6 @@ interface PagerItem {
 interface WorkoutExercisePagerProps<T extends PagerItem> {
   exercises: T[];
   renderExercise: (exercise: T, index: number) => ReactNode;
-  previousLabel: string;
   lastAction?: ReactNode;
 }
 
@@ -17,7 +15,6 @@ interface WorkoutExercisePagerProps<T extends PagerItem> {
 export default function WorkoutExercisePager<T extends PagerItem>({
   exercises,
   renderExercise,
-  previousLabel,
   lastAction,
 }: WorkoutExercisePagerProps<T>) {
   const tk = getWorkoutTokens();
@@ -54,12 +51,6 @@ export default function WorkoutExercisePager<T extends PagerItem>({
     });
 
     return () => observer.disconnect();
-  }, [exercises.length]);
-
-  const moveTo = useCallback((index: number) => {
-    const safeIndex = Math.max(0, Math.min(index, exercises.length - 1));
-    sectionRefs.current[safeIndex]?.scrollIntoView({ behavior: "smooth", block: "start" });
-    setActiveIndex(safeIndex);
   }, [exercises.length]);
 
   if (exercises.length === 0) return null;
@@ -127,27 +118,7 @@ export default function WorkoutExercisePager<T extends PagerItem>({
           WebkitBackdropFilter: "blur(16px)",
         }}
       >
-        <button
-          type="button"
-          onClick={() => moveTo(activeIndex - 1)}
-          disabled={activeIndex === 0}
-          aria-label={previousLabel}
-          title={previousLabel}
-          style={{
-            width: 36,
-            height: 36,
-            display: "grid",
-            placeItems: "center",
-            border: "none",
-            borderRadius: tk.radius.full,
-            background: activeIndex === 0 ? "transparent" : tk.surfaceAlt,
-            color: activeIndex === 0 ? tk.textFaint : tk.text,
-            cursor: activeIndex === 0 ? "default" : "pointer",
-            opacity: activeIndex === 0 ? 0.45 : 1,
-          }}
-        >
-          <Icon name="chevronLeft" size={18} style={{ transform: "rotate(90deg)" }} />
-        </button>
+        <span style={{ width: 36, height: 36 }} aria-hidden="true" />
 
         <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: "72px", justifyContent: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }} aria-hidden="true">

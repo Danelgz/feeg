@@ -416,7 +416,6 @@ export default function RoutineDetail() {
 
         <WorkoutExercisePager
           exercises={state.exercises}
-          previousLabel={t("previous_exercise")}
           lastAction={
             <button
               type="button"

@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { translations } from '../data/translations';
+import { languageOverrides } from '../data/languageConfig';
 import {
   onAuthChange,
   signInWithGoogle,
@@ -24,6 +25,11 @@ import {
 import { clearSnapshot as clearWorkoutSessionSnapshot } from '../lib/workoutStorage';
 
 const UserContext = createContext();
+
+const localizedTranslations = Object.fromEntries(
+  Object.entries(languageOverrides).map(([code, overrides]) => [code, { ...translations.es, ...overrides }])
+);
+const allTranslations = { ...translations, ...localizedTranslations };
 
 // Cambiar de apartado remonta la página, y cada pestaña llama a refreshData() al montar (index,
 // profile, measures, settings, routines/index) — sin esta ventana, ir Inicio → Rutinas → Perfil →
@@ -93,7 +99,7 @@ export function UserProvider({ children }) {
 
   // Función de traducción
   const t = (key) => {
-    return translations[language][key] || key;
+    return allTranslations[language]?.[key] || translations.es[key] || key;
   };
 
   // Cargar datos iniciales desde localStorage (para rapidez)

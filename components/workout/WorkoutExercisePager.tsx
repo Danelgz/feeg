@@ -120,7 +120,7 @@ export default function WorkoutExercisePager<T extends PagerItem>({
       >
         <span style={{ width: 36, height: 36 }} aria-hidden="true" />
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: "72px", justifyContent: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }} aria-hidden="true">
             {exercises.map((exercise, index) => (
               <span
@@ -136,9 +136,6 @@ export default function WorkoutExercisePager<T extends PagerItem>({
               />
             ))}
           </div>
-          <span style={{ color: tk.textMuted, fontSize: "0.72rem", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
-            {activeIndex + 1}/{exercises.length}
-          </span>
         </div>
 
         {activeIndex === exercises.length - 1 && lastAction ? (

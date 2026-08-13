@@ -8,11 +8,7 @@ import * as MALE_BODY from "../../data/muscleMapPaths";
 import * as FEMALE_BODY from "../../data/muscleMapPathsFemale";
 import { FACE_VERTICAL_OFFSET_BY_BODY, getFaceTransform } from "../../lib/faceTransform";
 import SettingsSubpage from "../../components/settings/SettingsSubpage";
-
-const LANGUAGES = [
-  { code: 'es', name: 'Español' },
-  { code: 'eu', name: 'Euskera' }
-];
+import { LANGUAGES } from "../../data/languageConfig";
 
 // Aire alrededor de la cabeza recortada: HEAD_BOX es el bbox exacto de la cabeza, y recortar justo
 // en su borde deja las orejas y la línea de la mandíbula pegadas al marco de la miniatura. Abajo NO

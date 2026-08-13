@@ -17,6 +17,9 @@ export default function RegisterForm({ onRegister, onCancel, initialData, title 
     firstName: initialData?.firstName || '',
     lastName: initialData?.lastName || '',
     username: initialData?.username || '',
+    // `?? null`, no `|| null`: 'male'/'female' son valores válidos y "no decirlo" es una elección
+    // explícita, no la ausencia de una — igual que ya hace ProfileEditModal con este mismo campo.
+    sex: initialData?.sex ?? null,
     weightValue: initialData?.weightValue ?? 70,
     weightUnit: initialData?.weightUnit || 'kg',
     heightValue: initialData?.heightValue ?? 170,
@@ -51,6 +54,7 @@ export default function RegisterForm({ onRegister, onCancel, initialData, title 
         firstName: formData.firstName,
         lastName: formData.lastName,
         username: formData.username,
+        sex: formData.sex,
         weight: formData.weightValue,
         weightUnit: formData.weightUnit,
         height: formData.heightValue,
@@ -63,8 +67,9 @@ export default function RegisterForm({ onRegister, onCancel, initialData, title 
 
   const isStepValid = () => {
     if (step === 1) return formData.firstName && formData.lastName && formData.username;
-    if (step === 2) return true;
-    if (step === 3) return formData.goal;
+    if (step === 2) return true; // Sexo: opcional, "prefiero no decirlo" es una respuesta válida.
+    if (step === 3) return true; // Peso/altura: siempre llevan un valor por defecto en la rueda.
+    if (step === 4) return formData.goal;
     return false;
   };
 
@@ -191,8 +196,55 @@ export default function RegisterForm({ onRegister, onCancel, initialData, title 
         </div>
       )}
 
-      {/* Step 2: Peso y Altura */}
+      {/* Step 2: Sexo — opcional, sólo afecta a los baremos de fuerza y a la silueta del mapa
+          muscular (ver MuscleMap.tsx y useRanks.ts). Mismas tres opciones y misma etiqueta que
+          ProfileEditModal, para no entrenar al usuario a esperar dos comportamientos distintos del
+          mismo dato según dónde lo toque. */}
       {step === 2 && (
+        <div>
+          <label style={{
+            color: isDark ? "#fff" : "#333",
+            display: "block",
+            marginBottom: "8px",
+            fontWeight: "600"
+          }}>
+            Sexo (opcional)
+          </label>
+          <p style={{ color: isDark ? "#999" : "#777", fontSize: "0.85rem", margin: "0 0 16px" }}>
+            Sólo se usa para calcular tus rangos de fuerza y la silueta del mapa muscular.
+          </p>
+          <div style={{ display: "flex", gap: "10px" }}>
+            {[
+              { key: "male", label: "Hombre" },
+              { key: "female", label: "Mujer" },
+              { key: null, label: "Prefiero no decirlo" },
+            ].map((option) => (
+              <button
+                key={option.label}
+                type="button"
+                onClick={() => handleInputChange('sex', option.key)}
+                style={{
+                  flex: 1,
+                  padding: "12px 8px",
+                  backgroundColor: formData.sex === option.key ? "#1dd1a1" : (isDark ? "#0f0f0f" : "#f9f9f9"),
+                  color: formData.sex === option.key ? "#000" : (isDark ? "#fff" : "#333"),
+                  border: formData.sex === option.key ? "2px solid #1dd1a1" : `1px solid ${isDark ? "#2a2a2a" : "#ddd"}`,
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: "600",
+                  fontSize: "0.85rem",
+                  transition: "all 0.3s ease"
+                }}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: Peso y Altura */}
+      {step === 3 && (
         <div>
           <div style={{ marginBottom: "20px" }}>
             <label style={{ 
@@ -304,8 +356,8 @@ export default function RegisterForm({ onRegister, onCancel, initialData, title 
         </div>
       )}
 
-      {/* Step 3: Objetivo */}
-      {step === 3 && (
+      {/* Step 4: Objetivo */}
+      {step === 4 && (
         <div>
           <label style={{ 
             color: isDark ? "#fff" : "#333", 
@@ -346,7 +398,7 @@ export default function RegisterForm({ onRegister, onCancel, initialData, title 
         justifyContent: "center",
         margin: "20px 0 30px 0"
       }}>
-        {[1, 2, 3].map((s) => (
+        {[1, 2, 3, 4].map((s) => (
           <div
             key={s}
             style={{
@@ -380,7 +432,7 @@ export default function RegisterForm({ onRegister, onCancel, initialData, title 
             Atrás
           </button>
         )}
-        {step < 3 ? (
+        {step < 4 ? (
           <button
             onClick={() => setStep(step + 1)}
             disabled={!isStepValid()}

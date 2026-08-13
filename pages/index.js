@@ -45,9 +45,22 @@ export default function Home() {
   // `completedWorkouts` — la lista local, que ya es la fuente de verdad y se actualiza al
   // instante en cualquier borrado (ver deleteCompletedWorkout en UserContext) — y se descarta el
   // que ya no esté ahí. Los entrenos de otras personas no se tocan: solo se puede borrar lo propio.
+  //
+  // `w.id` en `completedWorkouts` no tiene un único formato: justo tras guardar/importar es el id
+  // local (numérico), pero en cuanto refreshData() vuelve a sincronizar contra la nube pasa a ser
+  // el id compuesto del documento de Firestore (`getAllUserWorkouts` hace `{ ...d.data(), id: d.id
+  // }`, que pisa el numérico con "uid_numérico"). Sin normalizar esto, tras cualquier
+  // sincronización se le añadía el prefijo del uid una segunda vez y el id ya no coincidía con
+  // nada — el síntoma era que hasta los entrenos recién importados dejaban de verse en el feed.
   const ownWorkoutDocIds = useMemo(() => {
     if (!authUser) return null;
-    return new Set(completedWorkouts.map((w) => getPublicWorkoutDocId(authUser.uid, w.id)));
+    const prefix = `${authUser.uid}_`;
+    return new Set(
+      completedWorkouts.map((w) => {
+        const id = String(w.id);
+        return id.startsWith(prefix) ? id : getPublicWorkoutDocId(authUser.uid, id);
+      })
+    );
   }, [authUser, completedWorkouts]);
 
   const visibleFeedWorkouts = useMemo(() => {

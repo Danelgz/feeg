@@ -20,6 +20,17 @@ interface ExerciseRankListProps {
    * Estadísticas en mitad del resumen.
    */
   onExerciseClick?: (exercise: string) => void;
+  /**
+   * 'list' (por defecto): una columna, cada fila ocupa todo el ancho — el patrón de siempre,
+   * usado en el detalle de un grupo muscular donde cada fila ya lleva su propia barra de
+   * progreso y conviene leerla de un tirón.
+   * 'grid': se reparte en columnas (`repeat(auto-fill, minmax(...))`) en vez de apilarse en una
+   * sola tira — para el resumen de fin de entreno, donde una lista de una sola columna en una
+   * pantalla ancha deja casi todo el ancho vacío entre el nombre y la barra de progreso de cada
+   * fila. Con varias columnas la sección se aprovecha de verdad y dos o tres ejercicios sueltos
+   * no arrastran una única línea flotando en medio de la tarjeta.
+   */
+  layout?: 'list' | 'grid';
 }
 
 /**
@@ -40,13 +51,23 @@ export default function ExerciseRankList({
   translateExercise,
   tokens,
   onExerciseClick,
+  layout = 'list',
 }: ExerciseRankListProps) {
   const tk = tokens ?? getTokens(isDark);
 
   if (ranks.length === 0) return null;
 
   return (
-    <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: tk.space.sm }}>
+    <ul
+      style={{
+        listStyle: 'none',
+        margin: 0,
+        padding: 0,
+        display: 'grid',
+        gap: tk.space.sm,
+        ...(layout === 'grid' ? { gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))' } : null),
+      }}
+    >
       {ranks.map((rank) => {
         const position = getRankPosition(rank.level);
         const target = nextLevelTarget(rank.exercise, rank.level, rank.best1RM, bodyweightKg, sex);

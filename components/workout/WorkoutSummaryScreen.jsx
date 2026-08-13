@@ -392,9 +392,17 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
         </div>
 
         {ranksAvailable && sessionRanks.length > 0 && (
-          <motion.section variants={itemVariants} style={{ marginTop: 16, padding: "22px", border: `1px solid ${tk.border}`, borderRadius: 22, background: tk.surface }}>
-            <div className="summary-panel-label" style={{ marginBottom: 14 }}>{translate("summary_ranks_label")}</div>
-            <ExerciseRankList ranks={sessionRanks} bodyweightKg={bodyweightKg} sex={sex} isDark tokens={tk} />
+          <motion.section variants={itemVariants} className="summary-panel" style={{ marginTop: 16 }}>
+            <div className="summary-panel-heading">
+              <div>
+                <div className="summary-panel-label">{translate("summary_ranks_label")}</div>
+              </div>
+              <Icon name="award" size={20} color={tk.accent} />
+            </div>
+            {/* layout="grid": en fin de entreno el ancho disponible es el de toda la tarjeta, no
+                una columna estrecha como en el detalle de un grupo muscular — con una sola fila
+                por ejercicio esa anchura se quedaba casi vacía entre el nombre y la barra. */}
+            <ExerciseRankList ranks={sessionRanks} bodyweightKg={bodyweightKg} sex={sex} isDark tokens={tk} layout="grid" />
           </motion.section>
         )}
 

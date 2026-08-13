@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { getTokens } from "../lib/tokens";
@@ -19,13 +19,22 @@ const HEAD_CROP_PADDING_RATIO = 0.14;
  * mismo `HEAD_BOX`, mismo translate+scale que pinta `MuscleMap` de verdad), no una silueta
  * genérica: así el selector responde a "¿cómo se va a ver?" en vez de a una aproximación que luego
  * no coincide con el mapa muscular ni con Rangos.
+ *
+ * El recorte es una ELIPSE inscrita en el rectángulo de `HEAD_BOX` (+ aire), no el rectángulo en
+ * sí: un rectángulo deja ver las esquinas de abajo, que en la lámina real son ya cuello/hombros —
+ * la elipse toca el borde por el centro (donde está la cara de verdad) y se va cerrando hacia las
+ * esquinas, así que corta justo lo que no es cara sin recortar nada de la cabeza.
  */
 function FaceThumbnail({ style, isDark, sex, size = 56 }) {
+  const clipId = `feeg-face-thumb-${useId().replace(/:/g, '')}`;
   const bodySex = sex === "female" ? "female" : "male";
   const body = bodySex === "female" ? FEMALE_BODY : MALE_BODY;
   const headBox = HEAD_BOX[bodySex];
   const pad = headBox.w * HEAD_CROP_PADDING_RATIO;
-  const viewBox = `${headBox.x - pad} ${headBox.y - pad} ${headBox.w + pad * 2} ${headBox.h + pad}`;
+  const vbX = headBox.x - pad;
+  const vbY = headBox.y - pad;
+  const vbW = headBox.w + pad * 2;
+  const vbH = headBox.h + pad;
   const faceTransform = `translate(${headBox.x} ${headBox.y}) scale(${headBox.w / FACE_VIEW_BOX.width} ${headBox.h / FACE_VIEW_BOX.height})`;
   const silhouetteFill = isDark ? "#ffffff" : "#f6f8fa";
   const silhouetteStroke = isDark ? null : "#d2dae2";
@@ -33,20 +42,27 @@ function FaceThumbnail({ style, isDark, sex, size = 56 }) {
   return (
     <svg
       width={size}
-      height={size * ((headBox.h + pad) / (headBox.w + pad * 2))}
-      viewBox={viewBox}
+      height={size * (vbH / vbW)}
+      viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
       style={{ display: "block" }}
     >
-      {body.FRONT_SILHOUETTE.map((p, i) => (
-        <path
-          key={i}
-          d={p.d}
-          fill={p.fill === "none" ? "none" : silhouetteFill}
-          stroke={silhouetteStroke ?? undefined}
-          strokeWidth={silhouetteStroke ? 1.4 : undefined}
-        />
-      ))}
-      <g transform={faceTransform}>{style.front()}</g>
+      <defs>
+        <clipPath id={clipId}>
+          <ellipse cx={vbX + vbW / 2} cy={vbY + vbH / 2} rx={vbW / 2} ry={vbH / 2} />
+        </clipPath>
+      </defs>
+      <g clipPath={`url(#${clipId})`}>
+        {body.FRONT_SILHOUETTE.map((p, i) => (
+          <path
+            key={i}
+            d={p.d}
+            fill={p.fill === "none" ? "none" : silhouetteFill}
+            stroke={silhouetteStroke ?? undefined}
+            strokeWidth={silhouetteStroke ? 1.4 : undefined}
+          />
+        ))}
+        <g transform={faceTransform}>{style.front()}</g>
+      </g>
     </svg>
   );
 }
@@ -138,6 +154,180 @@ function FaceStylePicker({ isDark, isMobile, tk, value, onChange, sex }) {
             </button>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// Mismo texto que `RegisterForm` (la entrevista inicial) para los objetivos: son el valor que ya
+// puede llevar guardado un perfil antiguo, así que cambiar la lista rompería su selección actual.
+const GOAL_OPTIONS = ['Ganar masa muscular', 'Perder peso', 'Mejorar resistencia', 'Mantenimiento', 'Ganar fuerza'];
+
+const KG_TO_LB = 2.20462;
+const CM_TO_FT = 30.48;
+
+/** Redondea a 1 decimal y devuelve número, no string — para no ir arrastrando "70.0000000004". */
+function round1(n) {
+  return Math.round(n * 10) / 10;
+}
+
+/**
+ * Peso, altura y objetivo son las tres preguntas de `RegisterForm` ("la entrevista inicial") que se
+ * piden UNA vez, al completar el perfil, y que hasta ahora no había ningún sitio para volver a
+ * tocar: ni el perfil (que sólo edita nombre/usuario/foto/sexo) ni Medidas (que sólo guarda la
+ * *unidad* preferida, no estos valores). Ajustes es el lugar natural: es donde vive el resto de
+ * "cómo quiero que se comporte la app conmigo".
+ */
+function PhysicalProfileSection({ isDark, isMobile, tk, user, saveUser }) {
+  const weightUnit = user?.weightUnit === 'lb' ? 'lb' : 'kg';
+  const heightUnit = user?.heightUnit === 'ft' ? 'ft' : 'cm';
+
+  // Estado local de los inputs: sin él, cada pulsación de tecla dispararía un guardado (local Y en
+  // la nube, ver `saveUser` en UserContext) — aquí sólo se confirma al salir del campo.
+  const [weightDraft, setWeightDraft] = useState(user?.weight ?? '');
+  const [heightDraft, setHeightDraft] = useState(user?.height ?? '');
+
+  useEffect(() => { setWeightDraft(user?.weight ?? ''); }, [user?.weight]);
+  useEffect(() => { setHeightDraft(user?.height ?? ''); }, [user?.height]);
+
+  const commitWeight = () => {
+    const num = parseFloat(weightDraft);
+    if (!Number.isFinite(num)) { setWeightDraft(user?.weight ?? ''); return; }
+    if (num === user?.weight) return;
+    saveUser({ ...(user || {}), weight: num, weightUnit });
+  };
+
+  const commitHeight = () => {
+    const num = parseFloat(heightDraft);
+    if (!Number.isFinite(num)) { setHeightDraft(user?.height ?? ''); return; }
+    if (num === user?.height) return;
+    saveUser({ ...(user || {}), height: num, heightUnit });
+  };
+
+  const changeWeightUnit = (unit) => {
+    if (unit === weightUnit) return;
+    const num = parseFloat(weightDraft);
+    const converted = Number.isFinite(num) ? round1(unit === 'lb' ? num * KG_TO_LB : num / KG_TO_LB) : weightDraft;
+    setWeightDraft(converted);
+    saveUser({ ...(user || {}), weight: Number.isFinite(num) ? converted : user?.weight, weightUnit: unit });
+  };
+
+  const changeHeightUnit = (unit) => {
+    if (unit === heightUnit) return;
+    const num = parseFloat(heightDraft);
+    const converted = Number.isFinite(num) ? round1(unit === 'ft' ? num / CM_TO_FT : num * CM_TO_FT) : heightDraft;
+    setHeightDraft(converted);
+    saveUser({ ...(user || {}), height: Number.isFinite(num) ? converted : user?.height, heightUnit: unit });
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '12px 14px',
+    backgroundColor: tk.surfaceAlt,
+    border: `1.5px solid ${tk.border}`,
+    borderRadius: tk.radius.sm,
+    color: tk.text,
+    fontSize: '1rem',
+    outline: 'none',
+    boxSizing: 'border-box',
+  };
+
+  const unitToggle = (options, value, onChange) => (
+    <div style={{ display: 'flex', gap: '6px' }}>
+      {options.map((opt) => {
+        const active = value === opt;
+        return (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => onChange(opt)}
+            style={{
+              padding: '8px 14px',
+              borderRadius: tk.radius.sm,
+              border: `1.5px solid ${active ? tk.accent : tk.border}`,
+              backgroundColor: active ? tk.accentSoft : 'transparent',
+              color: active ? tk.accent : tk.textMuted,
+              fontWeight: active ? 700 : 500,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              transition: tk.transition,
+            }}
+          >
+            {opt}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+      <div>
+        <span style={{ color: tk.text, fontSize: '1.1rem', fontWeight: 600 }}>Datos físicos y objetivo</span>
+        <div style={{ color: tk.textMuted, fontSize: '0.85rem', marginTop: '2px' }}>
+          Lo que respondiste al completar tu perfil. Puedes cambiarlo cuando quieras.
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '15px' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <span style={{ color: tk.textMuted, fontSize: '0.85rem' }}>Peso</span>
+          {unitToggle(['kg', 'lb'], weightUnit, changeWeightUnit)}
+          <input
+            type="number"
+            step="0.1"
+            inputMode="decimal"
+            value={weightDraft}
+            onChange={(e) => setWeightDraft(e.target.value)}
+            onBlur={commitWeight}
+            placeholder="0.0"
+            style={inputStyle}
+          />
+        </div>
+
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <span style={{ color: tk.textMuted, fontSize: '0.85rem' }}>Altura</span>
+          {unitToggle(['cm', 'ft'], heightUnit, changeHeightUnit)}
+          <input
+            type="number"
+            step="0.1"
+            inputMode="decimal"
+            value={heightDraft}
+            onChange={(e) => setHeightDraft(e.target.value)}
+            onBlur={commitHeight}
+            placeholder="0.0"
+            style={inputStyle}
+          />
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <span style={{ color: tk.textMuted, fontSize: '0.85rem' }}>Objetivo</span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          {GOAL_OPTIONS.map((goal) => {
+            const active = user?.goal === goal;
+            return (
+              <button
+                key={goal}
+                type="button"
+                onClick={() => saveUser({ ...(user || {}), goal })}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: tk.radius.sm,
+                  border: `1.5px solid ${active ? tk.accent : tk.border}`,
+                  backgroundColor: active ? tk.accentSoft : 'transparent',
+                  color: active ? tk.accent : tk.text,
+                  fontWeight: active ? 700 : 500,
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                  transition: tk.transition,
+                }}
+              >
+                {goal}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -252,6 +442,16 @@ export default function Settings() {
             </div>
           )}
         </div>
+
+        {user && (
+          <>
+            <div style={{ height: "1px", backgroundColor: tk.border }} />
+
+            {/* Peso, altura y objetivo: las tres preguntas de RegisterForm ("la entrevista
+                inicial") que antes sólo se contestaban una vez y no había dónde volver a editar. */}
+            <PhysicalProfileSection isDark={isDark} isMobile={isMobile} tk={tk} user={user} saveUser={saveUser} />
+          </>
+        )}
 
         <div style={{ height: "1px", backgroundColor: tk.border }} />
 

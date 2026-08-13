@@ -156,12 +156,14 @@ function ExerciseCard({
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ color: tk.accent, fontSize: "0.67rem", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>{t("progression_title")}</div>
-            <div style={{ color: tk.text, fontSize: "0.84rem", fontWeight: 700, marginTop: "4px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {/* El dato accionable (peso/reps sugeridos) es lo único que importa decidir de un
+                vistazo — se separa a su propia línea, notablemente más grande que el resto de la
+                tarjeta, para que no compita en tamaño con el "· basado en" ni con el motivo. */}
+            <div style={{ color: tk.text, fontSize: "1.15rem", fontWeight: 800, letterSpacing: "-0.02em", marginTop: "3px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.15 }}>
               {primaryRecommendation.weight !== null && primaryRecommendation.weight !== undefined ? `${primaryRecommendation.weight}${weightUnit}` : ""} {primaryRecommendation.reps !== null && primaryRecommendation.reps !== undefined ? `× ${primaryRecommendation.reps}` : ""}
-              <span style={{ color: tk.textFaint, fontWeight: 500 }}> · {t(`recommendation_${primaryRecommendation.decision}`)}</span>
             </div>
-            <div style={{ color: tk.textMuted, fontSize: "0.72rem", marginTop: "3px" }}>
-              {t("progression_based_on")} {previousSeries?.[firstRecommendationIndex]?.weight}{weightUnit} × {previousSeries?.[firstRecommendationIndex]?.reps}
+            <div style={{ color: tk.textFaint, fontSize: "0.72rem", fontWeight: 600, marginTop: "3px" }}>
+              {t(`recommendation_${primaryRecommendation.decision}`)} · {t("progression_based_on")} {previousSeries?.[firstRecommendationIndex]?.weight}{weightUnit} × {previousSeries?.[firstRecommendationIndex]?.reps}
             </div>
           </div>
           <button
@@ -206,12 +208,15 @@ function ExerciseCard({
           className={`feeg-series-grid ${readOnly ? (showRir ? "feeg-series-grid--readonly-rir" : "feeg-series-grid--readonly") : showRir ? "feeg-series-grid--rir" : "feeg-series-grid--no-rir"}`}
           style={{
             display: "grid",
-            marginBottom: "10px",
+            marginBottom: "8px",
+            padding: "8px 8px",
+            borderRadius: tk.radius.sm,
+            backgroundColor: tk.surfaceAlt,
             color: tk.textFaint,
-            fontSize: "0.75rem",
-            fontWeight: 600,
+            fontSize: "0.7rem",
+            fontWeight: 700,
             textTransform: "uppercase",
-            letterSpacing: "0.5px",
+            letterSpacing: "0.06em",
           }}
         >
           <div>SERIE</div>

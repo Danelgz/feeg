@@ -23,6 +23,20 @@ function SeriesRow({
   const [showRecordHighlight, setShowRecordHighlight] = useState(false);
   const [glow, setGlow] = useState({ shadow: "0 0 0 rgba(46,230,197,0)", transition: "box-shadow 0s linear" });
 
+  // Pulso en el botón de check al completar una serie — no al montar ya completada (sesión
+  // restaurada) ni al desmarcarla, solo en la transición real false→true del usuario.
+  const wasCompletedRef = useRef(serie.completed);
+  const [checkPulse, setCheckPulse] = useState(false);
+  useEffect(() => {
+    if (!readOnly && serie.completed && !wasCompletedRef.current) {
+      setCheckPulse(true);
+      const timeout = setTimeout(() => setCheckPulse(false), 550);
+      wasCompletedRef.current = serie.completed;
+      return () => clearTimeout(timeout);
+    }
+    wasCompletedRef.current = serie.completed;
+  }, [serie.completed, readOnly]);
+
   useEffect(() => {
     if (isPR && !wasPRRef.current) {
       wasPRRef.current = true;
@@ -148,7 +162,12 @@ function SeriesRow({
             type="button"
             onClick={onToggleComplete}
             aria-label={serie.completed ? "Serie completada" : "Marcar serie como completada"}
-            style={{ width: 30, height: 30, borderRadius: "50%", border: `1.5px solid ${serie.completed ? tk.accent : tk.border}`, backgroundColor: serie.completed ? tk.accent : "transparent", color: serie.completed ? tk.onAccent : tk.textFaint, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+            className={checkPulse ? "feeg-check-pulse" : undefined}
+            style={{
+              position: "relative",
+              width: 30, height: 30, borderRadius: "50%", border: `1.5px solid ${serie.completed ? tk.accent : tk.border}`, backgroundColor: serie.completed ? tk.accent : "transparent", color: serie.completed ? tk.onAccent : tk.textFaint, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+              "--feeg-pulse-color": tk.accent,
+            }}
           >
             <Icon name="check" size={15} />
           </button>

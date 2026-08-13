@@ -38,11 +38,48 @@ const pressHandlers = {
   onMouseLeave: (e) => (e.currentTarget.style.transform = "scale(1)"),
 };
 
+const RING_SIZE = 60;
+const RING_STROKE = 4;
+const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
+/** Anillo de progreso del descanso, dibujado alrededor del número de cuenta atrás — de un vistazo
+ *  se lee "cuánto queda" por la forma del anillo, sin tener que leer el número. Sustituye a la
+ *  barra horizontal de 3px que iba arriba de toda la pantalla: fácil de no ver, y desconectada del
+ *  número al que se refería. */
+function RestRing({ progress, color, trackColor }) {
+  const offset = RING_CIRCUMFERENCE * (1 - progress);
+  return (
+    <svg
+      width={RING_SIZE}
+      height={RING_SIZE}
+      viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+      style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)" }}
+      aria-hidden="true"
+    >
+      <circle cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RING_RADIUS} fill="none" stroke={trackColor} strokeWidth={RING_STROKE} />
+      <circle
+        cx={RING_SIZE / 2}
+        cy={RING_SIZE / 2}
+        r={RING_RADIUS}
+        fill="none"
+        stroke={color}
+        strokeWidth={RING_STROKE}
+        strokeLinecap="round"
+        strokeDasharray={RING_CIRCUMFERENCE}
+        strokeDashoffset={offset}
+        style={{ transition: "stroke-dashoffset 1s linear, stroke 400ms ease" }}
+      />
+    </svg>
+  );
+}
+
 /**
  * Barra de descanso a todo lo ancho, fija en la parte inferior de la pantalla (mismo lenguaje
  * visual que apps de referencia como Hevy, con los colores propios de FEEG). Sustituye la pastilla
- * flotante anterior — más legible, botones más fáciles de acertar con el pulgar, y una barra de
- * progreso real (no solo el número) que se vuelve ámbar en los últimos 5s como aviso.
+ * flotante anterior — más legible, botones más fáciles de acertar con el pulgar, y un anillo de
+ * progreso real alrededor del número (no solo el número) que se vuelve ámbar en los últimos 5s
+ * como aviso.
  */
 export default function FloatingRestTimer({
   restActive,
@@ -73,19 +110,6 @@ export default function FloatingRestTimer({
         zIndex: 1500,
       }}
     >
-      {restActive && (
-        <div style={{ height: "3px", backgroundColor: tk.surfaceAlt }}>
-          <div
-            style={{
-              height: "100%",
-              width: `${progress * 100}%`,
-              backgroundColor: isFinalStretch ? tk.warning : tk.accent,
-              transition: "width 1s linear, background-color 400ms ease",
-            }}
-          />
-        </div>
-      )}
-
       <div
         style={{
           backgroundColor: tk.surface,
@@ -106,7 +130,7 @@ export default function FloatingRestTimer({
               −10
             </button>
 
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, minWidth: 0, gap: "4px" }}>
               <span
                 style={{
                   fontSize: "0.65rem",
@@ -115,25 +139,27 @@ export default function FloatingRestTimer({
                   letterSpacing: "0.05em",
                   color: tk.accent,
                   lineHeight: 1,
-                  marginBottom: "3px",
                 }}
               >
                 {translate("rest_prefix")}
               </span>
-              <span
-                style={{
-                  fontWeight: 800,
-                  fontSize: "1.9rem",
-                  fontVariantNumeric: "tabular-nums",
-                  lineHeight: 1,
-                  color: tk.text,
-                  display: "inline-block",
-                  transform: isFinalStretch ? "scale(1.08)" : "scale(1)",
-                  transition: "transform 300ms ease",
-                }}
-              >
-                {formatMinSec(restRemainingSeconds)}
-              </span>
+              <div style={{ position: "relative", width: RING_SIZE, height: RING_SIZE, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <RestRing progress={progress} color={isFinalStretch ? tk.warning : tk.accent} trackColor={tk.surfaceAlt} />
+                <span
+                  style={{
+                    fontWeight: 800,
+                    fontSize: "1.05rem",
+                    fontVariantNumeric: "tabular-nums",
+                    lineHeight: 1,
+                    color: tk.text,
+                    display: "inline-block",
+                    transform: isFinalStretch ? "scale(1.1)" : "scale(1)",
+                    transition: "transform 300ms ease",
+                  }}
+                >
+                  {formatMinSec(restRemainingSeconds)}
+                </span>
+              </div>
             </div>
 
             <button onClick={() => onAdjust(10)} style={adjustBtnStyle(tk)} {...pressHandlers}>

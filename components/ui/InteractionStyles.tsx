@@ -130,6 +130,35 @@ export default function InteractionStyles() {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
       }
 
+      /* Pulso al completar algo (p. ej. marcar una serie). Es la acción más repetida de todo un
+         entreno (puede pasar 20-30 veces por sesión), así que merece su propio feedback aparte
+         del genérico .feeg-press: un rebote de escala más el anillo de ::after expandiéndose y
+         desvaneciéndose. Se dispara una vez añadiendo la clase (el consumidor la quita tras la
+         animación); requiere position: relative en el elemento para que el anillo se ancle bien.
+         Color configurable con --feeg-pulse-color (por defecto currentColor). */
+      .feeg-check-pulse {
+        animation: feegCheckPulse 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      @keyframes feegCheckPulse {
+        0% { transform: scale(1); }
+        45% { transform: scale(1.32); }
+        100% { transform: scale(1); }
+      }
+      .feeg-check-pulse::after {
+        content: "";
+        position: absolute;
+        inset: -7px;
+        border-radius: 50%;
+        border: 2px solid var(--feeg-pulse-color, currentColor);
+        opacity: 0.85;
+        animation: feegCheckRing 550ms ease-out forwards;
+        pointer-events: none;
+      }
+      @keyframes feegCheckRing {
+        0% { transform: scale(0.55); opacity: 0.85; }
+        100% { transform: scale(2); opacity: 0; }
+      }
+
       @media (prefers-reduced-motion: reduce) {
         .feeg-press,
         .feeg-lift {
@@ -138,6 +167,10 @@ export default function InteractionStyles() {
         .feeg-press:active:not(:disabled),
         .feeg-lift:not(:disabled):hover {
           transform: none;
+        }
+        .feeg-check-pulse,
+        .feeg-check-pulse::after {
+          animation: none;
         }
       }
     `}</style>

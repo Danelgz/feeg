@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { getWorkoutTokens } from "../../lib/tokens";
 import { pickPrimaryPRType } from "../../lib/exerciseStats";
@@ -57,6 +57,74 @@ function buildRecordDeltaShort(record) {
   if (primary.type === "reps") return `+${Math.round(primary.deltaAbsolute)}`;
   if (primary.type === "oneRM") return `+${Math.round(primary.deltaPercent ?? 0)}%`;
   return `+${formatDelta(primary.deltaAbsolute)}${record.weightUnit}`;
+}
+
+/** Cuenta desde 0 hasta `target` con un ease-out, para que las cifras del cierre de sesión lleguen
+ *  "en movimiento" en vez de aparecer ya resueltas — es el momento de más motivación de todo el
+ *  entreno y merece algo más que texto estático. Se desactiva entera con reduced-motion. */
+function useCountUp(target, { duration = 900, active = true } = {}) {
+  const [value, setValue] = useState(active ? 0 : target);
+  const targetRef = useRef(target);
+  targetRef.current = target;
+
+  useEffect(() => {
+    if (!active) {
+      setValue(target);
+      return;
+    }
+    let raf;
+    const start = performance.now();
+    const tick = (now) => {
+      const elapsed = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - elapsed, 3);
+      setValue(targetRef.current * eased);
+      if (elapsed < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, active, duration]);
+
+  return value;
+}
+
+/** Confeti decorativo cuando la sesión trae algún logro (PR, récord de volumen, subida de rango).
+ *  Puramente aria-hidden — no comunica nada que no esté ya en el texto, así que desactivarlo con
+ *  reduced-motion no le quita información a nadie. */
+function SummaryConfetti({ tk }) {
+  const pieces = useMemo(
+    () =>
+      Array.from({ length: 22 }, (_, i) => ({
+        id: i,
+        left: Math.random() * 100,
+        delay: Math.random() * 0.35,
+        duration: 1.5 + Math.random() * 1,
+        width: 5 + Math.random() * 4,
+        rotate: Math.random() * 360,
+        drift: Math.round((Math.random() - 0.5) * 70),
+        color: [tk.accent, "#ffd166", "#ff8fa3", "#8ecae6"][i % 4],
+      })),
+    [tk.accent]
+  );
+
+  return (
+    <div className="summary-confetti" aria-hidden="true">
+      {pieces.map((p) => (
+        <span
+          key={p.id}
+          style={{
+            left: `${p.left}%`,
+            width: `${p.width}px`,
+            height: `${p.width * 0.4}px`,
+            backgroundColor: p.color,
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.duration}s`,
+            "--feeg-confetti-drift": `${p.drift}px`,
+            "--feeg-confetti-rotate": `${p.rotate}deg`,
+          }}
+        />
+      ))}
+    </div>
+  );
 }
 
 function AchievementOrbit({ hasAchievement, reducedMotion, tk }) {
@@ -127,6 +195,11 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
   const realRecords = prRecords.filter((r) => r.tier);
   const firstEverOnly = prRecords.filter((r) => !r.tier && r.isFirstEver);
   const hasAchievement = realRecords.length > 0 || !!workoutVolumeRecord || rankUps.length > 0;
+
+  const countActive = !prefersReducedMotion;
+  const durationCount = useCountUp(workout.elapsedTime || 0, { active: countActive, duration: 900 });
+  const volumeCount = useCountUp(workout.totalVolume || 0, { active: countActive, duration: 1100 });
+  const seriesCount = useCountUp(workout.series || 0, { active: countActive, duration: 800 });
   const hero = realRecords.length === 1 ? realRecords[0] : null;
   const details = workout?.exerciseDetails || workout?.details || [];
   const completedExerciseCount = workout.exercises || details.length;
@@ -192,6 +265,9 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
         .summary-page { width: min(100%, 1060px); margin: 0 auto; padding: clamp(28px, 6vw, 70px) clamp(18px, 5vw, 54px) 44px; box-sizing: border-box; }
         .summary-hero { position: relative; display: grid; grid-template-columns: 180px minmax(0, 1fr); align-items: center; gap: clamp(24px, 5vw, 70px); padding: clamp(26px, 5vw, 52px); border: 1px solid rgba(46,230,197,0.22); border-radius: 28px; background: linear-gradient(135deg, rgba(46,230,197,0.11), rgba(17,17,17,0.9) 42%, rgba(17,17,17,0.72)); box-shadow: 0 24px 80px rgba(0, 18, 15, 0.36), inset 0 1px rgba(255,255,255,0.07); overflow: hidden; }
         .summary-hero::after { content: ""; position: absolute; width: 360px; height: 360px; right: -160px; top: -210px; border-radius: 50%; border: 1px solid rgba(46,230,197,0.13); box-shadow: 0 0 0 32px rgba(46,230,197,0.035), 0 0 0 64px rgba(46,230,197,0.02); pointer-events: none; }
+        .summary-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
+        .summary-confetti span { position: absolute; top: -12px; border-radius: 2px; opacity: 0; animation-name: feeg-confetti-fall; animation-timing-function: cubic-bezier(0.25,0.46,0.45,0.94); animation-fill-mode: forwards; }
+        @keyframes feeg-confetti-fall { 0% { opacity: 0; transform: translate(0, 0) rotate(0deg); } 12% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--feeg-confetti-drift), 260px) rotate(var(--feeg-confetti-rotate)); } }
         .summary-hero-copy { position: relative; z-index: 1; min-width: 0; text-align: left; }
         .summary-eyebrow { color: ${tk.accent}; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 800; }
         .summary-orbit { position: relative; width: 156px; height: 156px; display: grid; place-items: center; margin: auto; }
@@ -221,6 +297,7 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
 
       <div className="summary-page">
         <motion.div variants={itemVariants} className="summary-hero">
+          {hasAchievement && !prefersReducedMotion && <SummaryConfetti tk={tk} />}
           <AchievementOrbit hasAchievement={hasAchievement} reducedMotion={prefersReducedMotion} tk={tk} />
           <div className="summary-hero-copy">
             <div className="summary-eyebrow">FEEG · {translate("summary_session_complete_label")}</div>
@@ -238,9 +315,9 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
         </motion.div>
 
         <motion.div variants={itemVariants} className="summary-metrics">
-          <Metric label={translate("duration_label")} value={formatDuration(workout.elapsedTime || 0)} tk={tk} delay={0.08} />
-          <Metric label={translate("volume")} value={`${formatValue(workout.totalVolume)} kg`} detail={translate("summary_total_load_detail")} tk={tk} delay={0.14} />
-          <Metric label={translate("series_label")} value={workout.series || 0} detail={`${completedExerciseCount} ${exerciseLabel}`} tk={tk} delay={0.2} />
+          <Metric label={translate("duration_label")} value={formatDuration(durationCount)} tk={tk} delay={0.08} />
+          <Metric label={translate("volume")} value={`${formatValue(volumeCount)} kg`} detail={translate("summary_total_load_detail")} tk={tk} delay={0.14} />
+          <Metric label={translate("series_label")} value={Math.round(seriesCount)} detail={`${completedExerciseCount} ${exerciseLabel}`} tk={tk} delay={0.2} />
         </motion.div>
 
         <div className="summary-content-grid">

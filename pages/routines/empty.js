@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import Layout from "../../components/Layout";
 import { useUser } from "../../context/UserContext";
@@ -37,6 +37,19 @@ export default function EmptyRoutine() {
   const [finishedWorkout, setFinishedWorkout] = useState(null);
   const [sessionPRRecords, setSessionPRRecords] = useState([]);
   const [sessionWorkoutVolumeRecord, setSessionWorkoutVolumeRecord] = useState(null);
+
+  // Salto automático al siguiente ejercicio: al completar la última serie pendiente de uno, el
+  // pager avanza solo tras un pequeño respiro (deja verse el pulso del check antes de moverse).
+  const pagerRef = useRef(null);
+  const handleToggleComplete = (exercise, serieUid) => {
+    const serie = exercise.series.find((s) => s.uid === serieUid);
+    const willComplete = !!serie && !serie.completed;
+    const wasLastPending = willComplete && exercise.series.every((s) => s.uid === serieUid || s.completed);
+    actions.toggleSeriesComplete(exercise.uid, serieUid);
+    if (wasLastPending) {
+      window.setTimeout(() => pagerRef.current?.scrollToNext(), 650);
+    }
+  };
 
   // Duración configurada del descanso en curso (no cambia con los ajustes +/-10s manuales) —
   // sirve para pintar la barra de progreso del temporizador de descanso.
@@ -332,6 +345,7 @@ export default function EmptyRoutine() {
         <WorkoutStatsBar mode="live" elapsedSeconds={elapsedSeconds} totalVolume={totals.totalVolume} totalSeries={totals.totalSeries} t={t} />
 
         <WorkoutExercisePager
+          ref={pagerRef}
           exercises={state.exercises}
           renderExercise={(exercise) => (
             <ExerciseCard
@@ -345,7 +359,7 @@ export default function EmptyRoutine() {
               progressionMode={user?.workoutPreferences?.progressionMode || "all"}
               onUpdateField={(serieUid, field, value) => actions.updateSeriesField(exercise.uid, serieUid, field, value)}
               onRirChange={(serieUid, value) => actions.updateSeriesRir(exercise.uid, serieUid, value)}
-              onToggleComplete={(serieUid) => actions.toggleSeriesComplete(exercise.uid, serieUid)}
+              onToggleComplete={(serieUid) => handleToggleComplete(exercise, serieUid)}
               onSetSeriesType={(serieUid, type) => actions.setSeriesType(exercise.uid, serieUid, type)}
               onAddSeries={() => actions.addSeries(exercise.uid)}
               onRemoveSeries={(serieUid) => actions.removeSeries(exercise.uid, serieUid)}

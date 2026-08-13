@@ -269,10 +269,13 @@ export default function MuscleMap({
 
               {/* La cara va DEBAJO de los músculos a propósito: si el cuello (un grupo entrenable
                   más) se solapa un poco con la caja de la cabeza, gana el color que informa sobre
-                  el que sólo decora. */}
-              <g transform={faceTransform} aria-hidden="true">
-                {view === 'front' ? faceStyle.front() : faceStyle.back()}
-              </g>
+                  el que sólo decora. Sólo hay dibujo frontal: sin pelo, la nuca calva ya la traza
+                  la silueta del cuerpo y no hace falta una vista posterior propia. */}
+              {view === 'front' && (
+                <g transform={faceTransform} aria-hidden="true">
+                  {faceStyle.front()}
+                </g>
+              )}
 
               {Object.entries(muscles).map(([groupKey, paths], groupIndex) => {
                 const group = groupKey as MuscleGroup;

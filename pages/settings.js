@@ -78,7 +78,7 @@ function FaceStylePicker({ isDark, isMobile, tk, value, onChange }) {
           Cómo se ve tu cuerpo en el mapa muscular y en Rangos.
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(3, 1fr)" : "repeat(5, 1fr)", gap: "10px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: "10px" }}>
         {FACE_STYLES.map((style) => {
           const active = (value || DEFAULT_FACE_STYLE_ID) === style.id;
           return (

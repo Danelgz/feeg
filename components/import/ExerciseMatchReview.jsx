@@ -92,7 +92,7 @@ export default function ExerciseMatchReview({ pending, onComplete, onCancel }) {
         </p>
       </header>
 
-      <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain", padding: "16px 20px 28px" }}>
+      <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain", padding: "16px 20px 128px" }}>
         <div style={{ maxWidth: "700px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "12px" }}>
           {items.map(({ foreignName, suggestion, occurrences }) => {
             const resolution = effectiveResolutions[foreignName];
@@ -145,7 +145,7 @@ export default function ExerciseMatchReview({ pending, onComplete, onCancel }) {
         </div>
       </div>
 
-      <footer style={{ flexShrink: 0, padding: "12px 20px", paddingBottom: "calc(12px + env(safe-area-inset-bottom))", borderTop: `1px solid ${tk.border}`, backgroundColor: tk.surface, display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "10px", position: "sticky", bottom: 0, zIndex: 1, boxSizing: "border-box", boxShadow: "0 -10px 30px rgba(0,0,0,0.18)" }}>
+      <footer className="exercise-match-footer" style={{ flexShrink: 0, padding: "12px 20px", paddingBottom: "calc(12px + env(safe-area-inset-bottom))", borderTop: `1px solid ${tk.border}`, backgroundColor: tk.surface, display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "10px", position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 2, boxSizing: "border-box", boxShadow: "0 -10px 30px rgba(0,0,0,0.18)" }}>
         <Button isDark={isDark} variant="secondary" onClick={onCancel} style={{ flex: "1 1 140px", minWidth: 0 }}>Cancelar</Button>
         <Button isDark={isDark} icon="check" onClick={() => onComplete(effectiveResolutions)} disabled={!allResolved} style={{ flex: "1 1 180px", minWidth: 0 }}>
           {allResolved ? "Confirmar conexiones" : `Confirma ${remaining} ${remainingLabel}`}
@@ -155,6 +155,8 @@ export default function ExerciseMatchReview({ pending, onComplete, onCancel }) {
       <style>{`
         @media (max-width: 520px) {
           .exercise-match-actions > button { flex: 1 1 100%; min-height: 42px; }
+          .exercise-match-footer { flex-direction: column; }
+          .exercise-match-footer > button { width: 100%; flex: 0 0 auto !important; min-height: 46px; }
         }
       `}</style>
 

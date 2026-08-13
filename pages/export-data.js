@@ -258,20 +258,11 @@ export default function ExportData() {
         }));
 
         const { resolved, pending } = resolveExerciseNames(uniqueNames);
+        const autoConnected = applyResolutions(workouts, resolved);
 
-        // La revisión es obligatoria incluso cuando el matcher ha conectado todos los nombres:
-        // así el usuario ve qué identidad ha elegido FEEG y puede corregirla antes de guardar.
-        // Los nombres automáticos entran ya confirmados; los dudosos quedan pendientes.
-        const reviewItems = uniqueNames.map((foreignName) => {
-          const unresolved = pending.find((item) => item.foreignName === foreignName);
-          return {
-            ...(unresolved || { foreignName, suggestion: null }),
-            resolution: resolved[foreignName] || null,
-            occurrences: occurrencesByName[foreignName] || 0,
-          };
-        });
-
-        if (reviewItems.length > 0) {
+        // Solo los nombres que no tienen una coincidencia segura requieren revisión manual.
+        // Las conexiones automáticas se aplican directamente; las dudosas quedan pendientes.
+        if (pending.length > 0) {
           setImportStatus("RevisiÃ³n obligatoria: confirma las conexiones antes de importar los datos.");
           setIsImporting(false);
           setPendingImport({
@@ -282,7 +273,10 @@ export default function ExportData() {
             workouts,
             weightMeasures,
             latestWeight,
-            pending: reviewItems,
+            pending: pending.map((item) => ({
+              ...item,
+              occurrences: occurrencesByName[item.foreignName] || 0,
+            })),
           });
           return;
         }

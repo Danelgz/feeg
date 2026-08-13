@@ -377,7 +377,7 @@ export default function EmptyRoutine() {
       </div>
 
       <style>{`
-        html, body { overflow-x: hidden; overscroll-behavior-x: none; }
+        html, body { overflow: hidden; overscroll-behavior: none; }
         .feeg-active-workout-viewport { max-width: 100%; }
       `}</style>
 

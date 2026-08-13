@@ -366,8 +366,17 @@ export default function Layout({ children, hideBottomNav = false }) {
                   className="page-transition"
                   style={{
                     flex: 1,
+                    minHeight: 0,
                     padding: currentIsMobile ? "0" : "20px",
-                    paddingBottom: currentIsMobile ? "80px" : "20px",
+                    // Los 80px son el hueco reservado para BottomNavigation — solo hace falta
+                    // cuando esa barra realmente se pinta debajo (ver más abajo). Reservarlo
+                    // también en pantallas con hideBottomNav (el modo entreno en vivo) dejaba la
+                    // página más alta que la pantalla, y ese sobrante hacía que el documento
+                    // entero se pudiera deslizar verticalmente — un tercer gesto de scroll
+                    // compitiendo con el scroll-snap del pager de ejercicios, que es el único que
+                    // debe cambiar de ejercicio. Con esto la página mide justo 100dvh y solo queda
+                    // el scroll interno del pager.
+                    paddingBottom: currentIsMobile ? (hideBottomNav ? "0" : "80px") : "20px",
                     backgroundColor: isDark ? "#0f0f0f" : "#f0f2f5",
                     color: isDark ? "#fff" : "#333",
                     transition: "background-color 0.3s ease",

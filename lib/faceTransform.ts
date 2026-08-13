@@ -18,7 +18,7 @@ export interface FaceViewBox {
  */
 export const FACE_VERTICAL_OFFSET_BY_BODY = {
   male: 0,
-  female: 10,
+  female: 20,
 } as const;
 
 /**

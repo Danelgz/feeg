@@ -11,6 +11,17 @@ export interface FaceViewBox {
 }
 
 /**
+ * Ajuste óptico de los rasgos dentro de la cabeza real de cada cuerpo. La cabeza femenina tiene
+ * una proporción más ancha y, con la misma caja normalizada, los rasgos necesitan bajar un poco
+ * para quedar centrados en la cara y no pegados a la frente. El valor está en unidades de la caja
+ * de la cara, antes de aplicar la escala del cuerpo.
+ */
+export const FACE_VERTICAL_OFFSET_BY_BODY = {
+  male: 0,
+  female: 10,
+} as const;
+
+/**
  * Transform SVG para encajar una cara (dibujada en su propia caja normalizada, ver
  * `data/faceStyles.tsx`) dentro de la caja real de una cabeza (ver `HEAD_BOX` en
  * `components/MuscleMap.tsx`), con escala UNIFORME y centrada — nunca estirada por separado en
@@ -35,11 +46,11 @@ export interface FaceViewBox {
  * alto que ancho, así que ahí sobra bastante alto — y la dejaba floja sobre la frente en vez de
  * asentada donde va la cara de verdad.
  */
-export function getFaceTransform(headBox: HeadBox, faceViewBox: FaceViewBox): string {
+export function getFaceTransform(headBox: HeadBox, faceViewBox: FaceViewBox, verticalOffset = 0): string {
   const scale = Math.min(headBox.w / faceViewBox.width, headBox.h / faceViewBox.height);
   const drawnWidth = faceViewBox.width * scale;
   const drawnHeight = faceViewBox.height * scale;
   const offsetX = headBox.x + (headBox.w - drawnWidth) / 2;
-  const offsetY = headBox.y + (headBox.h - drawnHeight);
+  const offsetY = headBox.y + (headBox.h - drawnHeight) + verticalOffset * scale;
   return `translate(${offsetX} ${offsetY}) scale(${scale})`;
 }

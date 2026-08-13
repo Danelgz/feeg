@@ -25,12 +25,21 @@ export interface FaceViewBox {
  *
  * La escala uniforme (el menor de los dos factores) deja algo de aire a los lados o arriba/abajo
  * según el cuerpo, pero la cara conserva siempre sus proporciones — nunca se ve estirada.
+ *
+ * El aire sobrante NO se reparte igual en los cuatro lados: en horizontal sí se centra (una cara
+ * es simétrica, no hay motivo para colgarla a un lado), pero en vertical se apoya por ABAJO — la
+ * barbilla coincide con el borde inferior del `HEAD_BOX` (que sí está bien anclado: es donde el
+ * cuello se estrecha) y todo el margen sobrante sube a la coronilla, que es zona de pelo/cráneo
+ * donde un poco más o menos de aire no se nota. Centrar en vertical (como hacía la primera
+ * versión) subía la cara más de la cuenta en la cabeza masculina — su HEAD_BOX es bastante más
+ * alto que ancho, así que ahí sobra bastante alto — y la dejaba floja sobre la frente en vez de
+ * asentada donde va la cara de verdad.
  */
 export function getFaceTransform(headBox: HeadBox, faceViewBox: FaceViewBox): string {
   const scale = Math.min(headBox.w / faceViewBox.width, headBox.h / faceViewBox.height);
   const drawnWidth = faceViewBox.width * scale;
   const drawnHeight = faceViewBox.height * scale;
   const offsetX = headBox.x + (headBox.w - drawnWidth) / 2;
-  const offsetY = headBox.y + (headBox.h - drawnHeight) / 2;
+  const offsetY = headBox.y + (headBox.h - drawnHeight);
   return `translate(${offsetX} ${offsetY}) scale(${scale})`;
 }

@@ -120,18 +120,34 @@ const ANATOMY: Record<BodySex, { viewBox: string; views: BodyView_[] }> = {
  *
  * - Masculina: la cabeza es el primer subtrazo, aislado, de FRONT_SILHOUETTE (bbox exacto).
  * - Femenina: la cabeza está fundida en el contorno completo del cuerpo (no hay subtrazo que
- *   aislar), así que se midió por bandas de altura, cortando donde el ancho se estrecha al cuello.
+ *   aislar), así que se midió punto a punto con un canvas oculto (`ctx.isPointInPath` barriendo la
+ *   lámina) en vez de a ojo: y=11 a y=166 (la primera versión) resultó estar midiendo el MOÑO del
+ *   peinado de la lámina, no la cabeza — la silueta femenina trae el pelo recogido fundido en el
+ *   mismo contorno que el cuerpo, sin subtrazo que lo separe (ver nota de "calvos" más abajo). Con
+ *   esa caja la cara se dibujaba encogida y desplazada hacia arriba, con las cejas invadiendo la
+ *   línea del moño. El barrido encuentra el óvalo real: se estrecha a cuello propiamente en y≈156,
+ *   así que la cabeza (moño aparte) va de y≈46 a y≈156.
  *
  * Frontal y posterior comparten la misma caja en los dos cuerpos: son la misma cabeza vista desde
  * dos ángulos sobre el mismo viewBox, no dos dibujos con proporciones distintas.
  *
- * Exportada: el selector de cara de Ajustes (`pages/settings.js`) la reutiliza para recortar la
- * miniatura de cada opción sobre la cabeza real del cuerpo del usuario, en vez de una silueta
+ * Exportada: el selector de cara de Ajustes (`pages/settings/preferences.js`) la reutiliza para recortar
+ * la miniatura de cada opción sobre la cabeza real del cuerpo del usuario, en vez de una silueta
  * genérica que no se parece a lo que va a ver luego en el mapa.
+ *
+ * ── Por qué la lámina femenina se sigue viendo con moño ──────────────────────────────────────
+ * Esta caja sólo controla DÓNDE se dibuja la cara; no puede quitar lo que ya está pintado en la
+ * lámina. El moño es parte de `data/muscleMapPathsFemale.ts`, generado al trazar
+ * `public/Ejemplochica.png` (ver cabecera de ese archivo) — la referencia fotografiada/dibujada
+ * lleva el pelo recogido, y el trazado automático no separa esa mecha del contorno del cuerpo como
+ * sí hace con la cabeza masculina (ahí la cabeza es un subtrazo propio y aislado). Quitarlo de
+ * verdad exige retrazar la lámina desde una referencia sin pelo, o añadir una excepción manual en
+ * `data/muscle-map-groups.female.json` que recorte esa mecha del contorno — no se puede arreglar
+ * sólo reposicionando esta caja.
  */
 export const HEAD_BOX: Record<BodySex, { x: number; y: number; w: number; h: number }> = {
   male: { x: 172, y: 11, w: 86, h: 134 },
-  female: { x: 150, y: 11, w: 105, h: 155 },
+  female: { x: 150, y: 45, w: 105, h: 108 },
 };
 
 function getIntensity(value: number, thresholds: [number, number, number, number]): IntensityLevel {

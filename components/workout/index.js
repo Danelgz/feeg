@@ -8,4 +8,5 @@ export { default as RestTimePickerModal } from "./RestTimePickerModal";
 export { default as FloatingRestTimer } from "./FloatingRestTimer";
 export { default as PRToast } from "./PRToast";
 export { default as ExerciseCard } from "./ExerciseCard";
+export { default as WorkoutExercisePager } from "./WorkoutExercisePager";
 export { default as WorkoutSummaryScreen } from "./WorkoutSummaryScreen";

@@ -9,8 +9,8 @@ import { getExerciseInfo, computeWorkoutTotals, buildPRRecordsFromExercises, che
 import { getLatestExerciseSeries } from "../../lib/workoutRecommendations";
 import { getWorkoutTokens } from "../../lib/tokens";
 import { translateExerciseName } from "../../lib/exerciseTranslation";
-import { ConfirmModal, Spinner } from "../../components/ui";
-import { ExerciseCard, WorkoutHeader, WorkoutStatsBar, FloatingRestTimer, WorkoutSummaryScreen, PRToast } from "../../components/workout";
+import { ConfirmModal, Icon, Spinner } from "../../components/ui";
+import { ExerciseCard, WorkoutHeader, WorkoutStatsBar, WorkoutExercisePager, FloatingRestTimer, WorkoutSummaryScreen, PRToast } from "../../components/workout";
 
 export default function RoutineDetail() {
   const router = useRouter();
@@ -409,13 +409,27 @@ export default function RoutineDetail() {
   // ongoing
   return (
     <Layout hideBottomNav>
-      <div className="feeg-active-workout-viewport" style={{ maxWidth: "900px", width: "100%", margin: "0 auto", overflowX: "hidden", touchAction: "pan-y", overscrollBehaviorX: "none" }}>
+      <div className="feeg-active-workout-viewport" style={{ maxWidth: "900px", width: "100%", height: "100dvh", minHeight: 0, margin: "0 auto", display: "flex", flexDirection: "column", overflow: "hidden", touchAction: "pan-y", overscrollBehaviorX: "none" }}>
         <WorkoutHeader mode="live" title={state.name || foundRoutine?.name} onBack={() => setShowDiscardConfirm(true)} primaryLabel={t("finish_button")} onPrimaryAction={() => setShowFinishConfirm(true)} />
 
         <WorkoutStatsBar mode="live" elapsedSeconds={elapsedSeconds} totalVolume={totals.totalVolume} totalSeries={totals.totalSeries} t={t} />
 
-        <div style={{ padding: "20px 15px 100px" }}>
-          {state.exercises.map((exercise) => (
+        <WorkoutExercisePager
+          exercises={state.exercises}
+          previousLabel={t("previous_exercise")}
+          nextLabel={t("next_exercise")}
+          lastAction={
+            <button
+              type="button"
+              onClick={() => setShowExerciseSelector(true)}
+              aria-label={t("add_exercise")}
+              title={t("add_exercise")}
+              style={{ width: 36, height: 36, display: "grid", placeItems: "center", border: `1px solid ${tk.accent}`, borderRadius: tk.radius.full, background: tk.accentSoft, color: tk.accent, cursor: "pointer" }}
+            >
+              <Icon name="plus" size={17} />
+            </button>
+          }
+          renderExercise={(exercise) => (
             <ExerciseCard
               key={exercise.uid}
               exercise={exercise}
@@ -440,15 +454,8 @@ export default function RoutineDetail() {
               onDeleteExercise={() => actions.removeExercise(exercise.uid)}
               onOpenHistory={() => router.push(`/exercise-history?exercise=${encodeURIComponent(exercise.name)}`)}
             />
-          ))}
-
-          <button
-            onClick={() => setShowExerciseSelector(true)}
-            style={{ width: "100%", padding: "15px", backgroundColor: tk.accentSoft, color: tk.accent, border: `1px dashed ${tk.accent}`, borderRadius: "10px", fontWeight: "600", cursor: "pointer" }}
-          >
-            + {t("add_exercise")}
-          </button>
-        </div>
+          )}
+        />
       </div>
 
       <style>{`

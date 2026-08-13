@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
-import { getWorkoutsFeed, searchUsers, likeWorkout, addWorkoutComment } from "../lib/firebase";
+import { getWorkoutsFeed, getPublicWorkoutDocId, searchUsers, likeWorkout, addWorkoutComment } from "../lib/firebase";
 import { useRouter } from "next/router";
 import { getTokens } from "../lib/tokens";
 import { translateExerciseName } from "../lib/exerciseTranslation";
@@ -18,7 +18,7 @@ function formatFeedDuration(workout) {
 }
 
 export default function Home() {
-  const { user, authUser, isLoaded, following, handleFollow, handleUnfollow, isMobile, refreshData, t, language, theme, showNotification } = useUser();
+  const { user, authUser, isLoaded, following, completedWorkouts, handleFollow, handleUnfollow, isMobile, refreshData, t, language, theme, showNotification } = useUser();
   const [feedWorkouts, setFeedWorkouts] = useState([]);
   const [feedCursor, setFeedCursor] = useState(null);
   const [feedHasMore, setFeedHasMore] = useState(false);
@@ -38,6 +38,22 @@ export default function Home() {
   const isDark = theme === 'dark';
   const tk = getTokens(isDark);
 
+  // `getWorkoutsFeed` es una consulta puntual a Firestore, así que si se borra un entreno propio
+  // en /routines y se vuelve a Inicio antes de que ese borrado termine de propagarse (o si este
+  // feed ya estaba montado en memoria), seguiría apareciendo hasta el siguiente refetch. En vez de
+  // fiarnos a ciegas de lo que devuelve la consulta, se contrasta cada entreno propio contra
+  // `completedWorkouts` — la lista local, que ya es la fuente de verdad y se actualiza al
+  // instante en cualquier borrado (ver deleteCompletedWorkout en UserContext) — y se descarta el
+  // que ya no esté ahí. Los entrenos de otras personas no se tocan: solo se puede borrar lo propio.
+  const ownWorkoutDocIds = useMemo(() => {
+    if (!authUser) return null;
+    return new Set(completedWorkouts.map((w) => getPublicWorkoutDocId(authUser.uid, w.id)));
+  }, [authUser, completedWorkouts]);
+
+  const visibleFeedWorkouts = useMemo(() => {
+    if (!authUser || !ownWorkoutDocIds) return feedWorkouts;
+    return feedWorkouts.filter((w) => w.userId !== authUser.uid || ownWorkoutDocIds.has(w.id));
+  }, [feedWorkouts, ownWorkoutDocIds, authUser]);
 
   const getTimeAgo = (timestamp) => {
     if (!timestamp) return "";
@@ -350,7 +366,7 @@ export default function Home() {
 
         {/* Feed de Entrenamientos */}
         <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "0" : "20px", padding: isMobile ? "0" : "0" }}>
-          {feedWorkouts.length === 0 ? (
+          {visibleFeedWorkouts.length === 0 ? (
             <EmptyState
               isDark={isDark}
               icon="dumbbell"
@@ -358,7 +374,7 @@ export default function Home() {
               action={<Button isDark={isDark} icon="users" onClick={() => router.push("/recommended")}>{t("people_you_might_follow")}</Button>}
             />
           ) : (
-            feedWorkouts.map(workout => {
+            visibleFeedWorkouts.map(workout => {
               const liked = !!workout.likes?.includes(authUser?.uid);
               const exercises = workout.exerciseDetails || [];
               const showAllExercises = !!expandedExercisesFor[workout.id];

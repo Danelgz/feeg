@@ -139,7 +139,7 @@ export default function EmptyRoutine() {
           workout={finishedWorkout}
           prRecords={sessionPRRecords}
           workoutVolumeRecord={sessionWorkoutVolumeRecord}
-          onDone={() => router.push("/routines?tab=completed")}
+          onDone={() => router.push("/")}
           t={t}
         />
       </Layout>

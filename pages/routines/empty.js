@@ -100,7 +100,7 @@ export default function EmptyRoutine() {
       exerciseDetails: state.exercises.map((ex) => ({
         name: ex.name,
         muscleGroup: ex.muscleGroup,
-        series: ex.series.map((s) => ({ reps: s.reps, weight: s.weight, type: s.type })),
+        series: ex.series.map((s) => ({ reps: s.reps, weight: s.weight, type: s.type, rir: s.rir ?? "" })),
       })),
     };
 
@@ -297,6 +297,7 @@ export default function EmptyRoutine() {
               translateExerciseName={(name) => translateExerciseName(name, language)}
               previousSeries={undefined}
               onUpdateField={(serieUid, field, value) => actions.updateSeriesField(exercise.uid, serieUid, field, value)}
+              onRirChange={(serieUid, value) => actions.updateSeriesRir(exercise.uid, serieUid, value)}
               onToggleComplete={(serieUid) => actions.toggleSeriesComplete(exercise.uid, serieUid)}
               onSetSeriesType={(serieUid, type) => actions.setSeriesType(exercise.uid, serieUid, type)}
               onAddSeries={() => actions.addSeries(exercise.uid)}

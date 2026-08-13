@@ -172,6 +172,11 @@ export function useWorkoutSession({
       dispatch({ type: "UPDATE_SERIES_FIELD", exerciseUid, serieUid, field, value }),
     []
   );
+  const updateSeriesRir = useCallback(
+    (exerciseUid: string, serieUid: string, value: number | string) =>
+      dispatch({ type: "UPDATE_SERIES_RIR", exerciseUid, serieUid, value }),
+    []
+  );
   const setSeriesType = useCallback(
     (exerciseUid: string, serieUid: string, seriesType: SeriesType) =>
       dispatch({ type: "SET_SERIES_TYPE", exerciseUid, serieUid, seriesType }),
@@ -277,6 +282,7 @@ export function useWorkoutSession({
       addSeries,
       removeSeries,
       updateSeriesField,
+      updateSeriesRir,
       setSeriesType,
       toggleSeriesComplete,
       setExerciseRest,

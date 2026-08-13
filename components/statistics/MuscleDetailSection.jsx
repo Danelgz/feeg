@@ -21,7 +21,7 @@ export default function MuscleDetailSection({ isDark, isMobile, group, workouts,
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const weekWorkouts = (workouts || []).filter(w => w.completedAt && new Date(w.completedAt) >= weekAgo);
 
-  const index = computeExerciseIndex(weekWorkouts, (d) => d.muscleGroup === group);
+  const index = computeExerciseIndex(weekWorkouts, (d) => (d.muscleGroup || d.group) === group);
   const results = Object.values(index).sort((a, b) => b.volume - a.volume);
   const totalSeries = results.reduce((sum, r) => sum + r.series, 0);
   const totalVolume = results.reduce((sum, r) => sum + r.volume, 0);

@@ -1,6 +1,7 @@
 import { memo, useState } from "react";
 import { getWorkoutTokens } from "../../lib/tokens";
 import { weightUnitFor } from "../../lib/exerciseStats";
+import { getSetRecommendation } from "../../lib/workoutRecommendations";
 import { Icon, ConfirmModal } from "../ui";
 import ExerciseThumb from "./ExerciseThumb";
 import ExerciseActionsMenu from "./ExerciseActionsMenu";
@@ -26,6 +27,7 @@ function ExerciseCard({
   translate,
   translateExerciseName,
   onUpdateField,
+  onRirChange,
   onToggleComplete,
   onSetSeriesType,
   onAddSeries,
@@ -47,6 +49,8 @@ function ExerciseCard({
 
   const weightUnit = weightUnitFor(exercise);
   const isTimeBased = exercise.exerciseType === "time";
+  const showRir = mode === "live";
+  const seriesGrid = showRir ? "40px minmax(60px, 1fr) 62px 62px 52px 38px" : "40px 1fr 70px 70px 45px";
 
   let normalCount = 0;
   const effectiveIndexes = exercise.series.map((s) => {
@@ -56,6 +60,17 @@ function ExerciseCard({
     }
     return normalCount;
   });
+  const recommendations = exercise.series.map((serie, idx) =>
+    getSetRecommendation(previousSeries?.[idx], serie.reps, exercise.exerciseType)
+  );
+  const firstRecommendationIndex = recommendations.findIndex(Boolean);
+  const primaryRecommendation = firstRecommendationIndex >= 0 ? recommendations[firstRecommendationIndex] : null;
+  const primarySerie = firstRecommendationIndex >= 0 ? exercise.series[firstRecommendationIndex] : null;
+  const applyRecommendation = (serie, recommendation) => {
+    if (!serie || !recommendation) return;
+    if (recommendation.weight !== null && recommendation.weight !== undefined) onUpdateField(serie.uid, "weight", recommendation.weight);
+    if (recommendation.reps !== null && recommendation.reps !== undefined) onUpdateField(serie.uid, "reps", recommendation.reps);
+  };
 
   return (
     <div style={{ marginBottom: "40px" }}>
@@ -94,6 +109,43 @@ function ExerciseCard({
         </span>
       </div>
 
+      {mode === "live" && primaryRecommendation && primarySerie && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            marginBottom: "16px",
+            padding: "12px 14px",
+            borderRadius: tk.radius.md,
+            background: `linear-gradient(100deg, ${tk.accentSoft}, rgba(26,26,26,0.75))`,
+            border: `1px solid ${tk.accent}55`,
+            boxShadow: `0 8px 24px rgba(0, 18, 15, 0.24)`,
+          }}
+        >
+          <div style={{ width: "34px", height: "34px", display: "grid", placeItems: "center", flexShrink: 0, borderRadius: "11px", background: tk.accent, color: tk.onAccent }}>
+            <Icon name={primaryRecommendation.decision === "increase" ? "trendUp" : primaryRecommendation.decision === "decrease" ? "chevronLeft" : "arrowRight"} size={18} strokeWidth={2.4} />
+          </div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ color: tk.accent, fontSize: "0.67rem", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>{t("progression_title")}</div>
+            <div style={{ color: tk.text, fontSize: "0.84rem", fontWeight: 700, marginTop: "4px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {primaryRecommendation.weight !== null && primaryRecommendation.weight !== undefined ? `${primaryRecommendation.weight}${weightUnit}` : ""} {primaryRecommendation.reps !== null && primaryRecommendation.reps !== undefined ? `× ${primaryRecommendation.reps}` : ""}
+              <span style={{ color: tk.textFaint, fontWeight: 500 }}> · {t(`recommendation_${primaryRecommendation.decision}`)}</span>
+            </div>
+            <div style={{ color: tk.textMuted, fontSize: "0.72rem", marginTop: "3px" }}>
+              {t("progression_based_on")} {previousSeries?.[firstRecommendationIndex]?.weight}{weightUnit} × {previousSeries?.[firstRecommendationIndex]?.reps}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => applyRecommendation(primarySerie, primaryRecommendation)}
+            style={{ flexShrink: 0, border: `1px solid ${tk.accent}88`, borderRadius: "9px", padding: "8px 10px", background: "transparent", color: tk.accent, fontSize: "0.72rem", fontWeight: 800, cursor: "pointer" }}
+          >
+            {t("recommendation_apply")}
+          </button>
+        </div>
+      )}
+
       {mode === "live" && (
         <input
           type="text"
@@ -119,7 +171,7 @@ function ExerciseCard({
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "40px 1fr 70px 70px 45px",
+            gridTemplateColumns: seriesGrid,
             gap: "10px",
             marginBottom: "10px",
             color: tk.textFaint,
@@ -133,6 +185,7 @@ function ExerciseCard({
           <div>ANTERIOR</div>
           <div style={{ textAlign: "center" }}>{isTimeBased ? "TIEMPO" : weightUnit === "L" ? "LASTRE" : "KG"}</div>
           <div style={{ textAlign: "center" }}>{isTimeBased ? "KM/H" : "REPS"}</div>
+          {showRir && <div style={{ textAlign: "center" }}>RIR</div>}
           <div />
         </div>
 
@@ -142,11 +195,16 @@ function ExerciseCard({
             serie={serie}
             effectiveIndex={effectiveIndexes[idx]}
             previous={previousSeries?.[idx] || null}
+            recommendation={recommendations[idx]}
+            recommendationLabel={recommendations[idx] ? t(`recommendation_${recommendations[idx].decision}`) : ""}
+            recommendationActionLabel={t("recommendation_apply")}
             mode={mode}
             weightUnit={weightUnit}
             onFieldChange={(field, value) => onUpdateField(serie.uid, field, value)}
+            onRirChange={(value) => onRirChange?.(serie.uid, value)}
             onToggleComplete={() => onToggleComplete(serie.uid)}
             onOpenType={() => setTypeModalSerieUid(serie.uid)}
+            onApplyRecommendation={recommendations[idx] ? () => applyRecommendation(serie, recommendations[idx]) : undefined}
           />
         ))}
       </div>

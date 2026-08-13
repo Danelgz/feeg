@@ -338,6 +338,30 @@ describe("computeExerciseIndex", () => {
     const index = computeExerciseIndex(workouts, (d) => d.muscleGroup === "Bíceps");
     expect(Object.keys(index)).toEqual(["Curl con barra recta"]);
   });
+
+  it("reads legacy details when exerciseDetails exists but is empty", () => {
+    const index = computeExerciseIndex([
+      {
+        exerciseDetails: [],
+        details: [{ name: "Press importado", series: [{ reps: 8, weight: 40 }] }],
+      },
+    ]);
+
+    expect(index["Press importado"]).toMatchObject({ sessions: 1, series: 1, reps: 8, volume: 320 });
+  });
+
+  it("accepts alternate set and group fields used by older imported records", () => {
+    const index = computeExerciseIndex([
+      {
+        exerciseDetails: [{ name: "Remo importado", group: "Espalda", sets: [{ reps: 10, weight: 30 }] }],
+      },
+    ]);
+
+    expect(index["Remo importado"]).toMatchObject({ sessions: 1, series: 1, reps: 10, volume: 300 });
+    expect(computeSeriesByGroup([
+      { exerciseDetails: [{ name: "Remo importado", group: "Espalda", sets: [{ reps: 10, weight: 30 }] }] },
+    ])).toMatchObject({ Espalda: 1 });
+  });
 });
 
 describe("computeLongestStreak", () => {

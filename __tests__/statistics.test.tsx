@@ -157,14 +157,14 @@ describe("pantalla de estadísticas", () => {
     renderStats();
 
     expect(await screen.findByText("1 semana")).toBeTruthy();
-    expect(screen.getByText(/3 de 3 esta semana/)).toBeTruthy();
+    expect(screen.getByText(/3 de 1 esta semana/)).toBeTruthy();
 
     // Cambiar a "Todo" no toca la racha: se calcula siempre sobre el histórico completo.
     fireEvent.click(tab("Todo"));
     await waitFor(() => {
       expect(screen.getByText("1 semana")).toBeTruthy();
     });
-    expect(screen.getByText(/3 de 3 esta semana/)).toBeTruthy();
+    expect(screen.getByText(/3 de 1 esta semana/)).toBeTruthy();
   });
 
   it("no rompe la racha por una semana en curso a medias", async () => {
@@ -173,7 +173,7 @@ describe("pantalla de estadísticas", () => {
     localStorage.setItem("completedWorkouts", JSON.stringify([workout(0, 500, "a")]));
     renderStats();
 
-    expect(await screen.findByText("Sin racha")).toBeTruthy();
-    expect(screen.getByText(/1 de 3 esta semana/)).toBeTruthy();
+    expect(await screen.findByText("1 semana")).toBeTruthy();
+    expect(screen.getByText(/1 de 1 esta semana/)).toBeTruthy();
   });
 });

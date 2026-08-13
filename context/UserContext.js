@@ -555,8 +555,18 @@ export function UserProvider({ children }) {
     // siempre el mismo id (Date.parse(completedAt) + índice, determinista para el mismo archivo)
     // — sin este filtro se duplicaba el historial completo en cada reintento, contando volumen y
     // PRs dos veces en las estadísticas.
-    const incomingIds = new Set(workouts.map((w) => w.id));
-    const newList = [...workouts, ...completedWorkouts.filter((w) => !incomingIds.has(w.id))];
+    const incomingIds = new Set(workouts.map((w) => String(w.id)));
+    // Leer la caché en el momento de escribir evita que una reparación lanzada desde una página
+    // que acaba de sincronizar fusione contra una captura antigua de `completedWorkouts` y pierda
+    // cambios hechos en otra pestaña o durante la propia revisión.
+    let cachedWorkouts = completedWorkouts;
+    try {
+      const stored = JSON.parse(localStorage.getItem('completedWorkouts') || 'null');
+      if (Array.isArray(stored)) cachedWorkouts = stored;
+    } catch (_) {
+      // La memoria sigue siendo una fuente válida si la caché está corrupta.
+    }
+    const newList = [...workouts, ...cachedWorkouts.filter((w) => !incomingIds.has(String(w.id)))];
     newList.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
 
     setCompletedWorkouts(newList);

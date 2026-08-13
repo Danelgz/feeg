@@ -17,13 +17,18 @@ export interface CompletedSeries {
   reps: number | string;
   weight: number | string;
   type?: string;
+  rir?: number | string;
 }
 
 export interface CompletedExerciseDetail {
   name?: string;
   exercise?: string;
+  group?: string;
   muscleGroup?: string;
-  series: CompletedSeries[];
+  series?: CompletedSeries[];
+  /** Formatos antiguos/alternativos que ya pueden existir en historiales guardados. */
+  sets?: CompletedSeries[];
+  completedSets?: CompletedSeries[];
 }
 
 export interface CompletedWorkout {
@@ -53,7 +58,21 @@ export function getExerciseInfo(name: string): ExerciseCatalogInfo | null {
 export const ALL_MUSCLE_GROUPS: string[] = Object.keys(exercisesList);
 
 function detailsOf(w: CompletedWorkout): CompletedExerciseDetail[] {
-  return w.exerciseDetails || w.details || [];
+  // Algunos historiales antiguos conservan `exerciseDetails: []` y dejan los datos reales en
+  // `details`. Usar `||` aquí no sirve porque un array vacío es truthy y hace desaparecer toda la
+  // sesión de las estadísticas.
+  if (Array.isArray(w.exerciseDetails) && w.exerciseDetails.length > 0) return w.exerciseDetails;
+  if (Array.isArray(w.details) && w.details.length > 0) return w.details;
+  return Array.isArray(w.exerciseDetails) ? w.exerciseDetails : Array.isArray(w.details) ? w.details : [];
+}
+
+function seriesOf(detail: CompletedExerciseDetail): CompletedSeries[] {
+  const candidates = [detail.series, detail.sets, detail.completedSets];
+  const populated = candidates.find((candidate) => Array.isArray(candidate) && candidate.length > 0);
+  if (populated) return populated;
+  const empty = candidates.find((candidate) => Array.isArray(candidate));
+  if (empty) return empty;
+  return [];
 }
 
 /**
@@ -69,9 +88,9 @@ export function computeSeriesByGroup(
 
   (workouts || []).forEach((w) => {
     detailsOf(w).forEach((d) => {
-      const group = d.muscleGroup;
+      const group = d.muscleGroup || d.group;
       if (!group || !(group in counts)) return;
-      counts[group] += Array.isArray(d.series) ? d.series.length : 0;
+      counts[group] += seriesOf(d).length;
     });
   });
 
@@ -100,14 +119,15 @@ export function computeExerciseIndex(
   (workouts || []).forEach((w) => {
     detailsOf(w).forEach((d) => {
       const name = d.name || d.exercise;
-      if (!name || !Array.isArray(d.series) || d.series.length === 0) return;
+      const series = seriesOf(d);
+      if (!name || series.length === 0) return;
       if (filter && !filter(d)) return;
 
       if (!index[name]) index[name] = { name, sessions: 0, series: 0, reps: 0, volume: 0 };
       const entry = index[name];
       entry.sessions += 1;
-      entry.series += d.series.length;
-      d.series.forEach((s) => {
+      entry.series += series.length;
+      series.forEach((s) => {
         const reps = toNumber(s.reps);
         const weight = toNumber(s.weight);
         entry.reps += reps;
@@ -207,17 +227,18 @@ export function computePersonalRecords(completedWorkouts: CompletedWorkout[]): P
   const map: PersonalRecordsMap = {};
 
   (completedWorkouts || []).forEach((w) => {
-    const details = w.exerciseDetails || w.details || [];
+    const details = detailsOf(w);
     details.forEach((detail) => {
       const name = detail.name || detail.exercise;
-      if (!name || !Array.isArray(detail.series)) return;
+      const series = seriesOf(detail);
+      if (!name || series.length === 0) return;
 
       if (!map[name]) {
         map[name] = { byReps: {}, byWeight: {}, best1RM: 0, maxSingleSetVolume: 0 };
       }
       const record = map[name];
 
-      detail.series.forEach((s) => {
+      series.forEach((s) => {
         const weight = toNumber(s.weight);
         const reps = Math.round(toNumber(s.reps));
         if (weight <= 0 || reps <= 0) return;
@@ -492,15 +513,16 @@ export function computePRTimeline(completedWorkouts: CompletedWorkout[], limitCo
   const currentByExercise: Record<string, PRMilestone> = {};
 
   sorted.forEach((w) => {
-    const details = w.exerciseDetails || w.details || [];
+    const details = detailsOf(w);
     details.forEach((detail) => {
       const name = detail.name || detail.exercise;
-      if (!name || !Array.isArray(detail.series)) return;
+      const series = seriesOf(detail);
+      if (!name || series.length === 0) return;
 
       if (!map[name]) map[name] = { byReps: {}, byWeight: {}, best1RM: 0, maxSingleSetVolume: 0 };
       const record = map[name];
 
-      detail.series.forEach((s, idx) => {
+      series.forEach((s, idx) => {
         const weight = toNumber(s.weight);
         const reps = Math.round(toNumber(s.reps));
         if (weight <= 0 || reps <= 0) return;
@@ -577,7 +599,9 @@ export function computeLongestStreak(workouts: CompletedWorkout[]): number {
 }
 
 /** Entrenos por semana que hay que cumplir para que la semana cuente en la racha. */
-export const DEFAULT_WEEKLY_GOAL = 3;
+// Una semana cuenta con un solo entrenamiento: la racha premia la constancia sin exigir una
+// frecuencia concreta que no encaje con todos los objetivos o niveles de experiencia.
+export const DEFAULT_WEEKLY_GOAL = 1;
 
 export interface WeeklyStreakResult {
   /** Semanas consecutivas cumpliendo el objetivo, hasta la de hoy. */

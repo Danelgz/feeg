@@ -6,6 +6,7 @@ import ExerciseSelector from "../../components/ExerciseSelector";
 import { useWorkoutSession } from "../../hooks/useWorkoutSession";
 import { createExerciseFromCatalog } from "../../hooks/workoutSessionReducer";
 import { getExerciseInfo, computeWorkoutTotals, buildPRRecordsFromExercises, checkWorkoutVolumePR } from "../../lib/exerciseStats";
+import { getLatestExerciseSeries } from "../../lib/workoutRecommendations";
 import { getWorkoutTokens } from "../../lib/tokens";
 import { translateExerciseName } from "../../lib/exerciseTranslation";
 import { ConfirmModal, Spinner } from "../../components/ui";
@@ -71,12 +72,8 @@ export default function RoutineDetail() {
   const previousByName = useMemo(() => {
     const map = {};
     state.exercises.forEach((ex) => {
-      if (map[ex.name]) return;
-      const lastWorkout = (completedWorkouts || []).find((w) =>
-        (w.exerciseDetails || w.details || []).some((ed) => (ed.name || ed.exercise) === ex.name)
-      );
-      const detail = lastWorkout && (lastWorkout.exerciseDetails || lastWorkout.details || []).find((ed) => (ed.name || ed.exercise) === ex.name);
-      if (detail) map[ex.name] = detail.series;
+      const latestSeries = getLatestExerciseSeries(completedWorkouts || [], ex.name);
+      if (latestSeries) map[ex.name] = latestSeries;
     });
     return map;
   }, [state.exercises, completedWorkouts]);
@@ -150,7 +147,7 @@ export default function RoutineDetail() {
 
     const exerciseDetails = state.exercises
       .map((ex) => {
-        const completedSeries = ex.series.filter((s) => s.completed).map((s) => ({ reps: s.reps, weight: s.weight, type: s.type }));
+        const completedSeries = ex.series.filter((s) => s.completed).map((s) => ({ reps: s.reps, weight: s.weight, type: s.type, rir: s.rir ?? "" }));
         if (completedSeries.length === 0) return null;
         return { name: ex.name, muscleGroup: ex.muscleGroup, series: completedSeries };
       })
@@ -427,6 +424,7 @@ export default function RoutineDetail() {
               translateExerciseName={(name) => translateExerciseName(name, language)}
               previousSeries={previousByName[exercise.name]}
               onUpdateField={(serieUid, field, value) => actions.updateSeriesField(exercise.uid, serieUid, field, value)}
+              onRirChange={(serieUid, value) => actions.updateSeriesRir(exercise.uid, serieUid, value)}
               onToggleComplete={(serieUid) => actions.toggleSeriesComplete(exercise.uid, serieUid)}
               onSetSeriesType={(serieUid, type) => actions.setSeriesType(exercise.uid, serieUid, type)}
               onAddSeries={() => actions.addSeries(exercise.uid)}

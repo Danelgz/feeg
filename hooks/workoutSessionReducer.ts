@@ -20,6 +20,8 @@ export interface SeriesEntry {
   prTier: PRTier | null;
   /** Uno por cada tipo de récord conseguido (peso, reps, 1RM, volumen de la serie). */
   prTypes: PRTypeResult[];
+  /** Repeticiones en reserva declaradas por el usuario (0 = fallo, 5 = muy lejos del fallo). */
+  rir: number | string;
 }
 
 export interface ExerciseSession {
@@ -62,6 +64,7 @@ export function createSeries(overrides: Partial<SeriesEntry> = {}): SeriesEntry 
     isFirstEver: false,
     prTier: null,
     prTypes: [],
+    rir: "",
     ...overrides,
   };
 }
@@ -118,7 +121,7 @@ export function createSessionFromRoutine(
       restSeconds: ex.rest ?? 60,
       notes: ex.notes || "",
       series: (ex.series || []).map((s: any) =>
-        createSeries({ type: s.type || "N", reps: s.reps ?? "", weight: s.weight ?? "" })
+      createSeries({ type: s.type || "N", reps: s.reps ?? "", weight: s.weight ?? "", rir: s.rir ?? "" })
       ),
     })),
   };
@@ -133,6 +136,7 @@ export type WorkoutSessionAction =
   | { type: "ADD_SERIES"; exerciseUid: string; duplicateLast?: boolean }
   | { type: "REMOVE_SERIES"; exerciseUid: string; serieUid: string }
   | { type: "UPDATE_SERIES_FIELD"; exerciseUid: string; serieUid: string; field: "reps" | "weight"; value: number | string }
+  | { type: "UPDATE_SERIES_RIR"; exerciseUid: string; serieUid: string; value: number | string }
   | { type: "SET_SERIES_TYPE"; exerciseUid: string; serieUid: string; seriesType: SeriesType }
   | { type: "TOGGLE_SERIES_COMPLETE"; exerciseUid: string; serieUid: string; prResult: PRCheckResult | null }
   | { type: "SET_EXERCISE_REST"; exerciseUid: string; restSeconds: number }
@@ -213,6 +217,21 @@ export function workoutSessionReducer(
                 ...ex,
                 series: ex.series.map((s) =>
                   s.uid !== action.serieUid ? s : { ...s, [action.field]: action.value }
+                ),
+              }
+        ),
+      };
+
+    case "UPDATE_SERIES_RIR":
+      return {
+        ...state,
+        exercises: state.exercises.map((ex) =>
+          ex.uid !== action.exerciseUid
+            ? ex
+            : {
+                ...ex,
+                series: ex.series.map((s) =>
+                  s.uid !== action.serieUid ? s : { ...s, rir: action.value }
                 ),
               }
         ),

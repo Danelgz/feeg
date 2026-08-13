@@ -74,14 +74,78 @@ export default function ExportData() {
   // (omitidos, o directamente ya conectados de forma automática por resolveExerciseNames) se
   // dejan tal y como los dejó parseHevyCSV.
   const applyResolutions = (workouts, resolutions) => {
-    return workouts.map((w) => ({
-      ...w,
-      exerciseDetails: w.exerciseDetails.map((ex) => {
-        const resolution = resolutions[ex.name];
-        if (!resolution) return ex;
-        return { ...ex, name: resolution.name, muscleGroup: resolution.group, group: resolution.group };
-      }),
-    }));
+    return workouts.map((w) => {
+      const detailsKey = Array.isArray(w.exerciseDetails) ? "exerciseDetails" : "details";
+      const details = w[detailsKey] || [];
+      return {
+        ...w,
+        [detailsKey]: details.map((ex) => {
+          const resolution = resolutions[ex.name || ex.exercise];
+          if (!resolution) return ex;
+          return { ...ex, name: resolution.name, muscleGroup: resolution.group, group: resolution.group };
+        }),
+      };
+    });
+  };
+
+  const exerciseNamesIn = (workouts) => {
+    const names = [];
+    const seen = new Set();
+    (workouts || []).forEach((w) => {
+      (w.exerciseDetails || w.details || []).forEach((ex) => {
+        const name = ex.name || ex.exercise;
+        if (name && !seen.has(name)) {
+          seen.add(name);
+          names.push(name);
+        }
+      });
+    });
+    return names;
+  };
+
+  const changedWorkoutsOnly = (originalWorkouts, repairedWorkouts) => {
+    const originalById = new Map((originalWorkouts || []).map((w) => [String(w.id), w]));
+    return repairedWorkouts.filter((workout) => {
+      const original = originalById.get(String(workout.id));
+      if (!original) return false;
+      const before = original.exerciseDetails || original.details || [];
+      const after = workout.exerciseDetails || workout.details || [];
+      return after.some((ex, index) => {
+        const old = before[index];
+        return !old || (ex.name || ex.exercise) !== (old.name || old.exercise) || ex.muscleGroup !== old.muscleGroup;
+      });
+    });
+  };
+
+  const finalizeRepair = async (repairedWorkouts, originalWorkouts) => {
+    try {
+      const changed = changedWorkoutsOnly(originalWorkouts, repairedWorkouts);
+      if (changed.length === 0) {
+        setImportStatus("No se encontraron conexiones nuevas que reparar.");
+        return;
+      }
+
+      setIsImporting(true);
+      setImportStatus(`Reparando ${changed.length} entrenamientos...`);
+      // Persistimos el historial reparado completo, no solo las filas que cambiaron. Así la
+      // escritura local y la de Firestore quedan alineadas y una sincronización posterior no
+      // puede recuperar una versión parcial de la reparación.
+      const syncResult = await bulkSaveWorkouts(repairedWorkouts);
+      if (syncResult && syncResult.ok === false) {
+        setImportWarning(true);
+        setImportStatus(`Se repararon en este dispositivo, pero no se pudieron sincronizar con la nube: ${syncResult.message || "error desconocido"}`);
+        return;
+      }
+      setImportWarning(false);
+      setImportedCount(changed.length);
+      setImportStatus(`Conexiones reparadas: ${changed.length} entrenamientos ya comparten los ejercicios de FEEG.`);
+    } catch (error) {
+      console.error("Error reparando conexiones de ejercicios:", error);
+      setImportWarning(true);
+      setImportStatus("No se pudieron reparar las conexiones del historial.");
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   const finalizeImport = async (workouts, weightMeasures, latestWeight) => {
@@ -133,6 +197,36 @@ export default function ExportData() {
     }
   };
 
+  const handleRepairExisting = () => {
+    if (isImporting || !completedWorkouts?.length) return;
+
+    setImportWarning(false);
+    setImportStatus("Revisando nombres de ejercicios del historial...");
+    const names = exerciseNamesIn(completedWorkouts);
+    const { resolved, pending } = resolveExerciseNames(names);
+    const autoRepaired = applyResolutions(completedWorkouts, resolved);
+
+    if (pending.length > 0) {
+      const occurrencesByName = {};
+      completedWorkouts.forEach((w) => {
+        (w.exerciseDetails || w.details || []).forEach((ex) => {
+          const name = ex.name || ex.exercise;
+          if (name) occurrencesByName[name] = (occurrencesByName[name] || 0) + (ex.series?.length || 0);
+        });
+      });
+      setPendingImport({
+        mode: "repair",
+        workouts: autoRepaired,
+        originalWorkouts: completedWorkouts,
+        pending: pending.map((p) => ({ ...p, occurrences: occurrencesByName[p.foreignName] || 0 })),
+      });
+      setImportStatus("");
+      return;
+    }
+
+    finalizeRepair(autoRepaired, completedWorkouts);
+  };
+
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -164,16 +258,31 @@ export default function ExportData() {
         }));
 
         const { resolved, pending } = resolveExerciseNames(uniqueNames);
-        const autoConnected = applyResolutions(workouts, resolved);
 
-        if (pending.length > 0) {
-          setImportStatus("");
+        // La revisión es obligatoria incluso cuando el matcher ha conectado todos los nombres:
+        // así el usuario ve qué identidad ha elegido FEEG y puede corregirla antes de guardar.
+        // Los nombres automáticos entran ya confirmados; los dudosos quedan pendientes.
+        const reviewItems = uniqueNames.map((foreignName) => {
+          const unresolved = pending.find((item) => item.foreignName === foreignName);
+          return {
+            ...(unresolved || { foreignName, suggestion: null }),
+            resolution: resolved[foreignName] || null,
+            occurrences: occurrencesByName[foreignName] || 0,
+          };
+        });
+
+        if (reviewItems.length > 0) {
+          setImportStatus("RevisiÃ³n obligatoria: confirma las conexiones antes de importar los datos.");
           setIsImporting(false);
           setPendingImport({
-            workouts: autoConnected,
+            mode: "import",
+            // Conservamos los nombres originales hasta que el usuario confirme. Si aquí se
+            // aplicaran ya las conexiones automáticas, cambiar una de ellas desde el menú no
+            // podría encontrar la clave original al finalizar la revisión.
+            workouts,
             weightMeasures,
             latestWeight,
-            pending: pending.map((p) => ({ ...p, occurrences: occurrencesByName[p.foreignName] || 0 })),
+            pending: reviewItems,
           });
           return;
         }
@@ -189,8 +298,12 @@ export default function ExportData() {
   };
 
   const handleReviewComplete = async (resolutions) => {
-    const { workouts, weightMeasures, latestWeight } = pendingImport;
+    const { mode, workouts, weightMeasures, latestWeight, originalWorkouts } = pendingImport;
     setPendingImport(null);
+    if (mode === "repair") {
+      await finalizeRepair(applyResolutions(workouts, resolutions), originalWorkouts);
+      return;
+    }
     setIsImporting(true);
     setImportStatus("Importando entrenamientos...");
     await finalizeImport(applyResolutions(workouts, resolutions), weightMeasures, latestWeight);
@@ -214,8 +327,25 @@ export default function ExportData() {
           row[h] = parts[i];
         }
       });
-      return row;
+      // Hevy ha utilizado dos nombres para algunas columnas según la unidad elegida y la
+      // versión de la exportación. Unificar aquí evita que el entrenamiento se guarde con
+      // ejercicios/series vacíos aunque el CSV sea válido.
+      return {
+        ...row,
+        title: row.title || row.workout_title || row.workout_name,
+        start_time: row.start_time || row.date || row.datetime,
+        end_time: row.end_time || row.finish_time,
+        exercise_title: row.exercise_title || row.exercise_name || row.exercise,
+        reps: row.reps ?? row.repetitions ?? row.rep,
+      };
     });
+
+    const parseNumber = (value) => {
+      if (value === null || value === undefined || value === "") return 0;
+      const normalized = String(value).trim().replace(/,(?=\d{1,2}$)/, ".");
+      const parsed = Number.parseFloat(normalized);
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
 
     // Helper for date parsing (handles YYYY-MM-DD HH:mm:ss and Spanish formats like "17 feb 2026, 11:44")
     const parseDateSafe = (dateStr) => {
@@ -305,8 +435,13 @@ export default function ExportData() {
 
       const exerciseDetails = Object.entries(exerciseGroups).map(([name, exRows]) => {
         const series = exRows.map(row => ({
-          reps: parseInt(row.reps) || 0,
-          weight: parseFloat(row.weight_kg) || 0,
+          reps: Math.round(parseNumber(row.reps)),
+          // Las exportaciones en libras traen `weight_lbs`, pero FEEG guarda el historial en kg.
+          weight: row.weight_kg !== undefined && row.weight_kg !== ""
+            ? parseNumber(row.weight_kg)
+            : row.weight_lbs !== undefined && row.weight_lbs !== ""
+              ? parseNumber(row.weight_lbs) * 0.45359237
+              : parseNumber(row.weight),
           type: row.set_type === "warmup" ? "W" : "N"
         }));
 
@@ -399,6 +534,26 @@ export default function ExportData() {
             Descargar mis datos (JSON)
           </Button>
         </div>
+
+        {completedWorkouts?.length > 0 && (
+          <div style={{
+            backgroundColor: tk.surface,
+            padding: "24px 30px",
+            borderRadius: tk.radius.md,
+            border: `1px solid ${tk.border}`,
+            boxShadow: tk.shadow.card,
+            marginBottom: "24px",
+          }}>
+            <h2 style={{ fontSize: "1.2rem", marginBottom: "10px", color: tk.text }}>Revisar conexiones del historial</h2>
+            <p style={{ color: tk.textMuted, lineHeight: "1.6", marginBottom: "18px" }}>
+              FEEG puede encontrar ejercicios importados con otro nombre y conectarlos con el catálogo actual.
+              Las coincidencias dudosas te pedirán confirmación antes de modificar tus datos.
+            </p>
+            <Button isDark={isDark} variant="secondary" icon="search" onClick={handleRepairExisting} disabled={isImporting}>
+              Revisar {completedWorkouts.length} entrenamientos
+            </Button>
+          </div>
+        )}
 
         <div style={{
           backgroundColor: tk.surface,

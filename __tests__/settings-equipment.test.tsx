@@ -28,12 +28,14 @@ vi.mock("../lib/firebase", () => ({
 }));
 
 import { UserProvider } from "../context/UserContext";
-import Settings from "../pages/settings";
+// Mancuernas/polea viven ahora en su propia subpágina de Ajustes (ver components/settings/
+// SettingsMenuRow.jsx), no en pages/settings.js -- ese archivo pasó a ser sólo el menú.
+import SettingsEquipment from "../pages/settings/equipment";
 
 function renderSettings() {
   render(
     <UserProvider>
-      <Settings />
+      <SettingsEquipment />
     </UserProvider>
   );
 }

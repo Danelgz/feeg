@@ -191,4 +191,17 @@ export const ICONS = {
     { tag: 'line', x1: 22, y1: 2, x2: 11, y2: 13 },
     { tag: 'polygon', points: '22 2 15 22 11 13 2 9 22 2' },
   ],
+  // Menú de Ajustes: cara del modelo del mapa muscular.
+  smile: [
+    { tag: 'circle', cx: 12, cy: 12, r: 10 },
+    { tag: 'path', d: 'M8 14s1.5 2 4 2 4-2 4-2' },
+    { tag: 'line', x1: 9, y1: 9, x2: 9.01, y2: 9 },
+    { tag: 'line', x1: 15, y1: 9, x2: 15.01, y2: 9 },
+  ],
+  // Menú de Ajustes: idioma.
+  globe: [
+    { tag: 'circle', cx: 12, cy: 12, r: 10 },
+    { tag: 'line', x1: 2, y1: 12, x2: 22, y2: 12 },
+    { tag: 'path', d: 'M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z' },
+  ],
 };

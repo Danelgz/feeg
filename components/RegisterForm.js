@@ -2,19 +2,26 @@ import React, { useState } from 'react';
 import NumberWheel from './NumberWheel';
 import { useUser } from '../context/UserContext';
 
-export default function RegisterForm({ onRegister }) {
+/**
+ * `initialData`, `onCancel`, `title` y `submitLabel` existen por un único caso de uso: repetir esta
+ * misma entrevista más tarde desde Ajustes ("por si te has confundido en algo"), sin perder lo que
+ * ya se había respondido ni bloquear la app entera como hace la primera vez (esa SÍ es obligatoria,
+ * por eso no lleva cancelar). Sin `initialData` y `onCancel` el componente se comporta exactamente
+ * como antes: alta obligatoria de un perfil nuevo.
+ */
+export default function RegisterForm({ onRegister, onCancel, initialData, title = 'Completa tu Perfil', submitLabel = 'Completar Registro' }) {
   const [step, setStep] = useState(1);
   const { theme } = useUser();
   const isDark = theme === 'dark';
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    username: '',
-    weightValue: 70,
-    weightUnit: 'kg',
-    heightValue: 170,
-    heightUnit: 'cm',
-    goal: ''
+    firstName: initialData?.firstName || '',
+    lastName: initialData?.lastName || '',
+    username: initialData?.username || '',
+    weightValue: initialData?.weightValue ?? 70,
+    weightUnit: initialData?.weightUnit || 'kg',
+    heightValue: initialData?.heightValue ?? 170,
+    heightUnit: initialData?.heightUnit || 'cm',
+    goal: initialData?.goal || ''
   });
 
   const handleInputChange = (field, value) => {
@@ -71,9 +78,34 @@ export default function RegisterForm({ onRegister }) {
       maxWidth: "500px",
       margin: "0 auto"
     }}>
-      <h2 style={{ color: isDark ? "#fff" : "#333", marginBottom: "30px", textAlign: "center", fontSize: "1.8rem" }}>
-        Completa tu Perfil
-      </h2>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", position: "relative", marginBottom: "30px" }}>
+        <h2 style={{ color: isDark ? "#fff" : "#333", textAlign: "center", fontSize: "1.8rem", margin: 0 }}>
+          {title}
+        </h2>
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            aria-label="Cancelar"
+            style={{
+              position: "absolute",
+              right: 0,
+              width: "32px",
+              height: "32px",
+              borderRadius: "50%",
+              border: "none",
+              backgroundColor: isDark ? "#2a2a2a" : "#eee",
+              color: isDark ? "#fff" : "#333",
+              cursor: "pointer",
+              fontSize: "1.1rem",
+              lineHeight: "32px",
+              padding: 0,
+            }}
+          >
+            ✕
+          </button>
+        )}
+      </div>
 
       {/* Step 1: Nombre y Apellidos */}
       {step === 1 && (
@@ -382,7 +414,7 @@ export default function RegisterForm({ onRegister }) {
               transition: "all 0.3s ease"
             }}
           >
-            Completar Registro
+            {submitLabel}
           </button>
         )}
       </div>

@@ -1,671 +1,73 @@
-import { useEffect, useId, useState } from "react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { getTokens } from "../lib/tokens";
-import { Icon, Button, Card, PageHeader, Switch } from "../components/ui";
-import { FACE_STYLES, DEFAULT_FACE_STYLE_ID, FACE_VIEW_BOX } from "../data/faceStyles";
-import { HEAD_BOX } from "../components/MuscleMap";
-import * as MALE_BODY from "../data/muscleMapPaths";
-import * as FEMALE_BODY from "../data/muscleMapPathsFemale";
+import { PageHeader, Card } from "../components/ui";
+import SettingsMenuRow from "../components/settings/SettingsMenuRow";
+import { FACE_STYLES, DEFAULT_FACE_STYLE_ID } from "../data/faceStyles";
 
-// Aire alrededor de la cabeza recortada: HEAD_BOX es el bbox exacto de la cabeza, y recortar justo
-// en su borde deja las orejas y la línea de la mandíbula pegadas al marco de la miniatura. Abajo NO
-// se aplica: el borde inferior de HEAD_BOX ya es la barbilla, y bajar de ahí mete el cuello/hombros
-// en una miniatura que sólo debería mostrar la cara.
-const HEAD_CROP_PADDING_RATIO = 0.14;
+const THEME_LABELS = { light: "Claro", dark: "Oscuro", system: "Sistema" };
+const LANGUAGE_LABELS = { es: "Español", eu: "Euskera" };
 
 /**
- * Miniatura de un FaceStyle recortada sobre la cabeza REAL del cuerpo del usuario (mismo path,
- * mismo `HEAD_BOX`, mismo translate+scale que pinta `MuscleMap` de verdad), no una silueta
- * genérica: así el selector responde a "¿cómo se va a ver?" en vez de a una aproximación que luego
- * no coincide con el mapa muscular ni con Rangos.
- *
- * El recorte es una ELIPSE inscrita en el rectángulo de `HEAD_BOX` (+ aire), no el rectángulo en
- * sí: un rectángulo deja ver las esquinas de abajo, que en la lámina real son ya cuello/hombros —
- * la elipse toca el borde por el centro (donde está la cara de verdad) y se va cerrando hacia las
- * esquinas, así que corta justo lo que no es cara sin recortar nada de la cabeza.
+ * Ajustes era una única tarjeta con los ocho apartados uno detrás de otro: cómodo de construir,
+ * pero para tocar el último había que scrollear por los siete anteriores. Ahora es un menú — cada
+ * fila lleva a su propia ruta bajo `/settings/*` (ver `components/settings/SettingsSubpage.jsx`),
+ * agrupadas por lo que de verdad se busca cuando se abre cada una: quién eres, cómo se ve la app,
+ * cómo se comporta durante el entreno, cómo suena.
  */
-function FaceThumbnail({ style, isDark, sex, size = 56 }) {
-  const clipId = `feeg-face-thumb-${useId().replace(/:/g, '')}`;
-  const bodySex = sex === "female" ? "female" : "male";
-  const body = bodySex === "female" ? FEMALE_BODY : MALE_BODY;
-  const headBox = HEAD_BOX[bodySex];
-  const pad = headBox.w * HEAD_CROP_PADDING_RATIO;
-  const vbX = headBox.x - pad;
-  const vbY = headBox.y - pad;
-  const vbW = headBox.w + pad * 2;
-  const vbH = headBox.h + pad;
-  const faceTransform = `translate(${headBox.x} ${headBox.y}) scale(${headBox.w / FACE_VIEW_BOX.width} ${headBox.h / FACE_VIEW_BOX.height})`;
-  const silhouetteFill = isDark ? "#ffffff" : "#f6f8fa";
-  const silhouetteStroke = isDark ? null : "#d2dae2";
-
-  return (
-    <svg
-      width={size}
-      height={size * (vbH / vbW)}
-      viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
-      style={{ display: "block" }}
-    >
-      <defs>
-        <clipPath id={clipId}>
-          <ellipse cx={vbX + vbW / 2} cy={vbY + vbH / 2} rx={vbW / 2} ry={vbH / 2} />
-        </clipPath>
-      </defs>
-      <g clipPath={`url(#${clipId})`}>
-        {body.FRONT_SILHOUETTE.map((p, i) => (
-          <path
-            key={i}
-            d={p.d}
-            fill={p.fill === "none" ? "none" : silhouetteFill}
-            stroke={silhouetteStroke ?? undefined}
-            strokeWidth={silhouetteStroke ? 1.4 : undefined}
-          />
-        ))}
-        <g transform={faceTransform}>{style.front()}</g>
-      </g>
-    </svg>
-  );
-}
-
-/**
- * Un par de opciones excluyentes con una línea de ejemplo cada una, en vez de un simple switch:
- * "peso de una o de las dos" no se entiende con un booleano sin nombre, y la línea de ejemplo es lo
- * que de verdad responde "¿y esto qué significa para mí" sin mandar a nadie a leer una nota aparte.
- */
-function EquipmentChoiceGroup({ isDark, isMobile, tk, label, desc, value, onChange, options }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      <div>
-        <div style={{ color: tk.text, fontSize: "0.95rem", fontWeight: 600 }}>{label}</div>
-        <div style={{ color: tk.textMuted, fontSize: "0.82rem", marginTop: "2px" }}>{desc}</div>
-      </div>
-      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "10px" }}>
-        {options.map((opt) => {
-          const active = value === opt.key;
-          return (
-            <button
-              key={opt.key}
-              type="button"
-              onClick={() => onChange(opt.key)}
-              aria-pressed={active}
-              style={{
-                flex: "1 1 0",
-                textAlign: "left",
-                padding: "12px 14px",
-                borderRadius: tk.radius.md,
-                border: `1.5px solid ${active ? tk.accent : tk.border}`,
-                backgroundColor: active ? tk.accentSoft : tk.surfaceAlt,
-                cursor: "pointer",
-                transition: tk.transition,
-              }}
-            >
-              <div style={{ color: active ? tk.accent : tk.text, fontWeight: active ? 700 : 500, fontSize: "0.9rem" }}>
-                {opt.label}
-              </div>
-              <div style={{ color: tk.textMuted, fontSize: "0.78rem", marginTop: "3px" }}>{opt.example}</div>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/**
- * Selector de cara del mapa muscular. Cada opción enseña su miniatura real (no un nombre suelto):
- * es una elección puramente visual, así que la respuesta a "¿cómo se ve esto?" tiene que estar en
- * el propio botón, no obligar a elegir y volver al mapa para comprobarlo.
- */
-function FaceStylePicker({ isDark, isMobile, tk, value, onChange, sex }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-      <div>
-        <div style={{ color: tk.text, fontSize: "1.1rem", fontWeight: 600 }}>Cara del modelo</div>
-        <div style={{ color: tk.textMuted, fontSize: "0.85rem", marginTop: "2px" }}>
-          Cómo se ve tu cuerpo en el mapa muscular y en Rangos.
-        </div>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: "10px" }}>
-        {FACE_STYLES.map((style) => {
-          const active = (value || DEFAULT_FACE_STYLE_ID) === style.id;
-          return (
-            <button
-              key={style.id}
-              type="button"
-              onClick={() => onChange(style.id)}
-              aria-pressed={active}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "6px",
-                padding: "10px 6px",
-                borderRadius: tk.radius.md,
-                border: `1.5px solid ${active ? tk.accent : tk.border}`,
-                backgroundColor: active ? tk.accentSoft : tk.surfaceAlt,
-                cursor: "pointer",
-                transition: tk.transition,
-              }}
-            >
-              <FaceThumbnail style={style} isDark={isDark} sex={sex} />
-              <span style={{ color: active ? tk.accent : tk.textMuted, fontWeight: active ? 700 : 500, fontSize: "0.78rem" }}>
-                {style.name}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// Mismo texto que `RegisterForm` (la entrevista inicial) para los objetivos: son el valor que ya
-// puede llevar guardado un perfil antiguo, así que cambiar la lista rompería su selección actual.
-const GOAL_OPTIONS = ['Ganar masa muscular', 'Perder peso', 'Mejorar resistencia', 'Mantenimiento', 'Ganar fuerza'];
-
-const KG_TO_LB = 2.20462;
-const CM_TO_FT = 30.48;
-
-/** Redondea a 1 decimal y devuelve número, no string — para no ir arrastrando "70.0000000004". */
-function round1(n) {
-  return Math.round(n * 10) / 10;
-}
-
-/**
- * Peso, altura y objetivo son las tres preguntas de `RegisterForm` ("la entrevista inicial") que se
- * piden UNA vez, al completar el perfil, y que hasta ahora no había ningún sitio para volver a
- * tocar: ni el perfil (que sólo edita nombre/usuario/foto/sexo) ni Medidas (que sólo guarda la
- * *unidad* preferida, no estos valores). Ajustes es el lugar natural: es donde vive el resto de
- * "cómo quiero que se comporte la app conmigo".
- */
-function PhysicalProfileSection({ isDark, isMobile, tk, user, saveUser }) {
-  const weightUnit = user?.weightUnit === 'lb' ? 'lb' : 'kg';
-  const heightUnit = user?.heightUnit === 'ft' ? 'ft' : 'cm';
-
-  // Estado local de los inputs: sin él, cada pulsación de tecla dispararía un guardado (local Y en
-  // la nube, ver `saveUser` en UserContext) — aquí sólo se confirma al salir del campo.
-  const [weightDraft, setWeightDraft] = useState(user?.weight ?? '');
-  const [heightDraft, setHeightDraft] = useState(user?.height ?? '');
-
-  useEffect(() => { setWeightDraft(user?.weight ?? ''); }, [user?.weight]);
-  useEffect(() => { setHeightDraft(user?.height ?? ''); }, [user?.height]);
-
-  const commitWeight = () => {
-    const num = parseFloat(weightDraft);
-    if (!Number.isFinite(num)) { setWeightDraft(user?.weight ?? ''); return; }
-    if (num === user?.weight) return;
-    saveUser({ ...(user || {}), weight: num, weightUnit });
-  };
-
-  const commitHeight = () => {
-    const num = parseFloat(heightDraft);
-    if (!Number.isFinite(num)) { setHeightDraft(user?.height ?? ''); return; }
-    if (num === user?.height) return;
-    saveUser({ ...(user || {}), height: num, heightUnit });
-  };
-
-  const changeWeightUnit = (unit) => {
-    if (unit === weightUnit) return;
-    const num = parseFloat(weightDraft);
-    const converted = Number.isFinite(num) ? round1(unit === 'lb' ? num * KG_TO_LB : num / KG_TO_LB) : weightDraft;
-    setWeightDraft(converted);
-    saveUser({ ...(user || {}), weight: Number.isFinite(num) ? converted : user?.weight, weightUnit: unit });
-  };
-
-  const changeHeightUnit = (unit) => {
-    if (unit === heightUnit) return;
-    const num = parseFloat(heightDraft);
-    const converted = Number.isFinite(num) ? round1(unit === 'ft' ? num / CM_TO_FT : num * CM_TO_FT) : heightDraft;
-    setHeightDraft(converted);
-    saveUser({ ...(user || {}), height: Number.isFinite(num) ? converted : user?.height, heightUnit: unit });
-  };
-
-  const inputStyle = {
-    width: '100%',
-    padding: '12px 14px',
-    backgroundColor: tk.surfaceAlt,
-    border: `1.5px solid ${tk.border}`,
-    borderRadius: tk.radius.sm,
-    color: tk.text,
-    fontSize: '1rem',
-    outline: 'none',
-    boxSizing: 'border-box',
-  };
-
-  const unitToggle = (options, value, onChange) => (
-    <div style={{ display: 'flex', gap: '6px' }}>
-      {options.map((opt) => {
-        const active = value === opt;
-        return (
-          <button
-            key={opt}
-            type="button"
-            onClick={() => onChange(opt)}
-            style={{
-              padding: '8px 14px',
-              borderRadius: tk.radius.sm,
-              border: `1.5px solid ${active ? tk.accent : tk.border}`,
-              backgroundColor: active ? tk.accentSoft : 'transparent',
-              color: active ? tk.accent : tk.textMuted,
-              fontWeight: active ? 700 : 500,
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              transition: tk.transition,
-            }}
-          >
-            {opt}
-          </button>
-        );
-      })}
-    </div>
-  );
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-      <div>
-        <span style={{ color: tk.text, fontSize: '1.1rem', fontWeight: 600 }}>Datos físicos y objetivo</span>
-        <div style={{ color: tk.textMuted, fontSize: '0.85rem', marginTop: '2px' }}>
-          Lo que respondiste al completar tu perfil. Puedes cambiarlo cuando quieras.
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '15px' }}>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <span style={{ color: tk.textMuted, fontSize: '0.85rem' }}>Peso</span>
-          {unitToggle(['kg', 'lb'], weightUnit, changeWeightUnit)}
-          <input
-            type="number"
-            step="0.1"
-            inputMode="decimal"
-            value={weightDraft}
-            onChange={(e) => setWeightDraft(e.target.value)}
-            onBlur={commitWeight}
-            placeholder="0.0"
-            style={inputStyle}
-          />
-        </div>
-
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <span style={{ color: tk.textMuted, fontSize: '0.85rem' }}>Altura</span>
-          {unitToggle(['cm', 'ft'], heightUnit, changeHeightUnit)}
-          <input
-            type="number"
-            step="0.1"
-            inputMode="decimal"
-            value={heightDraft}
-            onChange={(e) => setHeightDraft(e.target.value)}
-            onBlur={commitHeight}
-            placeholder="0.0"
-            style={inputStyle}
-          />
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <span style={{ color: tk.textMuted, fontSize: '0.85rem' }}>Objetivo</span>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-          {GOAL_OPTIONS.map((goal) => {
-            const active = user?.goal === goal;
-            return (
-              <button
-                key={goal}
-                type="button"
-                onClick={() => saveUser({ ...(user || {}), goal })}
-                style={{
-                  padding: '10px 16px',
-                  borderRadius: tk.radius.sm,
-                  border: `1.5px solid ${active ? tk.accent : tk.border}`,
-                  backgroundColor: active ? tk.accentSoft : 'transparent',
-                  color: active ? tk.accent : tk.text,
-                  fontWeight: active ? 700 : 500,
-                  fontSize: '0.9rem',
-                  cursor: 'pointer',
-                  transition: tk.transition,
-                }}
-              >
-                {goal}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function Settings() {
-  const {
-    theme, themePreference, setThemeMode, isMobile, language, updateLanguage,
-    soundEnabled, setSoundEnabled,
-    aiVoiceEnabled, setAiVoiceEnabled, aiVoiceURI, setAiVoiceURI, aiVoiceRate, setAiVoiceRate, aiVoicePitch, setAiVoicePitch,
-    t, authUser, loginWithGoogle, refreshData,
-    user, saveUser,
-  } = useUser();
-
-  // Las voces de SpeechSynthesis solo están disponibles en cliente y a veces llegan async
-  // (evento voiceschanged) — sin ese evento, en algunos navegadores getVoices() devuelve [] la
-  // primera vez que se llama.
-  const [availableVoices, setAvailableVoices] = useState([]);
-  const ttsSupported = typeof window !== "undefined" && !!window.speechSynthesis;
-
-  useEffect(() => {
-    if (!ttsSupported) return;
-    const loadVoices = () => setAvailableVoices(window.speechSynthesis.getVoices());
-    loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-    return () => { window.speechSynthesis.onvoiceschanged = null; };
-  }, [ttsSupported]);
-
-  // Forzar refresco de datos al entrar a ajustes
-  useEffect(() => {
-    if (authUser) {
-      refreshData();
-    }
-  }, [authUser]);
-
+  const { theme, isMobile, t, authUser, themePreference, language, soundEnabled, aiVoiceEnabled, user } = useUser();
   const isDark = theme === 'dark';
   const tk = getTokens(isDark);
 
-  const languages = [
-    { code: 'es', name: 'Español' },
-    { code: 'eu', name: 'Euskera' }
-  ];
+  const faceStyleName = FACE_STYLES.find((s) => s.id === (user?.faceStyle || DEFAULT_FACE_STYLE_ID))?.name;
 
-  const themeOptions = [
-    { key: 'light', label: t("light_mode"), icon: 'sun' },
-    { key: 'dark', label: t("dark_mode"), icon: 'moon' },
-    { key: 'system', label: 'Sistema', icon: 'monitor' }
+  const groups = [
+    {
+      title: "Cuenta",
+      rows: [
+        { icon: "user", label: t("google_account"), value: authUser ? authUser.email : "No has iniciado sesión", path: "/settings/account" },
+        ...(user ? [{ icon: "trendUp", label: "Perfil y objetivo", value: user?.goal || "Peso, altura y objetivo", path: "/settings/profile" }] : []),
+      ],
+    },
+    {
+      title: "Preferencias",
+      rows: [
+        { icon: "monitor", label: "Apariencia", value: THEME_LABELS[themePreference] || THEME_LABELS.system, path: "/settings/appearance" },
+        { icon: "globe", label: t("language"), value: LANGUAGE_LABELS[language] || LANGUAGE_LABELS.es, path: "/settings/language" },
+        { icon: "smile", label: "Cara del modelo", value: faceStyleName, path: "/settings/face" },
+      ],
+    },
+    {
+      title: "Entrenamiento",
+      rows: [
+        { icon: "barbell", label: t("equipment_settings_title"), value: t("equipment_settings_desc"), path: "/settings/equipment" },
+      ],
+    },
+    {
+      title: "Sonido y voz",
+      rows: [
+        { icon: "volume2", label: t("sound_pr_label"), value: soundEnabled ? "Activado" : "Desactivado", path: "/settings/sound" },
+        { icon: "mic", label: t("ai_voice_section_title"), value: aiVoiceEnabled ? "Activada" : "Desactivada", path: "/settings/ai-voice" },
+      ],
+    },
   ];
-
-  const handleSwitchAccount = async () => {
-    // Ojo: signInWithPopup tiene que lanzarse de forma síncrona dentro del gesto del click
-    // para que el navegador no lo bloquee — sobre todo en móvil, mucho más estricto que
-    // escritorio con esto. Antes había un `await logout()` justo delante, que rompía esa
-    // cadena síncrona y hacía que el selector de cuenta nunca se abriera en el móvil (aunque
-    // en PC sí colaba). No hace falta cerrar sesión antes: signInWithPopup con
-    // prompt: 'select_account' ya fuerza el selector y sustituye la cuenta activa al elegir
-    // una distinta.
-    await loginWithGoogle();
-  };
 
   return (
     <Layout>
       <PageHeader isDark={isDark} isMobile={isMobile} title={t("settings")} />
 
-      <Card isDark={isDark} padding={isMobile ? "sm" : "lg"} style={{ display: "flex", flexDirection: "column", gap: "25px" }}>
-        {/* Apartado de Cuenta */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-          <span style={{ color: tk.accent, fontSize: "1.1rem", fontWeight: "bold", display: "flex", alignItems: "center", gap: "8px" }}>
-            <Icon name="user" size={18} />
-            {t("google_account")}
-          </span>
-
-          {authUser ? (
-            <div style={{
-              display: "flex",
-              flexDirection: isMobile ? "column" : "row",
-              justifyContent: "space-between",
-              alignItems: isMobile ? "flex-start" : "center",
-              gap: "15px",
-              backgroundColor: tk.surfaceAlt,
-              padding: "15px",
-              borderRadius: tk.radius.md,
-              border: `1px solid ${tk.border}`
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div style={{ width: "45px", height: "45px", borderRadius: tk.radius.full, overflow: "hidden", border: `2px solid ${tk.accent}`, backgroundColor: tk.surfaceHover }}>
-                  {authUser.photoURL ? (
-                    <img src={authUser.photoURL} alt="pfp" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  ) : (
-                    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: tk.textMuted, fontSize: "0.7rem" }}>
-                      {t("no_pfp")}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <div style={{ color: tk.text, fontWeight: "600" }}>{authUser.displayName || "Usuario"}</div>
-                  <div style={{ color: tk.textMuted, fontSize: "0.85rem" }}>{authUser.email}</div>
-                </div>
-              </div>
-              <Button isDark={isDark} variant="secondary" size="sm" fullWidth={isMobile} onClick={handleSwitchAccount}>
-                {t("change_account")}
-              </Button>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "12px" }}>
-              <Button isDark={isDark} fullWidth onClick={loginWithGoogle}>
-                {t("login_google")}
-              </Button>
-              <Button isDark={isDark} variant="secondary" fullWidth onClick={loginWithGoogle}>
-                {t("register")}
-              </Button>
-            </div>
-          )}
-        </div>
-
-        {user && (
-          <>
-            <div style={{ height: "1px", backgroundColor: tk.border }} />
-
-            {/* Peso, altura y objetivo: las tres preguntas de RegisterForm ("la entrevista
-                inicial") que antes sólo se contestaban una vez y no había dónde volver a editar. */}
-            <PhysicalProfileSection isDark={isDark} isMobile={isMobile} tk={tk} user={user} saveUser={saveUser} />
-          </>
-        )}
-
-        <div style={{ height: "1px", backgroundColor: tk.border }} />
-
-        {/* Apartado de Tema */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          <span style={{ color: tk.text, fontSize: "1.1rem", fontWeight: 600 }}>
-            Apariencia
-          </span>
-          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-            {themeOptions.map((opt) => {
-              const active = themePreference === opt.key;
-              return (
-                <button
-                  key={opt.key}
-                  onClick={() => setThemeMode(opt.key)}
-                  style={{
-                    flex: isMobile ? "1 1 auto" : "0 0 auto",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "8px",
-                    padding: "12px 18px",
-                    borderRadius: tk.radius.md,
-                    border: `1.5px solid ${active ? tk.accent : tk.border}`,
-                    backgroundColor: active ? tk.accentSoft : "transparent",
-                    color: active ? tk.accent : tk.text,
-                    fontWeight: active ? 700 : 500,
-                    cursor: "pointer",
-                    transition: tk.transition,
-                    minWidth: isMobile ? undefined : "120px"
-                  }}
-                >
-                  <Icon name={opt.icon} size={17} />
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div style={{ height: "1px", backgroundColor: tk.border }} />
-
-        {/* Apartado de Idioma */}
-        <div style={{
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          justifyContent: "space-between",
-          alignItems: isMobile ? "flex-start" : "center",
-          gap: isMobile ? "15px" : "0"
-        }}>
-          <span style={{ color: tk.text, fontSize: "1.1rem" }}>
-            {t("language")}
-          </span>
-          <select
-            value={language}
-            onChange={(e) => updateLanguage(e.target.value)}
-            style={{
-              padding: "10px 16px",
-              backgroundColor: tk.surfaceAlt,
-              color: tk.text,
-              border: `1.5px solid ${tk.border}`,
-              borderRadius: tk.radius.sm,
-              cursor: "pointer",
-              fontSize: "1rem",
-              width: isMobile ? "100%" : "200px",
-              outline: "none",
-              transition: tk.transition
-            }}
-            onFocus={(e) => e.target.style.borderColor = tk.accent}
-            onBlur={(e) => e.target.style.borderColor = tk.border}
-          >
-            {languages.map((lang) => (
-              <option key={lang.code} value={lang.code}>
-                {lang.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div style={{ height: "1px", backgroundColor: tk.border }} />
-
-        {/* Apartado de la cara del modelo del mapa muscular. */}
-        <FaceStylePicker
-          isDark={isDark}
-          isMobile={isMobile}
-          tk={tk}
-          value={user?.faceStyle}
-          onChange={(faceStyle) => saveUser({ ...(user || {}), faceStyle })}
-          sex={user?.sex}
-        />
-
-        <div style={{ height: "1px", backgroundColor: tk.border }} />
-
-        {/* Apartado de cómo registra el usuario sus pesos: afecta a 1RM estimado y a los rangos. */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-          <div>
-            <span style={{ color: tk.text, fontSize: "1.1rem", fontWeight: 600 }}>
-              {t("equipment_settings_title")}
+      <Card isDark={isDark} padding={isMobile ? "sm" : "lg"} style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
+        {groups.map((group) => (
+          <div key={group.title} style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{ color: tk.textMuted, fontSize: "0.78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
+              {group.title}
             </span>
-            <div style={{ color: tk.textMuted, fontSize: "0.85rem", marginTop: "2px" }}>
-              {t("equipment_settings_desc")}
-            </div>
+            {group.rows.map((row) => (
+              <SettingsMenuRow key={row.path} isDark={isDark} icon={row.icon} label={row.label} value={row.value} path={row.path} />
+            ))}
           </div>
-
-          <EquipmentChoiceGroup
-            isDark={isDark}
-            isMobile={isMobile}
-            tk={tk}
-            label={t("dumbbell_mode_label")}
-            desc={t("dumbbell_mode_desc")}
-            value={user?.dumbbellMode === "combined" ? "combined" : "perHand"}
-            onChange={(dumbbellMode) => saveUser({ ...(user || {}), dumbbellMode })}
-            options={[
-              { key: "perHand", label: t("dumbbell_mode_perhand"), example: t("dumbbell_mode_perhand_example") },
-              { key: "combined", label: t("dumbbell_mode_combined"), example: t("dumbbell_mode_combined_example") },
-            ]}
-          />
-
-          <EquipmentChoiceGroup
-            isDark={isDark}
-            isMobile={isMobile}
-            tk={tk}
-            label={t("pulley_mode_label")}
-            desc={t("pulley_mode_desc")}
-            value={user?.pulleyMode === "assisted" ? "assisted" : "asShown"}
-            onChange={(pulleyMode) => saveUser({ ...(user || {}), pulleyMode })}
-            options={[
-              { key: "asShown", label: t("pulley_mode_asshown"), example: t("pulley_mode_asshown_example") },
-              { key: "assisted", label: t("pulley_mode_assisted"), example: t("pulley_mode_assisted_example") },
-            ]}
-          />
-        </div>
-
-        <div style={{ height: "1px", backgroundColor: tk.border }} />
-
-        {/* Apartado de Sonido */}
-        <div style={{
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          justifyContent: "space-between",
-          alignItems: isMobile ? "flex-start" : "center",
-          gap: isMobile ? "12px" : "0"
-        }}>
-          <div>
-            <div style={{ color: tk.text, fontSize: "1.1rem" }}>{t("sound_pr_label")}</div>
-            <div style={{ color: tk.textMuted, fontSize: "0.85rem", marginTop: "2px" }}>{t("sound_pr_desc")}</div>
-          </div>
-          <Switch isDark={isDark} checked={soundEnabled} onChange={setSoundEnabled} />
-        </div>
-
-        <div style={{ height: "1px", backgroundColor: tk.border }} />
-
-        {/* Apartado de Voz del Coach IA */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-          <span style={{ color: tk.text, fontSize: "1.1rem", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px" }}>
-            <Icon name="volume2" size={18} />
-            {t("ai_voice_section_title")}
-          </span>
-
-          <div style={{
-            display: "flex",
-            flexDirection: isMobile ? "column" : "row",
-            justifyContent: "space-between",
-            alignItems: isMobile ? "flex-start" : "center",
-            gap: isMobile ? "12px" : "0",
-          }}>
-            <div>
-              <div style={{ color: tk.text, fontSize: "1.1rem" }}>{t("ai_voice_enable_label")}</div>
-              <div style={{ color: tk.textMuted, fontSize: "0.85rem", marginTop: "2px" }}>{t("ai_voice_enable_desc")}</div>
-            </div>
-            <Switch isDark={isDark} checked={aiVoiceEnabled} onChange={setAiVoiceEnabled} disabled={!ttsSupported} />
-          </div>
-
-          {!ttsSupported && (
-            <div style={{ color: tk.textMuted, fontSize: "0.85rem" }}>{t("ai_voice_unsupported")}</div>
-          )}
-
-          {ttsSupported && aiVoiceEnabled && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px", backgroundColor: tk.surfaceAlt, borderRadius: tk.radius.md, padding: "15px", border: `1px solid ${tk.border}` }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <span style={{ color: tk.textMuted, fontSize: "0.85rem" }}>{t("ai_voice_select_label")}</span>
-                <select
-                  value={aiVoiceURI || ""}
-                  onChange={(e) => setAiVoiceURI(e.target.value || null)}
-                  style={{
-                    padding: "10px 14px",
-                    backgroundColor: tk.surface,
-                    color: tk.text,
-                    border: `1.5px solid ${tk.border}`,
-                    borderRadius: tk.radius.sm,
-                    cursor: "pointer",
-                    fontSize: "0.95rem",
-                    outline: "none",
-                  }}
-                >
-                  <option value="">{t("ai_voice_default_option")}</option>
-                  {availableVoices.map((v) => (
-                    <option key={v.voiceURI} value={v.voiceURI}>{v.name} ({v.lang})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <span style={{ color: tk.textMuted, fontSize: "0.85rem" }}>{t("ai_voice_rate_label")}: {aiVoiceRate.toFixed(1)}x</span>
-                <input type="range" min="0.5" max="2" step="0.1" value={aiVoiceRate} onChange={(e) => setAiVoiceRate(parseFloat(e.target.value))} style={{ accentColor: tk.accent }} />
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <span style={{ color: tk.textMuted, fontSize: "0.85rem" }}>{t("ai_voice_pitch_label")}: {aiVoicePitch.toFixed(1)}</span>
-                <input type="range" min="0.5" max="2" step="0.1" value={aiVoicePitch} onChange={(e) => setAiVoicePitch(parseFloat(e.target.value))} style={{ accentColor: tk.accent }} />
-              </div>
-            </div>
-          )}
-        </div>
+        ))}
       </Card>
     </Layout>
   );

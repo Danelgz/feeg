@@ -9,7 +9,7 @@ import { getExerciseInfo, computeWorkoutTotals, buildPRRecordsFromExercises, che
 import { getLatestExerciseSeries } from "../../lib/workoutRecommendations";
 import { getWorkoutTokens } from "../../lib/tokens";
 import { translateExerciseName } from "../../lib/exerciseTranslation";
-import { ConfirmModal, Icon, Spinner } from "../../components/ui";
+import { ConfirmModal, Spinner } from "../../components/ui";
 import { ExerciseCard, WorkoutHeader, WorkoutStatsBar, WorkoutExercisePager, FloatingRestTimer, WorkoutSummaryScreen, PRToast } from "../../components/workout";
 
 export default function RoutineDetail() {
@@ -416,17 +416,6 @@ export default function RoutineDetail() {
 
         <WorkoutExercisePager
           exercises={state.exercises}
-          lastAction={
-            <button
-              type="button"
-              onClick={() => setShowExerciseSelector(true)}
-              aria-label={t("add_exercise")}
-              title={t("add_exercise")}
-              style={{ width: 36, height: 36, display: "grid", placeItems: "center", border: `1px solid ${tk.accent}`, borderRadius: tk.radius.full, background: tk.accentSoft, color: tk.accent, cursor: "pointer" }}
-            >
-              <Icon name="plus" size={17} />
-            </button>
-          }
           renderExercise={(exercise) => (
             <ExerciseCard
               key={exercise.uid}

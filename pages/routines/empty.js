@@ -8,7 +8,7 @@ import { createExerciseFromCatalog } from "../../hooks/workoutSessionReducer";
 import { getExerciseInfo, computeWorkoutTotals, buildPRRecordsFromExercises, checkWorkoutVolumePR } from "../../lib/exerciseStats";
 import { getWorkoutTokens } from "../../lib/tokens";
 import { translateExerciseName } from "../../lib/exerciseTranslation";
-import { ConfirmModal, Icon } from "../../components/ui";
+import { ConfirmModal } from "../../components/ui";
 import { ExerciseCard, WorkoutHeader, WorkoutStatsBar, WorkoutExercisePager, FloatingRestTimer, WorkoutSummaryScreen, PRToast } from "../../components/workout";
 
 const WORKOUT_ID = "empty";
@@ -289,17 +289,6 @@ export default function EmptyRoutine() {
 
         <WorkoutExercisePager
           exercises={state.exercises}
-          lastAction={
-            <button
-              type="button"
-              onClick={() => setShowExerciseSelector(true)}
-              aria-label={t("add_exercise")}
-              title={t("add_exercise")}
-              style={{ width: 36, height: 36, display: "grid", placeItems: "center", border: `1px solid ${tk.accent}`, borderRadius: tk.radius.full, background: tk.accentSoft, color: tk.accent, cursor: "pointer" }}
-            >
-              <Icon name="plus" size={17} />
-            </button>
-          }
           renderExercise={(exercise) => (
             <ExerciseCard
               key={exercise.uid}

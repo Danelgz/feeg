@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { getWorkoutTokens } from "../../lib/tokens";
 
 interface PagerItem {
   uid?: string | number;
@@ -8,16 +7,13 @@ interface PagerItem {
 interface WorkoutExercisePagerProps<T extends PagerItem> {
   exercises: T[];
   renderExercise: (exercise: T, index: number) => ReactNode;
-  lastAction?: ReactNode;
 }
 
 /** Vertical, snap-based exercise navigation for the focused live workout experience. */
 export default function WorkoutExercisePager<T extends PagerItem>({
   exercises,
   renderExercise,
-  lastAction,
 }: WorkoutExercisePagerProps<T>) {
-  const tk = getWorkoutTokens();
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const sectionRefs = useRef<Array<HTMLElement | null>>([]);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -95,55 +91,6 @@ export default function WorkoutExercisePager<T extends PagerItem>({
           </div>
         </section>
       ))}
-
-      <div
-        aria-label="Navegación de ejercicios"
-        style={{
-          position: "absolute",
-          bottom: "14px",
-          zIndex: 20,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "12px",
-          width: "fit-content",
-          maxWidth: "calc(100% - 30px)",
-          margin: 0,
-          padding: "7px 9px",
-          border: "1px solid rgba(255,255,255,0.10)",
-          borderRadius: tk.radius.pill,
-          background: "rgba(17,17,17,0.86)",
-          boxShadow: "0 14px 34px rgba(0,0,0,0.42)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-        }}
-      >
-        <span style={{ width: 36, height: 36 }} aria-hidden="true" />
-
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }} aria-hidden="true">
-            {exercises.map((exercise, index) => (
-              <span
-                key={exercise.uid ?? index}
-                style={{
-                  width: index === activeIndex ? 16 : 5,
-                  height: 5,
-                  borderRadius: tk.radius.pill,
-                  background: index === activeIndex ? tk.accent : tk.textFaint,
-                  opacity: index === activeIndex ? 1 : 0.7,
-                  transition: "width 240ms cubic-bezier(0.16,1,0.3,1), background 180ms ease",
-                }}
-              />
-            ))}
-          </div>
-        </div>
-
-        {activeIndex === exercises.length - 1 && lastAction ? (
-          lastAction
-        ) : (
-          <span style={{ width: 36, height: 36 }} aria-hidden="true" />
-        )}
-      </div>
 
       <style>{`
         .feeg-exercise-pager::-webkit-scrollbar { display: none; }

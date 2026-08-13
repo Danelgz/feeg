@@ -276,7 +276,10 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
         .summary-orbit-ring-inner { inset: 14px; border-style: solid; border-width: 1px; opacity: 0.65; }
         .summary-orbit-ring-inner::after { top: auto; left: auto; right: 8px; bottom: 12px; width: 5px; height: 5px; opacity: 0.7; }
         .summary-orbit-core { width: 88px; height: 88px; border-radius: 32px; display: grid; place-items: center; box-shadow: 0 12px 38px rgba(46,230,197,0.25), inset 0 1px rgba(255,255,255,0.34); }
-        .summary-content-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr); gap: 16px; margin-top: 16px; }
+        /* Antes dos columnas lado a lado a partir de 720px — cada panel (Progreso, Desglose de
+           carga) se quedaba a la mitad del ancho de la tarjeta. Apilados a todo el ancho, uno
+           debajo del otro, en vez de repartidos en una cuadrícula. */
+        .summary-content-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 16px; }
         .summary-panel { border: 1px solid rgba(255,255,255,0.08); background: rgba(17,17,17,0.78); border-radius: 22px; padding: clamp(20px, 3vw, 30px); box-shadow: inset 0 1px rgba(255,255,255,0.035); }
         .summary-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 20px; }
         .summary-panel-label { color: ${tk.textMuted}; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
@@ -291,7 +294,7 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
         .summary-action:active { transform: scale(0.98); }
         .summary-action-primary { background: ${tk.accent}; color: ${tk.onAccent}; border-color: ${tk.accent}; box-shadow: 0 10px 24px rgba(46,230,197,0.22); }
         .summary-action-primary:hover { background: ${tk.accentHover}; }
-        @media (max-width: 720px) { .summary-page { padding-top: 22px; } .summary-hero { grid-template-columns: 1fr; text-align: center; padding: 28px 20px 32px; gap: 22px; } .summary-hero-copy { text-align: center; } .summary-content-grid { grid-template-columns: 1fr; } .summary-actions { flex-direction: column-reverse; } .summary-action { width: 100%; } }
+        @media (max-width: 720px) { .summary-page { padding-top: 22px; } .summary-hero { grid-template-columns: 1fr; text-align: center; padding: 28px 20px 32px; gap: 22px; } .summary-hero-copy { text-align: center; } .summary-actions { flex-direction: column-reverse; } .summary-action { width: 100%; } }
         @media (prefers-reduced-motion: reduce) { .summary-action { transition: none; } }
       `}</style>
 

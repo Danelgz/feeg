@@ -7,6 +7,7 @@ import * as MALE_BODY from '../data/muscleMapPaths';
 import * as FEMALE_BODY from '../data/muscleMapPathsFemale';
 import type { BodyView, MuscleGroup } from '../data/muscleMapRegions';
 import { getFaceStyle, FACE_VIEW_BOX } from '../data/faceStyles';
+import { getFaceTransform } from '../lib/faceTransform';
 
 export type IntensityLevel = 0 | 1 | 2 | 3 | 4;
 
@@ -207,7 +208,7 @@ export default function MuscleMap({
   const anatomy = ANATOMY[bodySex];
   const headBox = HEAD_BOX[bodySex];
   const faceStyle = getFaceStyle(faceStyleId);
-  const faceTransform = `translate(${headBox.x} ${headBox.y}) scale(${headBox.w / FACE_VIEW_BOX.width} ${headBox.h / FACE_VIEW_BOX.height})`;
+  const faceTransform = getFaceTransform(headBox, FACE_VIEW_BOX);
 
   const label = (group: MuscleGroup) => (labelForGroup ? labelForGroup(group) : group);
 

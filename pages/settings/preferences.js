@@ -6,6 +6,7 @@ import { FACE_STYLES, DEFAULT_FACE_STYLE_ID, FACE_VIEW_BOX } from "../../data/fa
 import { HEAD_BOX } from "../../components/MuscleMap";
 import * as MALE_BODY from "../../data/muscleMapPaths";
 import * as FEMALE_BODY from "../../data/muscleMapPathsFemale";
+import { getFaceTransform } from "../../lib/faceTransform";
 import SettingsSubpage from "../../components/settings/SettingsSubpage";
 
 const LANGUAGES = [
@@ -40,7 +41,7 @@ function FaceThumbnail({ style, isDark, sex, size = 56 }) {
   const vbY = headBox.y - pad;
   const vbW = headBox.w + pad * 2;
   const vbH = headBox.h + pad;
-  const faceTransform = `translate(${headBox.x} ${headBox.y}) scale(${headBox.w / FACE_VIEW_BOX.width} ${headBox.h / FACE_VIEW_BOX.height})`;
+  const faceTransform = getFaceTransform(headBox, FACE_VIEW_BOX);
   const silhouetteFill = isDark ? "#ffffff" : "#f6f8fa";
   const silhouetteStroke = isDark ? null : "#d2dae2";
 

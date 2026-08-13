@@ -4,14 +4,22 @@ import type { ReactNode } from 'react';
  * Caras del modelo del mapa muscular.
  *
  * ── El sistema de coordenadas ──────────────────────────────────────────────────────────────────
- * Cada cara se dibuja en una caja normalizada de 100 × 168 que representa EL CRÁNEO: (0,0) es la
- * coronilla por su lado izquierdo y (100,168) la barbilla por el derecho. `MuscleMap` la coloca
- * sobre la cabeza de la lámina que toque con un translate+scale (ver HEAD_BOX allí), así que estos
- * dibujos no saben nada de los dos cuerpos ni de sus viewBox distintos.
+ * Cada cara se dibuja en una caja normalizada de 100 × 126 que representa EL CRÁNEO: (0,0) es la
+ * coronilla por su lado izquierdo y (100,126) la barbilla por el derecho. `MuscleMap` la coloca
+ * sobre la cabeza de la lámina que toque con `lib/faceTransform.ts` (ver `HEAD_BOX` en
+ * `components/MuscleMap.tsx`), así que estos dibujos no saben nada de los dos cuerpos ni de sus
+ * viewBox distintos.
  *
- * 168 y no 140 de alto: es la relación intermedia entre las dos cabezas reales (la masculina es más
- * ancha y corta, la femenina más estrecha y larga). Repartir la diferencia deja a las dos con ~7%
- * de estiramiento en vez de cargárselo una sola, que a este tamaño no se ve.
+ * 126 y no 168 (la versión anterior): la relación 100×168 venía de una medida de la cabeza femenina
+ * que resultó estar mal — incluía el moño del peinado de la lámina, no sólo la cara (ver el
+ * historial de `HEAD_BOX` en `MuscleMap.tsx`) — y encima `MuscleMap` encajaba esta caja estirando
+ * x e y por SEPARADO para llenar el rectángulo exacto de cada cuerpo. Con dos cabezas de
+ * proporciones bien distintas (masculina bastante más alta que ancha, femenina casi cuadrada una
+ * vez medida bien), estirar por separado deformaba la cara — sobre todo en la femenina, ancha y
+ * aplastada. Los dos problemas se arreglan juntos: `getFaceTransform` ahora escala con un único
+ * factor (el menor de los dos, nunca estira un eje más que el otro) y esta caja pasa a 100×126,
+ * la media geométrica de las dos cabezas ya bien medidas — dejando algo de aire a los lados o
+ * arriba/abajo según el cuerpo, pero la cara nunca estirada.
  *
  * ── Todos calvos, a propósito ─────────────────────────────────────────────────────────────────
  * No hay pelo que dibujar ni distinguir por vista frontal/posterior: la única variable es la
@@ -35,7 +43,7 @@ const INK = '#1b1b1b';
 
 /** Nariz: igual en las cuatro expresiones — lo que cambia una cara es cejas, ojos y boca. */
 function Nose(): ReactNode {
-  return <path d="M50 88 L45 112 Q50 116 56 111" fill="none" stroke={INK} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />;
+  return <path d="M50 62 L45 84 Q50 88 56 83" fill="none" stroke={INK} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />;
 }
 
 export interface FaceStyle {
@@ -52,17 +60,17 @@ export const FACE_STYLES: FaceStyle[] = [
     name: 'Neutro',
     front: () => (
       <g>
-        <path d="M19 67 Q31 60 43 66" fill="none" stroke={INK} strokeWidth="3.6" strokeLinecap="round" />
-        <path d="M57 66 Q69 60 81 67" fill="none" stroke={INK} strokeWidth="3.6" strokeLinecap="round" />
+        <path d="M18 50 Q31 44 44 49" fill="none" stroke={INK} strokeWidth="3.4" strokeLinecap="round" />
+        <path d="M56 49 Q69 44 82 50" fill="none" stroke={INK} strokeWidth="3.4" strokeLinecap="round" />
 
-        <circle cx="33" cy="81" r="5.4" fill={INK} />
-        <circle cx="67" cy="81" r="5.4" fill={INK} />
-        <circle cx="34.8" cy="78.8" r="1.6" fill="#ffffff" />
-        <circle cx="68.8" cy="78.8" r="1.6" fill="#ffffff" />
+        <circle cx="33" cy="58" r="5.6" fill={INK} />
+        <circle cx="67" cy="58" r="5.6" fill={INK} />
+        <circle cx="34.7" cy="55.9" r="1.6" fill="#ffffff" />
+        <circle cx="68.7" cy="55.9" r="1.6" fill="#ffffff" />
 
         <Nose />
 
-        <path d="M37 132 Q50 137 63 132" fill="none" stroke={INK} strokeWidth="2.8" strokeLinecap="round" />
+        <path d="M36 96 Q50 100 64 96" fill="none" stroke={INK} strokeWidth="2.6" strokeLinecap="round" />
       </g>
     ),
   },
@@ -73,18 +81,18 @@ export const FACE_STYLES: FaceStyle[] = [
       <g>
         {/* Cejas más arriba y arqueadas que en 'Neutro': es lo que lee como sorpresa/alegría en vez
             de un ceño normal levantado un par de unidades. */}
-        <path d="M19 61 Q31 52 43 59" fill="none" stroke={INK} strokeWidth="3.6" strokeLinecap="round" />
-        <path d="M57 59 Q69 52 81 61" fill="none" stroke={INK} strokeWidth="3.6" strokeLinecap="round" />
+        <path d="M18 44 Q31 36 44 42" fill="none" stroke={INK} strokeWidth="3.4" strokeLinecap="round" />
+        <path d="M56 42 Q69 36 82 44" fill="none" stroke={INK} strokeWidth="3.4" strokeLinecap="round" />
 
         {/* Ojos en arco (^ ^), no círculos rellenos: es el atajo visual universal de "sonriendo con
             los ojos", y sin rellenar deja hueco a que se lea como entrecerrado por la sonrisa. */}
-        <path d="M26 82 Q33 74 40 82" fill="none" stroke={INK} strokeWidth="3.2" strokeLinecap="round" />
-        <path d="M60 82 Q67 74 74 82" fill="none" stroke={INK} strokeWidth="3.2" strokeLinecap="round" />
+        <path d="M25 59 Q33 51 41 59" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
+        <path d="M59 59 Q67 51 75 59" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
 
         <Nose />
 
         {/* Boca bien abierta hacia abajo: la curva de 'Neutro' amplificada, no una forma nueva. */}
-        <path d="M33 127 Q50 146 67 127" fill="none" stroke={INK} strokeWidth="3.2" strokeLinecap="round" />
+        <path d="M31 92 Q50 111 69 92" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
       </g>
     ),
   },
@@ -95,18 +103,18 @@ export const FACE_STYLES: FaceStyle[] = [
       <g>
         {/* Cejas rectas en V hacia el entrecejo — fruncidas, no curvas — es lo que distingue
             "serio" de una cara simplemente neutra o triste: no bajan, convergen. */}
-        <path d="M20 60 L42 70" fill="none" stroke={INK} strokeWidth="3.6" strokeLinecap="round" />
-        <path d="M80 60 L58 70" fill="none" stroke={INK} strokeWidth="3.6" strokeLinecap="round" />
+        <path d="M19 42 L43 51" fill="none" stroke={INK} strokeWidth="3.4" strokeLinecap="round" />
+        <path d="M81 42 L57 51" fill="none" stroke={INK} strokeWidth="3.4" strokeLinecap="round" />
 
         {/* Ojos entrecerrados: elipses achatadas en vez de círculos, sin brillo — la mirada fija
             de quien está concentrado no tiene el punto de luz "vivo" de las otras expresiones. */}
-        <ellipse cx="33" cy="82" rx="6.2" ry="3.2" fill={INK} />
-        <ellipse cx="67" cy="82" rx="6.2" ry="3.2" fill={INK} />
+        <ellipse cx="33" cy="59" rx="6.2" ry="3.2" fill={INK} />
+        <ellipse cx="67" cy="59" rx="6.2" ry="3.2" fill={INK} />
 
         <Nose />
 
         {/* Boca recta: ni sonrisa ni mueca, la línea plana de quien está a lo suyo. */}
-        <path d="M39 133 L61 133" fill="none" stroke={INK} strokeWidth="2.8" strokeLinecap="round" />
+        <path d="M38 98 L62 98" fill="none" stroke={INK} strokeWidth="2.6" strokeLinecap="round" />
       </g>
     ),
   },
@@ -117,18 +125,18 @@ export const FACE_STYLES: FaceStyle[] = [
       <g>
         {/* Asimetría deliberada: una ceja arriba, la otra en su sitio de 'Neutro' — es la que
             vende el guiño más que el propio ojo cerrado. */}
-        <path d="M19 61 Q31 53 43 60" fill="none" stroke={INK} strokeWidth="3.6" strokeLinecap="round" />
-        <path d="M57 66 Q69 60 81 67" fill="none" stroke={INK} strokeWidth="3.6" strokeLinecap="round" />
+        <path d="M18 43 Q31 35 44 41" fill="none" stroke={INK} strokeWidth="3.4" strokeLinecap="round" />
+        <path d="M56 49 Q69 44 82 50" fill="none" stroke={INK} strokeWidth="3.4" strokeLinecap="round" />
 
         {/* Ojo izquierdo cerrado en un guiño, derecho abierto como en 'Neutro'. */}
-        <path d="M26 81 Q33 85 40 81" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
-        <circle cx="67" cy="81" r="5.4" fill={INK} />
-        <circle cx="68.8" cy="78.8" r="1.6" fill="#ffffff" />
+        <path d="M25 58 Q33 62 41 58" fill="none" stroke={INK} strokeWidth="2.8" strokeLinecap="round" />
+        <circle cx="67" cy="58" r="5.6" fill={INK} />
+        <circle cx="68.7" cy="55.9" r="1.6" fill="#ffffff" />
 
         <Nose />
 
         {/* Sonrisa torcida: sube más por el lado del ojo abierto, nunca simétrica. */}
-        <path d="M37 130 Q52 141 66 127" fill="none" stroke={INK} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M34 95 Q51 106 65 91" fill="none" stroke={INK} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
       </g>
     ),
   },
@@ -138,7 +146,7 @@ export const FACE_STYLES: FaceStyle[] = [
 export const DEFAULT_FACE_STYLE_ID = 'neutral';
 
 /** La caja normalizada en la que están dibujadas todas las caras. La necesita quien las coloque. */
-export const FACE_VIEW_BOX = { width: 100, height: 168 };
+export const FACE_VIEW_BOX = { width: 100, height: 126 };
 
 /**
  * Resuelve un id guardado a su estilo. Cae al de por defecto ante un id desconocido — un perfil

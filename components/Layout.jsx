@@ -10,7 +10,7 @@ import { readLiveElapsedFromSnapshot } from "../lib/workoutStorage";
 import { useMinDurationLoading } from "../hooks/useMinDurationLoading";
 
 export default function Layout({ children, hideBottomNav = false }) {
-  const { theme, isMobile, activeRoutine, endRoutine, notification, isSyncing, isInitialSync, t, authUser, unreadNotificationsCount } = useUser();
+  const { theme, isMobile, activeRoutine, endRoutine, isSyncing, isInitialSync, t } = useUser();
   // El overlay a pantalla completa se reserva para la carga en frío: sincronizando SIN nada local
   // que mostrar (ver isInitialSync en context/UserContext.js). Antes se mostraba para cualquier
   // isSyncing, y como cada pestaña llama a refreshData() al montar, cambiar de apartado tapaba la
@@ -67,7 +67,6 @@ export default function Layout({ children, hideBottomNav = false }) {
   const isWorkoutMode = workoutModePages.includes(router.pathname);
 
   const showBack = !isTopLevel && !isWorkoutMode;
-  const showBell = !!authUser && !isWorkoutMode;
 
   // Botón de retroceso inteligente: si no hay historial o la entrada es directa, ir a una ruta de respaldo
   const smartBack = () => {
@@ -248,39 +247,6 @@ export default function Layout({ children, hideBottomNav = false }) {
           {showLoadingOverlay && <LoadingOverlay label="Cargando" sublabel="Un momento, por favor" />}
           {showSyncBar && <div className="sync-bar" aria-hidden="true" />}
 
-          {notification && (
-            <div style={{
-              position: "fixed",
-              top: "20px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              zIndex: 11000,
-              backgroundColor: notification.type === 'error' ? tk.danger : tk.accent,
-              color: notification.type === 'error' ? "#fff" : tk.onAccent,
-              padding: "12px 24px",
-              borderRadius: tk.radius.md,
-              boxShadow: "0 8px 30px rgba(0,0,0,0.3)",
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              minWidth: "280px",
-              maxWidth: "90vw",
-              animation: "slideDown 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28)",
-              fontWeight: "bold",
-              textAlign: "center",
-              justifyContent: "center"
-            }}>
-              <style>{`
-                @keyframes slideDown {
-                  from { opacity: 0; transform: translate(-50%, -40px); }
-                  to { opacity: 1; transform: translate(-50%, 0); }
-                }
-              `}</style>
-              <Icon name={notification.type === 'error' ? "alertCircle" : "check"} size={18} />
-              <span>{notification.message}</span>
-            </div>
-          )}
-
           {/* Intro de Logo (Solo Móvil) */}
           {showIntro && (
             <div style={{
@@ -335,7 +301,7 @@ export default function Layout({ children, hideBottomNav = false }) {
                     botones fijos independientes que había antes (que sí lo hacían en páginas sin
                     hueco reservado arriba, sobre todo en móvil). Solo se renderiza si hay algo
                     que mostrar, para no dejar una tira vacía en páginas top-level sin sesión. */}
-                {!isWorkoutMode && (showBack || showBell) && (
+                {!isWorkoutMode && showBack && (
                   <header
                     style={{
                       position: "sticky",
@@ -392,55 +358,6 @@ export default function Layout({ children, hideBottomNav = false }) {
                       <span />
                     )}
 
-                    {showBell && (
-                      <button
-                        onClick={() => router.push("/notifications")}
-                        title={t("notifications")}
-                        aria-label={t("notifications")}
-                        style={{
-                          position: "relative",
-                          width: currentIsMobile ? "34px" : "38px",
-                          height: currentIsMobile ? "34px" : "38px",
-                          borderRadius: tk.radius.full,
-                          backgroundColor: tk.surface,
-                          border: `1.5px solid ${unreadNotificationsCount > 0 ? tk.accent : tk.border}`,
-                          color: unreadNotificationsCount > 0 ? tk.accent : tk.text,
-                          cursor: "pointer",
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          transition: tk.transition,
-                          boxShadow: tk.shadow.card,
-                          flexShrink: 0,
-                        }}
-                      >
-                        <Icon name="bell" size={currentIsMobile ? 16 : 18} />
-                        {unreadNotificationsCount > 0 && (
-                          <span
-                            style={{
-                              position: "absolute",
-                              top: "-4px",
-                              right: "-4px",
-                              minWidth: "17px",
-                              height: "17px",
-                              padding: "0 4px",
-                              borderRadius: tk.radius.full,
-                              backgroundColor: tk.danger,
-                              color: "#fff",
-                              fontSize: "0.62rem",
-                              fontWeight: 800,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              border: `2px solid ${tk.surface}`,
-                              boxShadow: "0 0 0 1px rgba(0,0,0,0.15)",
-                            }}
-                          >
-                            {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
-                          </span>
-                        )}
-                      </button>
-                    )}
                   </header>
                 )}
 

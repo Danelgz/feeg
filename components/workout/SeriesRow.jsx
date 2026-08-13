@@ -17,7 +17,7 @@ function SeriesRow({
   readOnly = false,
 }) {
   const tk = getWorkoutTokens();
-  const isPR = serie.isPR;
+  const isPR = !readOnly && serie.isPR;
   const wasPRRef = useRef(isPR);
   const [justAchieved, setJustAchieved] = useState(false);
   const [showRecordHighlight, setShowRecordHighlight] = useState(false);
@@ -48,13 +48,13 @@ function SeriesRow({
   }, [isPR]);
 
   const badgeLabel = serie.type === "W" ? "W" : serie.type === "D" ? "D" : String(effectiveIndex);
-  const badgeColor = serie.type === "W" ? tk.accent : serie.type === "D" ? tk.warning : tk.text;
+  const badgeColor = readOnly ? tk.text : serie.type === "W" ? tk.accent : serie.type === "D" ? tk.warning : tk.text;
   const previousLabel = previous ? `${previous.weight}${weightUnit} × ${previous.reps}` : "—";
   const fieldStyle = { width: "100%", alignSelf: "center", background: tk.surfaceAlt, borderRadius: "4px", color: tk.text, padding: "6px 0", textAlign: "center", fontSize: "1rem", boxSizing: "border-box" };
 
   return (
     <div
-      className={`feeg-series-grid ${mode === "live" && showRir ? "feeg-series-grid--rir" : "feeg-series-grid--no-rir"}`}
+      className={`feeg-series-grid ${readOnly ? (showRir ? "feeg-series-grid--readonly-rir" : "feeg-series-grid--readonly") : mode === "live" && showRir ? "feeg-series-grid--rir" : "feeg-series-grid--no-rir"}`}
       ref={rowRef}
       style={{
         display: "grid",
@@ -63,9 +63,9 @@ function SeriesRow({
         marginBottom: "5px",
         borderRadius: "8px",
         boxSizing: "border-box",
-        padding: serie.completed ? "6px 8px" : "0",
-        backgroundColor: serie.completed ? tk.accentSoft : "transparent",
-        boxShadow: glow.shadow,
+        padding: readOnly ? "0" : serie.completed ? "6px 8px" : "0",
+        backgroundColor: readOnly ? "transparent" : serie.completed ? tk.accentSoft : "transparent",
+        boxShadow: readOnly ? "none" : glow.shadow,
         transition: `background-color 400ms ease, ${glow.transition}`,
       }}
     >
@@ -94,9 +94,11 @@ function SeriesRow({
         {justAchieved ? <Icon name="trendUp" size={14} color={tk.accent} /> : badgeLabel}
       </div>
 
-      <div style={{ alignSelf: "center", color: tk.textFaint, fontSize: "0.8rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-        <div style={{ lineHeight: 1.15 }}>{previousLabel}</div>
-      </div>
+      {!readOnly && (
+        <div style={{ alignSelf: "center", color: tk.textFaint, fontSize: "0.8rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div style={{ lineHeight: 1.15 }}>{previousLabel}</div>
+        </div>
+      )}
 
       {readOnly ? (
         <div style={fieldStyle}>{serie.weight === "" || serie.weight === undefined || serie.weight === null ? "—" : serie.weight}</div>
@@ -140,12 +142,8 @@ function SeriesRow({
         </select>
       ))}
 
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-        {mode === "live" && readOnly ? (
-          <div aria-label="Serie completada" style={{ width: 30, height: 30, borderRadius: "50%", border: `1.5px solid ${tk.accent}`, backgroundColor: tk.accent, color: tk.onAccent, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Icon name="check" size={15} />
-          </div>
-        ) : mode === "live" ? (
+      {!readOnly && <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+        {mode === "live" ? (
           <button
             type="button"
             onClick={onToggleComplete}
@@ -155,7 +153,7 @@ function SeriesRow({
             <Icon name="check" size={15} />
           </button>
         ) : null}
-      </div>
+      </div>}
     </div>
   );
 }

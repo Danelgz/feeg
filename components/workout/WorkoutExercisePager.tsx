@@ -10,7 +10,6 @@ interface WorkoutExercisePagerProps<T extends PagerItem> {
   exercises: T[];
   renderExercise: (exercise: T, index: number) => ReactNode;
   previousLabel: string;
-  nextLabel: string;
   lastAction?: ReactNode;
 }
 
@@ -19,7 +18,6 @@ export default function WorkoutExercisePager<T extends PagerItem>({
   exercises,
   renderExercise,
   previousLabel,
-  nextLabel,
   lastAction,
 }: WorkoutExercisePagerProps<T>) {
   const tk = getWorkoutTokens();
@@ -172,17 +170,7 @@ export default function WorkoutExercisePager<T extends PagerItem>({
           </span>
         </div>
 
-        {activeIndex < exercises.length - 1 ? (
-          <button
-            type="button"
-            onClick={() => moveTo(activeIndex + 1)}
-            aria-label={nextLabel}
-            title={nextLabel}
-            style={{ width: 36, height: 36, display: "grid", placeItems: "center", border: "none", borderRadius: tk.radius.full, background: tk.accent, color: tk.onAccent, cursor: "pointer", boxShadow: tk.shadow.accent }}
-          >
-            <Icon name="chevronRight" size={18} style={{ transform: "rotate(90deg)" }} />
-          </button>
-        ) : lastAction ? (
+        {activeIndex === exercises.length - 1 && lastAction ? (
           lastAction
         ) : (
           <span style={{ width: 36, height: 36 }} aria-hidden="true" />

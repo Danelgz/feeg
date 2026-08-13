@@ -54,7 +54,8 @@ function ExerciseCard({
 
   const weightUnit = weightUnitFor(exercise);
   const isTimeBased = exercise.exerciseType === "time";
-  const showRir = mode === "live" && showRirPreference !== false;
+  const hasRecordedRir = exercise.series.some((serie) => serie.rir !== "" && serie.rir !== undefined && serie.rir !== null);
+  const showRir = mode === "live" && (readOnly ? hasRecordedRir : showRirPreference !== false);
 
   let normalCount = 0;
   const effectiveIndexes = exercise.series.map((s) => {
@@ -202,7 +203,7 @@ function ExerciseCard({
 
       <div style={{ marginBottom: "15px" }}>
         <div
-          className={`feeg-series-grid ${showRir ? "feeg-series-grid--rir" : "feeg-series-grid--no-rir"}`}
+          className={`feeg-series-grid ${readOnly ? (showRir ? "feeg-series-grid--readonly-rir" : "feeg-series-grid--readonly") : showRir ? "feeg-series-grid--rir" : "feeg-series-grid--no-rir"}`}
           style={{
             display: "grid",
             marginBottom: "10px",
@@ -214,11 +215,11 @@ function ExerciseCard({
           }}
         >
           <div>SERIE</div>
-          <div>ANTERIOR</div>
+          {!readOnly && <div>ANTERIOR</div>}
           <div style={{ textAlign: "center" }}>{isTimeBased ? "TIEMPO" : weightUnit === "L" ? "LASTRE" : "KG"}</div>
           <div style={{ textAlign: "center" }}>{isTimeBased ? "KM/H" : "REPS"}</div>
           {showRir && <div style={{ textAlign: "center" }}>RIR</div>}
-          <div />
+          {!readOnly && <div />}
         </div>
 
         {exercise.series.map((serie, idx) => (
@@ -276,6 +277,12 @@ function ExerciseCard({
         .feeg-series-grid--no-rir {
           grid-template-columns: 40px minmax(0, 1fr) 70px 70px 45px;
         }
+        .feeg-series-grid--readonly-rir {
+          grid-template-columns: 40px minmax(0, 1fr) 62px 62px 52px;
+        }
+        .feeg-series-grid--readonly {
+          grid-template-columns: 40px minmax(0, 1fr) 70px 70px;
+        }
         .feeg-series-grid > * {
           min-width: 0;
         }
@@ -288,6 +295,12 @@ function ExerciseCard({
           }
           .feeg-series-grid--no-rir {
             grid-template-columns: 32px minmax(0, 1fr) 50px 50px 34px;
+          }
+          .feeg-series-grid--readonly-rir {
+            grid-template-columns: 32px minmax(0, 1fr) 50px 50px 38px;
+          }
+          .feeg-series-grid--readonly {
+            grid-template-columns: 32px minmax(0, 1fr) 50px 50px;
           }
         }
       `}</style>

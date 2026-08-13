@@ -2,7 +2,7 @@ import { useId } from "react";
 import { useUser } from "../../context/UserContext";
 import { getTokens } from "../../lib/tokens";
 import { Icon } from "../../components/ui";
-import { FACE_STYLES, DEFAULT_FACE_STYLE_ID, FACE_VIEW_BOX } from "../../data/faceStyles";
+import { FACE_STYLES, DEFAULT_FACE_STYLE_ID, FACE_VIEW_BOX, renderFace } from "../../data/faceStyles";
 import { HEAD_BOX } from "../../components/MuscleMap";
 import * as MALE_BODY from "../../data/muscleMapPaths";
 import * as FEMALE_BODY from "../../data/muscleMapPathsFemale";
@@ -67,7 +67,7 @@ function FaceThumbnail({ style, isDark, sex, size = 56 }) {
             strokeWidth={silhouetteStroke ? 1.4 : undefined}
           />
         ))}
-        <g transform={faceTransform}>{style.front()}</g>
+        <g transform={faceTransform}>{renderFace(style, bodySex)}</g>
       </g>
     </svg>
   );

@@ -6,7 +6,7 @@ import type { MusclePath } from '../data/muscleMapPaths';
 import * as MALE_BODY from '../data/muscleMapPaths';
 import * as FEMALE_BODY from '../data/muscleMapPathsFemale';
 import type { BodyView, MuscleGroup } from '../data/muscleMapRegions';
-import { getFaceStyle, FACE_VIEW_BOX } from '../data/faceStyles';
+import { getFaceStyle, FACE_VIEW_BOX, renderFace } from '../data/faceStyles';
 import { FACE_VERTICAL_OFFSET_BY_BODY, getFaceTransform } from '../lib/faceTransform';
 
 export type IntensityLevel = 0 | 1 | 2 | 3 | 4;
@@ -294,7 +294,7 @@ export default function MuscleMap({
                   la silueta del cuerpo y no hace falta una vista posterior propia. */}
               {view === 'front' && (
                 <g transform={faceTransform} aria-hidden="true">
-                  {faceStyle.front()}
+                  {renderFace(faceStyle, bodySex)}
                 </g>
               )}
 

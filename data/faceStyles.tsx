@@ -46,12 +46,19 @@ function Nose(): ReactNode {
   return <path d="M50 62 L45 84 Q50 88 56 83" fill="none" stroke={INK} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />;
 }
 
+/** Nariz femenina: más estrecha y baja que la versión masculina. */
+function FemaleNose(): ReactNode {
+  return <path d="M50 76 L47 90 Q50 93 54 90" fill="none" stroke={INK} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />;
+}
+
 export interface FaceStyle {
   /** Se guarda en el perfil (`user.faceStyle`), así que no debe cambiar una vez publicado. */
   id: string;
   name: string;
-  /** Único dibujo por estilo: cejas + ojos + nariz + boca sobre la cabeza calva. */
+  /** Dibujo de la expresión masculina: cejas + ojos + nariz + boca sobre la cabeza calva. */
   front: () => ReactNode;
+  /** Dibujo de la misma expresión para el cuerpo femenino, con geometría propia. */
+  frontFemale: () => ReactNode;
 }
 
 export const FACE_STYLES: FaceStyle[] = [
@@ -71,6 +78,21 @@ export const FACE_STYLES: FaceStyle[] = [
         <Nose />
 
         <path d="M36 96 Q50 100 64 96" fill="none" stroke={INK} strokeWidth="2.6" strokeLinecap="round" />
+      </g>
+    ),
+    frontFemale: () => (
+      <g>
+        <path d="M21 57 Q31 52 42 56" fill="none" stroke={INK} strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M58 56 Q69 52 79 57" fill="none" stroke={INK} strokeWidth="2.5" strokeLinecap="round" />
+
+        <path d="M25 69 Q33 64 41 69 Q33 73 25 69" fill="none" stroke={INK} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M59 69 Q67 64 75 69 Q67 73 59 69" fill="none" stroke={INK} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="33" cy="68.5" r="2.3" fill={INK} />
+        <circle cx="67" cy="68.5" r="2.3" fill={INK} />
+
+        <FemaleNose />
+
+        <path d="M43 104 Q50 106 57 104" fill="none" stroke={INK} strokeWidth="2.1" strokeLinecap="round" />
       </g>
     ),
   },
@@ -95,6 +117,19 @@ export const FACE_STYLES: FaceStyle[] = [
         <path d="M31 92 Q50 111 69 92" fill="none" stroke={INK} strokeWidth="3" strokeLinecap="round" />
       </g>
     ),
+    frontFemale: () => (
+      <g>
+        <path d="M21 54 Q31 48 42 54" fill="none" stroke={INK} strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M58 54 Q69 48 79 54" fill="none" stroke={INK} strokeWidth="2.5" strokeLinecap="round" />
+
+        <path d="M25 70 Q33 64 41 70" fill="none" stroke={INK} strokeWidth="2.3" strokeLinecap="round" />
+        <path d="M59 70 Q67 64 75 70" fill="none" stroke={INK} strokeWidth="2.3" strokeLinecap="round" />
+
+        <FemaleNose />
+
+        <path d="M40 103 Q50 111 60 103 Q57 109 50 111 Q43 109 40 103" fill="none" stroke={INK} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      </g>
+    ),
   },
   {
     id: 'focused',
@@ -115,6 +150,19 @@ export const FACE_STYLES: FaceStyle[] = [
 
         {/* Boca recta: ni sonrisa ni mueca, la línea plana de quien está a lo suyo. */}
         <path d="M38 98 L62 98" fill="none" stroke={INK} strokeWidth="2.6" strokeLinecap="round" />
+      </g>
+    ),
+    frontFemale: () => (
+      <g>
+        <path d="M21 57 L42 63" fill="none" stroke={INK} strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M79 57 L58 63" fill="none" stroke={INK} strokeWidth="2.5" strokeLinecap="round" />
+
+        <path d="M25 70 Q33 67 41 70" fill="none" stroke={INK} strokeWidth="2.3" strokeLinecap="round" />
+        <path d="M59 70 Q67 67 75 70" fill="none" stroke={INK} strokeWidth="2.3" strokeLinecap="round" />
+
+        <FemaleNose />
+
+        <path d="M43 106 L57 106" fill="none" stroke={INK} strokeWidth="2.1" strokeLinecap="round" />
       </g>
     ),
   },
@@ -139,6 +187,20 @@ export const FACE_STYLES: FaceStyle[] = [
         <path d="M34 95 Q51 106 65 91" fill="none" stroke={INK} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
       </g>
     ),
+    frontFemale: () => (
+      <g>
+        <path d="M21 53 Q31 47 42 53" fill="none" stroke={INK} strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M58 56 Q69 52 79 57" fill="none" stroke={INK} strokeWidth="2.5" strokeLinecap="round" />
+
+        <path d="M25 69 Q33 73 41 69" fill="none" stroke={INK} strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M59 69 Q67 64 75 69 Q67 73 59 69" fill="none" stroke={INK} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="67" cy="68.5" r="2.3" fill={INK} />
+
+        <FemaleNose />
+
+        <path d="M42 104 Q51 111 59 102" fill="none" stroke={INK} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      </g>
+    ),
   },
 ];
 
@@ -147,6 +209,11 @@ export const DEFAULT_FACE_STYLE_ID = 'neutral';
 
 /** La caja normalizada en la que están dibujadas todas las caras. La necesita quien las coloque. */
 export const FACE_VIEW_BOX = { width: 100, height: 126 };
+
+/** Devuelve la geometría adecuada para el cuerpo sin duplicar el selector de expresiones. */
+export function renderFace(style: FaceStyle, bodySex: 'male' | 'female'): ReactNode {
+  return bodySex === 'female' ? style.frontFemale() : style.front();
+}
 
 /**
  * Resuelve un id guardado a su estilo. Cae al de por defecto ante un id desconocido — un perfil

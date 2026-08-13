@@ -124,8 +124,12 @@ const ANATOMY: Record<BodySex, { viewBox: string; views: BodyView_[] }> = {
  *
  * Frontal y posterior comparten la misma caja en los dos cuerpos: son la misma cabeza vista desde
  * dos ángulos sobre el mismo viewBox, no dos dibujos con proporciones distintas.
+ *
+ * Exportada: el selector de cara de Ajustes (`pages/settings.js`) la reutiliza para recortar la
+ * miniatura de cada opción sobre la cabeza real del cuerpo del usuario, en vez de una silueta
+ * genérica que no se parece a lo que va a ver luego en el mapa.
  */
-const HEAD_BOX: Record<BodySex, { x: number; y: number; w: number; h: number }> = {
+export const HEAD_BOX: Record<BodySex, { x: number; y: number; w: number; h: number }> = {
   male: { x: 172, y: 11, w: 86, h: 134 },
   female: { x: 150, y: 11, w: 105, h: 155 },
 };

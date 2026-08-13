@@ -4,18 +4,47 @@ import { useUser } from "../context/UserContext";
 import { getTokens } from "../lib/tokens";
 import { Icon, Button, Card, PageHeader, Switch } from "../components/ui";
 import { FACE_STYLES, DEFAULT_FACE_STYLE_ID, FACE_VIEW_BOX } from "../data/faceStyles";
+import { HEAD_BOX } from "../components/MuscleMap";
+import * as MALE_BODY from "../data/muscleMapPaths";
+import * as FEMALE_BODY from "../data/muscleMapPathsFemale";
 
-// Silueta genérica para la miniatura del selector: un óvalo con barbilla, no la cabeza real de
-// ningún cuerpo. Ajustes no sabe (ni le hace falta saber) si el usuario acabará viéndose sobre el
-// cuerpo masculino o el femenino — esa cabeza exacta la pone MuscleMap al pintar de verdad.
-const GENERIC_HEAD_PATH = "M50 0 C20 0 8 25 8 55 C8 92 22 132 50 168 C78 132 92 92 92 55 C92 25 80 0 50 0 Z";
+// Aire alrededor de la cabeza recortada: HEAD_BOX es el bbox exacto de la cabeza, y recortar justo
+// en su borde deja las orejas y la línea de la mandíbula pegadas al marco de la miniatura.
+const HEAD_CROP_PADDING_RATIO = 0.14;
 
-/** Miniatura de un FaceStyle: la silueta genérica + el dibujo real de `front()` encima. */
-function FaceThumbnail({ style, isDark, size = 56 }) {
+/**
+ * Miniatura de un FaceStyle recortada sobre la cabeza REAL del cuerpo del usuario (mismo path,
+ * mismo `HEAD_BOX`, mismo translate+scale que pinta `MuscleMap` de verdad), no una silueta
+ * genérica: así el selector responde a "¿cómo se va a ver?" en vez de a una aproximación que luego
+ * no coincide con el mapa muscular ni con Rangos.
+ */
+function FaceThumbnail({ style, isDark, sex, size = 56 }) {
+  const bodySex = sex === "female" ? "female" : "male";
+  const body = bodySex === "female" ? FEMALE_BODY : MALE_BODY;
+  const headBox = HEAD_BOX[bodySex];
+  const pad = headBox.w * HEAD_CROP_PADDING_RATIO;
+  const viewBox = `${headBox.x - pad} ${headBox.y - pad} ${headBox.w + pad * 2} ${headBox.h + pad * 2}`;
+  const faceTransform = `translate(${headBox.x} ${headBox.y}) scale(${headBox.w / FACE_VIEW_BOX.width} ${headBox.h / FACE_VIEW_BOX.height})`;
+  const silhouetteFill = isDark ? "#ffffff" : "#f6f8fa";
+  const silhouetteStroke = isDark ? null : "#d2dae2";
+
   return (
-    <svg width={size} height={size * (FACE_VIEW_BOX.height / FACE_VIEW_BOX.width)} viewBox={`0 0 ${FACE_VIEW_BOX.width} ${FACE_VIEW_BOX.height}`}>
-      <path d={GENERIC_HEAD_PATH} fill={isDark ? "#ffffff" : "#f6f8fa"} />
-      {style.front()}
+    <svg
+      width={size}
+      height={size * ((headBox.h + pad * 2) / (headBox.w + pad * 2))}
+      viewBox={viewBox}
+      style={{ display: "block" }}
+    >
+      {body.FRONT_SILHOUETTE.map((p, i) => (
+        <path
+          key={i}
+          d={p.d}
+          fill={p.fill === "none" ? "none" : silhouetteFill}
+          stroke={silhouetteStroke ?? undefined}
+          strokeWidth={silhouetteStroke ? 1.4 : undefined}
+        />
+      ))}
+      <g transform={faceTransform}>{style.front()}</g>
     </svg>
   );
 }
@@ -69,7 +98,7 @@ function EquipmentChoiceGroup({ isDark, isMobile, tk, label, desc, value, onChan
  * es una elección puramente visual, así que la respuesta a "¿cómo se ve esto?" tiene que estar en
  * el propio botón, no obligar a elegir y volver al mapa para comprobarlo.
  */
-function FaceStylePicker({ isDark, isMobile, tk, value, onChange }) {
+function FaceStylePicker({ isDark, isMobile, tk, value, onChange, sex }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
       <div>
@@ -100,7 +129,7 @@ function FaceStylePicker({ isDark, isMobile, tk, value, onChange }) {
                 transition: tk.transition,
               }}
             >
-              <FaceThumbnail style={style} isDark={isDark} />
+              <FaceThumbnail style={style} isDark={isDark} sex={sex} />
               <span style={{ color: active ? tk.accent : tk.textMuted, fontWeight: active ? 700 : 500, fontSize: "0.78rem" }}>
                 {style.name}
               </span>
@@ -309,6 +338,7 @@ export default function Settings() {
           tk={tk}
           value={user?.faceStyle}
           onChange={(faceStyle) => saveUser({ ...(user || {}), faceStyle })}
+          sex={user?.sex}
         />
 
         <div style={{ height: "1px", backgroundColor: tk.border }} />

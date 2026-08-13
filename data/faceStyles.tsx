@@ -90,11 +90,11 @@ export const FACE_STYLES: FaceStyle[] = [
   },
   {
     id: 'focused',
-    name: 'Concentrado',
+    name: 'Serio',
     front: () => (
       <g>
         {/* Cejas rectas en V hacia el entrecejo — fruncidas, no curvas — es lo que distingue
-            "concentrado" de "serio" o "triste": no bajan, convergen. */}
+            "serio" de una cara simplemente neutra o triste: no bajan, convergen. */}
         <path d="M20 60 L42 70" fill="none" stroke={INK} strokeWidth="3.6" strokeLinecap="round" />
         <path d="M80 60 L58 70" fill="none" stroke={INK} strokeWidth="3.6" strokeLinecap="round" />
 

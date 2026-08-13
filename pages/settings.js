@@ -9,7 +9,9 @@ import * as MALE_BODY from "../data/muscleMapPaths";
 import * as FEMALE_BODY from "../data/muscleMapPathsFemale";
 
 // Aire alrededor de la cabeza recortada: HEAD_BOX es el bbox exacto de la cabeza, y recortar justo
-// en su borde deja las orejas y la línea de la mandíbula pegadas al marco de la miniatura.
+// en su borde deja las orejas y la línea de la mandíbula pegadas al marco de la miniatura. Abajo NO
+// se aplica: el borde inferior de HEAD_BOX ya es la barbilla, y bajar de ahí mete el cuello/hombros
+// en una miniatura que sólo debería mostrar la cara.
 const HEAD_CROP_PADDING_RATIO = 0.14;
 
 /**
@@ -23,7 +25,7 @@ function FaceThumbnail({ style, isDark, sex, size = 56 }) {
   const body = bodySex === "female" ? FEMALE_BODY : MALE_BODY;
   const headBox = HEAD_BOX[bodySex];
   const pad = headBox.w * HEAD_CROP_PADDING_RATIO;
-  const viewBox = `${headBox.x - pad} ${headBox.y - pad} ${headBox.w + pad * 2} ${headBox.h + pad * 2}`;
+  const viewBox = `${headBox.x - pad} ${headBox.y - pad} ${headBox.w + pad * 2} ${headBox.h + pad}`;
   const faceTransform = `translate(${headBox.x} ${headBox.y}) scale(${headBox.w / FACE_VIEW_BOX.width} ${headBox.h / FACE_VIEW_BOX.height})`;
   const silhouetteFill = isDark ? "#ffffff" : "#f6f8fa";
   const silhouetteStroke = isDark ? null : "#d2dae2";
@@ -31,7 +33,7 @@ function FaceThumbnail({ style, isDark, sex, size = 56 }) {
   return (
     <svg
       width={size}
-      height={size * ((headBox.h + pad * 2) / (headBox.w + pad * 2))}
+      height={size * ((headBox.h + pad) / (headBox.w + pad * 2))}
       viewBox={viewBox}
       style={{ display: "block" }}
     >

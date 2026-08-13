@@ -6,6 +6,7 @@ import { useRouter } from "next/router";
 import { getTokens } from "../lib/tokens";
 import { translateExerciseName } from "../lib/exerciseTranslation";
 import { ExerciseThumb } from "../components/workout";
+import ReadOnlyWorkoutModal from "../components/workout/ReadOnlyWorkoutModal";
 import { Icon, Button, Spinner, EmptyState, Avatar, SkeletonPage } from "../components/ui";
 
 function formatFeedDuration(workout) {
@@ -26,6 +27,7 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState([]);
   const [commentingOn, setCommentingOn] = useState(null);
   const [newComment, setNewComment] = useState("");
+  const [selectedWorkout, setSelectedWorkout] = useState(null);
   // Qué tarjetas tienen la lista de ejercicios expandida más allá de los 2 primeros.
   const [expandedExercisesFor, setExpandedExercisesFor] = useState({});
   // Qué ejercicios concretos (workoutId_idx) tienen su tabla de series abierta.
@@ -359,6 +361,7 @@ export default function Home() {
               return (
                 <div
                   key={workout.id}
+                  onClick={() => setSelectedWorkout(workout)}
                   style={{
                     backgroundColor: isMobile ? tk.bg : tk.surface,
                     border: isMobile ? "none" : `1px solid ${tk.border}`,
@@ -366,10 +369,14 @@ export default function Home() {
                     padding: isMobile ? "18px 15px" : "18px",
                     borderRadius: isMobile ? 0 : tk.radius.lg,
                     boxShadow: isMobile ? "none" : tk.shadow.card,
+                    cursor: "pointer",
                   }}
                 >
                   <div
-                    onClick={() => workout.userId && router.push(`/user/${workout.userId}`)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      if (workout.userId) router.push(`/user/${workout.userId}`);
+                    }}
                     style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px", cursor: "pointer" }}
                   >
                     <Avatar photoURL={workout.userPhoto} name={workout.userName} size={42} />
@@ -408,7 +415,10 @@ export default function Home() {
                         return (
                           <div key={idx}>
                             <div
-                              onClick={() => toggleSeriesTable(seriesKey)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                toggleSeriesTable(seriesKey);
+                              }}
                               style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}
                             >
                               <ExerciseThumb name={ex.name} size={36} />
@@ -457,7 +467,10 @@ export default function Home() {
 
                       {exercises.length > 2 && (
                         <button
-                          onClick={() => toggleShowAllExercises(workout.id)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            toggleShowAllExercises(workout.id);
+                          }}
                           style={{ background: "none", border: "none", color: tk.textMuted, fontSize: "0.82rem", cursor: "pointer", padding: "4px 0 0", textAlign: "center" }}
                         >
                           {showAllExercises ? t("hide_details") : t("see_more_exercises").replace("{count}", hiddenCount)}
@@ -467,14 +480,17 @@ export default function Home() {
                   )}
 
                   {workout.comments && (
-                    <div style={{ fontSize: "0.9rem", color: tk.textMuted, fontStyle: "italic", borderLeft: `2px solid ${tk.accent}`, paddingLeft: "10px", margin: "10px 0" }}>
+                    <div onClick={(event) => event.stopPropagation()} style={{ fontSize: "0.9rem", color: tk.textMuted, fontStyle: "italic", borderLeft: `2px solid ${tk.accent}`, paddingLeft: "10px", margin: "10px 0" }}>
                       "{workout.comments}"
                     </div>
                   )}
 
-                  <div style={{ display: "flex", alignItems: "center", gap: "20px", borderTop: `1px solid ${tk.border}`, paddingTop: "12px", marginTop: "4px" }}>
+                  <div onClick={(event) => event.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: "20px", borderTop: `1px solid ${tk.border}`, paddingTop: "12px", marginTop: "4px" }}>
                     <button
-                      onClick={() => handleLike(workout.id)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleLike(workout.id);
+                      }}
                       style={{
                         background: "none",
                         border: "none",
@@ -490,7 +506,10 @@ export default function Home() {
                       {workout.likes?.length || 0}
                     </button>
                     <button
-                      onClick={() => setCommentingOn(commentingOn === workout.id ? null : workout.id)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setCommentingOn(commentingOn === workout.id ? null : workout.id);
+                      }}
                       style={{
                         background: "none",
                         border: "none",
@@ -506,7 +525,10 @@ export default function Home() {
                       {workout.commentsList?.length || 0}
                     </button>
                     <button
-                      onClick={() => handleShare(workout)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleShare(workout);
+                      }}
                       title={t("share")}
                       style={{
                         background: "none",
@@ -530,7 +552,7 @@ export default function Home() {
                       display: "flex",
                       flexDirection: "column",
                       gap: "20px"
-                    }}>
+                    }} onClick={(event) => event.stopPropagation()}>
                       {/* Header Comentarios (Estilo Instagram) */}
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "5px" }}>
                         <span style={{ fontSize: "0.9rem", fontWeight: "bold", color: tk.textMuted }}>{t("comments_label")}</span>
@@ -645,6 +667,12 @@ export default function Home() {
           )}
         </div>
       </div>
+      <ReadOnlyWorkoutModal
+        workout={selectedWorkout}
+        language={language}
+        translate={t}
+        onClose={() => setSelectedWorkout(null)}
+      />
     </Layout>
   );
 }

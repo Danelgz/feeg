@@ -39,6 +39,7 @@ function ExerciseCard({
   onOpenHistory,
   showRirPreference = true,
   progressionMode = "all",
+  readOnly = false,
 }) {
   const t = translate || ((s) => s);
   const tName = translateExerciseName || ((s) => s);
@@ -65,7 +66,7 @@ function ExerciseCard({
   });
   const recommendations = exercise.series.map((serie, idx) => {
     const isNormalSeries = serie.type === "N" || !serie.type;
-    if (!isNormalSeries || serie.completed || appliedRecommendationUids.has(serie.uid) || progressionMode === "off") return null;
+    if (readOnly || !isNormalSeries || serie.completed || appliedRecommendationUids.has(serie.uid) || progressionMode === "off") return null;
     const recommendation = getSetRecommendation(previousSeries?.[idx], serie.reps, exercise.exerciseType);
     if (!recommendation) return null;
     if (progressionMode === "increaseOnly" && recommendation.decision !== "increase") return null;
@@ -114,7 +115,7 @@ function ExerciseCard({
           </div>
         </div>
 
-        <ExerciseActionsMenu
+        {!readOnly && <ExerciseActionsMenu
           open={menuOpen}
           onToggle={() => setMenuOpen((v) => !v)}
           onSubstitute={() => {
@@ -126,16 +127,16 @@ function ExerciseCard({
             setConfirmDeleteExercise(true);
           }}
           t={t}
-        />
+        />}
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "10px", color: tk.accent, marginBottom: "16px", fontSize: "0.95rem" }}>
-        <span onClick={() => setRestPickerOpen(true)} style={{ cursor: "pointer", fontWeight: 500 }}>
+        <span onClick={readOnly ? undefined : () => setRestPickerOpen(true)} style={{ cursor: readOnly ? "default" : "pointer", fontWeight: 500 }}>
           {t("rest_prefix")}: {formatRest(exercise.restSeconds)}
         </span>
       </div>
 
-      {mode === "live" && primaryRecommendation && primarySerie && (
+      {!readOnly && mode === "live" && primaryRecommendation && primarySerie && (
         <div
           style={{
             display: "flex",
@@ -172,7 +173,7 @@ function ExerciseCard({
         </div>
       )}
 
-      {mode === "live" && (
+      {!readOnly && mode === "live" && (
         <input
           type="text"
           value={exercise.notes}
@@ -191,6 +192,12 @@ function ExerciseCard({
             boxSizing: "border-box",
           }}
         />
+      )}
+
+      {readOnly && exercise.notes && (
+        <div style={{ marginBottom: "16px", padding: "9px 12px", background: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.sm, color: tk.textMuted, fontSize: "0.85rem" }}>
+          {exercise.notes}
+        </div>
       )}
 
       <div style={{ marginBottom: "15px" }}>
@@ -225,6 +232,7 @@ function ExerciseCard({
               effectiveIndex={effectiveIndexes[idx]}
               previous={previousSeries?.[idx] || null}
               mode={mode}
+              readOnly={readOnly}
               showRir={showRir}
               weightUnit={weightUnit}
               onFieldChange={(field, value) => onUpdateField(serie.uid, field, value)}
@@ -235,7 +243,7 @@ function ExerciseCard({
         ))}
       </div>
 
-      <button
+      {!readOnly && <button
         onClick={onAddSeries}
         style={{
           width: "100%",
@@ -254,7 +262,7 @@ function ExerciseCard({
         }}
       >
         <Icon name="plus" size={15} /> {t("add_series")}
-      </button>
+      </button>}
 
       <style>{`
         .feeg-series-grid {
@@ -284,15 +292,15 @@ function ExerciseCard({
         }
       `}</style>
 
-      <RestTimePickerModal
+      {!readOnly && <RestTimePickerModal
         open={restPickerOpen}
         value={exercise.restSeconds}
         onChange={onSetRest}
         onClose={() => setRestPickerOpen(false)}
         t={t}
-      />
+      />}
 
-      <SeriesTypeModal
+      {!readOnly && <SeriesTypeModal
         open={!!typeModalSerieUid}
         currentType={exercise.series.find((s) => s.uid === typeModalSerieUid)?.type || "N"}
         onSelectType={(type) => {
@@ -309,9 +317,9 @@ function ExerciseCard({
         }
         onClose={() => setTypeModalSerieUid(null)}
         t={t}
-      />
+      />}
 
-      <ConfirmModal
+      {!readOnly && <ConfirmModal
         isDark
         open={confirmDeleteExercise}
         title={t("delete_exercise_title")}
@@ -322,9 +330,9 @@ function ExerciseCard({
           onDeleteExercise();
         }}
         onCancel={() => setConfirmDeleteExercise(false)}
-      />
+      />}
 
-      <ConfirmModal
+      {!readOnly && <ConfirmModal
         isDark
         open={!!confirmDeleteSerieUid}
         title={t("delete_series_title")}
@@ -335,7 +343,7 @@ function ExerciseCard({
           setConfirmDeleteSerieUid(null);
         }}
         onCancel={() => setConfirmDeleteSerieUid(null)}
-      />
+      />}
     </div>
   );
 }

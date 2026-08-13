@@ -10,6 +10,7 @@ import MuscleRankList, { muscleRankRowId } from './MuscleRankList';
 import { EmptyState, RankArt } from '../ui';
 import { getTokens } from '../../lib/tokens';
 import { useRanks } from '../../hooks/useRanks';
+import { useUser } from '../../context/UserContext';
 import { RANKS, getRankPosition } from '../../data/ranks';
 import { translateExerciseName } from '../../lib/exerciseTranslation';
 import type { MuscleGroup } from '../../data/muscleMapRegions';
@@ -56,6 +57,7 @@ export default function RankMapSection({ isDark, isMobile = false, t, language }
     milestone,
     sex,
   } = useRanks();
+  const { user } = useUser();
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
 
   const toggleGroup = useCallback((group: string) => {
@@ -151,6 +153,7 @@ export default function RankMapSection({ isDark, isMobile = false, t, language }
             seriesByMuscle={{}}
             isDark={isDark}
             sex={sex}
+            faceStyleId={user?.faceStyle}
             labelForGroup={(group) => t(group) || group}
             // Color plano y no degradado: el mismo `rank.color` que pinta el disco de la insignia en
             // cada perfil de rango, para que el cuerpo se lea como "este músculo es Atleta" de un

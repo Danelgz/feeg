@@ -242,7 +242,15 @@ export default function Statistics() {
               onBack={() => setSelectedMuscle(null)}
             />
           ) : (
-            <MuscleMapSection isDark={isDark} isMobile={isNarrow} workouts={workouts} t={t} sex={user?.sex ?? null} onSelectMuscle={setSelectedMuscle} />
+            <MuscleMapSection
+              isDark={isDark}
+              isMobile={isNarrow}
+              workouts={workouts}
+              t={t}
+              sex={user?.sex ?? null}
+              faceStyleId={user?.faceStyle}
+              onSelectMuscle={setSelectedMuscle}
+            />
           )
         )}
 

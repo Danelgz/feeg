@@ -3,6 +3,22 @@ import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { getTokens } from "../lib/tokens";
 import { Icon, Button, Card, PageHeader, Switch } from "../components/ui";
+import { FACE_STYLES, DEFAULT_FACE_STYLE_ID, FACE_VIEW_BOX } from "../data/faceStyles";
+
+// Silueta genérica para la miniatura del selector: un óvalo con barbilla, no la cabeza real de
+// ningún cuerpo. Ajustes no sabe (ni le hace falta saber) si el usuario acabará viéndose sobre el
+// cuerpo masculino o el femenino — esa cabeza exacta la pone MuscleMap al pintar de verdad.
+const GENERIC_HEAD_PATH = "M50 0 C20 0 8 25 8 55 C8 92 22 132 50 168 C78 132 92 92 92 55 C92 25 80 0 50 0 Z";
+
+/** Miniatura de un FaceStyle: la silueta genérica + el dibujo real de `front()` encima. */
+function FaceThumbnail({ style, isDark, size = 56 }) {
+  return (
+    <svg width={size} height={size * (FACE_VIEW_BOX.height / FACE_VIEW_BOX.width)} viewBox={`0 0 ${FACE_VIEW_BOX.width} ${FACE_VIEW_BOX.height}`}>
+      <path d={GENERIC_HEAD_PATH} fill={isDark ? "#ffffff" : "#f6f8fa"} />
+      {style.front()}
+    </svg>
+  );
+}
 
 /**
  * Un par de opciones excluyentes con una línea de ejemplo cada una, en vez de un simple switch:
@@ -40,6 +56,54 @@ function EquipmentChoiceGroup({ isDark, isMobile, tk, label, desc, value, onChan
                 {opt.label}
               </div>
               <div style={{ color: tk.textMuted, fontSize: "0.78rem", marginTop: "3px" }}>{opt.example}</div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Selector de cara del mapa muscular. Cada opción enseña su miniatura real (no un nombre suelto):
+ * es una elección puramente visual, así que la respuesta a "¿cómo se ve esto?" tiene que estar en
+ * el propio botón, no obligar a elegir y volver al mapa para comprobarlo.
+ */
+function FaceStylePicker({ isDark, isMobile, tk, value, onChange }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <div>
+        <div style={{ color: tk.text, fontSize: "1.1rem", fontWeight: 600 }}>Cara del modelo</div>
+        <div style={{ color: tk.textMuted, fontSize: "0.85rem", marginTop: "2px" }}>
+          Cómo se ve tu cuerpo en el mapa muscular y en Rangos.
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(3, 1fr)" : "repeat(5, 1fr)", gap: "10px" }}>
+        {FACE_STYLES.map((style) => {
+          const active = (value || DEFAULT_FACE_STYLE_ID) === style.id;
+          return (
+            <button
+              key={style.id}
+              type="button"
+              onClick={() => onChange(style.id)}
+              aria-pressed={active}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "6px",
+                padding: "10px 6px",
+                borderRadius: tk.radius.md,
+                border: `1.5px solid ${active ? tk.accent : tk.border}`,
+                backgroundColor: active ? tk.accentSoft : tk.surfaceAlt,
+                cursor: "pointer",
+                transition: tk.transition,
+              }}
+            >
+              <FaceThumbnail style={style} isDark={isDark} />
+              <span style={{ color: active ? tk.accent : tk.textMuted, fontWeight: active ? 700 : 500, fontSize: "0.78rem" }}>
+                {style.name}
+              </span>
             </button>
           );
         })}
@@ -235,6 +299,17 @@ export default function Settings() {
             ))}
           </select>
         </div>
+
+        <div style={{ height: "1px", backgroundColor: tk.border }} />
+
+        {/* Apartado de la cara del modelo del mapa muscular. */}
+        <FaceStylePicker
+          isDark={isDark}
+          isMobile={isMobile}
+          tk={tk}
+          value={user?.faceStyle}
+          onChange={(faceStyle) => saveUser({ ...(user || {}), faceStyle })}
+        />
 
         <div style={{ height: "1px", backgroundColor: tk.border }} />
 

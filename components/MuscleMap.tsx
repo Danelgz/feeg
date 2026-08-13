@@ -6,6 +6,7 @@ import type { MusclePath } from '../data/muscleMapPaths';
 import * as MALE_BODY from '../data/muscleMapPaths';
 import * as FEMALE_BODY from '../data/muscleMapPathsFemale';
 import type { BodyView, MuscleGroup } from '../data/muscleMapRegions';
+import { getFaceStyle, FACE_VIEW_BOX } from '../data/faceStyles';
 
 export type IntensityLevel = 0 | 1 | 2 | 3 | 4;
 
@@ -60,6 +61,8 @@ export interface MuscleMapProps {
    * cuerpo que ya está mostrando rangos.
    */
   ariaLabelForGroup?: (group: MuscleGroup, value: number) => string;
+  /** Estilo de cara elegido en el perfil (`user.faceStyle`). Sin indicar, cae en `bald` (rapado). */
+  faceStyleId?: string | null;
 }
 
 const DEFAULT_THRESHOLDS: [number, number, number, number] = [1, 4, 8, 12];
@@ -110,6 +113,23 @@ const ANATOMY: Record<BodySex, { viewBox: string; views: BodyView_[] }> = {
   },
 };
 
+/**
+ * Caja de la cabeza en coordenadas reales de cada lámina, para encajar `data/faceStyles.tsx` (que
+ * dibuja en su propia caja normalizada de 100×168, ver `FACE_VIEW_BOX`) con un simple
+ * translate+scale. Medida directamente sobre los paths de cada body — no es una estimación:
+ *
+ * - Masculina: la cabeza es el primer subtrazo, aislado, de FRONT_SILHOUETTE (bbox exacto).
+ * - Femenina: la cabeza está fundida en el contorno completo del cuerpo (no hay subtrazo que
+ *   aislar), así que se midió por bandas de altura, cortando donde el ancho se estrecha al cuello.
+ *
+ * Frontal y posterior comparten la misma caja en los dos cuerpos: son la misma cabeza vista desde
+ * dos ángulos sobre el mismo viewBox, no dos dibujos con proporciones distintas.
+ */
+const HEAD_BOX: Record<BodySex, { x: number; y: number; w: number; h: number }> = {
+  male: { x: 172, y: 11, w: 86, h: 134 },
+  female: { x: 150, y: 11, w: 105, h: 155 },
+};
+
 function getIntensity(value: number, thresholds: [number, number, number, number]): IntensityLevel {
   if (value <= 0) return 0;
   const [t1, t2, t3, t4] = thresholds;
@@ -158,11 +178,16 @@ export default function MuscleMap({
   legend,
   hint = 'Pasa por encima de un músculo, o tócalo para ver sus ejercicios.',
   ariaLabelForGroup,
+  faceStyleId,
 }: MuscleMapProps) {
   const tk = getTokens(isDark);
   const prefersReducedMotion = useReducedMotion();
   const [active, setActive] = useState<Active | null>(null);
-  const anatomy = ANATOMY[sex === 'female' ? 'female' : 'male'];
+  const bodySex: BodySex = sex === 'female' ? 'female' : 'male';
+  const anatomy = ANATOMY[bodySex];
+  const headBox = HEAD_BOX[bodySex];
+  const faceStyle = getFaceStyle(faceStyleId);
+  const faceTransform = `translate(${headBox.x} ${headBox.y}) scale(${headBox.w / FACE_VIEW_BOX.width} ${headBox.h / FACE_VIEW_BOX.height})`;
 
   const label = (group: MuscleGroup) => (labelForGroup ? labelForGroup(group) : group);
 
@@ -241,6 +266,13 @@ export default function MuscleMap({
                   strokeWidth={silhouetteStroke ? 1.4 : undefined}
                 />
               ))}
+
+              {/* La cara va DEBAJO de los músculos a propósito: si el cuello (un grupo entrenable
+                  más) se solapa un poco con la caja de la cabeza, gana el color que informa sobre
+                  el que sólo decora. */}
+              <g transform={faceTransform} aria-hidden="true">
+                {view === 'front' ? faceStyle.front() : faceStyle.back()}
+              </g>
 
               {Object.entries(muscles).map(([groupKey, paths], groupIndex) => {
                 const group = groupKey as MuscleGroup;

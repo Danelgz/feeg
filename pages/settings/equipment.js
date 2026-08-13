@@ -1,5 +1,6 @@
 import { useUser } from "../../context/UserContext";
 import { getTokens } from "../../lib/tokens";
+import { Switch } from "../../components/ui";
 import SettingsSubpage from "../../components/settings/SettingsSubpage";
 
 /**
@@ -50,6 +51,11 @@ export default function SettingsEquipment() {
   const { theme, isMobile, t, user, saveUser } = useUser();
   const isDark = theme === 'dark';
   const tk = getTokens(isDark);
+  const workoutPreferences = user?.workoutPreferences || {};
+  const updateWorkoutPreferences = (changes) => saveUser({
+    ...(user || {}),
+    workoutPreferences: { ...workoutPreferences, ...changes },
+  });
 
   return (
     <SettingsSubpage
@@ -58,6 +64,36 @@ export default function SettingsEquipment() {
       title={t("equipment_settings_title")}
       subtitle={t("equipment_settings_desc")}
     >
+      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: "12px" }}>
+        <div>
+          <div style={{ color: tk.text, fontSize: "0.95rem", fontWeight: 600 }}>{t("rir_button_label")}</div>
+          <div style={{ color: tk.textMuted, fontSize: "0.82rem", marginTop: "2px" }}>{t("rir_button_desc")}</div>
+        </div>
+        <Switch
+          isDark={isDark}
+          checked={workoutPreferences.showRir !== false}
+          onChange={(showRir) => updateWorkoutPreferences({ showRir })}
+        />
+      </div>
+
+      <EquipmentChoiceGroup
+        isDark={isDark}
+        isMobile={isMobile}
+        tk={tk}
+        label={t("progression_mode_label")}
+        desc={t("progression_mode_desc")}
+        value={workoutPreferences.progressionMode || "all"}
+        onChange={(progressionMode) => updateWorkoutPreferences({ progressionMode })}
+        options={[
+          { key: "off", label: t("progression_mode_off"), example: t("progression_mode_off_example") },
+          { key: "increaseOnly", label: t("progression_mode_increase_only"), example: t("progression_mode_increase_only_example") },
+          { key: "increaseMaintain", label: t("progression_mode_increase_maintain"), example: t("progression_mode_increase_maintain_example") },
+          { key: "all", label: t("progression_mode_all"), example: t("progression_mode_all_example") },
+        ]}
+      />
+
+      <div style={{ height: "1px", backgroundColor: tk.border }} />
+
       <EquipmentChoiceGroup
         isDark={isDark}
         isMobile={isMobile}

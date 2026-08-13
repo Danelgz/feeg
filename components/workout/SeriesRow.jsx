@@ -11,10 +11,7 @@ function SeriesRow({
   effectiveIndex,
   previous,
   rowRef,
-  recommendation,
-  recommendationLabel,
-  recommendationActionLabel,
-  onApplyRecommendation,
+  showRir = true,
   mode,
   weightUnit,
   onFieldChange,
@@ -58,25 +55,18 @@ function SeriesRow({
   const badgeLabel = serie.type === "W" ? "W" : serie.type === "D" ? "D" : String(effectiveIndex);
   const badgeColor = serie.type === "W" ? tk.accent : serie.type === "D" ? tk.warning : tk.text;
   const previousLabel = previous ? `${previous.weight}${weightUnit} × ${previous.reps}` : "—";
-  const recommendationTarget = recommendation
-    ? `${recommendation.weight !== null && recommendation.weight !== undefined ? `${recommendation.weight}${weightUnit}` : ""}${recommendation.reps !== null && recommendation.reps !== undefined ? ` × ${recommendation.reps}` : ""}`.trim()
-    : "";
-
-  const recommendationColor = recommendation?.decision === "decrease" ? tk.warning : recommendation?.decision === "maintain" ? tk.textMuted : tk.accent;
-  const recommendationBackground = recommendation?.decision === "decrease" ? tk.warningSoft : recommendation?.decision === "maintain" ? "rgba(255,255,255,0.06)" : tk.accentSoft;
   return (
     <div
+      className={`feeg-series-grid ${mode === "live" && showRir ? "feeg-series-grid--rir" : "feeg-series-grid--no-rir"}`}
       ref={rowRef}
       style={{
         display: "grid",
-        gridTemplateColumns: mode === "live" ? "40px minmax(92px, 1fr) 62px 62px 52px 38px" : "40px 1fr 70px 70px 45px",
-        gap: "10px",
-        alignItems: recommendation ? "stretch" : "center",
-        minHeight: recommendation ? "58px" : "45px",
+        alignItems: "center",
+        minHeight: "45px",
         marginBottom: "5px",
         borderRadius: "8px",
         boxSizing: "border-box",
-        padding: serie.completed ? "6px 8px" : recommendation ? "6px 0" : "0",
+        padding: serie.completed ? "6px 8px" : "0",
         backgroundColor: serie.completed ? tk.accentSoft : "transparent",
         boxShadow: glow.shadow,
         transition: `background-color 400ms ease, ${glow.transition}`,
@@ -109,23 +99,6 @@ function SeriesRow({
 
       <div style={{ alignSelf: "center", color: tk.textFaint, fontSize: "0.8rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
         <div style={{ lineHeight: 1.15 }}>{previousLabel}</div>
-        {recommendation && (
-          <div
-            title="Sugerencia basada en tu último entrenamiento"
-            style={{ display: "flex", alignItems: "center", gap: "5px", width: "fit-content", maxWidth: "100%", color: recommendationColor, background: recommendationBackground, border: `1px solid ${recommendationColor}55`, borderRadius: "7px", padding: "4px 5px 4px 6px", fontSize: "0.64rem", marginTop: "4px", whiteSpace: "nowrap", boxSizing: "border-box" }}
-          >
-            <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{recommendation.decision === "increase" ? "↑" : recommendation.decision === "decrease" ? "↓" : "→"} {recommendationLabel}: <strong>{recommendationTarget}</strong></span>
-            {mode === "live" && !serie.completed && onApplyRecommendation && (
-              <button
-                type="button"
-                onClick={(event) => { event.stopPropagation(); onApplyRecommendation(); }}
-                style={{ border: "none", borderLeft: `1px solid ${recommendationColor}55`, padding: "0 0 0 5px", background: "transparent", color: recommendationColor, fontSize: "0.62rem", fontWeight: 800, cursor: "pointer" }}
-              >
-                {recommendationActionLabel}
-              </button>
-            )}
-          </div>
-        )}
       </div>
 
       <input
@@ -133,8 +106,8 @@ function SeriesRow({
         type="number"
         value={serie.weight}
         onChange={(e) => onFieldChange("weight", e.target.value === "" ? "" : Number(e.target.value))}
-        placeholder={recommendation?.weight !== null && recommendation?.weight !== undefined ? String(recommendation.weight) : previous ? String(previous.weight) : "0"}
-        style={{ width: "100%", alignSelf: "center", background: recommendation ? recommendationBackground : tk.surfaceAlt, border: recommendation ? `1px solid ${recommendationColor}66` : "none", borderRadius: "4px", color: tk.text, padding: "6px 0", textAlign: "center", fontSize: "1rem", boxSizing: "border-box", outlineColor: tk.accent }}
+        placeholder={previous ? String(previous.weight) : "0"}
+        style={{ width: "100%", alignSelf: "center", background: tk.surfaceAlt, border: "none", borderRadius: "4px", color: tk.text, padding: "6px 0", textAlign: "center", fontSize: "1rem", boxSizing: "border-box", outlineColor: tk.accent }}
       />
 
       <input
@@ -142,11 +115,11 @@ function SeriesRow({
         type="number"
         value={serie.reps}
         onChange={(e) => onFieldChange("reps", e.target.value === "" ? "" : Number(e.target.value))}
-        placeholder={recommendation?.reps !== null && recommendation?.reps !== undefined ? String(recommendation.reps) : previous ? String(previous.reps) : "0"}
-        style={{ width: "100%", alignSelf: "center", background: recommendation ? recommendationBackground : tk.surfaceAlt, border: recommendation ? `1px solid ${recommendationColor}66` : "none", borderRadius: "4px", color: tk.text, padding: "6px 0", textAlign: "center", fontSize: "1rem", boxSizing: "border-box", outlineColor: tk.accent }}
+        placeholder={previous ? String(previous.reps) : "0"}
+        style={{ width: "100%", alignSelf: "center", background: tk.surfaceAlt, border: "none", borderRadius: "4px", color: tk.text, padding: "6px 0", textAlign: "center", fontSize: "1rem", boxSizing: "border-box", outlineColor: tk.accent }}
       />
 
-      {mode === "live" && (
+      {mode === "live" && showRir && (
         <select
           aria-label="Repeticiones en reserva"
           value={serie.rir ?? ""}

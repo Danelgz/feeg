@@ -37,6 +37,8 @@ function ExerciseCard({
   onSubstitute,
   onDeleteExercise,
   onOpenHistory,
+  showRirPreference = true,
+  progressionMode = "all",
 }) {
   const t = translate || ((s) => s);
   const tName = translateExerciseName || ((s) => s);
@@ -51,8 +53,7 @@ function ExerciseCard({
 
   const weightUnit = weightUnitFor(exercise);
   const isTimeBased = exercise.exerciseType === "time";
-  const showRir = mode === "live";
-  const seriesGrid = showRir ? "40px minmax(60px, 1fr) 62px 62px 52px 38px" : "40px 1fr 70px 70px 45px";
+  const showRir = mode === "live" && showRirPreference !== false;
 
   let normalCount = 0;
   const effectiveIndexes = exercise.series.map((s) => {
@@ -64,8 +65,12 @@ function ExerciseCard({
   });
   const recommendations = exercise.series.map((serie, idx) => {
     const isNormalSeries = serie.type === "N" || !serie.type;
-    if (!isNormalSeries || serie.completed || appliedRecommendationUids.has(serie.uid)) return null;
-    return getSetRecommendation(previousSeries?.[idx], serie.reps, exercise.exerciseType);
+    if (!isNormalSeries || serie.completed || appliedRecommendationUids.has(serie.uid) || progressionMode === "off") return null;
+    const recommendation = getSetRecommendation(previousSeries?.[idx], serie.reps, exercise.exerciseType);
+    if (!recommendation) return null;
+    if (progressionMode === "increaseOnly" && recommendation.decision !== "increase") return null;
+    if (progressionMode === "increaseMaintain" && recommendation.decision === "decrease") return null;
+    return recommendation;
   });
   const firstRecommendationIndex = recommendations.findIndex(Boolean);
   const primaryRecommendation = firstRecommendationIndex >= 0 ? recommendations[firstRecommendationIndex] : null;
@@ -190,10 +195,9 @@ function ExerciseCard({
 
       <div style={{ marginBottom: "15px" }}>
         <div
+          className={`feeg-series-grid ${showRir ? "feeg-series-grid--rir" : "feeg-series-grid--no-rir"}`}
           style={{
             display: "grid",
-            gridTemplateColumns: seriesGrid,
-            gap: "10px",
             marginBottom: "10px",
             color: tk.textFaint,
             fontSize: "0.75rem",
@@ -221,6 +225,7 @@ function ExerciseCard({
               effectiveIndex={effectiveIndexes[idx]}
               previous={previousSeries?.[idx] || null}
               mode={mode}
+              showRir={showRir}
               weightUnit={weightUnit}
               onFieldChange={(field, value) => onUpdateField(serie.uid, field, value)}
               onRirChange={(value) => onRirChange?.(serie.uid, value)}
@@ -250,6 +255,34 @@ function ExerciseCard({
       >
         <Icon name="plus" size={15} /> {t("add_series")}
       </button>
+
+      <style>{`
+        .feeg-series-grid {
+          width: 100%;
+          min-width: 0;
+          gap: 10px;
+        }
+        .feeg-series-grid--rir {
+          grid-template-columns: 40px minmax(0, 1fr) 62px 62px 52px 38px;
+        }
+        .feeg-series-grid--no-rir {
+          grid-template-columns: 40px minmax(0, 1fr) 70px 70px 45px;
+        }
+        .feeg-series-grid > * {
+          min-width: 0;
+        }
+        @media (max-width: 520px) {
+          .feeg-series-grid {
+            gap: 5px;
+          }
+          .feeg-series-grid--rir {
+            grid-template-columns: 32px minmax(0, 1fr) 50px 50px 38px 32px;
+          }
+          .feeg-series-grid--no-rir {
+            grid-template-columns: 32px minmax(0, 1fr) 50px 50px 34px;
+          }
+        }
+      `}</style>
 
       <RestTimePickerModal
         open={restPickerOpen}

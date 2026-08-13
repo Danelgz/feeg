@@ -15,7 +15,7 @@ import { ExerciseCard, WorkoutHeader, WorkoutStatsBar, FloatingRestTimer, Workou
 export default function RoutineDetail() {
   const router = useRouter();
   const { id } = router.query;
-  const { routines: allRoutines, activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, completedWorkouts, soundEnabled, t, language, updateRoutine, theme } = useUser();
+  const { routines: allRoutines, activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, completedWorkouts, soundEnabled, t, language, updateRoutine, theme, user } = useUser();
   const isDark = theme === "dark";
   const tk = getWorkoutTokens();
   const workoutId = id ? id.toString() : "";
@@ -409,7 +409,7 @@ export default function RoutineDetail() {
   // ongoing
   return (
     <Layout hideBottomNav>
-      <div style={{ maxWidth: "900px", margin: "0 auto" }}>
+      <div className="feeg-active-workout-viewport" style={{ maxWidth: "900px", width: "100%", margin: "0 auto", overflowX: "hidden", touchAction: "pan-y", overscrollBehaviorX: "none" }}>
         <WorkoutHeader mode="live" title={state.name || foundRoutine?.name} onBack={() => setShowDiscardConfirm(true)} primaryLabel={t("finish_button")} onPrimaryAction={() => setShowFinishConfirm(true)} />
 
         <WorkoutStatsBar mode="live" elapsedSeconds={elapsedSeconds} totalVolume={totals.totalVolume} totalSeries={totals.totalSeries} t={t} />
@@ -423,6 +423,8 @@ export default function RoutineDetail() {
               translate={t}
               translateExerciseName={(name) => translateExerciseName(name, language)}
               previousSeries={previousByName[exercise.name]}
+              showRirPreference={user?.workoutPreferences?.showRir !== false}
+              progressionMode={user?.workoutPreferences?.progressionMode || "all"}
               onUpdateField={(serieUid, field, value) => actions.updateSeriesField(exercise.uid, serieUid, field, value)}
               onRirChange={(serieUid, value) => actions.updateSeriesRir(exercise.uid, serieUid, value)}
               onToggleComplete={(serieUid) => actions.toggleSeriesComplete(exercise.uid, serieUid)}
@@ -448,6 +450,11 @@ export default function RoutineDetail() {
           </button>
         </div>
       </div>
+
+      <style>{`
+        html, body { overflow-x: hidden; overscroll-behavior-x: none; }
+        .feeg-active-workout-viewport { max-width: 100%; }
+      `}</style>
 
       <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} totalRestSeconds={totalRestSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} />
       <PRToast item={prToast} t={t} onDismiss={dismissPRToast} />

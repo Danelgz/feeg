@@ -15,7 +15,7 @@ const WORKOUT_ID = "empty";
 
 export default function EmptyRoutine() {
   const router = useRouter();
-  const { activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, completedWorkouts, soundEnabled, t, language } = useUser();
+  const { activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, completedWorkouts, soundEnabled, t, language, user } = useUser();
   const tk = getWorkoutTokens();
 
   const { state, actions, elapsedSeconds, restRemainingSeconds, restActive, totals, prToast, dismissPRToast } = useWorkoutSession({
@@ -282,7 +282,7 @@ export default function EmptyRoutine() {
 
   return (
     <Layout hideBottomNav>
-      <div style={{ maxWidth: "900px", margin: "0 auto" }}>
+      <div className="feeg-active-workout-viewport" style={{ maxWidth: "900px", width: "100%", margin: "0 auto", overflowX: "hidden", touchAction: "pan-y", overscrollBehaviorX: "none" }}>
         <WorkoutHeader mode="live" title="Entreno Vacío" onBack={() => setShowDiscardConfirm(true)} primaryLabel={t("finish_button")} onPrimaryAction={() => setShowFinishConfirm(true)} />
 
         <WorkoutStatsBar mode="live" elapsedSeconds={elapsedSeconds} totalVolume={totals.totalVolume} totalSeries={totals.totalSeries} t={t} />
@@ -296,6 +296,8 @@ export default function EmptyRoutine() {
               translate={t}
               translateExerciseName={(name) => translateExerciseName(name, language)}
               previousSeries={undefined}
+              showRirPreference={user?.workoutPreferences?.showRir !== false}
+              progressionMode={user?.workoutPreferences?.progressionMode || "all"}
               onUpdateField={(serieUid, field, value) => actions.updateSeriesField(exercise.uid, serieUid, field, value)}
               onRirChange={(serieUid, value) => actions.updateSeriesRir(exercise.uid, serieUid, value)}
               onToggleComplete={(serieUid) => actions.toggleSeriesComplete(exercise.uid, serieUid)}
@@ -330,6 +332,11 @@ export default function EmptyRoutine() {
           </button>
         </div>
       </div>
+
+      <style>{`
+        html, body { overflow-x: hidden; overscroll-behavior-x: none; }
+        .feeg-active-workout-viewport { max-width: 100%; }
+      `}</style>
 
       <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} totalRestSeconds={totalRestSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} />
       <PRToast item={prToast} t={t} onDismiss={dismissPRToast} />

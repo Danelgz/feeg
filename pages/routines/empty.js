@@ -9,7 +9,7 @@ import { getExerciseInfo, computeWorkoutTotals, buildPRRecordsFromExercises, che
 import { getWorkoutTokens } from "../../lib/tokens";
 import { translateExerciseName } from "../../lib/exerciseTranslation";
 import { ConfirmModal } from "../../components/ui";
-import { ExerciseCard, WorkoutHeader, WorkoutStatsBar, WorkoutExercisePager, FloatingRestTimer, WorkoutSummaryScreen, PRToast } from "../../components/workout";
+import { ExerciseCard, WorkoutHeader, WorkoutStatsBar, WorkoutExercisePager, FloatingRestTimer, WorkoutSummaryScreen, WorkoutFinishScreen, PRToast } from "../../components/workout";
 
 const WORKOUT_ID = "empty";
 
@@ -28,11 +28,11 @@ export default function EmptyRoutine() {
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
   const [substitutingUid, setSubstitutingUid] = useState(null);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
-  const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showFinishForm, setShowFinishForm] = useState(false);
   const [showRoutineActiveAlert, setShowRoutineActiveAlert] = useState(false);
   const [finishName, setFinishName] = useState("Entrenamiento Vacío");
   const [finishComments, setFinishComments] = useState("");
+  const [finishTotalTime, setFinishTotalTime] = useState(0);
   const [savingWorkout, setSavingWorkout] = useState(false);
   const [finishedWorkout, setFinishedWorkout] = useState(null);
   const [sessionPRRecords, setSessionPRRecords] = useState([]);
@@ -92,6 +92,11 @@ export default function EmptyRoutine() {
     setSubstitutingUid(null);
   };
 
+  const openFinishForm = () => {
+    setFinishTotalTime(Math.floor(elapsedSeconds / 60));
+    setShowFinishForm(true);
+  };
+
   const handleSaveFinishedRoutine = () => {
     setSavingWorkout(true);
 
@@ -105,7 +110,7 @@ export default function EmptyRoutine() {
       comments: finishComments,
       completedAt: new Date().toISOString(),
       elapsedTime: elapsedSeconds,
-      totalTime: Math.floor(elapsedSeconds / 60),
+      totalTime: Number(finishTotalTime) || Math.floor(elapsedSeconds / 60),
       exercises: state.exercises.length,
       series: totals.totalSeries,
       totalReps: totals.totalReps,
@@ -235,104 +240,25 @@ export default function EmptyRoutine() {
     );
   }
 
-  if (showFinishConfirm) {
-    return (
-      <Layout hideBottomNav>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "80vh" }}>
-          <div style={{ backgroundColor: tk.surface, border: `2px solid ${tk.accent}`, borderRadius: tk.radius.lg, padding: "40px", textAlign: "center", maxWidth: "400px" }}>
-            <h2 style={{ color: tk.accent, marginBottom: "20px" }}>¿Terminar entreno?</h2>
-            <div style={{ display: "flex", gap: "15px" }}>
-              <button
-                onClick={() => setShowFinishConfirm(false)}
-                className="feeg-surface feeg-press feeg-hover"
-                style={{
-                  flex: 1, padding: "12px", border: "none", borderRadius: tk.radius.sm, cursor: "pointer",
-                  "--feeg-bg": tk.surfaceAlt,
-                  "--feeg-fg": tk.text,
-                  "--feeg-hover-bg": tk.surfaceHover,
-                  "--feeg-border-width": "0px",
-                }}
-              >
-                No
-              </button>
-              <button
-                onClick={() => {
-                  setShowFinishConfirm(false);
-                  setShowFinishForm(true);
-                }}
-                className="feeg-surface feeg-press feeg-hover"
-                style={{
-                  flex: 1, padding: "12px", border: "none", borderRadius: tk.radius.sm, fontWeight: "bold", cursor: "pointer",
-                  "--feeg-bg": tk.accent,
-                  "--feeg-fg": tk.onAccent,
-                  "--feeg-hover-bg": tk.accentHover,
-                  "--feeg-border-width": "0px",
-                }}
-              >
-                Sí, terminar
-              </button>
-            </div>
-          </div>
-        </div>
-        <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} totalRestSeconds={totalRestSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} />
-      </Layout>
-    );
-  }
-
   if (showFinishForm) {
     return (
       <Layout hideBottomNav>
-        <div style={{ maxWidth: "600px", margin: "0 auto" }}>
-          <div style={{ backgroundColor: tk.surface, border: `1px solid ${tk.accent}`, borderRadius: tk.radius.lg, padding: "30px" }}>
-            <h2 style={{ color: tk.accent, textAlign: "center", marginBottom: "30px" }}>Finalizar Entrenamiento</h2>
-            <div style={{ marginBottom: "20px" }}>
-              <label style={{ color: tk.textMuted, fontSize: "0.9rem", display: "block", marginBottom: "8px" }}>Nombre del entreno</label>
-              <input
-                type="text"
-                value={finishName}
-                onChange={(e) => setFinishName(e.target.value)}
-                style={{ width: "100%", padding: "12px", background: tk.bg, border: `1px solid ${tk.border}`, borderRadius: tk.radius.sm, color: tk.text, boxSizing: "border-box" }}
-              />
-            </div>
-            <div style={{ marginBottom: "20px" }}>
-              <label style={{ color: tk.textMuted, fontSize: "0.9rem", display: "block", marginBottom: "8px" }}>Comentarios</label>
-              <textarea
-                value={finishComments}
-                onChange={(e) => setFinishComments(e.target.value)}
-                style={{ width: "100%", padding: "12px", background: tk.bg, border: `1px solid ${tk.border}`, borderRadius: tk.radius.sm, color: tk.text, minHeight: "80px", boxSizing: "border-box" }}
-              />
-            </div>
-            <div style={{ display: "flex", gap: "15px", marginTop: "30px" }}>
-              <button
-                onClick={() => setShowFinishForm(false)}
-                className="feeg-surface feeg-press feeg-hover"
-                style={{
-                  flex: 1, padding: "12px", border: "none", borderRadius: tk.radius.sm, cursor: "pointer",
-                  "--feeg-bg": tk.surfaceAlt,
-                  "--feeg-fg": tk.text,
-                  "--feeg-hover-bg": tk.surfaceHover,
-                  "--feeg-border-width": "0px",
-                }}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveFinishedRoutine}
-                disabled={savingWorkout}
-                className="feeg-surface feeg-press feeg-hover"
-                style={{
-                  flex: 1, padding: "12px", border: "none", borderRadius: tk.radius.sm, fontWeight: "bold", cursor: savingWorkout ? "not-allowed" : "pointer", opacity: savingWorkout ? 0.7 : 1,
-                  "--feeg-bg": tk.accent,
-                  "--feeg-fg": tk.onAccent,
-                  "--feeg-hover-bg": tk.accentHover,
-                  "--feeg-border-width": "0px",
-                }}
-              >
-                {savingWorkout ? "Guardando..." : "Guardar"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <WorkoutFinishScreen
+          name={finishName}
+          onNameChange={setFinishName}
+          namePlaceholder={t("placeholder_workout_name")}
+          comments={finishComments}
+          onCommentsChange={setFinishComments}
+          totalMinutes={finishTotalTime}
+          onTotalMinutesChange={setFinishTotalTime}
+          elapsedSeconds={elapsedSeconds}
+          totals={totals}
+          exerciseCount={state.exercises.length}
+          savingWorkout={savingWorkout}
+          onCancel={() => setShowFinishForm(false)}
+          onSave={handleSaveFinishedRoutine}
+          t={t}
+        />
       </Layout>
     );
   }
@@ -340,7 +266,7 @@ export default function EmptyRoutine() {
   return (
     <Layout hideBottomNav>
       <div className="feeg-active-workout-viewport" style={{ maxWidth: "900px", width: "100%", height: "100dvh", minHeight: 0, margin: "0 auto", display: "flex", flexDirection: "column", overflow: "hidden", touchAction: "pan-y", overscrollBehaviorX: "none" }}>
-        <WorkoutHeader mode="live" title="Entreno Vacío" onBack={() => setShowDiscardConfirm(true)} primaryLabel={t("finish_button")} onPrimaryAction={() => setShowFinishConfirm(true)} />
+        <WorkoutHeader mode="live" title="Entreno Vacío" onBack={() => setShowDiscardConfirm(true)} primaryLabel={t("finish_button")} onPrimaryAction={openFinishForm} />
 
         <WorkoutStatsBar mode="live" elapsedSeconds={elapsedSeconds} totalVolume={totals.totalVolume} totalSeries={totals.totalSeries} t={t} />
 

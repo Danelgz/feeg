@@ -10,3 +10,5 @@ export { default as PRToast } from "./PRToast";
 export { default as ExerciseCard } from "./ExerciseCard";
 export { default as WorkoutExercisePager } from "./WorkoutExercisePager";
 export { default as WorkoutSummaryScreen } from "./WorkoutSummaryScreen";
+export { default as WorkoutFinishScreen } from "./WorkoutFinishScreen";
+export { default as DurationPickerModal } from "./DurationPickerModal";

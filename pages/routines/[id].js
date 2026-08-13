@@ -10,7 +10,7 @@ import { getLatestExerciseSeries } from "../../lib/workoutRecommendations";
 import { getWorkoutTokens } from "../../lib/tokens";
 import { translateExerciseName } from "../../lib/exerciseTranslation";
 import { ConfirmModal, Spinner } from "../../components/ui";
-import { ExerciseCard, WorkoutHeader, WorkoutStatsBar, WorkoutExercisePager, FloatingRestTimer, WorkoutSummaryScreen, PRToast } from "../../components/workout";
+import { ExerciseCard, WorkoutHeader, WorkoutStatsBar, WorkoutExercisePager, FloatingRestTimer, WorkoutSummaryScreen, WorkoutFinishScreen, PRToast } from "../../components/workout";
 
 export default function RoutineDetail() {
   const router = useRouter();
@@ -44,7 +44,6 @@ export default function RoutineDetail() {
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
   const [substitutingUid, setSubstitutingUid] = useState(null);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
-  const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showFinishForm, setShowFinishForm] = useState(false);
   const [showRoutineActiveAlert, setShowRoutineActiveAlert] = useState(false);
   const [finishName, setFinishName] = useState("");
@@ -136,7 +135,6 @@ export default function RoutineDetail() {
   };
 
   const openFinishForm = () => {
-    setShowFinishConfirm(false);
     setFinishName(state.name || foundRoutine?.name || "");
     setFinishTotalTime(Math.floor(elapsedSeconds / 60));
     setShowFinishForm(true);
@@ -318,162 +316,28 @@ export default function RoutineDetail() {
     );
   }
 
-  if (showFinishConfirm) {
-    return (
-      <Layout hideBottomNav>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "80vh" }}>
-          <div style={{ backgroundColor: tk.surface, border: `2px solid ${tk.accent}`, borderRadius: tk.radius.md, padding: "40px", maxWidth: "500px", textAlign: "center" }}>
-            <h2 style={{ color: tk.accent, marginBottom: "20px", fontSize: "1.5rem" }}>{t("confirm_finish_title")}</h2>
-            <p style={{ color: tk.textMuted, marginBottom: "30px" }}>{t("confirm_finish_subtitle")}</p>
-            <div style={{ display: "flex", gap: "15px" }}>
-              <button
-                onClick={() => setShowFinishConfirm(false)}
-                className="feeg-surface feeg-press feeg-hover"
-                style={{
-                  flex: 1, padding: "12px", border: "none", borderRadius: tk.radius.sm, cursor: "pointer", fontWeight: "600",
-                  "--feeg-bg": tk.surfaceAlt,
-                  "--feeg-fg": tk.text,
-                  "--feeg-hover-bg": tk.surfaceHover,
-                  "--feeg-border-width": "0px",
-                }}
-              >
-                {t("no_continue")}
-              </button>
-              <button
-                onClick={openFinishForm}
-                className="feeg-surface feeg-press feeg-hover"
-                style={{
-                  flex: 1, padding: "12px", border: "none", borderRadius: tk.radius.sm, cursor: "pointer", fontWeight: "600",
-                  "--feeg-bg": tk.accent,
-                  "--feeg-fg": tk.onAccent,
-                  "--feeg-hover-bg": tk.accentHover,
-                  "--feeg-border-width": "0px",
-                }}
-              >
-                {t("yes_finish")}
-              </button>
-            </div>
-          </div>
-        </div>
-        <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} totalRestSeconds={totalRestSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} />
-      </Layout>
-    );
-  }
-
   if (showFinishForm) {
-    const totalExercises = state.exercises.length;
     return (
       <Layout hideBottomNav>
-        <div style={{ maxWidth: "600px", margin: "0 auto" }}>
-          <div style={{ backgroundColor: tk.surface, border: `2px solid ${tk.accent}`, borderRadius: tk.radius.md, padding: "40px" }}>
-            <h2 style={{ color: tk.accent, marginBottom: "30px", fontSize: "1.5rem", textAlign: "center" }}>{t("finish_workout")}</h2>
-
-            <div style={{ marginBottom: "25px" }}>
-              <label style={{ display: "block", color: tk.textMuted, fontSize: "0.9rem", marginBottom: "8px" }}>{t("workout_name")}</label>
-              <input
-                type="text"
-                value={finishName}
-                onChange={(e) => setFinishName(e.target.value)}
-                placeholder={t("placeholder_workout_name")}
-                style={{ width: "100%", padding: "12px", backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.sm, color: tk.text, boxSizing: "border-box" }}
-              />
-            </div>
-
-            <div style={{ marginBottom: "25px" }}>
-              <label style={{ display: "block", color: tk.textMuted, fontSize: "0.9rem", marginBottom: "8px" }}>{t("comments")}</label>
-              <textarea
-                value={finishComments}
-                onChange={(e) => setFinishComments(e.target.value)}
-                placeholder={t("placeholder_comments")}
-                style={{ width: "100%", padding: "12px", backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.sm, color: tk.text, minHeight: "80px", boxSizing: "border-box", resize: "vertical" }}
-              />
-            </div>
-
-            <div style={{ marginBottom: "25px" }}>
-              <label style={{ display: "block", color: tk.textMuted, fontSize: "0.9rem", marginBottom: "8px" }}>{t("total_time_min")}</label>
-              <input
-                type="number"
-                value={finishTotalTime}
-                onChange={(e) => setFinishTotalTime(e.target.value)}
-                min="0"
-                style={{ width: "100%", padding: "12px", backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.sm, color: tk.text, boxSizing: "border-box" }}
-              />
-              <p style={{ margin: "5px 0 0 0", fontSize: "0.85rem", color: tk.accent }}>
-                {t("real_time")} {Math.floor(elapsedSeconds / 60)}m {elapsedSeconds % 60}s
-              </p>
-            </div>
-
-            {(routineChanges.exercises > 0 || routineChanges.series > 0) && (
-              <div style={{ backgroundColor: tk.accentSoft, padding: "15px", borderRadius: tk.radius.sm, marginBottom: "25px", border: `1px solid ${tk.accent}` }}>
-                <p style={{ color: tk.accent, fontWeight: "bold", margin: "0 0 10px 0", display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span>✨</span> {t("routine_improved_title")}
-                </p>
-                <p style={{ color: tk.textMuted, fontSize: "0.9rem", margin: "0 0 15px 0", lineHeight: "1.4" }}>
-                  {t("routine_changes_prefix")}
-                  <strong>
-                    {" "}
-                    {routineChanges.exercises > 0 && `${routineChanges.exercises} ${t("new_exercises_label")}`}
-                    {routineChanges.exercises > 0 && routineChanges.series > 0 && " y "}
-                    {routineChanges.series > 0 && `${routineChanges.series} ${t("additional_series_label")}`}
-                  </strong>
-                  .
-                </p>
-                <label style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer", color: tk.text, backgroundColor: tk.surface, padding: "10px", borderRadius: tk.radius.sm, border: `1px solid ${tk.border}` }}>
-                  <input type="checkbox" checked={updateOriginalRoutine} onChange={(e) => setUpdateOriginalRoutine(e.target.checked)} style={{ width: "20px", height: "20px", accentColor: tk.accent, cursor: "pointer" }} />
-                  <span style={{ fontSize: "0.95rem" }}>{t("update_original_routine_label")}</span>
-                </label>
-              </div>
-            )}
-
-            <div style={{ backgroundColor: tk.surfaceAlt, borderRadius: tk.radius.sm, padding: "20px", marginBottom: "25px" }}>
-              <h3 style={{ color: tk.accent, marginBottom: "15px", fontSize: "1.1rem" }}>{t("workout_summary")}</h3>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
-                {[
-                  { label: t("exercises_count"), value: totalExercises },
-                  { label: t("series_label"), value: totals.totalSeries },
-                  { label: t("reps_label"), value: totals.totalReps },
-                  { label: t("total_volume"), value: `${totals.totalVolume.toFixed(1)}kg` },
-                ].map((stat) => (
-                  <div key={stat.label} style={{ textAlign: "center" }}>
-                    <div style={{ color: tk.accent, fontSize: "1.8rem", fontWeight: "700" }}>{stat.value}</div>
-                    <div style={{ color: tk.textMuted, fontSize: "0.9rem" }}>{stat.label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: "15px" }}>
-              <button
-                onClick={() => setShowFinishForm(false)}
-                disabled={savingWorkout}
-                className="feeg-surface feeg-press feeg-hover"
-                style={{
-                  flex: 1, padding: "12px", border: "none", borderRadius: tk.radius.sm, cursor: savingWorkout ? "not-allowed" : "pointer", fontWeight: "600", opacity: savingWorkout ? 0.6 : 1,
-                  "--feeg-bg": tk.surfaceAlt,
-                  "--feeg-fg": tk.text,
-                  "--feeg-hover-bg": tk.surfaceHover,
-                  "--feeg-border-width": "0px",
-                }}
-              >
-                {t("cancel")}
-              </button>
-              <button
-                onClick={handleSaveFinishedRoutine}
-                disabled={savingWorkout}
-                className="feeg-surface feeg-press feeg-hover"
-                style={{
-                  flex: 1, padding: "12px", border: "none", borderRadius: tk.radius.sm, cursor: savingWorkout ? "not-allowed" : "pointer", fontWeight: "600", opacity: savingWorkout ? 0.7 : 1,
-                  "--feeg-bg": tk.accent,
-                  "--feeg-fg": tk.onAccent,
-                  "--feeg-hover-bg": tk.accentHover,
-                  "--feeg-border-width": "0px",
-                }}
-              >
-                {savingWorkout ? t("saving") : t("save_workout")}
-              </button>
-            </div>
-          </div>
-        </div>
+        <WorkoutFinishScreen
+          name={finishName}
+          onNameChange={setFinishName}
+          namePlaceholder={t("placeholder_workout_name")}
+          comments={finishComments}
+          onCommentsChange={setFinishComments}
+          totalMinutes={finishTotalTime}
+          onTotalMinutesChange={setFinishTotalTime}
+          elapsedSeconds={elapsedSeconds}
+          totals={totals}
+          exerciseCount={state.exercises.length}
+          routineChanges={routineChanges}
+          updateOriginalRoutine={updateOriginalRoutine}
+          onUpdateOriginalRoutineChange={setUpdateOriginalRoutine}
+          savingWorkout={savingWorkout}
+          onCancel={() => setShowFinishForm(false)}
+          onSave={handleSaveFinishedRoutine}
+          t={t}
+        />
       </Layout>
     );
   }
@@ -482,7 +346,7 @@ export default function RoutineDetail() {
   return (
     <Layout hideBottomNav>
       <div className="feeg-active-workout-viewport" style={{ maxWidth: "900px", width: "100%", height: "100dvh", minHeight: 0, margin: "0 auto", display: "flex", flexDirection: "column", overflow: "hidden", touchAction: "pan-y", overscrollBehaviorX: "none" }}>
-        <WorkoutHeader mode="live" title={state.name || foundRoutine?.name} onBack={() => setShowDiscardConfirm(true)} primaryLabel={t("finish_button")} onPrimaryAction={() => setShowFinishConfirm(true)} />
+        <WorkoutHeader mode="live" title={state.name || foundRoutine?.name} onBack={() => setShowDiscardConfirm(true)} primaryLabel={t("finish_button")} onPrimaryAction={openFinishForm} />
 
         <WorkoutStatsBar mode="live" elapsedSeconds={elapsedSeconds} totalVolume={totals.totalVolume} totalSeries={totals.totalSeries} t={t} />
 

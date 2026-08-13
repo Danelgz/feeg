@@ -97,6 +97,7 @@ export default function SettingsPreferences() {
               <button
                 key={opt.key}
                 onClick={() => setThemeMode(opt.key)}
+                className="feeg-surface feeg-press feeg-hover"
                 style={{
                   flex: isMobile ? "1 1 auto" : "0 0 auto",
                   display: "flex",
@@ -105,13 +106,16 @@ export default function SettingsPreferences() {
                   gap: "8px",
                   padding: "12px 18px",
                   borderRadius: tk.radius.md,
-                  border: `1.5px solid ${active ? tk.accent : tk.border}`,
-                  backgroundColor: active ? tk.accentSoft : "transparent",
-                  color: active ? tk.accent : tk.text,
                   fontWeight: active ? 700 : 500,
                   cursor: "pointer",
-                  transition: tk.transition,
-                  minWidth: isMobile ? undefined : "120px"
+                  minWidth: isMobile ? undefined : "120px",
+                  "--feeg-bg": active ? tk.accentSoft : "transparent",
+                  "--feeg-fg": active ? tk.accent : tk.text,
+                  "--feeg-border": active ? tk.accent : tk.border,
+                  "--feeg-hover-bg": active ? tk.accentSoft : tk.surfaceHover,
+                  "--feeg-hover-border": tk.accent,
+                  "--feeg-border-width": "1.5px",
+                  "--feeg-press-scale": 0.97,
                 }}
               >
                 <Icon name={opt.icon} size={17} />
@@ -135,18 +139,22 @@ export default function SettingsPreferences() {
                 type="button"
                 onClick={() => updateLanguage(lang.code)}
                 aria-pressed={active}
+                className="feeg-surface feeg-press feeg-hover"
                 style={{
                   flex: isMobile ? "1 1 auto" : "0 0 auto",
                   padding: "12px 18px",
                   borderRadius: tk.radius.md,
-                  border: `1.5px solid ${active ? tk.accent : tk.border}`,
-                  backgroundColor: active ? tk.accentSoft : "transparent",
-                  color: active ? tk.accent : tk.text,
                   fontWeight: active ? 700 : 500,
                   fontSize: "1rem",
                   cursor: "pointer",
-                  transition: tk.transition,
-                  minWidth: isMobile ? undefined : "120px"
+                  minWidth: isMobile ? undefined : "120px",
+                  "--feeg-bg": active ? tk.accentSoft : "transparent",
+                  "--feeg-fg": active ? tk.accent : tk.text,
+                  "--feeg-border": active ? tk.accent : tk.border,
+                  "--feeg-hover-bg": active ? tk.accentSoft : tk.surfaceHover,
+                  "--feeg-hover-border": tk.accent,
+                  "--feeg-border-width": "1.5px",
+                  "--feeg-press-scale": 0.97,
                 }}
               >
                 {lang.name}
@@ -174,6 +182,7 @@ export default function SettingsPreferences() {
                 type="button"
                 onClick={() => saveUser({ ...(user || {}), faceStyle: style.id })}
                 aria-pressed={active}
+                className="feeg-surface feeg-press feeg-hover"
                 style={{
                   display: "flex",
                   flexDirection: "column",
@@ -181,10 +190,13 @@ export default function SettingsPreferences() {
                   gap: "6px",
                   padding: "10px 6px",
                   borderRadius: tk.radius.md,
-                  border: `1.5px solid ${active ? tk.accent : tk.border}`,
-                  backgroundColor: active ? tk.accentSoft : tk.surfaceAlt,
                   cursor: "pointer",
-                  transition: tk.transition,
+                  "--feeg-bg": active ? tk.accentSoft : tk.surfaceAlt,
+                  "--feeg-border": active ? tk.accent : tk.border,
+                  "--feeg-hover-bg": active ? tk.accentSoft : tk.surfaceHover,
+                  "--feeg-hover-border": tk.accent,
+                  "--feeg-border-width": "1.5px",
+                  "--feeg-press-scale": 0.97,
                 }}
               >
                 <FaceThumbnail style={style} isDark={isDark} sex={sex} />

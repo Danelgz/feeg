@@ -24,15 +24,19 @@ function EquipmentChoiceGroup({ isDark, isMobile, tk, label, desc, value, onChan
               type="button"
               onClick={() => onChange(opt.key)}
               aria-pressed={active}
+              className="feeg-surface feeg-press feeg-hover"
               style={{
                 flex: "1 1 0",
                 textAlign: "left",
                 padding: "12px 14px",
                 borderRadius: tk.radius.md,
-                border: `1.5px solid ${active ? tk.accent : tk.border}`,
-                backgroundColor: active ? tk.accentSoft : tk.surfaceAlt,
                 cursor: "pointer",
-                transition: tk.transition,
+                "--feeg-bg": active ? tk.accentSoft : tk.surfaceAlt,
+                "--feeg-border": active ? tk.accent : tk.border,
+                "--feeg-hover-bg": active ? tk.accentSoft : tk.surfaceHover,
+                "--feeg-hover-border": tk.accent,
+                "--feeg-border-width": "1.5px",
+                "--feeg-press-scale": 0.98,
               }}
             >
               <div style={{ color: active ? tk.accent : tk.text, fontWeight: active ? 700 : 500, fontSize: "0.9rem" }}>

@@ -150,15 +150,18 @@ export default function EmptyRoutine() {
           </p>
           <button
             onClick={handleStart}
+            className="feeg-surface feeg-press feeg-hover"
             style={{
-              backgroundColor: tk.accent,
-              color: tk.onAccent,
               border: "none",
               borderRadius: tk.radius.md,
               padding: "15px 40px",
               fontSize: "1.1rem",
               fontWeight: "bold",
               cursor: "pointer",
+              "--feeg-bg": tk.accent,
+              "--feeg-fg": tk.onAccent,
+              "--feeg-hover-bg": tk.accentHover,
+              "--feeg-border-width": "0px",
             }}
           >
             Empezar Entrenamiento
@@ -201,7 +204,14 @@ export default function EmptyRoutine() {
               </p>
               <button
                 onClick={() => setShowRoutineActiveAlert(false)}
-                style={{ width: "100%", padding: "12px", backgroundColor: tk.accent, color: tk.onAccent, border: "none", borderRadius: tk.radius.md, fontWeight: "bold", cursor: "pointer" }}
+                className="feeg-surface feeg-press feeg-hover"
+                style={{
+                  width: "100%", padding: "12px", border: "none", borderRadius: tk.radius.md, fontWeight: "bold", cursor: "pointer",
+                  "--feeg-bg": tk.accent,
+                  "--feeg-fg": tk.onAccent,
+                  "--feeg-hover-bg": tk.accentHover,
+                  "--feeg-border-width": "0px",
+                }}
               >
                 {t("understood")}
               </button>
@@ -219,7 +229,17 @@ export default function EmptyRoutine() {
           <div style={{ backgroundColor: tk.surface, border: `2px solid ${tk.accent}`, borderRadius: tk.radius.lg, padding: "40px", textAlign: "center", maxWidth: "400px" }}>
             <h2 style={{ color: tk.accent, marginBottom: "20px" }}>¿Terminar entreno?</h2>
             <div style={{ display: "flex", gap: "15px" }}>
-              <button onClick={() => setShowFinishConfirm(false)} style={{ flex: 1, padding: "12px", background: tk.surfaceAlt, color: tk.text, border: "none", borderRadius: tk.radius.sm, cursor: "pointer" }}>
+              <button
+                onClick={() => setShowFinishConfirm(false)}
+                className="feeg-surface feeg-press feeg-hover"
+                style={{
+                  flex: 1, padding: "12px", border: "none", borderRadius: tk.radius.sm, cursor: "pointer",
+                  "--feeg-bg": tk.surfaceAlt,
+                  "--feeg-fg": tk.text,
+                  "--feeg-hover-bg": tk.surfaceHover,
+                  "--feeg-border-width": "0px",
+                }}
+              >
                 No
               </button>
               <button
@@ -227,7 +247,14 @@ export default function EmptyRoutine() {
                   setShowFinishConfirm(false);
                   setShowFinishForm(true);
                 }}
-                style={{ flex: 1, padding: "12px", background: tk.accent, color: tk.onAccent, border: "none", borderRadius: tk.radius.sm, fontWeight: "bold", cursor: "pointer" }}
+                className="feeg-surface feeg-press feeg-hover"
+                style={{
+                  flex: 1, padding: "12px", border: "none", borderRadius: tk.radius.sm, fontWeight: "bold", cursor: "pointer",
+                  "--feeg-bg": tk.accent,
+                  "--feeg-fg": tk.onAccent,
+                  "--feeg-hover-bg": tk.accentHover,
+                  "--feeg-border-width": "0px",
+                }}
               >
                 Sí, terminar
               </button>
@@ -263,13 +290,30 @@ export default function EmptyRoutine() {
               />
             </div>
             <div style={{ display: "flex", gap: "15px", marginTop: "30px" }}>
-              <button onClick={() => setShowFinishForm(false)} style={{ flex: 1, padding: "12px", background: tk.surfaceAlt, color: tk.text, border: "none", borderRadius: tk.radius.sm, cursor: "pointer" }}>
+              <button
+                onClick={() => setShowFinishForm(false)}
+                className="feeg-surface feeg-press feeg-hover"
+                style={{
+                  flex: 1, padding: "12px", border: "none", borderRadius: tk.radius.sm, cursor: "pointer",
+                  "--feeg-bg": tk.surfaceAlt,
+                  "--feeg-fg": tk.text,
+                  "--feeg-hover-bg": tk.surfaceHover,
+                  "--feeg-border-width": "0px",
+                }}
+              >
                 Cancelar
               </button>
               <button
                 onClick={handleSaveFinishedRoutine}
                 disabled={savingWorkout}
-                style={{ flex: 1, padding: "12px", background: tk.accent, color: tk.onAccent, border: "none", borderRadius: tk.radius.sm, fontWeight: "bold", cursor: savingWorkout ? "not-allowed" : "pointer", opacity: savingWorkout ? 0.7 : 1 }}
+                className="feeg-surface feeg-press feeg-hover"
+                style={{
+                  flex: 1, padding: "12px", border: "none", borderRadius: tk.radius.sm, fontWeight: "bold", cursor: savingWorkout ? "not-allowed" : "pointer", opacity: savingWorkout ? 0.7 : 1,
+                  "--feeg-bg": tk.accent,
+                  "--feeg-fg": tk.onAccent,
+                  "--feeg-hover-bg": tk.accentHover,
+                  "--feeg-border-width": "0px",
+                }}
               >
                 {savingWorkout ? "Guardando..." : "Guardar"}
               </button>

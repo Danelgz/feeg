@@ -222,17 +222,21 @@ export default function ExerciseHistory() {
       <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px' }}>
         <button
           onClick={() => router.back()}
+          className="feeg-surface feeg-press feeg-hover"
           style={{
-            background: 'none',
             border: 'none',
-            color: mint,
             fontSize: '1rem',
             cursor: 'pointer',
             fontWeight: '600',
             marginBottom: '20px',
             display: 'flex',
             alignItems: 'center',
-            gap: '5px'
+            gap: '5px',
+            padding: '4px 0',
+            '--feeg-fg': mint,
+            '--feeg-hover-fg': mint,
+            '--feeg-border-width': '0px',
+            '--feeg-press-scale': 0.96,
           }}
         >
           ← Volver

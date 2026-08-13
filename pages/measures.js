@@ -248,17 +248,21 @@ export default function Measures() {
             <button
               key={u}
               onClick={() => updateUnits('weight', u)}
+              className="feeg-surface feeg-press feeg-hover"
               style={{
                 flex: 1,
                 padding: "8px",
                 borderRadius: tk.radius.sm,
                 border: "none",
-                backgroundColor: units.weight === u ? tk.accent : "transparent",
-                color: units.weight === u ? tk.onAccent : tk.textMuted,
                 fontWeight: "bold",
                 cursor: "pointer",
                 fontSize: "0.8rem",
-                transition: tk.transition
+                "--feeg-bg": units.weight === u ? tk.accent : "transparent",
+                "--feeg-fg": units.weight === u ? tk.onAccent : tk.textMuted,
+                "--feeg-hover-bg": units.weight === u ? tk.accentHover : tk.surfaceHover,
+                "--feeg-hover-fg": units.weight === u ? tk.onAccent : tk.text,
+                "--feeg-border-width": "0px",
+                "--feeg-press-scale": 0.96,
               }}
             >{u.toUpperCase()}</button>
           ))}
@@ -268,17 +272,21 @@ export default function Measures() {
             <button
               key={u}
               onClick={() => updateUnits('length', u)}
+              className="feeg-surface feeg-press feeg-hover"
               style={{
                 flex: 1,
                 padding: "8px",
                 borderRadius: tk.radius.sm,
                 border: "none",
-                backgroundColor: units.length === u ? tk.accent : "transparent",
-                color: units.length === u ? tk.onAccent : tk.textMuted,
                 fontWeight: "bold",
                 cursor: "pointer",
                 fontSize: "0.8rem",
-                transition: tk.transition
+                "--feeg-bg": units.length === u ? tk.accent : "transparent",
+                "--feeg-fg": units.length === u ? tk.onAccent : tk.textMuted,
+                "--feeg-hover-bg": units.length === u ? tk.accentHover : tk.surfaceHover,
+                "--feeg-hover-fg": units.length === u ? tk.onAccent : tk.text,
+                "--feeg-border-width": "0px",
+                "--feeg-press-scale": 0.96,
               }}
             >{u.toUpperCase()}</button>
           ))}
@@ -325,13 +333,28 @@ export default function Measures() {
                 <div style={{ display: "flex", gap: "10px" }}>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleEdit(m); }}
-                    style={{ background: "none", border: "none", color: tk.textMuted, cursor: "pointer", display: "flex" }}
+                    className="feeg-surface feeg-press feeg-hover"
+                    style={{
+                      border: "none", cursor: "pointer", display: "flex", padding: "4px", borderRadius: tk.radius.sm,
+                      "--feeg-fg": tk.textMuted,
+                      "--feeg-hover-fg": tk.accent,
+                      "--feeg-border-width": "0px",
+                      "--feeg-press-scale": 0.88,
+                    }}
                   >
                     <Icon name="edit" size={18} />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(m.id); }}
-                    style={{ background: "none", border: "none", color: tk.danger, cursor: "pointer", display: "flex" }}
+                    className="feeg-surface feeg-press feeg-hover"
+                    style={{
+                      border: "none", cursor: "pointer", display: "flex", padding: "4px", borderRadius: tk.radius.sm,
+                      "--feeg-fg": tk.danger,
+                      "--feeg-hover-fg": tk.danger,
+                      "--feeg-hover-bg": tk.dangerSoft,
+                      "--feeg-border-width": "0px",
+                      "--feeg-press-scale": 0.88,
+                    }}
                   >
                     <Icon name="trash" size={18} />
                   </button>
@@ -373,7 +396,17 @@ export default function Measures() {
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
               <h2 style={{ margin: 0, color: tk.accent }}>{editingId ? "Editar Medida" : "Nueva Medida"}</h2>
-              <button onClick={() => { setShowAddForm(false); setEditingId(null); }} style={{ background: "none", border: "none", color: tk.text, cursor: "pointer", display: "flex" }}>
+              <button
+                onClick={() => { setShowAddForm(false); setEditingId(null); }}
+                className="feeg-surface feeg-press feeg-hover"
+                style={{
+                  border: "none", cursor: "pointer", display: "flex", padding: "4px", borderRadius: tk.radius.sm,
+                  "--feeg-fg": tk.text,
+                  "--feeg-hover-bg": tk.surfaceHover,
+                  "--feeg-border-width": "0px",
+                  "--feeg-press-scale": 0.88,
+                }}
+              >
                 <Icon name="close" size={20} />
               </button>
             </div>
@@ -477,7 +510,14 @@ export default function Measures() {
           }}>
             <button
               onClick={() => setViewingMeasure(null)}
-              style={{ position: "absolute", top: "20px", right: "20px", background: "none", border: "none", color: tk.text, cursor: "pointer", zIndex: 10, display: "flex" }}
+              className="feeg-surface feeg-press feeg-hover"
+              style={{
+                position: "absolute", top: "20px", right: "20px", border: "none", cursor: "pointer", zIndex: 10, display: "flex", padding: "4px", borderRadius: tk.radius.sm,
+                "--feeg-fg": tk.text,
+                "--feeg-hover-bg": tk.surfaceHover,
+                "--feeg-border-width": "0px",
+                "--feeg-press-scale": 0.88,
+              }}
             >
               <Icon name="close" size={20} />
             </button>

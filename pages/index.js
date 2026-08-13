@@ -241,7 +241,14 @@ export default function Home() {
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
-                  style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: tk.textFaint, cursor: "pointer", display: "flex" }}
+                  className="feeg-surface feeg-hover"
+                  style={{
+                    position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)",
+                    border: "none", cursor: "pointer", display: "flex",
+                    "--feeg-fg": tk.textFaint,
+                    "--feeg-hover-fg": tk.text,
+                    "--feeg-border-width": "0px",
+                  }}
                 >
                   <Icon name="close" size={16} />
                 </button>
@@ -471,7 +478,14 @@ export default function Home() {
                             event.stopPropagation();
                             toggleShowAllExercises(workout.id);
                           }}
-                          style={{ background: "none", border: "none", color: tk.textMuted, fontSize: "0.82rem", cursor: "pointer", padding: "4px 0 0", textAlign: "center" }}
+                          className="feeg-surface feeg-press feeg-hover"
+                          style={{
+                            border: "none", fontSize: "0.82rem", cursor: "pointer", padding: "4px 0 0", textAlign: "center",
+                            "--feeg-fg": tk.textMuted,
+                            "--feeg-hover-fg": tk.accent,
+                            "--feeg-border-width": "0px",
+                            "--feeg-press-scale": 0.97,
+                          }}
                         >
                           {showAllExercises ? t("hide_details") : t("see_more_exercises").replace("{count}", hiddenCount)}
                         </button>
@@ -491,15 +505,20 @@ export default function Home() {
                         event.stopPropagation();
                         handleLike(workout.id);
                       }}
+                      className="feeg-surface feeg-press feeg-hover"
                       style={{
-                        background: "none",
                         border: "none",
-                        color: liked ? tk.accent : tk.textMuted,
                         display: "flex",
                         alignItems: "center",
                         gap: "5px",
                         cursor: "pointer",
-                        fontSize: "0.9rem"
+                        fontSize: "0.9rem",
+                        padding: "4px",
+                        borderRadius: tk.radius.sm,
+                        "--feeg-fg": liked ? tk.accent : tk.textMuted,
+                        "--feeg-hover-fg": tk.accent,
+                        "--feeg-border-width": "0px",
+                        "--feeg-press-scale": 0.88,
                       }}
                     >
                       <Icon name="heart" size={20} style={{ fill: liked ? "currentColor" : "none" }} />
@@ -510,15 +529,20 @@ export default function Home() {
                         event.stopPropagation();
                         setCommentingOn(commentingOn === workout.id ? null : workout.id);
                       }}
+                      className="feeg-surface feeg-press feeg-hover"
                       style={{
-                        background: "none",
                         border: "none",
-                        color: commentingOn === workout.id ? tk.accent : tk.textMuted,
                         display: "flex",
                         alignItems: "center",
                         gap: "5px",
                         cursor: "pointer",
-                        fontSize: "0.9rem"
+                        fontSize: "0.9rem",
+                        padding: "4px",
+                        borderRadius: tk.radius.sm,
+                        "--feeg-fg": commentingOn === workout.id ? tk.accent : tk.textMuted,
+                        "--feeg-hover-fg": tk.accent,
+                        "--feeg-border-width": "0px",
+                        "--feeg-press-scale": 0.88,
                       }}
                     >
                       <Icon name="message" size={20} />
@@ -530,14 +554,19 @@ export default function Home() {
                         handleShare(workout);
                       }}
                       title={t("share")}
+                      className="feeg-surface feeg-press feeg-hover"
                       style={{
-                        background: "none",
                         border: "none",
-                        color: tk.textMuted,
                         display: "flex",
                         alignItems: "center",
                         cursor: "pointer",
                         marginLeft: "auto",
+                        padding: "4px",
+                        borderRadius: tk.radius.sm,
+                        "--feeg-fg": tk.textMuted,
+                        "--feeg-hover-fg": tk.accent,
+                        "--feeg-border-width": "0px",
+                        "--feeg-press-scale": 0.88,
                       }}
                     >
                       <Icon name="share" size={20} />
@@ -632,9 +661,8 @@ export default function Home() {
                           <button
                             onClick={() => handleAddComment(workout.id)}
                             disabled={!newComment.trim()}
+                            className="feeg-surface feeg-press feeg-hover"
                             style={{
-                              backgroundColor: tk.accent,
-                              color: tk.onAccent,
                               border: "none",
                               width: "32px",
                               height: "32px",
@@ -642,9 +670,13 @@ export default function Home() {
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
-                              cursor: "pointer",
+                              cursor: newComment.trim() ? "pointer" : "not-allowed",
                               opacity: newComment.trim() ? 1 : 0.5,
-                              transition: tk.transition
+                              "--feeg-bg": tk.accent,
+                              "--feeg-fg": tk.onAccent,
+                              "--feeg-hover-bg": tk.accentHover,
+                              "--feeg-border-width": "0px",
+                              "--feeg-press-scale": 0.9,
                             }}
                           >
                             <Icon name="arrowRight" size={16} style={{ transform: "rotate(-90deg)" }} />

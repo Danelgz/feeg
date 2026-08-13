@@ -62,32 +62,40 @@ export default function Routines() {
         }}>
           <button
             onClick={() => setActiveTab("active")}
+            className="feeg-surface feeg-press feeg-hover"
             style={{
               padding: "10px 20px",
-              backgroundColor: activeTab === "active" ? tk.accent : "transparent",
-              color: activeTab === "active" ? tk.onAccent : tk.textMuted,
               border: "none",
               borderRadius: tk.radius.sm,
               cursor: "pointer",
               fontWeight: "600",
-              transition: tk.transition,
-              flexShrink: 0
+              flexShrink: 0,
+              "--feeg-bg": activeTab === "active" ? tk.accent : "transparent",
+              "--feeg-fg": activeTab === "active" ? tk.onAccent : tk.textMuted,
+              "--feeg-hover-bg": activeTab === "active" ? tk.accentHover : tk.surfaceHover,
+              "--feeg-hover-fg": activeTab === "active" ? tk.onAccent : tk.text,
+              "--feeg-border-width": "0px",
+              "--feeg-press-scale": 0.96,
             }}
           >
             {t("active_routines")}
           </button>
           <button
             onClick={() => setActiveTab("completed")}
+            className="feeg-surface feeg-press feeg-hover"
             style={{
               padding: "10px 20px",
-              backgroundColor: activeTab === "completed" ? tk.accent : "transparent",
-              color: activeTab === "completed" ? tk.onAccent : tk.textMuted,
               border: "none",
               borderRadius: tk.radius.sm,
               cursor: "pointer",
               fontWeight: "600",
-              transition: tk.transition,
-              flexShrink: 0
+              flexShrink: 0,
+              "--feeg-bg": activeTab === "completed" ? tk.accent : "transparent",
+              "--feeg-fg": activeTab === "completed" ? tk.onAccent : tk.textMuted,
+              "--feeg-hover-bg": activeTab === "completed" ? tk.accentHover : tk.surfaceHover,
+              "--feeg-hover-fg": activeTab === "completed" ? tk.onAccent : tk.text,
+              "--feeg-border-width": "0px",
+              "--feeg-press-scale": 0.96,
             }}
           >
             {t("completed_workouts")} ({completedWorkouts.length})

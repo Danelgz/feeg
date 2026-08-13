@@ -265,7 +265,14 @@ export default function RoutineDetail() {
 
           <button
             onClick={handleStart}
-            style={{ padding: "12px 30px", fontSize: "1.1rem", backgroundColor: tk.accent, color: tk.onAccent, border: "none", borderRadius: tk.radius.md, fontWeight: "600", cursor: "pointer" }}
+            className="feeg-surface feeg-press feeg-hover"
+            style={{
+              padding: "12px 30px", fontSize: "1.1rem", border: "none", borderRadius: tk.radius.md, fontWeight: "600", cursor: "pointer",
+              "--feeg-bg": tk.accent,
+              "--feeg-fg": tk.onAccent,
+              "--feeg-hover-bg": tk.accentHover,
+              "--feeg-border-width": "0px",
+            }}
           >
             {t("start_routine")}
           </button>
@@ -278,7 +285,17 @@ export default function RoutineDetail() {
               <p style={{ color: tk.textMuted, fontSize: "0.95rem", marginBottom: "25px", lineHeight: "1.4" }}>
                 {t("routine_already_active_desc").replace("{name}", activeRoutine?.name || "")}
               </p>
-              <button onClick={() => setShowRoutineActiveAlert(false)} style={{ width: "100%", padding: "12px", backgroundColor: tk.accent, color: tk.onAccent, border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}>
+              <button
+                onClick={() => setShowRoutineActiveAlert(false)}
+                className="feeg-surface feeg-press feeg-hover"
+                style={{
+                  width: "100%", padding: "12px", border: "none", borderRadius: "10px", fontWeight: "bold", cursor: "pointer",
+                  "--feeg-bg": tk.accent,
+                  "--feeg-fg": tk.onAccent,
+                  "--feeg-hover-bg": tk.accentHover,
+                  "--feeg-border-width": "0px",
+                }}
+              >
                 {t("understood")}
               </button>
             </div>
@@ -296,10 +313,30 @@ export default function RoutineDetail() {
             <h2 style={{ color: tk.accent, marginBottom: "20px", fontSize: "1.5rem" }}>{t("confirm_finish_title")}</h2>
             <p style={{ color: tk.textMuted, marginBottom: "30px" }}>{t("confirm_finish_subtitle")}</p>
             <div style={{ display: "flex", gap: "15px" }}>
-              <button onClick={() => setShowFinishConfirm(false)} style={{ flex: 1, padding: "12px", backgroundColor: tk.surfaceAlt, color: tk.text, border: "none", borderRadius: tk.radius.sm, cursor: "pointer", fontWeight: "600" }}>
+              <button
+                onClick={() => setShowFinishConfirm(false)}
+                className="feeg-surface feeg-press feeg-hover"
+                style={{
+                  flex: 1, padding: "12px", border: "none", borderRadius: tk.radius.sm, cursor: "pointer", fontWeight: "600",
+                  "--feeg-bg": tk.surfaceAlt,
+                  "--feeg-fg": tk.text,
+                  "--feeg-hover-bg": tk.surfaceHover,
+                  "--feeg-border-width": "0px",
+                }}
+              >
                 {t("no_continue")}
               </button>
-              <button onClick={openFinishForm} style={{ flex: 1, padding: "12px", backgroundColor: tk.accent, color: tk.onAccent, border: "none", borderRadius: tk.radius.sm, cursor: "pointer", fontWeight: "600" }}>
+              <button
+                onClick={openFinishForm}
+                className="feeg-surface feeg-press feeg-hover"
+                style={{
+                  flex: 1, padding: "12px", border: "none", borderRadius: tk.radius.sm, cursor: "pointer", fontWeight: "600",
+                  "--feeg-bg": tk.accent,
+                  "--feeg-fg": tk.onAccent,
+                  "--feeg-hover-bg": tk.accentHover,
+                  "--feeg-border-width": "0px",
+                }}
+              >
                 {t("yes_finish")}
               </button>
             </div>
@@ -393,10 +430,32 @@ export default function RoutineDetail() {
             </div>
 
             <div style={{ display: "flex", gap: "15px" }}>
-              <button onClick={() => setShowFinishForm(false)} disabled={savingWorkout} style={{ flex: 1, padding: "12px", backgroundColor: tk.surfaceAlt, color: tk.text, border: "none", borderRadius: tk.radius.sm, cursor: savingWorkout ? "not-allowed" : "pointer", fontWeight: "600", opacity: savingWorkout ? 0.6 : 1 }}>
+              <button
+                onClick={() => setShowFinishForm(false)}
+                disabled={savingWorkout}
+                className="feeg-surface feeg-press feeg-hover"
+                style={{
+                  flex: 1, padding: "12px", border: "none", borderRadius: tk.radius.sm, cursor: savingWorkout ? "not-allowed" : "pointer", fontWeight: "600", opacity: savingWorkout ? 0.6 : 1,
+                  "--feeg-bg": tk.surfaceAlt,
+                  "--feeg-fg": tk.text,
+                  "--feeg-hover-bg": tk.surfaceHover,
+                  "--feeg-border-width": "0px",
+                }}
+              >
                 {t("cancel")}
               </button>
-              <button onClick={handleSaveFinishedRoutine} disabled={savingWorkout} style={{ flex: 1, padding: "12px", backgroundColor: tk.accent, color: tk.onAccent, border: "none", borderRadius: tk.radius.sm, cursor: savingWorkout ? "not-allowed" : "pointer", fontWeight: "600", opacity: savingWorkout ? 0.7 : 1 }}>
+              <button
+                onClick={handleSaveFinishedRoutine}
+                disabled={savingWorkout}
+                className="feeg-surface feeg-press feeg-hover"
+                style={{
+                  flex: 1, padding: "12px", border: "none", borderRadius: tk.radius.sm, cursor: savingWorkout ? "not-allowed" : "pointer", fontWeight: "600", opacity: savingWorkout ? 0.7 : 1,
+                  "--feeg-bg": tk.accent,
+                  "--feeg-fg": tk.onAccent,
+                  "--feeg-hover-bg": tk.accentHover,
+                  "--feeg-border-width": "0px",
+                }}
+              >
                 {savingWorkout ? t("saving") : t("save_workout")}
               </button>
             </div>

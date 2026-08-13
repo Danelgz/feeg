@@ -225,8 +225,15 @@ export default function MuscleMap({
   // En oscuro la silueta va blanca y recorta contra la tarjeta. En claro hay que bajarla, porque un
   // blanco puro sobre una tarjeta blanca no sería una figura, sería nada; y ahí sí hace falta un
   // trazo, pero en el contorno del cuerpo, no en cada músculo.
-  const silhouetteFill = isDark ? '#ffffff' : '#f6f8fa';
-  const silhouetteStroke = isDark ? null : '#d2dae2';
+  //
+  // El primer intento aquí ('#f6f8fa' + trazo '#d2dae2') se quedó demasiado cerca del blanco de la
+  // tarjeta (tk.surface = '#ffffff'): a menos de un 4% de diferencia de luminosidad el cuerpo
+  // prácticamente desaparecía y sólo se intuía por el trazo, casi invisible él mismo. Estos tonos
+  // están sacados un peldaño más abajo (más grises, menos blancos) para que el muñeco se lea de un
+  // vistazo también en claro, sin acercarse al gris medio de `restFill` (que tiene que seguir
+  // leyéndose como "otro color", no como el mismo tono un poco más oscuro).
+  const silhouetteFill = isDark ? '#ffffff' : '#e3e8ee';
+  const silhouetteStroke = isDark ? null : '#a7b3c1';
   const restFill = isDark ? '#9aa3ad' : '#98a3b0';
   // Los músculos no llevan trazo en ningún estado, tampoco al señalarlos: quien señala un músculo ya
   // tiene la respuesta en la franja de lectura de abajo, que además dice CUÁL es y en qué nivel está

@@ -168,7 +168,16 @@ export default function CreateRoutine() {
 
           <button
             onClick={() => setShowExerciseSelector(true)}
-            style={{ width: "100%", padding: "15px", backgroundColor: tk.accentSoft, color: tk.accent, border: `1px dashed ${tk.accent}`, borderRadius: "10px", fontWeight: "600", cursor: "pointer" }}
+            className="feeg-surface feeg-press feeg-hover"
+            style={{
+              width: "100%", padding: "15px", borderStyle: "dashed", borderRadius: "10px", fontWeight: "600", cursor: "pointer",
+              "--feeg-bg": tk.accentSoft,
+              "--feeg-fg": tk.accent,
+              "--feeg-border": tk.accent,
+              "--feeg-hover-bg": tk.accentSoft,
+              "--feeg-border-width": "1px",
+              "--feeg-press-scale": 0.98,
+            }}
           >
             + {t("add_exercise")}
           </button>

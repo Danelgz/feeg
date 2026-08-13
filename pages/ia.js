@@ -341,13 +341,13 @@ export default function IA() {
   // pequeña. En escritorio esas acciones siguen donde estaban (la tarjeta ya tiene sitio de sobra).
   const chatHeaderActions = isMobile && activeTab === "chat" ? (
     <div style={{ display: "flex", gap: "6px" }}>
-      <button onClick={() => setShowHistoryOverlay(true)} aria-label={t("ai_conversation_history")} style={{ ...iconButtonStyle(tk), color: tk.text, backgroundColor: tk.surface, border: `1px solid ${tk.border}` }}>
+      <button onClick={() => setShowHistoryOverlay(true)} aria-label={t("ai_conversation_history")} className="feeg-surface feeg-press feeg-hover" style={{ ...iconButtonStyle(tk), background: undefined, border: undefined, color: undefined, "--feeg-fg": tk.text, "--feeg-bg": tk.surface, "--feeg-border": tk.border, "--feeg-hover-bg": tk.surfaceHover, "--feeg-hover-border": tk.accent, "--feeg-border-width": "1px" }}>
         <Icon name="clock" size={17} />
       </button>
-      <button onClick={handleNewConversation} aria-label={t("ai_new_conversation")} style={{ ...iconButtonStyle(tk), color: tk.text, backgroundColor: tk.surface, border: `1px solid ${tk.border}` }}>
+      <button onClick={handleNewConversation} aria-label={t("ai_new_conversation")} className="feeg-surface feeg-press feeg-hover" style={{ ...iconButtonStyle(tk), background: undefined, border: undefined, color: undefined, "--feeg-fg": tk.text, "--feeg-bg": tk.surface, "--feeg-border": tk.border, "--feeg-hover-bg": tk.surfaceHover, "--feeg-hover-border": tk.accent, "--feeg-border-width": "1px" }}>
         <Icon name="plus" size={17} />
       </button>
-      <button onClick={() => setAiVoiceEnabled(!aiVoiceEnabled)} title={t("ai_voice_enable_label")} style={{ ...iconButtonStyle(tk), color: aiVoiceEnabled ? tk.accent : tk.textFaint, backgroundColor: tk.surface, border: `1px solid ${aiVoiceEnabled ? tk.accent : tk.border}` }}>
+      <button onClick={() => setAiVoiceEnabled(!aiVoiceEnabled)} title={t("ai_voice_enable_label")} className="feeg-surface feeg-press feeg-hover" style={{ ...iconButtonStyle(tk), background: undefined, border: undefined, color: undefined, "--feeg-fg": aiVoiceEnabled ? tk.accent : tk.textFaint, "--feeg-bg": tk.surface, "--feeg-border": aiVoiceEnabled ? tk.accent : tk.border, "--feeg-hover-bg": tk.surfaceHover, "--feeg-hover-border": tk.accent, "--feeg-border-width": "1px" }}>
         <Icon name={aiVoiceEnabled ? "volume2" : "volumeX"} size={17} />
       </button>
     </div>
@@ -423,7 +423,14 @@ export default function IA() {
                       <button
                         onClick={(e) => { e.stopPropagation(); handleRequestDeleteConversation(conv); }}
                         aria-label={t("ai_delete_conversation")}
-                        style={{ background: "none", border: "none", color: tk.textFaint, cursor: "pointer", padding: "4px", display: "flex", flexShrink: 0 }}
+                        className="feeg-surface feeg-press feeg-hover"
+                        style={{
+                          border: "none", cursor: "pointer", padding: "4px", display: "flex", flexShrink: 0, borderRadius: tk.radius.sm,
+                          "--feeg-fg": tk.textFaint,
+                          "--feeg-hover-fg": tk.danger,
+                          "--feeg-border-width": "0px",
+                          "--feeg-press-scale": 0.85,
+                        }}
                       >
                         <Icon name="trash" size={14} />
                       </button>
@@ -462,7 +469,14 @@ export default function IA() {
                   <button
                     onClick={() => setAiVoiceEnabled(!aiVoiceEnabled)}
                     title={t("ai_voice_enable_label")}
-                    style={{ ...iconButtonStyle(tk), color: aiVoiceEnabled ? tk.accent : tk.textFaint }}
+                    className="feeg-surface feeg-press feeg-hover"
+                    style={{
+                      ...iconButtonStyle(tk), background: undefined, border: undefined, color: undefined,
+                      "--feeg-fg": aiVoiceEnabled ? tk.accent : tk.textFaint,
+                      "--feeg-hover-bg": tk.surfaceHover,
+                      "--feeg-hover-fg": tk.accent,
+                      "--feeg-border-width": "0px",
+                    }}
                   >
                     <Icon name={aiVoiceEnabled ? "volume2" : "volumeX"} size={18} />
                   </button>
@@ -553,11 +567,17 @@ export default function IA() {
                 {voice.isSpeaking && (
                   <button
                     onClick={voice.stopSpeaking}
+                    className="feeg-surface feeg-press feeg-hover"
                     style={{
                       alignSelf: "flex-start",
                       display: "flex", alignItems: "center", gap: "6px",
-                      background: "none", border: `1px solid ${tk.border}`, borderRadius: tk.radius.pill,
-                      padding: "6px 12px", color: tk.textMuted, fontSize: tk.fontSize.xs, cursor: "pointer",
+                      borderRadius: tk.radius.pill,
+                      padding: "6px 12px", fontSize: tk.fontSize.xs, cursor: "pointer",
+                      "--feeg-fg": tk.textMuted,
+                      "--feeg-border": tk.border,
+                      "--feeg-hover-fg": tk.accent,
+                      "--feeg-hover-border": tk.accent,
+                      "--feeg-border-width": "1px",
                     }}
                   >
                     <Icon name="volume2" size={14} /> {t("ai_stop_speaking")}
@@ -597,10 +617,8 @@ export default function IA() {
                 <button
                   onClick={handleMicClick}
                   title={voice.sttSupported ? t("ai_listening") : t("ai_mic_not_supported")}
+                  className="feeg-surface feeg-press feeg-hover"
                   style={{
-                    background: voice.isListening ? tk.danger : tk.surfaceAlt,
-                    border: `1px solid ${voice.isListening ? tk.danger : tk.border}`,
-                    color: voice.isListening ? "#fff" : tk.text,
                     borderRadius: tk.radius.md,
                     width: isMobile ? "42px" : "46px",
                     cursor: "pointer",
@@ -608,7 +626,11 @@ export default function IA() {
                     alignItems: "center",
                     justifyContent: "center",
                     flexShrink: 0,
-                    transition: tk.transition,
+                    "--feeg-bg": voice.isListening ? tk.danger : tk.surfaceAlt,
+                    "--feeg-fg": voice.isListening ? "#fff" : tk.text,
+                    "--feeg-border": voice.isListening ? tk.danger : tk.border,
+                    "--feeg-hover-bg": voice.isListening ? tk.dangerHover : tk.surfaceHover,
+                    "--feeg-border-width": "1px",
                   }}
                 >
                   <Icon name="mic" size={18} />
@@ -624,7 +646,9 @@ export default function IA() {
                 <button
                   onClick={() => handleSendMessage()}
                   disabled={isLoadingChat || !chatInput.trim()}
+                  className="feeg-press"
                   style={{
+                    "--feeg-press-scale": 0.9,
                     background: `linear-gradient(135deg, ${tk.accent} 0%, ${tk.accentHover} 100%)`,
                     color: tk.onAccent,
                     border: "none",
@@ -676,7 +700,12 @@ export default function IA() {
             flexShrink: 0,
           }}>
             <span style={{ color: tk.text, fontWeight: tk.weight.bold, fontSize: tk.fontSize.lg }}>{t("ai_conversation_history")}</span>
-            <button onClick={() => setShowHistoryOverlay(false)} aria-label="Cerrar" style={{ ...iconButtonStyle(tk), color: tk.textMuted }}>
+            <button
+              onClick={() => setShowHistoryOverlay(false)}
+              aria-label="Cerrar"
+              className="feeg-surface feeg-press feeg-hover"
+              style={{ ...iconButtonStyle(tk), background: undefined, border: undefined, color: undefined, "--feeg-fg": tk.textMuted, "--feeg-hover-bg": tk.surfaceHover, "--feeg-border-width": "0px" }}
+            >
               <Icon name="close" size={20} />
             </button>
           </div>
@@ -719,7 +748,14 @@ export default function IA() {
                 <button
                   onClick={(e) => { e.stopPropagation(); handleRequestDeleteConversation(conv); }}
                   aria-label={t("ai_delete_conversation")}
-                  style={{ background: "none", border: "none", color: tk.textFaint, cursor: "pointer", padding: "6px", display: "flex", flexShrink: 0 }}
+                  className="feeg-surface feeg-press feeg-hover"
+                  style={{
+                    border: "none", cursor: "pointer", padding: "6px", display: "flex", flexShrink: 0, borderRadius: tk.radius.sm,
+                    "--feeg-fg": tk.textFaint,
+                    "--feeg-hover-fg": tk.danger,
+                    "--feeg-border-width": "0px",
+                    "--feeg-press-scale": 0.88,
+                  }}
                 >
                   <Icon name="trash" size={16} />
                 </button>

@@ -75,29 +75,24 @@ export default function Exercises() {
             <div key={group} id={`group-${group}`} style={{ marginBottom: "1rem" }}>
               <button
                 onClick={() => toggleGroup(group)}
+                className="feeg-surface feeg-press feeg-hover"
                 style={{
                   width: "100%",
                   padding: "1rem",
-                  backgroundColor: tk.surface,
-                  border: `2px solid ${tk.accent}`,
                   borderRadius: tk.radius.sm,
-                  color: tk.accent,
                   fontSize: "1.1rem",
                   fontWeight: "700",
                   cursor: "pointer",
-                  transition: tk.transition,
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  textAlign: "left"
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = tk.accentSoft;
-                  e.currentTarget.style.boxShadow = tk.shadow.accent;
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = tk.surface;
-                  e.currentTarget.style.boxShadow = "none";
+                  textAlign: "left",
+                  "--feeg-bg": tk.surface,
+                  "--feeg-fg": tk.accent,
+                  "--feeg-border": tk.accent,
+                  "--feeg-hover-bg": tk.accentSoft,
+                  "--feeg-border-width": "2px",
+                  "--feeg-press-scale": 0.99,
                 }}
               >
                 <span>{t(group) || group}</span>

@@ -60,7 +60,7 @@ export default function ExerciseRankList({
   const isFlat = layout === 'grid';
 
   return (
-    <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: isFlat ? 0 : tk.space.sm }}>
+    <ul style={{ listStyle: 'none', width: '100%', minWidth: 0, margin: 0, padding: 0, display: 'grid', gap: isFlat ? 0 : tk.space.sm }}>
       {ranks.map((rank, index) => {
         const position = getRankPosition(rank.level);
         const target = nextLevelTarget(rank.exercise, rank.level, rank.best1RM, bodyweightKg, sex);
@@ -94,6 +94,9 @@ export default function ExerciseRankList({
               style={{
                 display: 'flex',
                 alignItems: 'center',
+                width: '100%',
+                minWidth: 0,
+                boxSizing: 'border-box',
                 gap: tk.space.md,
                 padding: `${tk.space.sm} 2px`,
                 borderBottom: isLast ? 'none' : `1px solid ${tk.border}`,
@@ -119,13 +122,15 @@ export default function ExerciseRankList({
                 <RankArt rank={position.rank} tier={position.tier} size={18} />
               </div>
 
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: tk.space.sm }}>
+              <div style={{ minWidth: 0, flex: '1 1 auto', maxWidth: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: tk.space.sm, minWidth: 0, maxWidth: '100%' }}>
                   <span
                     style={{
                       color: tk.text,
                       fontSize: tk.fontSize.sm,
                       fontWeight: tk.weight.medium,
+                      minWidth: 0,
+                      flex: '1 1 auto',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
@@ -133,11 +138,11 @@ export default function ExerciseRankList({
                   >
                     {name}
                   </span>
-                  <span style={{ flexShrink: 0, color: position.rank.color, fontWeight: tk.weight.bold, fontSize: tk.fontSize.xs }}>
+                  <span style={{ flexShrink: 1, maxWidth: '42%', color: position.rank.color, fontWeight: tk.weight.bold, fontSize: tk.fontSize.xs, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>
                     {position.label}
                   </span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: tk.space.sm, marginTop: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: tk.space.sm, marginTop: '6px', minWidth: 0, maxWidth: '100%' }}>
                   <div
                     aria-hidden="true"
                     style={{ flex: 1, height: '4px', borderRadius: tk.radius.pill, backgroundColor: tk.border, overflow: 'hidden' }}
@@ -151,7 +156,7 @@ export default function ExerciseRankList({
                       }}
                     />
                   </div>
-                  <span style={{ flexShrink: 0, fontSize: tk.fontSize.xs, color: tk.textFaint, fontVariantNumeric: 'tabular-nums' }}>
+                  <span style={{ flexShrink: 1, maxWidth: '42%', fontSize: tk.fontSize.xs, color: tk.textFaint, fontVariantNumeric: 'tabular-nums', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>
                     {target?.isMaxed
                       ? 'al máximo'
                       : target && target.deltaKg > 0

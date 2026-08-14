@@ -87,73 +87,6 @@ function useCountUp(target, { duration = 900, active = true } = {}) {
   return value;
 }
 
-/** Confeti decorativo cuando la sesión trae algún logro (PR, récord de volumen, subida de rango).
- *  Puramente aria-hidden — no comunica nada que no esté ya en el texto, así que desactivarlo con
- *  reduced-motion no le quita información a nadie. */
-function SummaryConfetti({ tk }) {
-  const pieces = useMemo(
-    () =>
-      Array.from({ length: 22 }, (_, i) => ({
-        id: i,
-        left: Math.random() * 100,
-        delay: Math.random() * 0.35,
-        duration: 1.5 + Math.random() * 1,
-        width: 5 + Math.random() * 4,
-        rotate: Math.random() * 360,
-        drift: Math.round((Math.random() - 0.5) * 70),
-        color: [tk.accent, "#ffd166", "#ff8fa3", "#8ecae6"][i % 4],
-      })),
-    [tk.accent]
-  );
-
-  return (
-    <div className="summary-confetti" aria-hidden="true">
-      {pieces.map((p) => (
-        <span
-          key={p.id}
-          style={{
-            left: `${p.left}%`,
-            width: `${p.width}px`,
-            height: `${p.width * 0.4}px`,
-            backgroundColor: p.color,
-            animationDelay: `${p.delay}s`,
-            animationDuration: `${p.duration}s`,
-            "--feeg-confetti-drift": `${p.drift}px`,
-            "--feeg-confetti-rotate": `${p.rotate}deg`,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-function AchievementOrbit({ hasAchievement, reducedMotion, tk }) {
-  return (
-    <div className="summary-orbit" aria-hidden="true">
-      <motion.div
-        className="summary-orbit-ring"
-        animate={reducedMotion ? undefined : { rotate: 360 }}
-        transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-        style={{ borderColor: `${tk.accent}70` }}
-      />
-      <motion.div
-        className="summary-orbit-ring summary-orbit-ring-inner"
-        animate={reducedMotion ? undefined : { rotate: -360 }}
-        transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-        style={{ borderColor: `${tk.accent}35` }}
-      />
-      <motion.div
-        className="summary-orbit-core"
-        animate={reducedMotion ? undefined : { scale: [1, 1.045, 1] }}
-        transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
-        style={{ background: hasAchievement ? tk.accent : tk.surfaceAlt, color: hasAchievement ? tk.onAccent : tk.accent }}
-      >
-        <Icon name={hasAchievement ? "award" : "check"} size={38} strokeWidth={1.8} />
-      </motion.div>
-    </div>
-  );
-}
-
 function Metric({ label, value, detail, tk, delay = 0 }) {
   return (
     <motion.div
@@ -194,8 +127,6 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
 
   const realRecords = prRecords.filter((r) => r.tier);
   const firstEverOnly = prRecords.filter((r) => !r.tier && r.isFirstEver);
-  const hasAchievement = realRecords.length > 0 || !!workoutVolumeRecord || rankUps.length > 0;
-
   const countActive = !prefersReducedMotion;
   const durationCount = useCountUp(workout.elapsedTime || 0, { active: countActive, duration: 900 });
   const volumeCount = useCountUp(workout.totalVolume || 0, { active: countActive, duration: 1100 });
@@ -259,28 +190,21 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
       initial="hidden"
       animate="show"
       variants={pageVariants}
-      style={{ minHeight: "100dvh", background: `radial-gradient(circle at 50% -10%, ${tk.accent}18 0%, transparent 34%), ${tk.bg}`, color: tk.text, overflow: "hidden" }}
+      style={{ minHeight: "100dvh", background: tk.bg, color: tk.text, overflowX: "hidden" }}
     >
       <style>{`
-        .summary-page { width: min(100%, 1060px); margin: 0 auto; padding: clamp(28px, 6vw, 70px) clamp(18px, 5vw, 54px) 44px; box-sizing: border-box; }
-        .summary-hero { position: relative; display: grid; grid-template-columns: 180px minmax(0, 1fr); align-items: center; gap: clamp(24px, 5vw, 70px); padding: clamp(26px, 5vw, 52px); border: 1px solid rgba(46,230,197,0.22); border-radius: 28px; background: linear-gradient(135deg, rgba(46,230,197,0.11), rgba(17,17,17,0.9) 42%, rgba(17,17,17,0.72)); box-shadow: 0 24px 80px rgba(0, 18, 15, 0.36), inset 0 1px rgba(255,255,255,0.07); overflow: hidden; }
-        .summary-hero::after { content: ""; position: absolute; width: 360px; height: 360px; right: -160px; top: -210px; border-radius: 50%; border: 1px solid rgba(46,230,197,0.13); box-shadow: 0 0 0 32px rgba(46,230,197,0.035), 0 0 0 64px rgba(46,230,197,0.02); pointer-events: none; }
-        .summary-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
-        .summary-confetti span { position: absolute; top: -12px; border-radius: 2px; opacity: 0; animation-name: feeg-confetti-fall; animation-timing-function: cubic-bezier(0.25,0.46,0.45,0.94); animation-fill-mode: forwards; }
-        @keyframes feeg-confetti-fall { 0% { opacity: 0; transform: translate(0, 0) rotate(0deg); } 12% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--feeg-confetti-drift), 260px) rotate(var(--feeg-confetti-rotate)); } }
-        .summary-hero-copy { position: relative; z-index: 1; min-width: 0; text-align: left; }
+        .summary-page { width: 100%; max-width: 1440px; margin: 0 auto; padding: clamp(28px, 5vw, 64px) clamp(20px, 4vw, 64px) 52px; box-sizing: border-box; }
+        .summary-hero { position: relative; display: block; padding: clamp(26px, 4vw, 52px) 0; border-top: 1px solid rgba(255,255,255,0.1); border-bottom: 1px solid rgba(255,255,255,0.1); background: transparent; }
+        .summary-hero-copy { min-width: 0; text-align: left; }
         .summary-eyebrow { color: ${tk.accent}; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 800; }
-        .summary-orbit { position: relative; width: 156px; height: 156px; display: grid; place-items: center; margin: auto; }
-        .summary-orbit-ring { position: absolute; inset: 0; border: 1px dashed; border-radius: 50%; }
-        .summary-orbit-ring::after { content: ""; position: absolute; width: 8px; height: 8px; top: 14px; left: 22px; background: ${tk.accent}; border-radius: 50%; box-shadow: 0 0 18px ${tk.accent}; }
-        .summary-orbit-ring-inner { inset: 14px; border-style: solid; border-width: 1px; opacity: 0.65; }
-        .summary-orbit-ring-inner::after { top: auto; left: auto; right: 8px; bottom: 12px; width: 5px; height: 5px; opacity: 0.7; }
-        .summary-orbit-core { width: 88px; height: 88px; border-radius: 32px; display: grid; place-items: center; box-shadow: 0 12px 38px rgba(46,230,197,0.25), inset 0 1px rgba(255,255,255,0.34); }
         /* Antes dos columnas lado a lado a partir de 720px — cada panel (Progreso, Desglose de
            carga) se quedaba a la mitad del ancho de la tarjeta. Apilados a todo el ancho, uno
            debajo del otro, en vez de repartidos en una cuadrícula. */
-        .summary-content-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 16px; }
-        .summary-panel { border: 1px solid rgba(255,255,255,0.08); background: rgba(17,17,17,0.78); border-radius: 22px; padding: clamp(20px, 3vw, 30px); box-shadow: inset 0 1px rgba(255,255,255,0.035); }
+        .summary-content-grid { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr); margin-top: 34px; border-top: 1px solid rgba(255,255,255,0.1); border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .summary-panel { min-width: 0; padding: clamp(24px, 3vw, 36px) 0; }
+        .summary-panel-achievements { padding-right: clamp(24px, 4vw, 64px); }
+        .summary-panel-achievements + .summary-panel-breakdown { border-left: 1px solid rgba(255,255,255,0.1); padding-left: clamp(24px, 4vw, 64px); }
+        .summary-ranks-panel { min-width: 0; overflow: hidden; border-top: 1px solid rgba(255,255,255,0.1); }
         .summary-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 20px; }
         .summary-panel-label { color: ${tk.textMuted}; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
         .summary-metrics { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08); margin-top: 20px; }
@@ -288,20 +212,20 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
         .summary-breakdown-row { display: grid; grid-template-columns: minmax(0, 1fr) 42px; gap: 12px; align-items: center; padding: 11px 0; }
         .summary-breakdown-track { height: 5px; margin-top: 8px; border-radius: 10px; background: rgba(255,255,255,0.08); overflow: hidden; }
         .summary-breakdown-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, ${tk.accent}55, ${tk.accent}); transform-origin: left center; }
-        .summary-actions { display: flex; gap: 10px; justify-content: center; margin-top: 24px; }
+        .summary-rank-up { display: flex; align-items: center; gap: 13px; padding: 14px 0; border-top: 1px solid rgba(255,255,255,0.1); }
+        .summary-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 0; padding-top: 24px; }
         .summary-action { min-height: 48px; border-radius: 14px; padding: 0 20px; border: 1px solid rgba(255,255,255,0.12); background: ${tk.surfaceAlt}; color: ${tk.text}; font: inherit; font-weight: 700; cursor: pointer; transition: transform 180ms ease, border-color 180ms ease, background 180ms ease; }
         .summary-action:hover { transform: translateY(-2px); border-color: ${tk.accent}90; background: ${tk.surfaceHover}; }
         .summary-action:active { transform: scale(0.98); }
         .summary-action-primary { background: ${tk.accent}; color: ${tk.onAccent}; border-color: ${tk.accent}; box-shadow: 0 10px 24px rgba(46,230,197,0.22); }
         .summary-action-primary:hover { background: ${tk.accentHover}; }
-        @media (max-width: 720px) { .summary-page { padding-top: 22px; } .summary-hero { grid-template-columns: 1fr; text-align: center; padding: 28px 20px 32px; gap: 22px; } .summary-hero-copy { text-align: center; } .summary-actions { flex-direction: column-reverse; } .summary-action { width: 100%; } }
+        @media (max-width: 860px) { .summary-content-grid { grid-template-columns: 1fr; } .summary-panel-achievements { padding-right: 0; } .summary-panel-achievements + .summary-panel-breakdown { border-left: 0; border-top: 1px solid rgba(255,255,255,0.1); padding-left: 0; } }
+        @media (max-width: 720px) { .summary-page { padding-top: 22px; } .summary-hero { padding: 28px 0 32px; } .summary-actions { flex-direction: column-reverse; } .summary-action { width: 100%; } }
         @media (prefers-reduced-motion: reduce) { .summary-action { transition: none; } }
       `}</style>
 
       <div className="summary-page">
         <motion.div variants={itemVariants} className="summary-hero">
-          {hasAchievement && !prefersReducedMotion && <SummaryConfetti tk={tk} />}
-          <AchievementOrbit hasAchievement={hasAchievement} reducedMotion={prefersReducedMotion} tk={tk} />
           <div className="summary-hero-copy">
             <div className="summary-eyebrow">FEEG · {translate("summary_session_complete_label")}</div>
             <h1 style={{ margin: "12px 0 10px", fontSize: "clamp(2rem, 6vw, 4.4rem)", lineHeight: 0.98, letterSpacing: "-0.065em", fontWeight: tk.weight.heavy, textWrap: "balance" }}>
@@ -325,7 +249,7 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
 
         <div className="summary-content-grid">
           {(realRecords.length > 0 || workoutVolumeRecord || firstEverOnly.length > 0) && (
-            <motion.section variants={itemVariants} className="summary-panel">
+            <motion.section variants={itemVariants} className="summary-panel summary-panel-achievements">
               <div className="summary-panel-heading">
                 <div>
                   <div className="summary-panel-label">{translate("summary_achievements_label")}</div>
@@ -371,7 +295,7 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
             </motion.section>
           )}
 
-          <motion.section variants={itemVariants} className="summary-panel">
+          <motion.section variants={itemVariants} className="summary-panel summary-panel-breakdown">
             <div className="summary-panel-heading">
               <div>
                 <div className="summary-panel-label">{translate("summary_breakdown_label")}</div>
@@ -395,7 +319,7 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
         </div>
 
         {ranksAvailable && sessionRanks.length > 0 && (
-          <motion.section variants={itemVariants} className="summary-panel" style={{ marginTop: 16 }}>
+          <motion.section variants={itemVariants} className="summary-panel summary-ranks-panel">
             <div className="summary-panel-heading">
               <div>
                 <div className="summary-panel-label">{translate("summary_ranks_label")}</div>
@@ -414,7 +338,7 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
         {rankUps.slice(0, 3).map((up, index) => {
           const position = getRankPosition(up.currentLevel);
           return (
-            <motion.div key={up.group ?? "__overall__"} variants={itemVariants} style={{ display: "flex", alignItems: "center", gap: 13, marginTop: 12, padding: "14px 18px", borderRadius: 16, background: `${position.rank.color}12`, border: `1px solid ${position.rank.color}45` }}>
+            <motion.div key={up.group ?? "__overall__"} variants={itemVariants} className="summary-rank-up">
               <div style={{ width: 38, height: 38, display: "grid", placeItems: "center", flexShrink: 0, borderRadius: 12, background: `${position.rank.color}22` }}><RankArt rank={position.rank} tier={position.tier} size={23} /></div>
               <div style={{ minWidth: 0 }}><div style={{ color: tk.text, fontSize: "0.88rem", fontWeight: tk.weight.bold }}>{up.isNewRank ? translate("summary_new_rank") : translate("summary_rank_up")}</div><div style={{ color: tk.textMuted, fontSize: "0.78rem", marginTop: 3 }}>{up.group ? `${up.group} · ` : "Nivel global · "}<span style={{ color: position.rank.color, fontWeight: tk.weight.bold }}>{position.label}</span></div></div>
               <Icon name="arrowRight" size={17} color={position.rank.color} style={{ marginLeft: "auto" }} />

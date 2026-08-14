@@ -7,6 +7,7 @@ import { getTokens } from "../lib/tokens";
 import { Icon, Button, PageHeader, ConfirmModal, EmptyState, ChipNav } from "../components/ui";
 import TrainingGenerator from "../components/ai/TrainingGenerator";
 import TechniqueExplorer from "../components/ai/TechniqueExplorer";
+import BodyAnalyzer from "../components/ai/BodyAnalyzer";
 import {
   subscribeAiConversations,
   subscribeAiMessages,
@@ -96,6 +97,7 @@ const TABS = [
   { key: "chat", label: "Chat" },
   { key: "training", label: "Entrenamiento" },
   { key: "technique", label: "Técnica" },
+  { key: "body", label: "Análisis físico" },
 ];
 
 export default function IA() {
@@ -679,6 +681,11 @@ export default function IA() {
         {/* Explorador de técnica — buscador + catálogo navegable, ver components/ai/TechniqueExplorer */}
         {activeTab === "technique" && (
           <TechniqueExplorer isDark={isDark} isMobile={isMobile} showNotification={showNotification} />
+        )}
+
+        {/* Analizador corporal multimodal — subida privada en memoria + lectura estructurada de Gemini */}
+        {activeTab === "body" && (
+          <BodyAnalyzer isDark={isDark} isMobile={isMobile} />
         )}
       </div>
 

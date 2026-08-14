@@ -77,12 +77,13 @@ export default function ProfileImageCropper({ sourcePhotoURL, onSave, onClose })
   };
 
   return (
-    <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "#111", zIndex: 6000, display: "flex", flexDirection: "column" }}>
+    <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "#111", zIndex: 6000, display: "flex", flexDirection: "column", fontFamily: "'Manrope', -apple-system, 'Segoe UI', sans-serif" }}>
+      <style>{`@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap");`}</style>
       <div style={{ padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <button onClick={onClose} style={{ background: "none", border: "none", color: "#fff", cursor: "pointer" }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
-        <div style={{ color: "#fff", fontWeight: "600" }}>Ajustar imagen</div>
+        <div style={{ color: "#fff", fontWeight: "700" }}>Ajustar imagen</div>
         <button onClick={handleConfirm} style={{ background: "none", border: "none", color: "#1dd1a1", cursor: "pointer" }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
         </button>
@@ -150,11 +151,11 @@ export default function ProfileImageCropper({ sourcePhotoURL, onSave, onClose })
               style={{ background: "none", border: "none", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", cursor: "pointer" }}
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-              <span style={{ fontSize: "0.7rem", color: "#888" }}>RESET</span>
+              <span style={{ fontSize: "0.7rem", fontWeight: "700", color: "#888" }}>RESET</span>
             </button>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
               <div style={{ width: "24px", height: "24px", border: "2px solid #1dd1a1", borderRadius: "2px" }}></div>
-              <span style={{ fontSize: "0.7rem", color: "#1dd1a1" }}>1:1</span>
+              <span style={{ fontSize: "0.7rem", fontWeight: "700", color: "#1dd1a1" }}>1:1</span>
             </div>
           </div>
         </div>

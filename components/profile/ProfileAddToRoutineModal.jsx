@@ -10,13 +10,27 @@ export default function ProfileAddToRoutineModal({ isDark = true, open, routineN
       onClick={onClose}
       style={{
         position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center",
+        backgroundColor: "rgba(4, 8, 8, 0.72)", display: "flex", alignItems: "center",
         justifyContent: "center", zIndex: 3500, padding: "20px",
+        backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
       }}
     >
-      <div onClick={(e) => e.stopPropagation()} style={{ backgroundColor: tk.surface, padding: "25px", borderRadius: "15px", width: "100%", maxWidth: "400px", textAlign: "center", border: `1px solid ${tk.border}` }}>
-        <h2 style={{ color: tk.text, marginBottom: "15px" }}>Crear Rutina desde Entrenamiento</h2>
-        <p style={{ color: tk.textMuted, marginBottom: "20px", fontSize: "0.9rem" }}>Ingresa un nombre para la nueva rutina</p>
+      <style>{`@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap");`}</style>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          backgroundColor: tk.surface,
+          padding: "25px",
+          borderRadius: "18px",
+          width: "100%",
+          maxWidth: "400px",
+          textAlign: "center",
+          border: `1px solid ${tk.border}`,
+          fontFamily: "'Manrope', -apple-system, 'Segoe UI', sans-serif",
+        }}
+      >
+        <h2 style={{ color: tk.text, marginBottom: "12px", fontSize: "1.1rem", fontWeight: 800, letterSpacing: "-0.02em" }}>Crear Rutina desde Entrenamiento</h2>
+        <p style={{ color: tk.textMuted, marginBottom: "20px", fontSize: "0.9rem", fontWeight: 500 }}>Ingresa un nombre para la nueva rutina</p>
         <input
           type="text"
           placeholder="Nombre de la rutina"
@@ -28,21 +42,23 @@ export default function ProfileAddToRoutineModal({ isDark = true, open, routineN
           style={{
             width: "100%",
             padding: "12px",
-            borderRadius: "8px",
+            borderRadius: "10px",
             border: `1px solid ${tk.border}`,
             backgroundColor: tk.surfaceAlt,
             color: tk.text,
             marginBottom: "20px",
             fontSize: "1rem",
+            fontFamily: "inherit",
+            fontWeight: 600,
             boxSizing: "border-box",
           }}
           autoFocus
         />
         <div style={{ display: "flex", gap: "10px" }}>
-          <button onClick={onClose} style={{ flex: 1, padding: "12px", borderRadius: "8px", border: `1px solid ${tk.border}`, backgroundColor: "transparent", color: tk.text, cursor: "pointer" }}>
+          <button onClick={onClose} className="feeg-press feeg-hover" style={{ flex: 1, padding: "12px", borderRadius: "12px", border: `1px solid ${tk.border}`, backgroundColor: "transparent", color: tk.text, fontWeight: 700, cursor: "pointer", "--feeg-hover-bg": tk.surfaceHover, "--feeg-press-scale": 0.96 }}>
             Cancelar
           </button>
-          <button onClick={onConfirm} style={{ flex: 1, padding: "12px", borderRadius: "8px", border: "none", backgroundColor: tk.accent, color: tk.onAccent, fontWeight: "bold", cursor: "pointer" }}>
+          <button onClick={onConfirm} className="feeg-press" style={{ flex: 1, padding: "12px", borderRadius: "12px", border: "none", backgroundColor: tk.accent, color: tk.onAccent, fontWeight: "800", cursor: "pointer", "--feeg-press-scale": 0.96 }}>
             Crear
           </button>
         </div>

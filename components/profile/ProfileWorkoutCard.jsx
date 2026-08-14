@@ -29,13 +29,14 @@ export default function ProfileWorkoutCard({
   const hasMenu = !!(onAddToRoutine || onEdit || onDelete);
 
   return (
-    <div style={{ backgroundColor: tk.surfaceAlt, padding: "15px", borderRadius: "14px", marginBottom: "15px" }}>
+    <div style={{ backgroundColor: tk.surfaceAlt, padding: "15px", borderRadius: "14px", marginBottom: "15px", fontFamily: "'Manrope', -apple-system, 'Segoe UI', sans-serif", fontWeight: 500 }}>
+      <style>{`@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap");`}</style>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px", gap: "10px" }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: tk.accent, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div style={{ fontSize: "1.1rem", fontWeight: "800", color: tk.accent, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {workout.name}
           </div>
-          <div style={{ fontSize: "0.8rem", color: tk.textMuted }}>{new Date(workout.completedAt).toLocaleString()}</div>
+          <div style={{ fontSize: "0.8rem", fontWeight: "600", color: tk.textMuted }}>{new Date(workout.completedAt).toLocaleString()}</div>
         </div>
 
         {hasMenu && (
@@ -80,7 +81,7 @@ export default function ProfileWorkoutCard({
                   {onAddToRoutine && (
                     <button
                       onClick={() => { setMenuOpen(false); onAddToRoutine(); }}
-                      style={{ width: "100%", padding: "12px 14px", background: "none", border: "none", borderBottom: `1px solid ${tk.border}`, color: tk.text, textAlign: "left", cursor: "pointer", fontSize: "0.88rem", display: "flex", alignItems: "center", gap: "10px" }}
+                      style={{ width: "100%", padding: "12px 14px", background: "none", border: "none", borderBottom: `1px solid ${tk.border}`, color: tk.text, textAlign: "left", cursor: "pointer", fontSize: "0.88rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "10px" }}
                     >
                       <Icon name="plus" size={15} color={tk.accent} />
                       Añadir a rutina
@@ -89,7 +90,7 @@ export default function ProfileWorkoutCard({
                   {onEdit && (
                     <button
                       onClick={() => { setMenuOpen(false); onEdit(); }}
-                      style={{ width: "100%", padding: "12px 14px", background: "none", border: "none", borderBottom: `1px solid ${tk.border}`, color: tk.text, textAlign: "left", cursor: "pointer", fontSize: "0.88rem", display: "flex", alignItems: "center", gap: "10px" }}
+                      style={{ width: "100%", padding: "12px 14px", background: "none", border: "none", borderBottom: `1px solid ${tk.border}`, color: tk.text, textAlign: "left", cursor: "pointer", fontSize: "0.88rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "10px" }}
                     >
                       <Icon name="edit" size={15} color={tk.textMuted} />
                       Editar
@@ -98,7 +99,7 @@ export default function ProfileWorkoutCard({
                   {onDelete && (
                     <button
                       onClick={() => { setMenuOpen(false); onDelete(); }}
-                      style={{ width: "100%", padding: "12px 14px", background: "none", border: "none", color: tk.danger, textAlign: "left", cursor: "pointer", fontSize: "0.88rem", display: "flex", alignItems: "center", gap: "10px" }}
+                      style={{ width: "100%", padding: "12px 14px", background: "none", border: "none", color: tk.danger, textAlign: "left", cursor: "pointer", fontSize: "0.88rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "10px" }}
                     >
                       <Icon name="trash" size={15} />
                       Borrar
@@ -111,7 +112,7 @@ export default function ProfileWorkoutCard({
         )}
       </div>
 
-      <div style={{ fontSize: "0.9rem", color: tk.textMuted, marginBottom: "14px" }}>
+      <div style={{ fontSize: "0.9rem", fontWeight: "600", color: tk.textMuted, marginBottom: "14px" }}>
         {workout.series} series • {workout.totalVolume?.toLocaleString()} kg • {workout.totalReps} reps • {workout.totalTime || Math.floor((workout.elapsedTime || 0) / 60)} min
       </div>
 

@@ -3,7 +3,11 @@ import { getTokens } from "../../lib/tokens";
 import { filterSessionsByPeriod } from "../../lib/exerciseProfile";
 
 const SPANISH_MONTHS_SHORT = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-const BAR_WIDTH = 30;
+const POINT_SPACING = 46;
+const PAD_X = 24;
+const CHART_H = 150;
+const PAD_TOP = 18;
+const PAD_BOTTOM = 8;
 
 const PERIODS = [
   { key: "30d", label: "30 días", days: 30 },
@@ -13,15 +17,16 @@ const PERIODS = [
 ];
 
 /**
- * Progreso del mejor set por sesión (mismo patrón de barras + chips de periodo que
- * ProfileActivityChart, pero una barra por SESIÓN de este ejercicio, no por semana — con la
- * frecuencia real de un ejercicio concreto, agrupar por semana dejaría casi todas las barras
- * vacías).
+ * Progreso del mejor set por sesión: puntos unidos por una línea (no barras) — un punto por
+ * SESIÓN de este ejercicio, no por semana, porque con la frecuencia real de un ejercicio concreto
+ * agrupar por semana dejaría casi todo vacío. Ancho fijo por punto dentro de un contenedor con
+ * scroll horizontal en vez de comprimir todos los puntos en el ancho de la tarjeta: con "Siempre"
+ * puede haber decenas de sesiones, y apretarlas todas ilegibles no ayuda más que poder deslizar.
  */
 export default function ExerciseProgressChart({ isDark = true, sessions, unit }) {
   const tk = getTokens(isDark);
   const [period, setPeriod] = useState("3m");
-  const [activeBar, setActiveBar] = useState(null);
+  const [activePoint, setActivePoint] = useState(null);
   const scrollRef = useRef(null);
 
   const periodDays = PERIODS.find((p) => p.key === period)?.days ?? 90;
@@ -30,11 +35,18 @@ export default function ExerciseProgressChart({ isDark = true, sessions, unit })
     .slice()
     .sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  const maxWeight = Math.max(1, ...filtered.map((s) => s.bestSet.weight));
+  const weights = filtered.map((s) => s.bestSet.weight);
+  const minW = filtered.length > 0 ? Math.min(...weights) : 0;
+  const maxW = filtered.length > 0 ? Math.max(...weights) : 1;
+  const rangeW = maxW - minW || 1;
+
+  const chartW = Math.max(200, PAD_X * 2 + POINT_SPACING * Math.max(0, filtered.length - 1));
+  const getX = (i) => PAD_X + i * POINT_SPACING;
+  const getY = (weight) => PAD_TOP + (CHART_H - PAD_TOP - PAD_BOTTOM) * (1 - (weight - minW) / rangeW);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
-    setActiveBar(null);
+    setActivePoint(null);
   }, [period, filtered.length]);
 
   return (
@@ -67,81 +79,74 @@ export default function ExerciseProgressChart({ isDark = true, sessions, unit })
           Sin sesiones en este periodo
         </div>
       ) : (
-        <div
-          ref={scrollRef}
-          style={{
-            height: "170px",
-            display: "flex",
-            alignItems: "flex-end",
-            gap: "10px",
-            marginBottom: "10px",
-            paddingTop: "30px",
-            paddingBottom: "4px",
-            overflowX: "auto",
-            WebkitOverflowScrolling: "touch",
-          }}
-        >
-          {filtered.map((session, i) => (
-            <div
-              key={`${session.workoutId}-${i}`}
-              onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                setActiveBar(activeBar?.i === i ? null : { i, x: rect.left + rect.width / 2, y: rect.top });
-              }}
-              style={{ position: "relative", width: `${BAR_WIDTH}px`, flexShrink: 0, height: "100%", display: "flex", alignItems: "flex-end", cursor: "pointer" }}
-            >
-              <div
-                style={{
-                  width: "100%",
-                  backgroundColor: activeBar?.i === i ? tk.text : tk.accent,
-                  height: `${Math.max(6, (session.bestSet.weight / maxWeight) * 100)}%`,
-                  borderRadius: "6px 6px 3px 3px",
-                  transition: "all 0.2s ease",
-                }}
+        <div ref={scrollRef} style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+          <svg width={chartW} height={CHART_H} style={{ display: "block" }}>
+            {filtered.length > 1 && (
+              <polyline
+                fill="none"
+                stroke={tk.accent}
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                points={filtered.map((s, i) => `${getX(i)},${getY(s.bestSet.weight)}`).join(" ")}
               />
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: "calc(100% + 6px)",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  lineHeight: 1.25,
-                  whiteSpace: "nowrap",
+            )}
+
+            {filtered.map((session, i) => (
+              <g
+                key={`${session.workoutId}-${i}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActivePoint((cur) => (cur === i ? null : i));
                 }}
+                style={{ cursor: "pointer" }}
               >
-                <span style={{ color: tk.textFaint, fontSize: "0.56rem", fontWeight: 700, textTransform: "uppercase" }}>
-                  {SPANISH_MONTHS_SHORT[session.date.getMonth()]}
-                </span>
-                <span style={{ color: tk.textFaint, fontSize: "0.6rem", fontWeight: 700 }}>{session.date.getDate()}</span>
-              </div>
-            </div>
-          ))}
+                {/* Círculo invisible más grande que el punto real: el objetivo táctil real de un
+                    punto de 5px de radio es demasiado pequeño para tocarlo con el dedo. */}
+                <circle cx={getX(i)} cy={getY(session.bestSet.weight)} r="14" fill="transparent" />
+                <circle
+                  cx={getX(i)}
+                  cy={getY(session.bestSet.weight)}
+                  r={activePoint === i ? 7 : 5}
+                  fill={activePoint === i ? tk.text : tk.accent}
+                  stroke={tk.surfaceAlt}
+                  strokeWidth="2"
+                  style={{ transition: "r 0.15s ease" }}
+                />
+                <text
+                  x={getX(i)}
+                  y={CHART_H - 2}
+                  textAnchor="middle"
+                  fontSize="8"
+                  fontWeight="700"
+                  fill={tk.textFaint}
+                  style={{ textTransform: "uppercase" }}
+                >
+                  {SPANISH_MONTHS_SHORT[session.date.getMonth()]} {session.date.getDate()}
+                </text>
+              </g>
+            ))}
+          </svg>
         </div>
       )}
 
-      {activeBar && filtered[activeBar.i] && (
+      {activePoint !== null && filtered[activePoint] && (
         <div
           style={{
-            position: "fixed",
-            left: activeBar.x,
-            top: activeBar.y - 12,
-            transform: "translate(-50%, -100%)",
-            backgroundColor: tk.text,
-            color: tk.bg,
-            padding: "6px 10px",
-            borderRadius: "6px",
-            fontSize: "0.8rem",
-            whiteSpace: "nowrap",
-            zIndex: 200,
-            fontWeight: "bold",
-            boxShadow: tk.shadow.float,
-            pointerEvents: "none",
+            marginTop: "10px",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "8px 14px",
+            borderRadius: tk.radius.pill,
+            backgroundColor: tk.surfaceAlt,
+            border: `1px solid ${tk.accent}55`,
           }}
         >
-          {filtered[activeBar.i].bestSet.weight}{unit} × {filtered[activeBar.i].bestSet.reps} · {filtered[activeBar.i].date.toLocaleDateString()}
+          <span style={{ color: tk.accent, fontWeight: 800, fontSize: "0.88rem" }}>
+            {filtered[activePoint].bestSet.weight}{unit} × {filtered[activePoint].bestSet.reps}
+          </span>
+          <span style={{ color: tk.textFaint, fontSize: "0.78rem" }}>{filtered[activePoint].date.toLocaleDateString()}</span>
         </div>
       )}
     </div>

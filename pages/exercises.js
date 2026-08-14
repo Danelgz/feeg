@@ -6,7 +6,7 @@ import { exercisesList } from "../data/exercises";
 import { useUser } from "../context/UserContext";
 import { getTokens } from "../lib/tokens";
 import { translateExerciseName } from "../lib/exerciseTranslation";
-import { Icon, EmptyState, PageHeader, Badge } from "../components/ui";
+import { Icon, EmptyState, PageHeader, Badge, MuscleGroupIcon } from "../components/ui";
 import { ExerciseThumb } from "../components/workout";
 
 function exerciseTypeLabel(exercise, t) {
@@ -73,38 +73,67 @@ export default function Exercises() {
 
       <div style={{ maxWidth: "900px", margin: "0 auto" }}>
         {hasResults ? (
-          Object.entries(filteredGroups).map(([group, exercises]) => (
-            <div key={group} id={`group-${group}`} style={{ marginBottom: "1rem" }}>
-              <button
-                onClick={() => toggleGroup(group)}
-                className="feeg-surface feeg-press feeg-hover"
-                style={{
-                  width: "100%",
-                  padding: "1rem",
-                  borderRadius: tk.radius.sm,
-                  fontSize: "1.1rem",
-                  fontWeight: "700",
-                  cursor: "pointer",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  textAlign: "left",
-                  "--feeg-bg": tk.surface,
-                  "--feeg-fg": tk.accent,
-                  "--feeg-border": tk.accent,
-                  "--feeg-hover-bg": tk.accentSoft,
-                  "--feeg-border-width": "2px",
-                  "--feeg-press-scale": 0.99,
-                }}
-              >
-                <span>{t(group) || group}</span>
-                <span style={{ display: "flex", transition: "transform 0.3s ease", transform: expandedGroups[group] ? "rotate(180deg)" : "rotate(0)" }}>
-                  <Icon name="chevronLeft" size={16} style={{ transform: "rotate(-90deg)" }} />
-                </span>
-              </button>
+          <>
+            {/* Grid de grupos: icono del cuerpo con solo ese músculo marcado en verde + nombre
+                debajo, en vez de una fila de texto plano — se reconoce el grupo de un vistazo sin
+                tener que leer cada etiqueta. */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? "84px" : "100px"}, 1fr))`,
+                gap: isMobile ? "10px" : "14px",
+                marginBottom: "28px",
+              }}
+            >
+              {Object.keys(filteredGroups).map((group) => {
+                const isOpen = !!expandedGroups[group];
+                return (
+                  <button
+                    key={group}
+                    id={`group-${group}`}
+                    onClick={() => toggleGroup(group)}
+                    aria-pressed={isOpen}
+                    className="feeg-press feeg-hover"
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: "8px",
+                      padding: "12px 8px",
+                      borderRadius: tk.radius.md,
+                      border: `1px solid ${isOpen ? tk.accent : tk.border}`,
+                      backgroundColor: isOpen ? tk.accentSoft : tk.surface,
+                      cursor: "pointer",
+                      "--feeg-hover-border": tk.accent,
+                      "--feeg-press-scale": 0.96,
+                    }}
+                  >
+                    <MuscleGroupIcon group={group} isDark={isDark} size={isMobile ? 56 : 64} />
+                    <span
+                      style={{
+                        color: isOpen ? tk.accent : tk.text,
+                        fontSize: "0.7rem",
+                        fontWeight: "800",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.02em",
+                        textAlign: "center",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        maxWidth: "100%",
+                      }}
+                    >
+                      {t(group) || group}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-              {expandedGroups[group] && (
-                <ul style={{ listStyle: "none", padding: "0.5rem 0 0 0", marginTop: "0.5rem" }}>
+            {Object.entries(filteredGroups).map(([group, exercises]) => expandedGroups[group] && (
+              <div key={group} style={{ marginBottom: "1.5rem" }}>
+                <h3 style={{ margin: "0 0 10px", color: tk.text, fontSize: "1rem", fontWeight: 800 }}>{t(group) || group}</h3>
+                <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                   {exercises.map((exercise) => {
                     const isFavorite = favoriteExercises.includes(exercise.name);
                     return (
@@ -166,9 +195,9 @@ export default function Exercises() {
                     );
                   })}
                 </ul>
-              )}
-            </div>
-          ))
+              </div>
+            ))}
+          </>
         ) : (
           <EmptyState isDark={isDark} icon="search" title={t("no_exercises_found")} />
         )}

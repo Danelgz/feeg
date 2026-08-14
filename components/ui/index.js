@@ -16,3 +16,4 @@ export { default as RankIcon } from "./RankIcon";
 export { default as RankArt } from "./RankArt";
 export { default as RankBadge } from "./RankBadge";
 export { default as ExerciseRankList } from "./ExerciseRankList";
+export { default as MuscleGroupIcon } from "./MuscleGroupIcon";

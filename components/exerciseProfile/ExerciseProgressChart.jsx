@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { getTokens } from "../../lib/tokens";
 import { filterSessionsByPeriod } from "../../lib/exerciseProfile";
 
@@ -8,6 +8,9 @@ const PAD_X = 24;
 const CHART_H = 150;
 const PAD_TOP = 18;
 const PAD_BOTTOM = 8;
+// Como máximo esta cantidad de etiquetas de fecha a la vez: con muchos puntos comprimidos en un
+// ancho fijo (ver la nota sobre "clavado" más abajo) el texto se pisa mucho antes que los puntos.
+const MAX_LABELS = 10;
 
 const PERIODS = [
   { key: "30d", label: "30 días", days: 30 },
@@ -19,21 +22,22 @@ const PERIODS = [
 /**
  * Progreso del mejor set por sesión: puntos unidos por una línea (no barras) — un punto por
  * SESIÓN de este ejercicio, no por semana, porque con la frecuencia real de un ejercicio concreto
- * agrupar por semana dejaría casi todo vacío. Ancho fijo por punto dentro de un contenedor con
- * scroll horizontal en vez de comprimir todos los puntos en el ancho de la tarjeta: con "Siempre"
- * puede haber decenas de sesiones, y apretarlas todas ilegibles no ayuda más que poder deslizar.
+ * agrupar por semana dejaría casi todo vacío.
  *
- * La lectura de un punto no depende de acertarle con precisión: tocar/pulsar en cualquier parte
- * del gráfico selecciona el punto más cercano en X, y con ratón se puede arrastrar para recorrerlos
- * en vivo sin soltar — deslizar por el trazo, no ir tocando uno a uno. En táctil el arrastre se dejó
- * para el scroll nativo del contenedor (que sigue haciendo falta con "Siempre"); ahí cada toque
- * selecciona el punto más cercano de un gesto.
+ * El gráfico NO se desliza a los lados — a propósito, aunque eso signifique que con "Siempre" y
+ * muchas sesiones los puntos queden más apretados. El ancho lógico (chartW, en unidades de
+ * viewBox) se calcula igual que si hubiera scroll, pero el SVG se renderiza a `width="100%"` con
+ * `preserveAspectRatio="none"`, así que el navegador ESCALA esas unidades para que quepan siempre
+ * en el ancho real de la tarjeta — nunca hay contenido fuera del viewport que se pueda arrastrar.
+ *
+ * Tocar/pulsar en cualquier parte del gráfico selecciona el punto más cercano en X, y se puede
+ * arrastrar (dedo o ratón) para recorrerlos en vivo sin soltar — ya no hay ningún gesto de scroll
+ * con el que competir, así que el arrastre funciona igual en los dos.
  */
 export default function ExerciseProgressChart({ isDark = true, sessions, unit }) {
   const tk = getTokens(isDark);
   const [period, setPeriod] = useState("3m");
   const [activePoint, setActivePoint] = useState(null);
-  const scrollRef = useRef(null);
   const svgRef = useRef(null);
   const scrubbingRef = useRef(false);
 
@@ -58,6 +62,8 @@ export default function ExerciseProgressChart({ isDark = true, sessions, unit })
   // entera abajo por el `|| 1` que tenía antes este cálculo.
   const getY = (weight) => (rangeW === 0 ? midY : PAD_TOP + plotH * (1 - (weight - minW) / rangeW));
 
+  const labelStep = Math.max(1, Math.ceil(filtered.length / MAX_LABELS));
+
   const nearestIndexFor = (clientX) => {
     if (!svgRef.current || filtered.length === 0) return null;
     const rect = svgRef.current.getBoundingClientRect();
@@ -78,12 +84,8 @@ export default function ExerciseProgressChart({ isDark = true, sessions, unit })
   const handlePointerDown = (e) => {
     const idx = nearestIndexFor(e.clientX);
     if (idx !== null) setActivePoint(idx);
-    // Solo ratón/lápiz arrastra en vivo — en táctil el mismo gesto tiene que poder seguir siendo
-    // "deslizar para desplazar" cuando hay más sesiones de las que caben.
-    if (e.pointerType !== "touch") {
-      scrubbingRef.current = true;
-      e.currentTarget.setPointerCapture(e.pointerId);
-    }
+    scrubbingRef.current = true;
+    e.currentTarget.setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e) => {
@@ -96,23 +98,16 @@ export default function ExerciseProgressChart({ isDark = true, sessions, unit })
     scrubbingRef.current = false;
   };
 
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
-    setActivePoint(null);
-  }, [period, filtered.length]);
-
   return (
     <div>
-      <style>{`
-        .feeg-exercise-chart-scroll { scrollbar-width: none; }
-        .feeg-exercise-chart-scroll::-webkit-scrollbar { display: none; }
-      `}</style>
-
       <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
         {PERIODS.map((p) => (
           <button
             key={p.key}
-            onClick={() => setPeriod(p.key)}
+            onClick={() => {
+              setPeriod(p.key);
+              setActivePoint(null);
+            }}
             className="feeg-press"
             style={{
               padding: "7px 14px",
@@ -136,12 +131,16 @@ export default function ExerciseProgressChart({ isDark = true, sessions, unit })
           Sin sesiones en este periodo
         </div>
       ) : (
-        <div ref={scrollRef} className="feeg-exercise-chart-scroll" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        // Sin overflow ni scroll: el ancho real lo decide el contenedor, no chartW — el SVG solo
+        // usa chartW como sistema de coordenadas interno y lo estira/comprime para llenarlo.
+        <div style={{ width: "100%", touchAction: "none" }}>
           <svg
             ref={svgRef}
-            width={chartW}
+            viewBox={`0 0 ${chartW} ${CHART_H}`}
+            preserveAspectRatio="none"
+            width="100%"
             height={CHART_H}
-            style={{ display: "block", cursor: "pointer", touchAction: "pan-x" }}
+            style={{ display: "block", cursor: "pointer" }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={stopScrubbing}
@@ -169,17 +168,19 @@ export default function ExerciseProgressChart({ isDark = true, sessions, unit })
                   strokeWidth="2"
                   style={{ transition: "r 0.15s ease" }}
                 />
-                <text
-                  x={getX(i)}
-                  y={CHART_H - 2}
-                  textAnchor="middle"
-                  fontSize="8"
-                  fontWeight="700"
-                  fill={tk.textFaint}
-                  style={{ textTransform: "uppercase" }}
-                >
-                  {SPANISH_MONTHS_SHORT[session.date.getMonth()]} {session.date.getDate()}
-                </text>
+                {(i % labelStep === 0 || i === filtered.length - 1) && (
+                  <text
+                    x={getX(i)}
+                    y={CHART_H - 2}
+                    textAnchor="middle"
+                    fontSize="8"
+                    fontWeight="700"
+                    fill={tk.textFaint}
+                    style={{ textTransform: "uppercase" }}
+                  >
+                    {SPANISH_MONTHS_SHORT[session.date.getMonth()]} {session.date.getDate()}
+                  </text>
+                )}
               </g>
             ))}
           </svg>

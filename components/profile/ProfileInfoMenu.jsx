@@ -9,11 +9,19 @@ const MENU_ITEMS = [
   { label: "Calendario", path: "/calendar", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> },
 ];
 
-/** Botón desplegable con accesos rápidos a estadísticas/ejercicios/medidas/calendario — autocontenido. */
-export default function ProfileInfoMenu({ isDark = true }) {
+/**
+ * Botón desplegable con accesos rápidos a estadísticas/ejercicios/medidas/calendario — autocontenido.
+ *
+ * extraItems añade entradas más allá de las fijas de arriba (mismo layout, mismo estilo) sin que
+ * este componente tenga que conocerlas de antemano — p. ej. "Cuerpo de rangos" en pages/profile.js,
+ * que abre un modal en vez de navegar. Cada entrada admite `path` (navega) u `onClick` (acción
+ * directa); si trae las dos, `onClick` gana.
+ */
+export default function ProfileInfoMenu({ isDark = true, extraItems = [] }) {
   const tk = getTokens(isDark);
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const items = [...MENU_ITEMS, ...extraItems];
 
   return (
     <div style={{ marginBottom: "30px" }}>
@@ -68,10 +76,14 @@ export default function ProfileInfoMenu({ isDark = true }) {
 
       {open && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "12px", animation: "fadeIn 0.3s ease" }}>
-          {MENU_ITEMS.map((btn) => (
+          {items.map((btn) => (
             <button
               key={btn.label}
-              onClick={() => router.push(btn.path)}
+              onClick={() => {
+                setOpen(false);
+                if (btn.onClick) btn.onClick();
+                else router.push(btn.path);
+              }}
               style={{
                 display: "flex",
                 flexDirection: "column",

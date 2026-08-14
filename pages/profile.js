@@ -19,7 +19,9 @@ import {
   ProfileImageCropper,
   ProfileFollowListModal,
   ProfilePhotoViewer,
+  ProfileRankMapModal,
 } from "../components/profile";
+import { Icon } from "../components/ui";
 
 export default function Profile() {
   const router = useRouter();
@@ -47,22 +49,33 @@ export default function Profile() {
   const isDark = theme === "dark";
   const tk = getTokens(isDark);
 
-  // El rango (nivel/prestigio) se calcula siempre a partir de los propios datos del usuario
-  // (measures, PRs) vía useRanks — nunca de los de otra persona, cuyas medidas son privadas. Para
-  // que el perfil de otra persona pueda mostrar tu insignia sin recalcularla, se refleja aquí en
-  // usersPublic/{uid} cada vez que cambia — mismo patrón que el resto de campos públicos del
-  // perfil. syncedRankRef evita reescribir en cada render cuando el valor no cambió.
+  // El rango (nivel/prestigio, y el desglose por grupo para el "cuerpo de rangos") se calcula
+  // siempre a partir de los propios datos del usuario (measures, PRs) vía useRanks — nunca de los
+  // de otra persona, cuyas medidas son privadas. Para que el perfil de otra persona pueda mostrar
+  // la insignia y el mapa sin recalcularlos, se reflejan aquí en usersPublic/{uid} cada vez que
+  // cambian — mismo patrón que el resto de campos públicos del perfil. Solo se guarda
+  // level/rankableExercises de cada grupo (no el ejercicio a ejercicio, que sí sigue siendo
+  // privado) — ver ProfileRankMapModal. syncedRankRef evita reescribir en cada render cuando el
+  // valor no cambió.
   const ranks = useRanks();
   const syncedRankRef = useRef(null);
   useEffect(() => {
     if (!authUser || !ranks.available) return;
-    const key = `${ranks.overallLevel}:${ranks.prestigeLevels}`;
+    const publicGroupRanks = Object.fromEntries(
+      Object.entries(ranks.groupRanks).map(([group, r]) => [group, { level: r.level, rankableExercises: r.rankableExercises }])
+    );
+    const key = JSON.stringify({ o: ranks.overallLevel, p: ranks.prestigeLevels, g: publicGroupRanks });
     if (syncedRankRef.current === key) return;
     syncedRankRef.current = key;
-    saveToCloud(`usersPublic/${authUser.uid}`, { overallLevel: ranks.overallLevel, prestigeLevels: ranks.prestigeLevels }).catch(() => {});
-  }, [authUser, ranks.available, ranks.overallLevel, ranks.prestigeLevels]);
+    saveToCloud(`usersPublic/${authUser.uid}`, {
+      overallLevel: ranks.overallLevel,
+      prestigeLevels: ranks.prestigeLevels,
+      groupRanks: publicGroupRanks,
+    }).catch(() => {});
+  }, [authUser, ranks.available, ranks.overallLevel, ranks.prestigeLevels, ranks.groupRanks]);
 
   const [isEditing, setIsEditing] = useState(false);
+  const [showRankMap, setShowRankMap] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
   const [showFollowers, setShowFollowers] = useState(false);
@@ -286,11 +299,19 @@ export default function Profile() {
             onOpenFollowing={handleOpenFollowing}
             overallLevel={ranks.available ? ranks.overallLevel : undefined}
             prestigeLevels={ranks.prestigeLevels}
+            onViewRankMap={ranks.available ? () => setShowRankMap(true) : undefined}
           />
 
           <ProfileActivityChart isDark={isDark} completedWorkouts={completedWorkouts} />
 
-          <ProfileInfoMenu isDark={isDark} />
+          <ProfileInfoMenu
+            isDark={isDark}
+            extraItems={
+              ranks.available
+                ? [{ label: "Cuerpo de rangos", icon: <Icon name="award" size={20} />, onClick: () => setShowRankMap(true) }]
+                : []
+            }
+          />
 
           <ProfileWorkoutsSection
             isDark={isDark}
@@ -379,6 +400,19 @@ export default function Profile() {
       )}
 
       <ProfilePhotoViewer open={isPhotoFullScreen} photoURL={user?.photoURL} onClose={() => setIsPhotoFullScreen(false)} />
+
+      {showRankMap && (
+        <ProfileRankMapModal
+          isDark={isDark}
+          overallLevel={ranks.overallLevel}
+          prestigeLevels={ranks.prestigeLevels}
+          groupRanks={ranks.groupRanks}
+          sex={ranks.sex}
+          faceStyleId={user?.faceStyle}
+          t={t}
+          onClose={() => setShowRankMap(false)}
+        />
+      )}
 
       {cropSourceURL && (
         <ProfileImageCropper

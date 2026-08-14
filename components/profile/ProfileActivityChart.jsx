@@ -2,7 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { getTokens } from "../../lib/tokens";
 
 const SPANISH_MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const SPANISH_MONTHS_SHORT = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const BAR_WIDTH = 34;
+// Cuántas páginas extra puede pedir el propio gráfico como máximo cuando ve que el periodo
+// elegido pide más historial del que hay cargado. Es un tope de cordura, no paginación real: un
+// perfil ajeno solo trae 20 entrenos de golpe (pages/user/[uid].js), así que sin esto "Último año"
+// en el perfil de alguien activo se veía con la mayoría de semanas en blanco simplemente porque
+// ese historial no había llegado todavía, no porque no existiera.
+const MAX_AUTO_LOAD_PAGES = 4;
 
 function formatRangeDate(date) {
   return date ? `${date.getDate()} ${SPANISH_MONTHS[date.getMonth()]}` : "";
@@ -49,6 +56,9 @@ function getChartData(completedWorkouts, chartFilter) {
           count: 0,
           date: monday,
           range: `${monday.getDate()}-${weekEnd.getDate()}`,
+          // Mismo mes en ambos extremos casi siempre; cuando la semana cruza de mes (p. ej.
+          // 29 ene - 4 feb) se cuenta por el mes de inicio, que es el que ancla la barra en el eje.
+          monthShort: SPANISH_MONTHS_SHORT[monday.getMonth()],
         };
       }
 
@@ -66,23 +76,77 @@ function getChartData(completedWorkouts, chartFilter) {
   }
 }
 
+/** Fecha del entreno completado más antiguo actualmente cargado en memoria, o null si no hay ninguno. */
+function oldestLoadedDate(completedWorkouts) {
+  if (!completedWorkouts || completedWorkouts.length === 0) return null;
+  let oldest = null;
+  for (const w of completedWorkouts) {
+    if (!w?.completedAt) continue;
+    const d = new Date(w.completedAt);
+    if (isNaN(d.getTime())) continue;
+    if (!oldest || d < oldest) oldest = d;
+  }
+  return oldest;
+}
+
+function minDateForFilter(chartFilter) {
+  const now = new Date();
+  if (chartFilter === "3_months") { const d = new Date(); d.setMonth(now.getMonth() - 3); return d; }
+  if (chartFilter === "6_months") { const d = new Date(); d.setMonth(now.getMonth() - 6); return d; }
+  if (chartFilter === "1_year") { const d = new Date(); d.setFullYear(now.getFullYear() - 1); return d; }
+  return null;
+}
+
 const CHART_MODES = [
   { id: "duration", label: "Duración" },
   { id: "volume", label: "Volumen" },
   { id: "reps", label: "Repeticiones" },
 ];
 
-/** Gráfico de barras semanal (duración/volumen/reps) de la sección de perfil — autocontenido. */
-export default function ProfileActivityChart({ isDark = true, completedWorkouts }) {
+/**
+ * Gráfico de barras semanal (duración/volumen/reps) de la sección de perfil.
+ *
+ * hasMore/isLoadingMore/onLoadMore son opcionales: el perfil propio pasa el historial completo ya
+ * sincronizado en local y no los necesita. El perfil ajeno (pages/user/[uid].js) solo tiene
+ * cargada la primera página de entrenos públicos — cuando el periodo elegido pide más atrás de lo
+ * que hay en memoria, este componente pide más páginas él solo (con tope, ver
+ * MAX_AUTO_LOAD_PAGES) en vez de dibujar un gráfico con la mayoría de semanas en blanco por una
+ * carencia de datos que el usuario no puede ver ni arreglar desde aquí.
+ */
+export default function ProfileActivityChart({ isDark = true, completedWorkouts, hasMore, isLoadingMore, onLoadMore }) {
   const tk = getTokens(isDark);
   const [chartFilter, setChartFilter] = useState("3_months");
   const [chartMode, setChartMode] = useState("duration");
   const [activeBar, setActiveBar] = useState(null);
   const scrollRef = useRef(null);
+  const autoLoadCountRef = useRef(0);
 
   const chartData = getChartData(completedWorkouts, chartFilter);
   const overallRange = chartData.length > 0 ? `(${formatRangeDate(chartData[0].date)} — ${formatRangeDate(new Date())})` : "";
   const maxVal = Math.max(chartMode === "duration" ? 5 : 1, ...chartData.map((d) => d[chartMode]), 1);
+
+  const needsMoreHistory = (() => {
+    if (!onLoadMore || !hasMore) return false;
+    const minDate = minDateForFilter(chartFilter);
+    const oldest = oldestLoadedDate(completedWorkouts);
+    // Sin ningún entreno cargado todavía, o el más antiguo cargado ya es más reciente que el
+    // arranque del periodo pedido: falta historial por traer. "always" (minDate null) sigue
+    // pidiendo más mientras haya, hasta el tope de páginas.
+    return !oldest || !minDate || oldest > minDate;
+  })();
+
+  useEffect(() => {
+    autoLoadCountRef.current = 0;
+  }, [chartFilter]);
+
+  useEffect(() => {
+    if (!needsMoreHistory || isLoadingMore) return;
+    if (autoLoadCountRef.current >= MAX_AUTO_LOAD_PAGES) return;
+    autoLoadCountRef.current += 1;
+    onLoadMore();
+  }, [needsMoreHistory, isLoadingMore, onLoadMore]);
+
+  const cappedWithMoreLeft = needsMoreHistory && autoLoadCountRef.current >= MAX_AUTO_LOAD_PAGES && !isLoadingMore;
 
   // Arranca mostrando las semanas más recientes (el extremo derecho), que es lo que casi
   // siempre se quiere ver primero; deslizar hacia la izquierda revela el histórico.
@@ -116,7 +180,7 @@ export default function ProfileActivityChart({ isDark = true, completedWorkouts 
 
       {chartData.length === 0 ? (
         <div style={{ height: "150px", display: "flex", alignItems: "center", justifyContent: "center", color: tk.textFaint, backgroundColor: tk.surfaceAlt, borderRadius: "12px" }}>
-          Sin datos suficientes
+          {needsMoreHistory ? "Cargando historial…" : "Sin datos suficientes"}
         </div>
       ) : (
         <div
@@ -127,7 +191,7 @@ export default function ProfileActivityChart({ isDark = true, completedWorkouts 
             alignItems: "flex-end",
             gap: "10px",
             marginBottom: "10px",
-            paddingTop: "24px",
+            paddingTop: "30px",
             paddingBottom: "4px",
             overflowX: "auto",
             WebkitOverflowScrolling: "touch",
@@ -166,17 +230,27 @@ export default function ProfileActivityChart({ isDark = true, completedWorkouts 
                   bottom: "calc(100% + 6px)",
                   left: "50%",
                   transform: "translateX(-50%)",
-                  color: tk.textFaint,
-                  fontSize: "0.62rem",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  lineHeight: 1.25,
                   whiteSpace: "nowrap",
-                  fontWeight: "bold",
                 }}
               >
-                {d.range}
+                <span style={{ color: tk.textFaint, fontSize: "0.58rem", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                  {d.monthShort}
+                </span>
+                <span style={{ color: tk.textFaint, fontSize: "0.62rem", fontWeight: "bold" }}>{d.range}</span>
               </div>
             </div>
           ))}
         </div>
+      )}
+
+      {cappedWithMoreLeft && (
+        <p style={{ margin: "0 0 12px", fontSize: "0.72rem", color: tk.textFaint, textAlign: "center" }}>
+          Mostrando el historial cargado hasta ahora — puede haber semanas más antiguas sin traer todavía.
+        </p>
       )}
 
       {/* position: fixed a propósito — dentro del contenedor con scroll horizontal, un tooltip
@@ -201,7 +275,7 @@ export default function ProfileActivityChart({ isDark = true, completedWorkouts 
             pointerEvents: "none",
           }}
         >
-          {chartData[activeBar.i].range}: {valueLabel(chartData[activeBar.i])}
+          {chartData[activeBar.i].range} {chartData[activeBar.i].monthShort}: {valueLabel(chartData[activeBar.i])}
         </div>
       )}
 

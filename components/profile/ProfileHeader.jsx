@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { getTokens } from "../../lib/tokens";
-import { RankBadge } from "../ui";
+import { RankArt } from "../ui";
+import { getRankPosition } from "../../data/ranks";
 
 /**
  * Cabecera de perfil: username, nombre, foto, contadores y descripción. La esquina superior
@@ -31,6 +32,7 @@ export default function ProfileHeader({
   prestigeLevels,
   hasRoutines,
   onViewRoutines,
+  onViewRankMap,
 }) {
   const tk = getTokens(isDark);
   const [followPulse, setFollowPulse] = useState(false);
@@ -51,6 +53,26 @@ export default function ProfileHeader({
         </h1>
         {onToggleFollow ? (
           <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+            {typeof overallLevel === "number" && onViewRankMap && (
+              <button
+                onClick={onViewRankMap}
+                className="feeg-press feeg-hover"
+                style={{
+                  padding: "9px 14px",
+                  borderRadius: "10px",
+                  border: `1px solid ${tk.border}`,
+                  backgroundColor: "transparent",
+                  color: tk.text,
+                  fontWeight: "700",
+                  fontSize: "0.85rem",
+                  cursor: "pointer",
+                  "--feeg-hover-bg": tk.surfaceHover,
+                  "--feeg-press-scale": 0.95,
+                }}
+              >
+                Rangos
+              </button>
+            )}
             {hasRoutines && (
               <button
                 onClick={onViewRoutines}
@@ -107,11 +129,30 @@ export default function ProfileHeader({
         {user?.firstName || "Sin nombre"}
       </div>
 
-      {typeof overallLevel === "number" && (
-        <div style={{ marginBottom: "16px" }}>
-          <RankBadge isDark={isDark} level={overallLevel} prestigeLevels={prestigeLevels || 0} size="sm" />
-        </div>
-      )}
+      {typeof overallLevel === "number" && (() => {
+        const position = getRankPosition(overallLevel, prestigeLevels || 0);
+        const Wrapper = onViewRankMap ? "button" : "div";
+        return (
+          <Wrapper
+            onClick={onViewRankMap}
+            className={onViewRankMap ? "feeg-press" : undefined}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              marginBottom: "16px",
+              border: "none",
+              background: "none",
+              padding: 0,
+              cursor: onViewRankMap ? "pointer" : "default",
+              "--feeg-press-scale": 0.96,
+            }}
+          >
+            <RankArt rank={position.rank} tier={position.tier} size={22} />
+            <span style={{ fontSize: "0.85rem", fontWeight: 800, color: position.rank.color }}>{position.label}</span>
+          </Wrapper>
+        );
+      })()}
 
       <div style={{ display: "flex", gap: "25px", alignItems: "center", marginBottom: "25px" }}>
         <div

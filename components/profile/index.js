@@ -15,3 +15,4 @@ export { default as ProfilePhotoViewer } from "./ProfilePhotoViewer";
 export { default as ProfileRoutinesSection } from "./ProfileRoutinesSection";
 export { default as ProfileRoutineCard } from "./ProfileRoutineCard";
 export { default as ProfileRoutinePreviewModal } from "./ProfileRoutinePreviewModal";
+export { default as ProfileRankMapModal } from "./ProfileRankMapModal";

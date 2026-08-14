@@ -410,6 +410,10 @@ export function UserProvider({ children }) {
               photoPosX: userData.photoPosX || 0,
               photoPosY: userData.photoPosY || 0,
               description: userData.description || "",
+              // Necesario para dibujar el cuerpo correcto (MuscleMap tiene dos láminas, macho/hembra)
+              // en el perfil de otra persona — sin esto el "cuerpo de rangos" ajeno caía siempre al
+              // masculino por defecto porque el sexo real vive en el perfil privado.
+              sex: userData.sex ?? null,
               uid: authUser.uid,
               following: following
             });

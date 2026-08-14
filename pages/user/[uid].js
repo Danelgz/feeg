@@ -14,6 +14,7 @@ import {
   ProfilePhotoViewer,
   ProfileRoutinesSection,
   ProfileRoutinePreviewModal,
+  ProfileRankMapModal,
 } from "../../components/profile";
 
 /**
@@ -45,6 +46,7 @@ export default function UserProfile() {
   const [isPhotoFullScreen, setIsPhotoFullScreen] = useState(false);
   const [viewingWorkoutDetail, setViewingWorkoutDetail] = useState(null);
   const [previewingRoutine, setPreviewingRoutine] = useState(null);
+  const [showRankMap, setShowRankMap] = useState(false);
 
   useEffect(() => {
     if (uid) {
@@ -184,6 +186,7 @@ export default function UserProfile() {
             onOpenFollowing={handleOpenFollowing}
             overallLevel={targetUser.overallLevel}
             prestigeLevels={targetUser.prestigeLevels}
+            onViewRankMap={targetUser.overallLevel != null ? () => setShowRankMap(true) : undefined}
             hasRoutines={publicRoutines.length > 0}
             onViewRoutines={() => document.getElementById("profile-routines-section")?.scrollIntoView({ behavior: "smooth", block: "start" })}
           />
@@ -195,7 +198,13 @@ export default function UserProfile() {
             onCopyRoutine={handleCopyRoutine}
           />
 
-          <ProfileActivityChart isDark={isDark} completedWorkouts={workouts} />
+          <ProfileActivityChart
+            isDark={isDark}
+            completedWorkouts={workouts}
+            hasMore={workoutsHasMore}
+            isLoadingMore={isLoadingMoreWorkouts}
+            onLoadMore={handleLoadMoreWorkouts}
+          />
 
           <ProfileWorkoutsSection
             isDark={isDark}
@@ -227,6 +236,19 @@ export default function UserProfile() {
           language={language}
           onCopy={() => handleCopyRoutine(previewingRoutine)}
           onClose={() => setPreviewingRoutine(null)}
+        />
+      )}
+
+      {showRankMap && (
+        <ProfileRankMapModal
+          isDark={isDark}
+          overallLevel={targetUser.overallLevel}
+          prestigeLevels={targetUser.prestigeLevels}
+          groupRanks={targetUser.groupRanks}
+          sex={targetUser.sex}
+          displayName={targetUser.firstName || targetUser.username}
+          t={t}
+          onClose={() => setShowRankMap(false)}
         />
       )}
 

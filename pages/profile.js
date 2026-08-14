@@ -55,6 +55,7 @@ export default function Profile() {
   const [followingList, setFollowingList] = useState([]);
   const [isPhotoFullScreen, setIsPhotoFullScreen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
   const [viewingWorkoutDetail, setViewingWorkoutDetail] = useState(null);
   const [addingToRoutine, setAddingToRoutine] = useState(null);
   const [routineName, setRoutineName] = useState("");
@@ -153,6 +154,7 @@ export default function Profile() {
   const handleEditSave = async () => {
     if (saving) return;
     setSaving(true);
+    setJustSaved(false);
 
     try {
       let finalPhotoURL = editData.photoURL;
@@ -193,6 +195,10 @@ export default function Profile() {
       };
 
       await saveUser(updatedUser);
+      // Deja el botón en estado "Guardado" un instante antes de cerrar, para que la
+      // confirmación sea visible en vez de que el modal desaparezca de golpe.
+      setJustSaved(true);
+      await new Promise((resolve) => setTimeout(resolve, 550));
       setIsEditing(false);
     } catch (e) {
       console.error("Error en handleEditSave:", e);
@@ -200,6 +206,7 @@ export default function Profile() {
     } finally {
       setSaving(false);
       setIsProcessingImage(false);
+      setJustSaved(false);
     }
   };
 
@@ -334,6 +341,7 @@ export default function Profile() {
         setEditData={setEditData}
         isProcessingImage={isProcessingImage}
         saving={saving}
+        justSaved={justSaved}
         onFileSelected={handleFileSelected}
         onSave={handleEditSave}
         onClose={() => setIsEditing(false)}

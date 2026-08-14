@@ -25,8 +25,6 @@ export default function ProfileHeader({
   onOpenPhoto,
   onOpenFollowers,
   onOpenFollowing,
-  hasRoutines,
-  onViewRoutines,
 }) {
   const tk = getTokens(isDark);
   const [followPulse, setFollowPulse] = useState(false);
@@ -47,26 +45,6 @@ export default function ProfileHeader({
         </h1>
         {onToggleFollow ? (
           <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-            {hasRoutines && (
-              <button
-                onClick={onViewRoutines}
-                className="feeg-press feeg-hover"
-                style={{
-                  padding: "9px 14px",
-                  borderRadius: "10px",
-                  border: `1px solid ${tk.border}`,
-                  backgroundColor: "transparent",
-                  color: tk.text,
-                  fontWeight: "700",
-                  fontSize: "0.85rem",
-                  cursor: "pointer",
-                  "--feeg-hover-bg": tk.surfaceHover,
-                  "--feeg-press-scale": 0.95,
-                }}
-              >
-                Rutinas
-              </button>
-            )}
             <button
               onClick={handleToggleFollow}
               className={`feeg-press${followPulse ? " feeg-check-pulse" : ""}`}

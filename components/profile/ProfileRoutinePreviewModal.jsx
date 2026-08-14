@@ -40,6 +40,7 @@ export default function ProfileRoutinePreviewModal({ isDark = true, routine, lan
       }}
     >
       <style>{`
+        @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap");
         @keyframes profileRoutinePreviewIn { from { opacity: 0; transform: scale(0.96) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         @media (prefers-reduced-motion: reduce) { .profile-routine-preview-dialog { animation: none; } }
       `}</style>
@@ -61,6 +62,8 @@ export default function ProfileRoutinePreviewModal({ isDark = true, routine, lan
           border: `1px solid ${tk.border}`,
           boxShadow: "0 28px 90px rgba(0,0,0,0.42)",
           animation: "profileRoutinePreviewIn 220ms cubic-bezier(0.16, 1, 0.3, 1)",
+          fontFamily: "'Manrope', -apple-system, 'Segoe UI', sans-serif",
+          fontWeight: 500,
         }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "14px", padding: "20px 22px 16px", borderBottom: `1px solid ${tk.border}` }}>
@@ -68,7 +71,7 @@ export default function ProfileRoutinePreviewModal({ isDark = true, routine, lan
             <div style={{ fontSize: "1.15rem", fontWeight: 800, color: tk.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {routine.name}
             </div>
-            <div style={{ fontSize: "0.8rem", color: tk.textMuted, marginTop: "3px" }}>
+            <div style={{ fontSize: "0.8rem", fontWeight: 600, color: tk.textMuted, marginTop: "3px" }}>
               {routine.exercises.length} ejercicios · {seriesCount} series
             </div>
           </div>

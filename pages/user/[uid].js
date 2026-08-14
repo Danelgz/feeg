@@ -185,15 +185,6 @@ export default function UserProfile() {
             onOpenPhoto={() => setIsPhotoFullScreen(true)}
             onOpenFollowers={handleOpenFollowers}
             onOpenFollowing={handleOpenFollowing}
-            hasRoutines={publicRoutines.length > 0}
-            onViewRoutines={() => {
-              setRoutinesOpen(true);
-              // El siguiente frame: si la caja estaba cerrada, su contenido (y el resto de la
-              // altura de la página) todavía no existía en el DOM cuando se pidió el scroll.
-              requestAnimationFrame(() => {
-                document.getElementById("profile-routines-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
-              });
-            }}
           />
 
           <ProfileRoutinesSection

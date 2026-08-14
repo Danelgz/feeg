@@ -40,6 +40,7 @@ export default function ProfileRoutineCard({ isDark = true, routine, onOpenPrevi
         border: `1px solid ${tk.border}`,
         backgroundColor: tk.surfaceAlt,
         cursor: "pointer",
+        fontFamily: "'Manrope', -apple-system, 'Segoe UI', sans-serif",
         "--feeg-hover-border": tk.accent,
         "--feeg-press-scale": 0.97,
       }}
@@ -48,7 +49,7 @@ export default function ProfileRoutineCard({ isDark = true, routine, onOpenPrevi
         <div style={{ fontSize: "1rem", fontWeight: 800, color: tk.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {routine.name}
         </div>
-        <div style={{ fontSize: "0.78rem", color: tk.textMuted, marginTop: "3px" }}>
+        <div style={{ fontSize: "0.78rem", fontWeight: 600, color: tk.textMuted, marginTop: "3px" }}>
           {routine.exercises.length} ejercicios · {seriesCount} series
         </div>
       </div>

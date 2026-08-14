@@ -19,9 +19,7 @@ import {
   ProfileImageCropper,
   ProfileFollowListModal,
   ProfilePhotoViewer,
-  ProfileRankMapModal,
 } from "../components/profile";
-import { Icon } from "../components/ui";
 
 export default function Profile() {
   const router = useRouter();
@@ -75,7 +73,6 @@ export default function Profile() {
   }, [authUser, ranks.available, ranks.overallLevel, ranks.prestigeLevels, ranks.groupRanks]);
 
   const [isEditing, setIsEditing] = useState(false);
-  const [showRankMap, setShowRankMap] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
   const [showFollowers, setShowFollowers] = useState(false);
@@ -301,14 +298,7 @@ export default function Profile() {
 
           <ProfileActivityChart isDark={isDark} completedWorkouts={completedWorkouts} />
 
-          <ProfileInfoMenu
-            isDark={isDark}
-            extraItems={
-              ranks.available
-                ? [{ label: "Cuerpo de rangos", icon: <Icon name="award" size={20} />, onClick: () => setShowRankMap(true) }]
-                : []
-            }
-          />
+          <ProfileInfoMenu isDark={isDark} />
 
           <ProfileWorkoutsSection
             isDark={isDark}
@@ -397,19 +387,6 @@ export default function Profile() {
       )}
 
       <ProfilePhotoViewer open={isPhotoFullScreen} photoURL={user?.photoURL} onClose={() => setIsPhotoFullScreen(false)} />
-
-      {showRankMap && (
-        <ProfileRankMapModal
-          isDark={isDark}
-          overallLevel={ranks.overallLevel}
-          prestigeLevels={ranks.prestigeLevels}
-          groupRanks={ranks.groupRanks}
-          sex={ranks.sex}
-          faceStyleId={user?.faceStyle}
-          t={t}
-          onClose={() => setShowRankMap(false)}
-        />
-      )}
 
       {cropSourceURL && (
         <ProfileImageCropper

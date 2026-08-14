@@ -97,8 +97,8 @@ export default function Layout({ children, hideBottomNav = false }) {
 
   useEffect(() => {
     // Aplicar color de fondo al body para evitar bordes blancos y mejorar el scroll en móvil
-    document.body.style.backgroundColor = isDark ? "#0f0f0f" : "#f0f2f5";
-    document.documentElement.style.backgroundColor = isDark ? "#0f0f0f" : "#f0f2f5";
+    document.body.style.backgroundColor = isDark ? "#000000" : "#f0f2f5";
+    document.documentElement.style.backgroundColor = isDark ? "#000000" : "#f0f2f5";
   }, [isDark]);
 
   useEffect(() => {
@@ -131,7 +131,7 @@ export default function Layout({ children, hideBottomNav = false }) {
       // Fuente de la app (Outfit, ver pages/_app.js). El fallback mantiene la pila del sistema por si
       // la variable no llega a resolverse.
       fontFamily: "var(--font-feeg), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-      backgroundColor: isDark ? "#0f0f0f" : "#f0f2f5",
+      backgroundColor: isDark ? "#000000" : "#f0f2f5",
       color: isDark ? "#fff" : "#333",
       transition: "background-color 0.3s ease",
     }}>
@@ -157,12 +157,12 @@ export default function Layout({ children, hideBottomNav = false }) {
         <meta name="twitter:card" content="summary" />
         {/* Tiñe la barra del navegador en móvil del color del fondo, para que la app no quede
             enmarcada por una franja blanca. */}
-        <meta name="theme-color" content={isDark ? "#0f0f0f" : "#f0f2f5"} />
+        <meta name="theme-color" content={isDark ? "#000000" : "#f0f2f5"} />
         <style>{`
           html, body {
             margin: 0;
             padding: 0;
-            background-color: ${isDark ? "#0f0f0f" : "#f0f2f5"};
+            background-color: ${isDark ? "#000000" : "#f0f2f5"};
             transition: background-color 0.3s ease;
             height: 100%;
             width: 100%;
@@ -255,7 +255,7 @@ export default function Layout({ children, hideBottomNav = false }) {
               left: 0,
               width: "100vw",
               height: "100vh",
-              backgroundColor: isDark ? "#0f0f0f" : "#f0f2f5",
+              backgroundColor: isDark ? "#000000" : "#f0f2f5",
               zIndex: 10000,
               display: "flex",
               justifyContent: "center",
@@ -315,7 +315,7 @@ export default function Layout({ children, hideBottomNav = false }) {
                       // página se intuye debajo, y los botones (con su propio fondo opaco+sombra)
                       // son lo único que de verdad "pesa" visualmente en la barra.
                       background: isDark
-                        ? "linear-gradient(180deg, rgba(15,15,15,0.85) 0%, rgba(15,15,15,0.6) 100%)"
+                        ? "linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.6) 100%)"
                         : "linear-gradient(180deg, rgba(240,242,245,0.9) 0%, rgba(240,242,245,0.65) 100%)",
                       backdropFilter: "blur(14px)",
                       WebkitBackdropFilter: "blur(14px)",
@@ -377,7 +377,7 @@ export default function Layout({ children, hideBottomNav = false }) {
                     // debe cambiar de ejercicio. Con esto la página mide justo 100dvh y solo queda
                     // el scroll interno del pager.
                     paddingBottom: currentIsMobile ? (hideBottomNav ? "0" : "80px") : "20px",
-                    backgroundColor: isDark ? "#0f0f0f" : "#f0f2f5",
+                    backgroundColor: isDark ? "#000000" : "#f0f2f5",
                     color: isDark ? "#fff" : "#333",
                     transition: "background-color 0.3s ease",
                     width: "100%",

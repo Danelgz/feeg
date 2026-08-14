@@ -83,7 +83,7 @@ export default function BottomNavigation() {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: isDark ? "rgba(15, 15, 15, 0.98)" : "rgba(255, 255, 255, 0.98)",
+            backgroundColor: isDark ? "rgba(0, 0, 0, 0.98)" : "rgba(255, 255, 255, 0.98)",
             zIndex: 999,
             display: "flex",
             flexDirection: "column",

@@ -6,13 +6,13 @@ import { useUser } from "../context/UserContext";
 import { getFollowersList, getFollowingList, saveToCloud } from "../lib/firebase";
 import { useRanks } from "../hooks/useRanks";
 import { getTokens } from "../lib/tokens";
+import ReadOnlyWorkoutModal from "../components/workout/ReadOnlyWorkoutModal";
 import {
   ProfileLoginPrompt,
   ProfileHeader,
   ProfileActivityChart,
   ProfileInfoMenu,
   ProfileWorkoutsSection,
-  ProfileWorkoutDetailModal,
   ProfileConfirmModal,
   ProfileAddToRoutineModal,
   ProfileEditModal,
@@ -314,9 +314,10 @@ export default function Profile() {
       </Layout>
 
       {viewingWorkoutDetail && (
-        <ProfileWorkoutDetailModal
+        <ReadOnlyWorkoutModal
           workout={viewingWorkoutDetail}
           language={language}
+          translate={t}
           onClose={() => setViewingWorkoutDetail(null)}
         />
       )}

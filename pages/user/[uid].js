@@ -5,11 +5,11 @@ import { useUser } from "../../context/UserContext";
 import { getFromCloud, getUserWorkouts, getUserWorkoutsCount, getFollowersCount, getFollowersList, getFollowingList, likeWorkout, addWorkoutComment } from "../../lib/firebase";
 import { getTokens } from "../../lib/tokens";
 import { Spinner, EmptyState } from "../../components/ui";
+import ReadOnlyWorkoutModal from "../../components/workout/ReadOnlyWorkoutModal";
 import {
   ProfileHeader,
   ProfileActivityChart,
   ProfileWorkoutsSection,
-  ProfileWorkoutDetailModal,
   ProfileFollowListModal,
   ProfilePhotoViewer,
   ProfileRoutinesSection,
@@ -222,9 +222,10 @@ export default function UserProfile() {
       </Layout>
 
       {viewingWorkoutDetail && (
-        <ProfileWorkoutDetailModal
+        <ReadOnlyWorkoutModal
           workout={viewingWorkoutDetail}
           language={language}
+          translate={t}
           onClose={() => setViewingWorkoutDetail(null)}
         />
       )}

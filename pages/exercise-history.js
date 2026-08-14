@@ -1,16 +1,18 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { useRanks } from "../hooks/useRanks";
 import { getRankPosition, RANKS } from "../data/ranks";
 import { STRENGTH_STANDARDS } from "../data/strengthStandards";
+import { exercisesList } from "../data/exercises";
 import { resolveStandard, nextLevelTarget } from "../lib/rankEngine";
-import { getExerciseInfo, computePersonalRecords, computePRTimeline } from "../lib/exerciseStats";
+import { getExerciseInfo, computePersonalRecords, computePRTimeline, calculateOneRM } from "../lib/exerciseStats";
 import { getExerciseSessions, computeRepRecordsWithDates, computeSessionFrequency } from "../lib/exerciseProfile";
 import { translateExerciseName } from "../lib/exerciseTranslation";
 import { getTokens } from "../lib/tokens";
 import { Icon, Badge, EmptyState, ChipNav, RankArt, Spinner } from "../components/ui";
+import { ExerciseThumb } from "../components/workout";
 import ExercisePhoto from "../components/exerciseProfile/ExercisePhoto";
 import ExerciseProgressChart from "../components/exerciseProfile/ExerciseProgressChart";
 import ReadOnlyWorkoutModal from "../components/workout/ReadOnlyWorkoutModal";
@@ -21,6 +23,7 @@ const TABS = [
   { key: "resumen", label: "Resumen" },
   { key: "records", label: "Récords" },
   { key: "historial", label: "Historial" },
+  { key: "similares", label: "Similares" },
   { key: "notas", label: "Notas" },
 ];
 
@@ -30,7 +33,12 @@ function formatDate(date) {
 
 export default function ExerciseHistoryPage() {
   const router = useRouter();
-  const { theme, isMobile, t, language, completedWorkouts, exerciseNotes, saveExerciseNote, favoriteExercises, toggleFavoriteExercise } = useUser();
+  const {
+    theme, isMobile, t, language, completedWorkouts,
+    exerciseNotes, saveExerciseNote,
+    favoriteExercises, toggleFavoriteExercise,
+    exerciseGoals, saveExerciseGoal,
+  } = useUser();
   const { exerciseRanks, bodyweightKg, sex } = useRanks();
   const isDark = theme === "dark";
   const tk = getTokens(isDark);
@@ -40,6 +48,18 @@ export default function ExerciseHistoryPage() {
   const [viewingWorkout, setViewingWorkout] = useState(null);
   const [noteDraft, setNoteDraft] = useState(null);
   const [noteSaved, setNoteSaved] = useState(false);
+  const [goalDraft, setGoalDraft] = useState(null);
+  const [goalSaved, setGoalSaved] = useState(false);
+  const [shared, setShared] = useState(false);
+
+  // Sin esto, ir a un ejercicio distinto desde "Similares" (misma página, la ruta no se
+  // desmonta, solo cambia router.query.exercise) dejaba el borrador de nota/objetivo del
+  // ejercicio ANTERIOR pisando al nuevo hasta que se tocara algo.
+  useEffect(() => {
+    setNoteDraft(null);
+    setGoalDraft(null);
+    setViewingWorkout(null);
+  }, [exerciseName]);
 
   const info = exerciseName ? getExerciseInfo(exerciseName) : null;
   const unit = info?.type === "time" ? "m" : info?.unit === "lastre" ? "L" : "kg";
@@ -81,6 +101,55 @@ export default function ExerciseHistoryPage() {
     saveExerciseNote(exerciseName, noteText);
     setNoteSaved(true);
     window.setTimeout(() => setNoteSaved(false), 1600);
+  };
+
+  // Objetivo personal: peso a X repeticiones que se pone el propio usuario — no confundir con el
+  // rango de arriba, que compara contra baremos de población. El progreso se mide en 1RM estimado
+  // para que cualquier serie registrada cuente hacia la meta, no solo una a las mismas repes
+  // exactas del objetivo.
+  const goal = exerciseName ? exerciseGoals[exerciseName] : null;
+  const goalWeight = goalDraft?.weight ?? goal?.weight ?? "";
+  const goalReps = goalDraft?.reps ?? goal?.reps ?? "";
+  const goalOneRM = goal ? calculateOneRM(goal.weight, goal.reps) : null;
+  const goalProgress = goal && goalOneRM && record ? Math.max(0, Math.min(1, record.best1RM / goalOneRM)) : null;
+  const goalReached = goalProgress !== null && goalProgress >= 1;
+
+  const handleSaveGoal = () => {
+    saveExerciseGoal(exerciseName, goalWeight, goalReps);
+    setGoalDraft(null);
+    setGoalSaved(true);
+    window.setTimeout(() => setGoalSaved(false), 1600);
+  };
+
+  const handleClearGoal = () => {
+    saveExerciseGoal(exerciseName, null, null);
+    setGoalDraft(null);
+  };
+
+  // Alternativas: mismo grupo muscular, distinto ejercicio — para cuando no hay acceso al
+  // material de este o simplemente se quiere variar. Directamente del catálogo, sin depender de
+  // que el usuario ya lo haya entrenado alguna vez.
+  const similarExercises = info?.group
+    ? (exercisesList[info.group] || []).filter((ex) => ex.name !== exerciseName)
+    : [];
+
+  const handleShare = async () => {
+    const parts = [translateExerciseName(exerciseName, language)];
+    if (record) parts.push(`1RM ${record.best1RM.toFixed(1)}${unit}`);
+    if (rankPosition) parts.push(rankPosition.label);
+    if (goal) parts.push(`Objetivo ${goal.weight}${unit} × ${goal.reps} (${Math.round((goalProgress || 0) * 100)}%)`);
+    const shareText = parts.join(" · ");
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ title: "FEEG", text: shareText });
+      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(shareText);
+      }
+      setShared(true);
+      window.setTimeout(() => setShared(false), 2200);
+    } catch (_) {
+      // Cancelar el diálogo nativo no debe convertir una acción opcional en un error visible.
+    }
   };
 
   if (!exerciseName) {
@@ -138,23 +207,41 @@ export default function ExerciseHistoryPage() {
               <h1 style={{ margin: 0, color: tk.text, fontSize: isMobile ? "1.25rem" : "1.6rem", fontWeight: 800, letterSpacing: "-0.02em", overflowWrap: "anywhere" }}>
                 {translateExerciseName(exerciseName, language)}
               </h1>
-              <button
-                onClick={() => toggleFavoriteExercise(exerciseName)}
-                aria-label={isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
-                aria-pressed={isFavorite}
-                className="feeg-press"
-                style={{
-                  flexShrink: 0,
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: isFavorite ? tk.danger : tk.textFaint,
-                  padding: "2px",
-                  "--feeg-press-scale": 0.85,
-                }}
-              >
-                <Icon name="heart" size={24} style={{ fill: isFavorite ? "currentColor" : "none" }} />
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+                <button
+                  onClick={handleShare}
+                  aria-label="Compartir progreso"
+                  className="feeg-press feeg-hover"
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: shared ? tk.accent : tk.textFaint,
+                    padding: "6px",
+                    borderRadius: tk.radius.sm,
+                    "--feeg-hover-bg": tk.surfaceHover,
+                    "--feeg-press-scale": 0.85,
+                  }}
+                >
+                  <Icon name={shared ? "check" : "share"} size={20} />
+                </button>
+                <button
+                  onClick={() => toggleFavoriteExercise(exerciseName)}
+                  aria-label={isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
+                  aria-pressed={isFavorite}
+                  className="feeg-press"
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: isFavorite ? tk.danger : tk.textFaint,
+                    padding: "2px",
+                    "--feeg-press-scale": 0.85,
+                  }}
+                >
+                  <Icon name="heart" size={24} style={{ fill: isFavorite ? "currentColor" : "none" }} />
+                </button>
+              </div>
             </div>
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "8px" }}>
@@ -176,6 +263,89 @@ export default function ExerciseHistoryPage() {
         <div style={{ marginTop: "20px", marginBottom: "40px" }}>
           {activeTab === "resumen" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${goalReached ? tk.accent : tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
+                <p style={{ margin: "0 0 10px", color: tk.textFaint, fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  Tu objetivo
+                </p>
+
+                {goal && (
+                  <>
+                    <div style={{ height: "8px", backgroundColor: tk.surface, border: `1px solid ${tk.border}`, borderRadius: tk.radius.pill, overflow: "hidden", marginBottom: "10px" }}>
+                      <div
+                        style={{
+                          width: `${Math.round((goalProgress || 0) * 100)}%`,
+                          height: "100%",
+                          backgroundColor: goalReached ? tk.accent : tk.accent,
+                          borderRadius: tk.radius.pill,
+                          transition: "width 0.3s ease",
+                        }}
+                      />
+                    </div>
+                    <p style={{ margin: "0 0 16px", color: tk.textMuted, fontSize: "0.88rem" }}>
+                      {goalReached ? (
+                        <>🎉 <strong style={{ color: tk.accent }}>¡Objetivo conseguido!</strong> {goal.weight}{unit} × {goal.reps}</>
+                      ) : (
+                        <>
+                          Meta: <strong style={{ color: tk.text }}>{goal.weight}{unit} × {goal.reps}</strong>
+                          {record && <> · vas al <strong style={{ color: tk.text }}>{Math.round((goalProgress || 0) * 100)}%</strong></>}
+                        </>
+                      )}
+                    </p>
+                  </>
+                )}
+
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    placeholder={`Peso (${unit})`}
+                    value={goalWeight}
+                    onChange={(e) => setGoalDraft({ weight: e.target.value, reps: goalReps })}
+                    style={{ width: "110px", padding: "9px 10px", borderRadius: tk.radius.sm, border: `1px solid ${tk.border}`, backgroundColor: tk.surface, color: tk.text, fontSize: "0.88rem", fontFamily: "inherit" }}
+                  />
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="Reps"
+                    value={goalReps}
+                    onChange={(e) => setGoalDraft({ weight: goalWeight, reps: e.target.value })}
+                    style={{ width: "80px", padding: "9px 10px", borderRadius: tk.radius.sm, border: `1px solid ${tk.border}`, backgroundColor: tk.surface, color: tk.text, fontSize: "0.88rem", fontFamily: "inherit" }}
+                  />
+                  <button
+                    onClick={handleSaveGoal}
+                    disabled={!goalWeight}
+                    className="feeg-press"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "9px 16px",
+                      borderRadius: tk.radius.sm,
+                      border: "none",
+                      backgroundColor: tk.accent,
+                      color: tk.onAccent,
+                      fontWeight: 700,
+                      fontSize: "0.85rem",
+                      cursor: goalWeight ? "pointer" : "default",
+                      opacity: goalWeight ? 1 : 0.5,
+                      "--feeg-press-scale": 0.96,
+                    }}
+                  >
+                    {goalSaved && <Icon name="check" size={14} />}
+                    {goalSaved ? "Guardado" : goal ? "Actualizar" : "Poner objetivo"}
+                  </button>
+                  {goal && (
+                    <button
+                      onClick={handleClearGoal}
+                      className="feeg-press"
+                      style={{ background: "none", border: "none", color: tk.textFaint, fontSize: "0.8rem", cursor: "pointer", padding: "9px 4px", "--feeg-press-scale": 0.95 }}
+                    >
+                      Quitar
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {rankPosition && (
                 <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
                   <p style={{ margin: "0 0 10px", color: tk.textFaint, fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
@@ -348,6 +518,57 @@ export default function ExerciseHistoryPage() {
                         )}
                         <Icon name="chevronRight" size={16} color={tk.textFaint} />
                       </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "similares" && (
+            <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
+              <p style={{ margin: "0 0 6px", color: tk.text, fontWeight: 800, fontSize: "1.02rem" }}>Alternativas</p>
+              <p style={{ margin: "0 0 16px", color: tk.textMuted, fontSize: "0.85rem" }}>
+                Mismo grupo muscular ({t(info?.group) || info?.group}), para variar o si no tienes acceso a este material.
+              </p>
+
+              {similarExercises.length === 0 ? (
+                <EmptyState isDark={isDark} icon="dumbbell" title="Sin alternativas en el catálogo" description="No hay más ejercicios de este grupo en FEEG todavía." />
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {similarExercises.map((ex) => (
+                    <button
+                      key={ex.id}
+                      onClick={() => router.push(`/exercise-history?exercise=${encodeURIComponent(ex.name)}`)}
+                      className="feeg-press feeg-hover"
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "12px",
+                        padding: "10px 12px",
+                        borderRadius: tk.radius.sm,
+                        border: `1px solid ${tk.border}`,
+                        backgroundColor: tk.surface,
+                        color: tk.text,
+                        cursor: "pointer",
+                        textAlign: "left",
+                        "--feeg-hover-bg": tk.surfaceHover,
+                        "--feeg-hover-border": tk.accent,
+                        "--feeg-press-scale": 0.98,
+                      }}
+                    >
+                      <span style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+                        <ExerciseThumb name={ex.name} size={32} />
+                        <span style={{ fontWeight: 700, fontSize: "0.9rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {translateExerciseName(ex.name, language)}
+                        </span>
+                      </span>
+                      <span style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                        {ex.equipment && <Badge isDark={isDark} variant="outline">{ex.equipment}</Badge>}
+                        <Icon name="chevronRight" size={16} color={tk.textFaint} />
+                      </span>
                     </button>
                   ))}
                 </div>

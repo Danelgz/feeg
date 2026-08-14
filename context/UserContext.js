@@ -70,6 +70,9 @@ export function UserProvider({ children }) {
   // directamente, para que cualquier pantalla futura que también los necesite los tenga gratis.
   const [exerciseNotes, setExerciseNotes] = useState({});
   const [favoriteExercises, setFavoriteExercises] = useState([]);
+  // Objetivo personal por ejercicio ({ weight, reps }) — una meta que se pone el propio usuario,
+  // distinta del rango (que compara contra baremos poblacionales). Mismo patrón que lo de arriba.
+  const [exerciseGoals, setExerciseGoals] = useState({});
   const [following, setFollowing] = useState([]);
   const [followers, setFollowers] = useState([]);
   const [notifications, setNotifications] = useState([]);
@@ -120,6 +123,7 @@ export function UserProvider({ children }) {
     const savedMeasures = localStorage.getItem('measures');
     const savedExerciseNotes = localStorage.getItem('exerciseNotes');
     const savedFavoriteExercises = localStorage.getItem('favoriteExercises');
+    const savedExerciseGoals = localStorage.getItem('exerciseGoals');
     const savedSoundEnabled = localStorage.getItem('soundEnabled');
     const savedAiVoiceEnabled = localStorage.getItem('aiVoiceEnabled');
     const savedAiVoiceURI = localStorage.getItem('aiVoiceURI');
@@ -136,6 +140,7 @@ export function UserProvider({ children }) {
     if (savedMeasures) try { setMeasures(JSON.parse(savedMeasures)); } catch (e) {}
     if (savedExerciseNotes) try { setExerciseNotes(JSON.parse(savedExerciseNotes)); } catch (e) {}
     if (savedFavoriteExercises) try { setFavoriteExercises(JSON.parse(savedFavoriteExercises)); } catch (e) {}
+    if (savedExerciseGoals) try { setExerciseGoals(JSON.parse(savedExerciseGoals)); } catch (e) {}
     if (savedSoundEnabled !== null) setSoundEnabledState(savedSoundEnabled === 'true');
     if (savedAiVoiceEnabled !== null) setAiVoiceEnabledState(savedAiVoiceEnabled === 'true');
     if (savedAiVoiceURI) setAiVoiceURIState(savedAiVoiceURI);
@@ -251,6 +256,10 @@ export function UserProvider({ children }) {
         if (cloudData.favoriteExercises) {
           setFavoriteExercises(cloudData.favoriteExercises);
           localStorage.setItem('favoriteExercises', JSON.stringify(cloudData.favoriteExercises));
+        }
+        if (cloudData.exerciseGoals) {
+          setExerciseGoals(cloudData.exerciseGoals);
+          localStorage.setItem('exerciseGoals', JSON.stringify(cloudData.exerciseGoals));
         }
         if (cloudData.activeRoutine) {
           setActiveRoutine(cloudData.activeRoutine);
@@ -472,12 +481,14 @@ export function UserProvider({ children }) {
     localStorage.removeItem('measures');
     localStorage.removeItem('exerciseNotes');
     localStorage.removeItem('favoriteExercises');
+    localStorage.removeItem('exerciseGoals');
     localStorage.removeItem('activeRoutine');
     setCompletedWorkouts([]);
     setRoutines([]);
     setMeasures([]);
     setExerciseNotes({});
     setFavoriteExercises([]);
+    setExerciseGoals({});
     setActiveRoutine(null);
     setFollowing([]);
     setFollowers([]);
@@ -778,6 +789,23 @@ export function UserProvider({ children }) {
     }
   };
 
+  /** Objetivo personal de un ejercicio: peso a X repeticiones. `weight` null/0 borra la meta —
+   *  mismo criterio que saveExerciseNote para no acumular entradas vacías. */
+  const saveExerciseGoal = async (exerciseName, weight, reps) => {
+    lastLocalUpdate.current = Date.now();
+    const newGoals = { ...exerciseGoals };
+    if (weight && Number(weight) > 0) {
+      newGoals[exerciseName] = { weight: Number(weight), reps: Number(reps) > 0 ? Number(reps) : 1 };
+    } else {
+      delete newGoals[exerciseName];
+    }
+    setExerciseGoals(newGoals);
+    localStorage.setItem('exerciseGoals', JSON.stringify(newGoals));
+    if (authUser) {
+      await saveToCloud(`users/${authUser.uid}`, { exerciseGoals: newGoals });
+    }
+  };
+
   const startRoutine = async (routineData) => {
     lastLocalUpdate.current = Date.now();
     setActiveRoutine(routineData);
@@ -869,6 +897,8 @@ export function UserProvider({ children }) {
       saveExerciseNote,
       favoriteExercises,
       toggleFavoriteExercise,
+      exerciseGoals,
+      saveExerciseGoal,
       following,
       followers,
       isMobile,

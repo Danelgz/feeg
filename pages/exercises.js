@@ -48,7 +48,13 @@ export default function Exercises() {
   }, {});
 
   const hasResults = Object.keys(filteredGroups).length > 0;
-  const selectedExercises = selectedGroup ? filteredGroups[selectedGroup] : null;
+  // Favoritos primero — Array.prototype.sort es estable, así que dentro de cada bloque
+  // (favorito / no favorito) se conserva el orden original del catálogo.
+  const selectedExercises = selectedGroup
+    ? [...(filteredGroups[selectedGroup] || [])].sort(
+        (a, b) => Number(favoriteExercises.includes(b.name)) - Number(favoriteExercises.includes(a.name))
+      )
+    : null;
   const orderedGroups = [
     ...GROUP_DISPLAY_ORDER.filter((g) => filteredGroups[g]),
     ...Object.keys(filteredGroups).filter((g) => !GROUP_DISPLAY_ORDER.includes(g)),

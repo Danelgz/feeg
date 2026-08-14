@@ -9,6 +9,16 @@ import { translateExerciseName } from "../lib/exerciseTranslation";
 import { Icon, EmptyState, PageHeader, Badge, MuscleGroupIcon } from "../components/ui";
 import { ExerciseThumb } from "../components/workout";
 
+// Orden de la rejilla de grupos: el de data/exercises.js con Abductor y Cardio intercambiados de
+// sitio (a petición expresa) — Abductor tiene foto de músculo real ahora (ver MuscleGroupIcon) y
+// gana el hueco más visible; Cardio, que solo tiene icono genérico, pasa al suyo. Cualquier grupo
+// que no esté en esta lista (por si se añade uno nuevo a exercisesList y se olvida aquí) cae al
+// final en vez de desaparecer.
+const GROUP_DISPLAY_ORDER = [
+  "Pecho", "Espalda", "Hombros", "Bíceps", "Tríceps", "Antebrazo", "Cuádriceps", "Femoral",
+  "Glúteos", "Gemelos", "Cuello", "Abdomen", "Abductor", "Aductor", "Cardio", "Cuerpo Completo", "Movilidad",
+];
+
 function exerciseTypeLabel(exercise, t) {
   if (exercise.unit === "lastre") return t("exercise_type_lastre");
   if (exercise.type === "reps") return t("exercise_type_reps");
@@ -39,6 +49,10 @@ export default function Exercises() {
 
   const hasResults = Object.keys(filteredGroups).length > 0;
   const selectedExercises = selectedGroup ? filteredGroups[selectedGroup] : null;
+  const orderedGroups = [
+    ...GROUP_DISPLAY_ORDER.filter((g) => filteredGroups[g]),
+    ...Object.keys(filteredGroups).filter((g) => !GROUP_DISPLAY_ORDER.includes(g)),
+  ];
 
   return (
     <Layout>
@@ -169,7 +183,7 @@ export default function Exercises() {
           // debajo, 2 por fila — se reconoce el grupo de un vistazo sin tener que leer cada
           // etiqueta, y tocarlo lleva directamente a sus ejercicios.
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: isMobile ? "12px" : "16px" }}>
-            {Object.keys(filteredGroups).map((group) => (
+            {orderedGroups.map((group) => (
               <button
                 key={group}
                 onClick={() => setSelectedGroup(group)}

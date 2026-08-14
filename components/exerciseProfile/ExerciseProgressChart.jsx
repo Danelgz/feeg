@@ -22,12 +22,20 @@ const PERIODS = [
  * agrupar por semana dejaría casi todo vacío. Ancho fijo por punto dentro de un contenedor con
  * scroll horizontal en vez de comprimir todos los puntos en el ancho de la tarjeta: con "Siempre"
  * puede haber decenas de sesiones, y apretarlas todas ilegibles no ayuda más que poder deslizar.
+ *
+ * La lectura de un punto no depende de acertarle con precisión: tocar/pulsar en cualquier parte
+ * del gráfico selecciona el punto más cercano en X, y con ratón se puede arrastrar para recorrerlos
+ * en vivo sin soltar — deslizar por el trazo, no ir tocando uno a uno. En táctil el arrastre se dejó
+ * para el scroll nativo del contenedor (que sigue haciendo falta con "Siempre"); ahí cada toque
+ * selecciona el punto más cercano de un gesto.
  */
 export default function ExerciseProgressChart({ isDark = true, sessions, unit }) {
   const tk = getTokens(isDark);
   const [period, setPeriod] = useState("3m");
   const [activePoint, setActivePoint] = useState(null);
   const scrollRef = useRef(null);
+  const svgRef = useRef(null);
+  const scrubbingRef = useRef(false);
 
   const periodDays = PERIODS.find((p) => p.key === period)?.days ?? 90;
   const withBestSet = (sessions || []).filter((s) => s.bestSet);
@@ -50,6 +58,44 @@ export default function ExerciseProgressChart({ isDark = true, sessions, unit })
   // entera abajo por el `|| 1` que tenía antes este cálculo.
   const getY = (weight) => (rangeW === 0 ? midY : PAD_TOP + plotH * (1 - (weight - minW) / rangeW));
 
+  const nearestIndexFor = (clientX) => {
+    if (!svgRef.current || filtered.length === 0) return null;
+    const rect = svgRef.current.getBoundingClientRect();
+    const scale = rect.width > 0 ? chartW / rect.width : 1;
+    const xInSvg = (clientX - rect.left) * scale;
+    let nearest = 0;
+    let nearestDist = Infinity;
+    filtered.forEach((_, i) => {
+      const dist = Math.abs(getX(i) - xInSvg);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearest = i;
+      }
+    });
+    return nearest;
+  };
+
+  const handlePointerDown = (e) => {
+    const idx = nearestIndexFor(e.clientX);
+    if (idx !== null) setActivePoint(idx);
+    // Solo ratón/lápiz arrastra en vivo — en táctil el mismo gesto tiene que poder seguir siendo
+    // "deslizar para desplazar" cuando hay más sesiones de las que caben.
+    if (e.pointerType !== "touch") {
+      scrubbingRef.current = true;
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
+  };
+
+  const handlePointerMove = (e) => {
+    if (!scrubbingRef.current) return;
+    const idx = nearestIndexFor(e.clientX);
+    if (idx !== null) setActivePoint(idx);
+  };
+
+  const stopScrubbing = () => {
+    scrubbingRef.current = false;
+  };
+
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
     setActivePoint(null);
@@ -57,6 +103,11 @@ export default function ExerciseProgressChart({ isDark = true, sessions, unit })
 
   return (
     <div>
+      <style>{`
+        .feeg-exercise-chart-scroll { scrollbar-width: none; }
+        .feeg-exercise-chart-scroll::-webkit-scrollbar { display: none; }
+      `}</style>
+
       <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
         {PERIODS.map((p) => (
           <button
@@ -85,8 +136,17 @@ export default function ExerciseProgressChart({ isDark = true, sessions, unit })
           Sin sesiones en este periodo
         </div>
       ) : (
-        <div ref={scrollRef} style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-          <svg width={chartW} height={CHART_H} style={{ display: "block" }}>
+        <div ref={scrollRef} className="feeg-exercise-chart-scroll" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+          <svg
+            ref={svgRef}
+            width={chartW}
+            height={CHART_H}
+            style={{ display: "block", cursor: "pointer", touchAction: "pan-x" }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={stopScrubbing}
+            onPointerCancel={stopScrubbing}
+          >
             {filtered.length > 1 && (
               <polyline
                 fill="none"
@@ -99,17 +159,7 @@ export default function ExerciseProgressChart({ isDark = true, sessions, unit })
             )}
 
             {filtered.map((session, i) => (
-              <g
-                key={`${session.workoutId}-${i}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActivePoint((cur) => (cur === i ? null : i));
-                }}
-                style={{ cursor: "pointer" }}
-              >
-                {/* Círculo invisible más grande que el punto real: el objetivo táctil real de un
-                    punto de 5px de radio es demasiado pequeño para tocarlo con el dedo. */}
-                <circle cx={getX(i)} cy={getY(session.bestSet.weight)} r="14" fill="transparent" />
+              <g key={`${session.workoutId}-${i}`}>
                 <circle
                   cx={getX(i)}
                   cy={getY(session.bestSet.weight)}

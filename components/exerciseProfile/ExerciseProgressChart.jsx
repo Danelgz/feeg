@@ -38,11 +38,17 @@ export default function ExerciseProgressChart({ isDark = true, sessions, unit })
   const weights = filtered.map((s) => s.bestSet.weight);
   const minW = filtered.length > 0 ? Math.min(...weights) : 0;
   const maxW = filtered.length > 0 ? Math.max(...weights) : 1;
-  const rangeW = maxW - minW || 1;
+  const rangeW = maxW - minW;
+  const plotH = CHART_H - PAD_TOP - PAD_BOTTOM;
+  const midY = PAD_TOP + plotH / 2;
 
   const chartW = Math.max(200, PAD_X * 2 + POINT_SPACING * Math.max(0, filtered.length - 1));
   const getX = (i) => PAD_X + i * POINT_SPACING;
-  const getY = (weight) => PAD_TOP + (CHART_H - PAD_TOP - PAD_BOTTOM) * (1 - (weight - minW) / rangeW);
+  // Peso más bajo abajo del todo, más alto arriba del todo. Cuando todas las sesiones pesan lo
+  // mismo, rangeW es 0 — sin este caso aparte, (weight - minW) / rangeW da 0/0 = NaN y el punto no
+  // se pinta; con él, la línea queda recta en el medio en vez de desaparecer o (el bug real) irse
+  // entera abajo por el `|| 1` que tenía antes este cálculo.
+  const getY = (weight) => (rangeW === 0 ? midY : PAD_TOP + plotH * (1 - (weight - minW) / rangeW));
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;

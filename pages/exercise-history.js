@@ -1,397 +1,420 @@
-import { useState } from 'react';
-import { useRouter } from 'next/router';
-import Layout from '../components/Layout';
-import { useUser } from '../context/UserContext';
-import { exercisesList } from '../data/exercises';
-import { useRanks } from '../hooks/useRanks';
-import { getRankPosition } from '../data/ranks';
-import { nextLevelTarget } from '../lib/rankEngine';
-import { RankArt } from '../components/ui';
+import { useMemo, useState } from "react";
+import { useRouter } from "next/router";
+import Layout from "../components/Layout";
+import { useUser } from "../context/UserContext";
+import { useRanks } from "../hooks/useRanks";
+import { getRankPosition, RANKS } from "../data/ranks";
+import { STRENGTH_STANDARDS } from "../data/strengthStandards";
+import { resolveStandard, nextLevelTarget } from "../lib/rankEngine";
+import { getExerciseInfo, computePersonalRecords, computePRTimeline } from "../lib/exerciseStats";
+import { getExerciseSessions, computeRepRecordsWithDates, computeSessionFrequency } from "../lib/exerciseProfile";
+import { translateExerciseName } from "../lib/exerciseTranslation";
+import { getTokens } from "../lib/tokens";
+import { Icon, Badge, EmptyState, ChipNav, RankArt, Spinner } from "../components/ui";
+import ExercisePhoto from "../components/exerciseProfile/ExercisePhoto";
+import ExerciseProgressChart from "../components/exerciseProfile/ExerciseProgressChart";
+import ReadOnlyWorkoutModal from "../components/workout/ReadOnlyWorkoutModal";
 
-export default function ExerciseHistory() {
+const RANK_SCALE = `linear-gradient(90deg, ${RANKS.map((r) => r.color).join(", ")})`;
+
+const TABS = [
+  { key: "resumen", label: "Resumen" },
+  { key: "records", label: "Récords" },
+  { key: "historial", label: "Historial" },
+  { key: "notas", label: "Notas" },
+];
+
+function formatDate(date) {
+  return date.toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
+}
+
+export default function ExerciseHistoryPage() {
   const router = useRouter();
-  const { theme, completedWorkouts, t } = useUser();
+  const { theme, isMobile, t, language, completedWorkouts, exerciseNotes, saveExerciseNote, favoriteExercises, toggleFavoriteExercise } = useUser();
   const { exerciseRanks, bodyweightKg, sex } = useRanks();
-  const isDark = theme === 'dark';
-  const mint = '#2EE6C5';
-  const mintSoft = 'rgba(46, 230, 197, 0.12)';
-  const surface = isDark ? '#141414' : '#fff';
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  
+  const isDark = theme === "dark";
+  const tk = getTokens(isDark);
+
   const exerciseName = router.query.exercise;
-  const [selectedGraphPoint, setSelectedGraphPoint] = useState(null);
+  const [activeTab, setActiveTab] = useState("resumen");
+  const [viewingWorkout, setViewingWorkout] = useState(null);
+  const [noteDraft, setNoteDraft] = useState(null);
+  const [noteSaved, setNoteSaved] = useState(false);
+
+  const info = exerciseName ? getExerciseInfo(exerciseName) : null;
+  const unit = info?.type === "time" ? "m" : info?.unit === "lastre" ? "L" : "kg";
+  const isFavorite = exerciseName ? favoriteExercises.includes(exerciseName) : false;
+
+  const sessions = useMemo(
+    () => (exerciseName ? getExerciseSessions(completedWorkouts, exerciseName) : []),
+    [completedWorkouts, exerciseName]
+  );
+
+  const prMap = useMemo(() => computePersonalRecords(completedWorkouts), [completedWorkouts]);
+  const record = exerciseName ? prMap[exerciseName] : null;
+
+  const repRecords = useMemo(
+    () => (exerciseName ? computeRepRecordsWithDates(completedWorkouts, exerciseName) : []),
+    [completedWorkouts, exerciseName]
+  );
+
+  const prTimeline = useMemo(() => {
+    if (!exerciseName) return [];
+    return computePRTimeline(completedWorkouts, 2000).milestones.filter((m) => m.exerciseName === exerciseName);
+  }, [completedWorkouts, exerciseName]);
+
+  const frequency = useMemo(() => computeSessionFrequency(sessions), [sessions]);
+
+  const rank = exerciseName ? exerciseRanks.find((r) => r.exercise === exerciseName) : null;
+  const rankPosition = rank ? getRankPosition(rank.level) : null;
+  const rankTarget = rank ? nextLevelTarget(exerciseName, rank.level, rank.best1RM, bodyweightKg, sex) : null;
+
+  const standard = exerciseName ? STRENGTH_STANDARDS[exerciseName] : null;
+  const resolvedStandard = standard ? resolveStandard(standard, sex) : null;
+  const standardProgress = resolvedStandard && rank
+    ? Math.max(0, Math.min(1, (rank.ratio - resolvedStandard.floor) / (resolvedStandard.ceiling - resolvedStandard.floor)))
+    : null;
+
+  const noteText = noteDraft ?? exerciseNotes[exerciseName] ?? "";
+
+  const handleSaveNote = () => {
+    saveExerciseNote(exerciseName, noteText);
+    setNoteSaved(true);
+    window.setTimeout(() => setNoteSaved(false), 1600);
+  };
 
   if (!exerciseName) {
     return (
       <Layout>
-        <div style={{ padding: '20px', textAlign: 'center' }}>
-          <p style={{ color: isDark ? '#aaa' : '#666' }}>{t('loading_routine')}</p>
-        </div>
+        <Spinner isDark={isDark} fullPage label={t("loading_routine")} />
       </Layout>
-    );
-  }
-
-  const getExerciseInfo = (name) => {
-    for (const group in exercisesList) {
-      const ex = exercisesList[group].find(e => e.name === name);
-      if (ex) return { ...ex, group };
-    }
-    return null;
-  };
-
-  const getExerciseHistory = (exerciseName) => {
-    if (!completedWorkouts) return [];
-    
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    const historyMap = {};
-    const allSessions = [];
-
-    completedWorkouts.forEach(w => {
-      if (!w.completedAt) return;
-      const workoutDate = new Date(w.completedAt);
-      if (workoutDate >= thirtyDaysAgo) {
-        const details = w.exerciseDetails || w.details || [];
-        const exDetail = details.find(ed => (ed.name || ed.exercise) === exerciseName);
-        if (exDetail && Array.isArray(exDetail.series)) {
-          const maxWeight = Math.max(...exDetail.series.map(s => parseFloat(s.weight) || 0));
-          if (maxWeight > 0) {
-            const dateKey = workoutDate.toDateString();
-            if (!historyMap[dateKey] || historyMap[dateKey].weight < maxWeight) {
-              historyMap[dateKey] = {
-                date: workoutDate,
-                weight: maxWeight,
-                formattedDate: `${workoutDate.getDate()}/${workoutDate.getMonth() + 1}`,
-                series: exDetail.series
-              };
-            }
-          }
-          allSessions.push({
-            date: workoutDate,
-            series: exDetail.series,
-            completedAt: w.completedAt
-          });
-        }
-      }
-    });
-    
-    return Object.values(historyMap).sort((a, b) => a.date - b.date);
-  };
-
-  const calculateMetrics = () => {
-    if (!completedWorkouts) return {};
-
-    let oneRM = 0;
-    let maxSingleSetVolume = 0;
-    let totalVolume = 0;
-    const personalRecordsByReps = {};
-
-    completedWorkouts.forEach(w => {
-      const details = w.exerciseDetails || w.details || [];
-      const exDetail = details.find(ed => (ed.name || ed.exercise) === exerciseName);
-      
-      if (exDetail && Array.isArray(exDetail.series)) {
-        exDetail.series.forEach(s => {
-          const weight = parseFloat(s.weight) || 0;
-          const reps = parseInt(s.reps) || 0;
-          
-          if (weight > 0 && reps > 0) {
-            oneRM = Math.max(oneRM, calculateOneRM(weight, reps));
-            maxSingleSetVolume = Math.max(maxSingleSetVolume, weight * reps);
-            totalVolume += weight * reps;
-            
-            const repsKey = `${reps}_rep${reps !== 1 ? 's' : ''}`;
-            if (!personalRecordsByReps[repsKey] || personalRecordsByReps[repsKey] < weight) {
-              personalRecordsByReps[repsKey] = weight;
-            }
-          }
-        });
-      }
-    });
-
-    return { oneRM, maxSingleSetVolume, totalVolume, personalRecordsByReps };
-  };
-
-  const calculateOneRM = (weight, reps) => {
-    if (reps === 1) return weight;
-    return weight * (36 / (37 - reps));
-  };
-
-  const history = getExerciseHistory(exerciseName);
-  const info = getExerciseInfo(exerciseName);
-  const unit = info?.type === 'time' ? 'm' : info?.unit === 'lastre' ? 'L' : 'kg';
-  const metrics = calculateMetrics();
-
-  // Mismo motor y las mismas preferencias que la pestaña Rangos — este ejercicio no puede tener un
-  // rango aquí y otro distinto allí. `rank` sale `undefined` sin peso corporal registrado o si el
-  // ejercicio no tiene baremo (STRENGTH_STANDARDS), y entonces la tarjeta de abajo no se enseña:
-  // más vale nada que un rango a medias o inventado.
-  const rank = exerciseRanks.find((r) => r.exercise === exerciseName);
-  const rankPosition = rank ? getRankPosition(rank.level) : null;
-  const rankTarget = rank ? nextLevelTarget(exerciseName, rank.level, rank.best1RM, bodyweightKg, sex) : null;
-
-  const w = isMobile ? 280 : 380;
-  const h = isMobile ? 160 : 220;
-  const p = isMobile ? 30 : 40;
-
-  let graphContent;
-  if (history.length < 2) {
-    graphContent = (
-      <div style={{ padding: '60px 20px', textAlign: 'center', color: '#aaa', backgroundColor: mintSoft, borderRadius: '12px' }}>
-        <p style={{ fontSize: '1.1rem', fontWeight: '500' }}>No hay datos suficientes</p>
-        <p style={{ fontSize: '0.9rem', marginTop: '10px', opacity: 0.7 }}>Se necesitan al menos 2 sesiones en los últimos 30 días.</p>
-      </div>
-    );
-  } else {
-    const weights = history.map(d => d.weight);
-    const minW = Math.min(...weights) * 0.85;
-    const maxW = Math.max(...weights) * 1.15;
-    const rangeW = maxW - minW || 1;
-    
-    const getX = (i) => p + (i * (w - 2 * p) / (history.length - 1));
-    const getY = (weight) => h - p - ((weight - minW) * (h - 2 * p) / rangeW);
-    
-    const points = history.map((d, i) => `${getX(i)},${getY(d.weight)}`).join(' ');
-    
-    graphContent = (
-      <div style={{ position: 'relative', marginTop: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '0.75rem', padding: `0 ${p}px`, marginBottom: '10px', fontWeight: '500' }}>
-          <span>{minW.toFixed(1)}{unit}</span>
-          <span style={{ textAlign: 'center', opacity: 0.7 }}>Últimos 30 días</span>
-          <span>{maxW.toFixed(1)}{unit}</span>
-        </div>
-        <svg width={w} height={h} style={{ overflow: 'visible', display: 'block', margin: '0 auto', backgroundColor: isDark ? '#0f0f0f' : '#f9f9f9', borderRadius: '12px' }}>
-          <line x1={p} y1={p} x2={p} y2={h - p} stroke={isDark ? '#333' : '#ddd'} strokeWidth='2' />
-          <line x1={p} y1={h - p} x2={w - p} y2={h - p} stroke={isDark ? '#333' : '#ddd'} strokeWidth='2' />
-          
-          <polyline
-            fill='none'
-            stroke={mint}
-            strokeWidth='3'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-            points={points}
-            style={{ filter: 'drop-shadow(0 0 6px rgba(46, 230, 197, 0.4))' }}
-          />
-          
-          {history.map((d, i) => (
-            <g key={i} onClick={(e) => { e.stopPropagation(); setSelectedGraphPoint(i); }} style={{ cursor: 'pointer' }}>
-              <circle
-                cx={getX(i)}
-                cy={getY(d.weight)}
-                r={selectedGraphPoint === i ? 8 : 6}
-                fill={selectedGraphPoint === i ? '#fff' : mint}
-                stroke={mint}
-                strokeWidth='2'
-              />
-            </g>
-          ))}
-        </svg>
-        
-        {selectedGraphPoint !== null && (
-          <div style={{
-            position: 'absolute',
-            top: getY(history[selectedGraphPoint].weight) - 70,
-            left: Math.max(0, Math.min(w - 100, getX(selectedGraphPoint) - 50)),
-            backgroundColor: mint,
-            color: '#000',
-            padding: '10px 15px',
-            borderRadius: '12px',
-            fontSize: '0.9rem',
-            textAlign: 'center',
-            zIndex: 10,
-            boxShadow: '0 8px 24px rgba(46, 230, 197, 0.3)',
-            fontWeight: 'bold',
-            pointerEvents: 'none'
-          }}>
-            <div style={{ fontSize: '1.1rem' }}>{history[selectedGraphPoint].weight.toFixed(1)} {unit}</div>
-            <div style={{ fontSize: '0.8rem', opacity: 0.8, marginTop: '4px' }}>{history[selectedGraphPoint].formattedDate}</div>
-          </div>
-        )}
-        
-        <p style={{ textAlign: 'center', color: '#666', fontSize: '0.8rem', marginTop: '20px', cursor: 'pointer' }}>
-          Toca los puntos para ver detalles
-        </p>
-      </div>
     );
   }
 
   return (
     <Layout>
-      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px' }}>
+      <div style={{ maxWidth: "900px", margin: "0 auto", padding: isMobile ? "0" : "0 20px" }}>
         <button
           onClick={() => router.back()}
           className="feeg-surface feeg-press feeg-hover"
           style={{
-            border: 'none',
-            fontSize: '1rem',
-            cursor: 'pointer',
-            fontWeight: '600',
-            marginBottom: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '5px',
-            padding: '4px 0',
-            '--feeg-fg': mint,
-            '--feeg-hover-fg': mint,
-            '--feeg-border-width': '0px',
-            '--feeg-press-scale': 0.96,
+            border: "none",
+            fontSize: "1rem",
+            cursor: "pointer",
+            fontWeight: "600",
+            marginBottom: "16px",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "4px 0",
+            "--feeg-fg": tk.accent,
+            "--feeg-hover-fg": tk.accentHover,
+            "--feeg-border-width": "0px",
+            "--feeg-press-scale": 0.96,
           }}
         >
-          ← Volver
+          <Icon name="chevronLeft" size={18} />
+          Volver
         </button>
 
-        <div style={{
-          backgroundColor: isDark ? '#0f0f0f' : '#f9f9f9',
-          borderRadius: '16px',
-          padding: isMobile ? '20px' : '30px',
-          marginBottom: '30px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '15px' : '20px', marginBottom: '30px' }}>
-            <div style={{
-              width: isMobile ? '50px' : '70px',
-              height: isMobile ? '50px' : '70px',
-              borderRadius: '12px',
-              backgroundColor: mint,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              overflow: 'hidden'
-            }}>
-              <img 
-                src={`/exercises/${(exerciseName || '').toLowerCase().replace(/ /g, '_')}.png`}
-                onError={(e) => { e.target.src = '/logo3.png'; }}
-                alt={exerciseName}
-                style={{ width: '80%', height: 'auto' }}
-              />
-            </div>
-            <div>
-              <h1 style={{ margin: 0, color: mint, fontSize: isMobile ? '1.3rem' : '2rem' }}>{t(exerciseName)}</h1>
-              <p style={{ margin: '8px 0 0 0', color: isDark ? '#aaa' : '#666', fontSize: '0.95rem' }}>
-                {info?.group ? t(info.group) : 'Ejercicio'}
-              </p>
-            </div>
-          </div>
+        {/* Cabecera: foto, nombre, grupo/equipo, favorito y rango — todo lo identificador del
+            ejercicio en un único bloque, antes de las pestañas. */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: isMobile ? "14px" : "20px",
+            backgroundColor: tk.surfaceAlt,
+            border: `1px solid ${tk.border}`,
+            borderRadius: tk.radius.lg,
+            padding: isMobile ? "16px" : "22px",
+            marginBottom: "20px",
+          }}
+        >
+          <ExercisePhoto name={exerciseName} size={isMobile ? 64 : 88} />
 
-          {rankPosition && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              backgroundColor: isDark ? '#1a1a1a' : '#fff',
-              borderRadius: '12px',
-              padding: isMobile ? '14px' : '18px',
-              marginBottom: '20px'
-            }}>
-              <RankArt rank={rankPosition.rank} tier={rankPosition.tier} size={isMobile ? 36 : 44} animated={false} />
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <p style={{ margin: 0, color: '#888', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: '600', letterSpacing: '0.04em' }}>
-                  Tu rango en este ejercicio
-                </p>
-                <p style={{ margin: '4px 0 0', color: rankPosition.rank.color, fontSize: isMobile ? '1.1rem' : '1.35rem', fontWeight: 'bold' }}>
-                  {rankPosition.label}
-                </p>
-                <p style={{ margin: '4px 0 0', color: isDark ? '#aaa' : '#666', fontSize: '0.82rem' }}>
-                  {rank.ratio.toFixed(2)}× tu peso corporal
-                  {rankTarget && !rankTarget.isMaxed && rankTarget.deltaKg > 0 && (
-                    <> · faltan {rankTarget.deltaKg < 1 ? rankTarget.deltaKg.toFixed(1) : Math.ceil(rankTarget.deltaKg)} kg para{' '}
-                      {getRankPosition(rankTarget.targetLevel).label}
-                    </>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "10px" }}>
+              <h1 style={{ margin: 0, color: tk.text, fontSize: isMobile ? "1.25rem" : "1.6rem", fontWeight: 800, letterSpacing: "-0.02em", overflowWrap: "anywhere" }}>
+                {translateExerciseName(exerciseName, language)}
+              </h1>
+              <button
+                onClick={() => toggleFavoriteExercise(exerciseName)}
+                aria-label={isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
+                aria-pressed={isFavorite}
+                className="feeg-press"
+                style={{
+                  flexShrink: 0,
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: isFavorite ? tk.danger : tk.textFaint,
+                  padding: "2px",
+                  "--feeg-press-scale": 0.85,
+                }}
+              >
+                <Icon name="heart" size={24} style={{ fill: isFavorite ? "currentColor" : "none" }} />
+              </button>
+            </div>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "8px" }}>
+              {info?.group && <Badge isDark={isDark} variant="neutral">{t(info.group) || info.group}</Badge>}
+              {info?.equipment && <Badge isDark={isDark} variant="outline">{info.equipment}</Badge>}
+            </div>
+
+            {rankPosition && (
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "12px" }}>
+                <RankArt rank={rankPosition.rank} tier={rankPosition.tier} size={20} />
+                <span style={{ fontSize: "0.9rem", fontWeight: 800, color: rankPosition.rank.color }}>{rankPosition.label}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <ChipNav items={TABS} activeKey={activeTab} onChange={setActiveTab} isDark={isDark} ariaLabel="Secciones de la ficha del ejercicio" />
+
+        <div style={{ marginTop: "20px", marginBottom: "40px" }}>
+          {activeTab === "resumen" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              {rankPosition && (
+                <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
+                  <p style={{ margin: "0 0 10px", color: tk.textFaint, fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                    Progreso hacia el siguiente rango
+                  </p>
+                  {!rankTarget?.isMaxed && rankTarget && (
+                    <div
+                      role="progressbar"
+                      aria-valuenow={Math.round((rank.level % 1) * 100)}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      style={{ height: "8px", backgroundColor: tk.surface, border: `1px solid ${tk.border}`, borderRadius: tk.radius.pill, overflow: "hidden", marginBottom: "10px" }}
+                    >
+                      <div style={{ width: `${Math.round((rank.level % 1) * 100)}%`, height: "100%", background: `linear-gradient(90deg, ${rankPosition.rank.accent}, ${rankPosition.rank.color})`, borderRadius: tk.radius.pill }} />
+                    </div>
                   )}
-                  {rankTarget?.isMaxed && <> · nivel máximo</>}
-                </p>
+                  <p style={{ margin: 0, color: tk.textMuted, fontSize: "0.88rem" }}>
+                    {rankTarget?.isMaxed
+                      ? "Nivel máximo en este ejercicio."
+                      : rankTarget
+                      ? <>Faltan <strong style={{ color: tk.text }}>{rankTarget.deltaKg < 1 ? rankTarget.deltaKg.toFixed(1) : Math.ceil(rankTarget.deltaKg)} {unit}</strong> para {getRankPosition(rankTarget.targetLevel).label}</>
+                      : `${rank.ratio.toFixed(2)}× tu peso corporal`}
+                  </p>
+
+                  {resolvedStandard && standardProgress !== null && (
+                    <div style={{ marginTop: "18px" }}>
+                      <p style={{ margin: "0 0 8px", color: tk.textFaint, fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                        Dónde caes en el baremo completo
+                      </p>
+                      <div style={{ position: "relative", height: "8px" }}>
+                        <div style={{ position: "absolute", inset: 0, borderRadius: tk.radius.pill, background: RANK_SCALE, border: `1px solid ${tk.border}` }} />
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: "-3px",
+                            left: `${standardProgress * 100}%`,
+                            transform: "translateX(-50%)",
+                            width: "14px",
+                            height: "14px",
+                            borderRadius: "50%",
+                            backgroundColor: tk.text,
+                            border: `2px solid ${tk.surfaceAlt}`,
+                            boxShadow: tk.shadow.float,
+                          }}
+                        />
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "6px" }}>
+                        <span style={{ fontSize: "0.68rem", color: tk.textFaint, fontWeight: 700 }}>{RANKS[0].name}</span>
+                        <span style={{ fontSize: "0.68rem", color: tk.textFaint, fontWeight: 700 }}>{RANKS[RANKS.length - 1].name}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
+                <p style={{ margin: "0 0 12px", color: tk.text, fontWeight: 800, fontSize: "1.02rem" }}>Progreso</p>
+                <ExerciseProgressChart isDark={isDark} sessions={sessions} unit={unit} />
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: "12px" }}>
+                {[
+                  { label: "1RM estimado", value: record ? `${record.best1RM.toFixed(1)} ${unit}` : "-" },
+                  { label: "Mayor volumen (serie)", value: record ? record.maxSingleSetVolume.toFixed(1) : "-" },
+                  { label: "Sesiones totales", value: frequency.totalSessions || "-" },
+                  { label: "Frecuencia reciente", value: frequency.perWeekRecent > 0 ? `${frequency.perWeekRecent}/sem` : "-" },
+                ].map((stat) => (
+                  <div key={stat.label} style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.md, padding: "14px 10px", textAlign: "center" }}>
+                    <div style={{ color: tk.accent, fontSize: isMobile ? "1.1rem" : "1.3rem", fontWeight: 800 }}>{stat.value}</div>
+                    <div style={{ color: tk.textFaint, fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", marginTop: "4px" }}>{stat.label}</div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
-          {graphContent}
-        </div>
+          {activeTab === "records" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
+                <p style={{ margin: "0 0 16px", color: tk.text, fontWeight: 800, fontSize: "1.02rem" }}>Mejores marcas por repetición</p>
+                {repRecords.length === 0 ? (
+                  <EmptyState isDark={isDark} icon="award" title="Sin marcas todavía" description="Registra una serie de este ejercicio para empezar a ver tus récords." />
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? "120px" : "150px"}, 1fr))`, gap: "12px" }}>
+                    {repRecords.map((r) => (
+                      <div key={r.reps} style={{ backgroundColor: tk.accentSoft, border: `1px solid ${tk.accent}55`, borderRadius: tk.radius.sm, padding: "14px", textAlign: "center" }}>
+                        <p style={{ margin: "0 0 6px", color: tk.textMuted, fontSize: "0.78rem", fontWeight: 700 }}>{r.reps} rep{r.reps !== 1 ? "s" : ""}</p>
+                        <p style={{ margin: 0, color: tk.accent, fontSize: "1.3rem", fontWeight: 800 }}>{r.weight.toFixed(1)} {unit}</p>
+                        <p style={{ margin: "6px 0 0", color: tk.textFaint, fontSize: "0.68rem" }}>{formatDate(r.date)}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-          <div style={{
-            backgroundColor: isDark ? '#1a1a1a' : '#fff',
-            borderRadius: '12px',
-            padding: '20px',
-            textAlign: 'center'
-          }}>
-            <p style={{ margin: '0 0 10px 0', color: '#888', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: '600' }}>
-              1RM (Estimado)
-            </p>
-            <h2 style={{ margin: 0, color: mint, fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold' }}>
-              {metrics.oneRM > 0 ? metrics.oneRM.toFixed(1) : '-'} {unit}
-            </h2>
-          </div>
+              <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
+                <p style={{ margin: "0 0 16px", color: tk.text, fontWeight: 800, fontSize: "1.02rem" }}>Línea de tiempo de récords</p>
+                {prTimeline.length === 0 ? (
+                  <EmptyState isDark={isDark} icon="trendUp" title="Sin récords registrados" description="Cuando superes tu mejor 1RM estimado en este ejercicio, aparecerá aquí." />
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    {prTimeline.map((m) => (
+                      <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 0", borderBottom: `1px solid ${tk.border}` }}>
+                        <Icon name="trendUp" size={16} color={tk.accent} style={{ flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ color: tk.text, fontSize: "0.9rem", fontWeight: 700 }}>
+                            {m.weight}{unit} × {m.reps} <span style={{ color: tk.textMuted, fontWeight: 500 }}>· 1RM est. {m.oneRM.toFixed(1)}{unit}</span>
+                          </div>
+                          <div style={{ color: tk.textFaint, fontSize: "0.74rem", marginTop: "2px" }}>{formatDate(new Date(m.date))}</div>
+                        </div>
+                        {m.deltaOneRMPercent !== null && (
+                          <Badge isDark={isDark} variant="accent">+{m.deltaOneRMPercent.toFixed(1)}%</Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
-          <div style={{
-            backgroundColor: isDark ? '#1a1a1a' : '#fff',
-            borderRadius: '12px',
-            padding: '20px',
-            textAlign: 'center'
-          }}>
-            <p style={{ margin: '0 0 10px 0', color: '#888', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: '600' }}>
-              Mayor Volumen (Serie)
-            </p>
-            <h2 style={{ margin: 0, color: mint, fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold' }}>
-              {metrics.maxSingleSetVolume > 0 ? metrics.maxSingleSetVolume.toFixed(1) : '-'}
-            </h2>
-            <p style={{ margin: '5px 0 0 0', color: '#666', fontSize: '0.75rem' }}>kg × reps</p>
-          </div>
+          {activeTab === "historial" && (
+            <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "8px" }}>
+                <p style={{ margin: 0, color: tk.text, fontWeight: 800, fontSize: "1.02rem" }}>Sesiones</p>
+                <span style={{ color: tk.textMuted, fontSize: "0.82rem" }}>
+                  {frequency.totalSessions} en total · {frequency.perWeekRecent}/semana (últimas 8 semanas)
+                </span>
+              </div>
 
-          <div style={{
-            backgroundColor: isDark ? '#1a1a1a' : '#fff',
-            borderRadius: '12px',
-            padding: '20px',
-            textAlign: 'center'
-          }}>
-            <p style={{ margin: '0 0 10px 0', color: '#888', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: '600' }}>
-              Volumen Total
-            </p>
-            <h2 style={{ margin: 0, color: mint, fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold' }}>
-              {metrics.totalVolume > 0 ? Math.round(metrics.totalVolume) : '-'}
-            </h2>
-            <p style={{ margin: '5px 0 0 0', color: '#666', fontSize: '0.75rem' }}>Todas las sesiones</p>
-          </div>
-        </div>
+              {sessions.length === 0 ? (
+                <EmptyState isDark={isDark} icon="clock" title="Sin sesiones registradas" description="Este ejercicio no aparece todavía en ningún entreno terminado." />
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {sessions.map((session, i) => (
+                    <button
+                      key={`${session.workoutId}-${i}`}
+                      onClick={() => {
+                        const workout = completedWorkouts.find((w) => w.id === session.workoutId);
+                        if (workout) setViewingWorkout(workout);
+                      }}
+                      className="feeg-press feeg-hover"
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "12px",
+                        padding: "12px 14px",
+                        borderRadius: tk.radius.md,
+                        border: `1px solid ${tk.border}`,
+                        backgroundColor: tk.surface,
+                        color: tk.text,
+                        cursor: "pointer",
+                        textAlign: "left",
+                        "--feeg-hover-bg": tk.surfaceHover,
+                        "--feeg-hover-border": tk.accent,
+                        "--feeg-press-scale": 0.98,
+                      }}
+                    >
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: "0.9rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{session.workoutName}</div>
+                        <div style={{ color: tk.textFaint, fontSize: "0.74rem", marginTop: "2px" }}>{formatDate(session.date)} · {session.series.length} series</div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+                        {session.bestSet && (
+                          <span style={{ color: tk.accent, fontWeight: 700, fontSize: "0.88rem" }}>
+                            {session.bestSet.weight}{unit} × {session.bestSet.reps}
+                          </span>
+                        )}
+                        <Icon name="chevronRight" size={16} color={tk.textFaint} />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
-        <div style={{
-          backgroundColor: isDark ? '#1a1a1a' : '#fff',
-          borderRadius: '12px',
-          padding: '25px'
-        }}>
-          <h3 style={{ margin: '0 0 20px 0', color: mint, fontSize: isMobile ? '1.1rem' : '1.3rem' }}>Mejores Marcas Personales</h3>
-          
-          {Object.keys(metrics.personalRecordsByReps).length === 0 ? (
-            <p style={{ color: '#888', textAlign: 'center', margin: '20px 0' }}>Sin datos de personal records</p>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '15px' }}>
-              {Object.entries(metrics.personalRecordsByReps).sort((a, b) => {
-                const repsA = parseInt(a[0]);
-                const repsB = parseInt(b[0]);
-                return repsA - repsB;
-              }).map(([reps, weight]) => (
-                <div
-                  key={reps}
+          {activeTab === "notas" && (
+            <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
+              <p style={{ margin: "0 0 6px", color: tk.text, fontWeight: 800, fontSize: "1.02rem" }}>Tus notas</p>
+              <p style={{ margin: "0 0 14px", color: tk.textMuted, fontSize: "0.85rem" }}>
+                Técnica, cues, lesiones a vigilar — lo que quieras recordar la próxima vez que hagas este ejercicio. Solo tú lo ves.
+              </p>
+              <textarea
+                value={noteText}
+                onChange={(e) => setNoteDraft(e.target.value)}
+                placeholder="p. ej. codos pegados al cuerpo, bajar controlado…"
+                rows={6}
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  padding: "12px 14px",
+                  borderRadius: tk.radius.md,
+                  border: `1px solid ${tk.border}`,
+                  backgroundColor: tk.surface,
+                  color: tk.text,
+                  fontSize: "0.92rem",
+                  fontFamily: "inherit",
+                  lineHeight: 1.5,
+                  resize: "vertical",
+                }}
+              />
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "12px" }}>
+                <button
+                  onClick={handleSaveNote}
+                  className="feeg-press"
                   style={{
-                    backgroundColor: mintSoft,
-                    border: `1px solid ${mint}`,
-                    borderRadius: '10px',
-                    padding: '15px',
-                    textAlign: 'center'
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "10px 20px",
+                    borderRadius: tk.radius.sm,
+                    border: "none",
+                    backgroundColor: tk.accent,
+                    color: tk.onAccent,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    "--feeg-press-scale": 0.96,
                   }}
                 >
-                  <p style={{ margin: '0 0 8px 0', color: '#888', fontSize: '0.8rem', fontWeight: '600' }}>
-                    {reps.replace('_', ' ')}
-                  </p>
-                  <p style={{ margin: 0, color: mint, fontSize: '1.5rem', fontWeight: 'bold' }}>
-                    {weight.toFixed(1)} {unit}
-                  </p>
-                </div>
-              ))}
+                  {noteSaved && <Icon name="check" size={15} />}
+                  {noteSaved ? "Guardado" : "Guardar nota"}
+                </button>
+              </div>
             </div>
           )}
         </div>
       </div>
+
+      {viewingWorkout && (
+        <ReadOnlyWorkoutModal
+          workout={viewingWorkout}
+          language={language}
+          translate={t}
+          onClose={() => setViewingWorkout(null)}
+        />
+      )}
     </Layout>
   );
 }

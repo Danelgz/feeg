@@ -57,7 +57,7 @@ export function getExerciseInfo(name: string): ExerciseCatalogInfo | null {
  * antes faltaran grupos enteros como Cardio/Aductor/Abductor en los gráficos). */
 export const ALL_MUSCLE_GROUPS: string[] = Object.keys(exercisesList);
 
-function detailsOf(w: CompletedWorkout): CompletedExerciseDetail[] {
+export function detailsOf(w: CompletedWorkout): CompletedExerciseDetail[] {
   // Algunos historiales antiguos conservan `exerciseDetails: []` y dejan los datos reales en
   // `details`. Usar `||` aquí no sirve porque un array vacío es truthy y hace desaparecer toda la
   // sesión de las estadísticas.
@@ -66,7 +66,7 @@ function detailsOf(w: CompletedWorkout): CompletedExerciseDetail[] {
   return Array.isArray(w.exerciseDetails) ? w.exerciseDetails : Array.isArray(w.details) ? w.details : [];
 }
 
-function seriesOf(detail: CompletedExerciseDetail): CompletedSeries[] {
+export function seriesOf(detail: CompletedExerciseDetail): CompletedSeries[] {
   const candidates = [detail.series, detail.sets, detail.completedSets];
   const populated = candidates.find((candidate) => Array.isArray(candidate) && candidate.length > 0);
   if (populated) return populated;

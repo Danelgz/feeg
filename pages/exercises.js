@@ -1,5 +1,6 @@
 // pages/exercises.js
 import { useState } from "react";
+import { useRouter } from "next/router";
 import Layout from "../components/Layout";
 import { exercisesList } from "../data/exercises";
 import { useUser } from "../context/UserContext";
@@ -16,9 +17,10 @@ function exerciseTypeLabel(exercise, t) {
 }
 
 export default function Exercises() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [expandedGroups, setExpandedGroups] = useState({});
-  const { theme, isMobile, t, language } = useUser();
+  const { theme, isMobile, t, language, favoriteExercises, toggleFavoriteExercise } = useUser();
   const isDark = theme === 'dark';
   const tk = getTokens(isDark);
 
@@ -103,40 +105,66 @@ export default function Exercises() {
 
               {expandedGroups[group] && (
                 <ul style={{ listStyle: "none", padding: "0.5rem 0 0 0", marginTop: "0.5rem" }}>
-                  {exercises.map((exercise) => (
-                    <li
-                      key={exercise.id}
-                      style={{
-                        padding: "12px",
-                        border: `1px solid ${tk.border}`,
-                        borderRadius: tk.radius.sm,
-                        marginBottom: "8px",
-                        cursor: "pointer",
-                        backgroundColor: tk.surface,
-                        color: tk.text,
-                        transition: tk.transition,
-                        marginLeft: "1rem"
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.backgroundColor = tk.surfaceHover;
-                        e.currentTarget.style.borderColor = tk.accent;
-                        e.currentTarget.style.transform = "translateX(4px)";
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.backgroundColor = tk.surface;
-                        e.currentTarget.style.borderColor = tk.border;
-                        e.currentTarget.style.transform = "translateX(0)";
-                      }}
-                    >
-                      <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
-                        <span style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
-                          <ExerciseThumb name={exercise.name} size={34} />
-                          {translateExerciseName(exercise.name, language)}
+                  {exercises.map((exercise) => {
+                    const isFavorite = favoriteExercises.includes(exercise.name);
+                    return (
+                      <li
+                        key={exercise.id}
+                        onClick={() => router.push(`/exercise-history?exercise=${encodeURIComponent(exercise.name)}`)}
+                        style={{
+                          padding: "12px",
+                          border: `1px solid ${tk.border}`,
+                          borderRadius: tk.radius.sm,
+                          marginBottom: "8px",
+                          cursor: "pointer",
+                          backgroundColor: tk.surface,
+                          color: tk.text,
+                          transition: tk.transition,
+                          marginLeft: "1rem"
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.backgroundColor = tk.surfaceHover;
+                          e.currentTarget.style.borderColor = tk.accent;
+                          e.currentTarget.style.transform = "translateX(4px)";
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.backgroundColor = tk.surface;
+                          e.currentTarget.style.borderColor = tk.border;
+                          e.currentTarget.style.transform = "translateX(0)";
+                        }}
+                      >
+                        <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
+                          <span style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+                            <ExerciseThumb name={exercise.name} size={34} />
+                            {translateExerciseName(exercise.name, language)}
+                          </span>
+                          <span style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                            <Badge isDark={isDark} variant="neutral">{exerciseTypeLabel(exercise, t)}</Badge>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleFavoriteExercise(exercise.name);
+                              }}
+                              aria-label={isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
+                              aria-pressed={isFavorite}
+                              className="feeg-press"
+                              style={{
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                                color: isFavorite ? tk.danger : tk.textFaint,
+                                display: "flex",
+                                padding: "2px",
+                                "--feeg-press-scale": 0.85,
+                              }}
+                            >
+                              <Icon name="heart" size={17} style={{ fill: isFavorite ? "currentColor" : "none" }} />
+                            </button>
+                          </span>
                         </span>
-                        <Badge isDark={isDark} variant="neutral">{exerciseTypeLabel(exercise, t)}</Badge>
-                      </span>
-                    </li>
-                  ))}
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>

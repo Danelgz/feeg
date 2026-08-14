@@ -64,6 +64,12 @@ export function UserProvider({ children }) {
   const [completedWorkouts, setCompletedWorkouts] = useState([]);
   const [routines, setRoutines] = useState([]);
   const [measures, setMeasures] = useState([]);
+  // Notas propias por ejercicio (técnica, cues personales) y favoritos — datos privados del
+  // usuario sobre el catálogo, no sobre su historial de entrenos. Mismo patrón local-first que
+  // measures/routines: se leen y escriben aquí, nunca desde la página de la ficha del ejercicio
+  // directamente, para que cualquier pantalla futura que también los necesite los tenga gratis.
+  const [exerciseNotes, setExerciseNotes] = useState({});
+  const [favoriteExercises, setFavoriteExercises] = useState([]);
   const [following, setFollowing] = useState([]);
   const [followers, setFollowers] = useState([]);
   const [notifications, setNotifications] = useState([]);
@@ -112,6 +118,8 @@ export function UserProvider({ children }) {
     const savedWorkouts = localStorage.getItem('completedWorkouts');
     const savedRoutines = localStorage.getItem('routines');
     const savedMeasures = localStorage.getItem('measures');
+    const savedExerciseNotes = localStorage.getItem('exerciseNotes');
+    const savedFavoriteExercises = localStorage.getItem('favoriteExercises');
     const savedSoundEnabled = localStorage.getItem('soundEnabled');
     const savedAiVoiceEnabled = localStorage.getItem('aiVoiceEnabled');
     const savedAiVoiceURI = localStorage.getItem('aiVoiceURI');
@@ -126,6 +134,8 @@ export function UserProvider({ children }) {
     if (savedWorkouts) try { setCompletedWorkouts(JSON.parse(savedWorkouts)); } catch (e) {}
     if (savedRoutines) try { setRoutines(JSON.parse(savedRoutines)); } catch (e) {}
     if (savedMeasures) try { setMeasures(JSON.parse(savedMeasures)); } catch (e) {}
+    if (savedExerciseNotes) try { setExerciseNotes(JSON.parse(savedExerciseNotes)); } catch (e) {}
+    if (savedFavoriteExercises) try { setFavoriteExercises(JSON.parse(savedFavoriteExercises)); } catch (e) {}
     if (savedSoundEnabled !== null) setSoundEnabledState(savedSoundEnabled === 'true');
     if (savedAiVoiceEnabled !== null) setAiVoiceEnabledState(savedAiVoiceEnabled === 'true');
     if (savedAiVoiceURI) setAiVoiceURIState(savedAiVoiceURI);
@@ -233,6 +243,14 @@ export function UserProvider({ children }) {
         if (cloudData.measures) {
           setMeasures(cloudData.measures);
           localStorage.setItem('measures', JSON.stringify(cloudData.measures));
+        }
+        if (cloudData.exerciseNotes) {
+          setExerciseNotes(cloudData.exerciseNotes);
+          localStorage.setItem('exerciseNotes', JSON.stringify(cloudData.exerciseNotes));
+        }
+        if (cloudData.favoriteExercises) {
+          setFavoriteExercises(cloudData.favoriteExercises);
+          localStorage.setItem('favoriteExercises', JSON.stringify(cloudData.favoriteExercises));
         }
         if (cloudData.activeRoutine) {
           setActiveRoutine(cloudData.activeRoutine);
@@ -452,10 +470,14 @@ export function UserProvider({ children }) {
     localStorage.removeItem('completedWorkouts');
     localStorage.removeItem('routines');
     localStorage.removeItem('measures');
+    localStorage.removeItem('exerciseNotes');
+    localStorage.removeItem('favoriteExercises');
     localStorage.removeItem('activeRoutine');
     setCompletedWorkouts([]);
     setRoutines([]);
     setMeasures([]);
+    setExerciseNotes({});
+    setFavoriteExercises([]);
     setActiveRoutine(null);
     setFollowing([]);
     setFollowers([]);
@@ -728,6 +750,34 @@ export function UserProvider({ children }) {
     }
   };
 
+  /** Nota libre sobre un ejercicio (técnica, cues). Texto vacío borra la clave en vez de guardar
+   *  una cadena vacía, para que el mapa no crezca sin límite con entradas "" de ejercicios que se
+   *  probaron a escribir algo y se borró. */
+  const saveExerciseNote = async (exerciseName, text) => {
+    lastLocalUpdate.current = Date.now();
+    const trimmed = (text || '').trim();
+    const newNotes = { ...exerciseNotes };
+    if (trimmed) newNotes[exerciseName] = trimmed;
+    else delete newNotes[exerciseName];
+    setExerciseNotes(newNotes);
+    localStorage.setItem('exerciseNotes', JSON.stringify(newNotes));
+    if (authUser) {
+      await saveToCloud(`users/${authUser.uid}`, { exerciseNotes: newNotes });
+    }
+  };
+
+  const toggleFavoriteExercise = async (exerciseName) => {
+    lastLocalUpdate.current = Date.now();
+    const newList = favoriteExercises.includes(exerciseName)
+      ? favoriteExercises.filter((name) => name !== exerciseName)
+      : [...favoriteExercises, exerciseName];
+    setFavoriteExercises(newList);
+    localStorage.setItem('favoriteExercises', JSON.stringify(newList));
+    if (authUser) {
+      await saveToCloud(`users/${authUser.uid}`, { favoriteExercises: newList });
+    }
+  };
+
   const startRoutine = async (routineData) => {
     lastLocalUpdate.current = Date.now();
     setActiveRoutine(routineData);
@@ -815,6 +865,10 @@ export function UserProvider({ children }) {
       deleteRoutine,
       measures,
       saveMeasures,
+      exerciseNotes,
+      saveExerciseNote,
+      favoriteExercises,
+      toggleFavoriteExercise,
       following,
       followers,
       isMobile,

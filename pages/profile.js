@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import Layout from "../components/Layout";
 import RegisterForm from "../components/RegisterForm";
 import { useUser } from "../context/UserContext";
-import { getFollowersList, getFollowingList } from "../lib/firebase";
+import { getFollowersList, getFollowingList, saveToCloud } from "../lib/firebase";
+import { useRanks } from "../hooks/useRanks";
 import { getTokens } from "../lib/tokens";
 import {
   ProfileLoginPrompt,
@@ -45,6 +46,21 @@ export default function Profile() {
   } = useUser();
   const isDark = theme === "dark";
   const tk = getTokens(isDark);
+
+  // El rango (nivel/prestigio) se calcula siempre a partir de los propios datos del usuario
+  // (measures, PRs) vía useRanks — nunca de los de otra persona, cuyas medidas son privadas. Para
+  // que el perfil de otra persona pueda mostrar tu insignia sin recalcularla, se refleja aquí en
+  // usersPublic/{uid} cada vez que cambia — mismo patrón que el resto de campos públicos del
+  // perfil. syncedRankRef evita reescribir en cada render cuando el valor no cambió.
+  const ranks = useRanks();
+  const syncedRankRef = useRef(null);
+  useEffect(() => {
+    if (!authUser || !ranks.available) return;
+    const key = `${ranks.overallLevel}:${ranks.prestigeLevels}`;
+    if (syncedRankRef.current === key) return;
+    syncedRankRef.current = key;
+    saveToCloud(`usersPublic/${authUser.uid}`, { overallLevel: ranks.overallLevel, prestigeLevels: ranks.prestigeLevels }).catch(() => {});
+  }, [authUser, ranks.available, ranks.overallLevel, ranks.prestigeLevels]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -268,6 +284,8 @@ export default function Profile() {
             onOpenPhoto={() => setIsPhotoFullScreen(true)}
             onOpenFollowers={handleOpenFollowers}
             onOpenFollowing={handleOpenFollowing}
+            overallLevel={ranks.available ? ranks.overallLevel : undefined}
+            prestigeLevels={ranks.prestigeLevels}
           />
 
           <ProfileActivityChart isDark={isDark} completedWorkouts={completedWorkouts} />

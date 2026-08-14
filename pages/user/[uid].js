@@ -12,6 +12,8 @@ import {
   ProfileWorkoutDetailModal,
   ProfileFollowListModal,
   ProfilePhotoViewer,
+  ProfileRoutinesSection,
+  ProfileRoutinePreviewModal,
 } from "../../components/profile";
 
 /**
@@ -24,7 +26,7 @@ import {
 export default function UserProfile() {
   const router = useRouter();
   const { uid } = router.query;
-  const { authUser, user: currentUser, isLoaded, isMobile, following, handleFollow, handleUnfollow, t, language, theme, showNotification } = useUser();
+  const { authUser, user: currentUser, isLoaded, isMobile, following, handleFollow, handleUnfollow, saveRoutine, t, language, theme, showNotification } = useUser();
   const isDark = theme === "dark";
   const tk = getTokens(isDark);
 
@@ -42,6 +44,7 @@ export default function UserProfile() {
   const [followingList, setFollowingList] = useState([]);
   const [isPhotoFullScreen, setIsPhotoFullScreen] = useState(false);
   const [viewingWorkoutDetail, setViewingWorkoutDetail] = useState(null);
+  const [previewingRoutine, setPreviewingRoutine] = useState(null);
 
   useEffect(() => {
     if (uid) {
@@ -124,6 +127,15 @@ export default function UserProfile() {
     }
   };
 
+  const handleCopyRoutine = async (routine) => {
+    if (!authUser) {
+      showNotification("Inicia sesión para copiar rutinas a tu cuenta", "error");
+      return;
+    }
+    await saveRoutine({ id: Date.now(), name: routine.name, exercises: routine.exercises, public: true });
+    showNotification(`Rutina "${routine.name}" copiada a tus rutinas`, "success");
+  };
+
   const handleOpenFollowers = async () => {
     setShowFollowers(true);
     const list = await getFollowersList(uid);
@@ -153,6 +165,7 @@ export default function UserProfile() {
   }
 
   const isFollowing = following.includes(uid);
+  const publicRoutines = targetUser.routines || [];
 
   return (
     <>
@@ -169,6 +182,17 @@ export default function UserProfile() {
             onOpenPhoto={() => setIsPhotoFullScreen(true)}
             onOpenFollowers={handleOpenFollowers}
             onOpenFollowing={handleOpenFollowing}
+            overallLevel={targetUser.overallLevel}
+            prestigeLevels={targetUser.prestigeLevels}
+            hasRoutines={publicRoutines.length > 0}
+            onViewRoutines={() => document.getElementById("profile-routines-section")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          />
+
+          <ProfileRoutinesSection
+            isDark={isDark}
+            routines={publicRoutines}
+            onOpenPreview={(routine) => setPreviewingRoutine(routine)}
+            onCopyRoutine={handleCopyRoutine}
           />
 
           <ProfileActivityChart isDark={isDark} completedWorkouts={workouts} />
@@ -193,6 +217,16 @@ export default function UserProfile() {
           workout={viewingWorkoutDetail}
           language={language}
           onClose={() => setViewingWorkoutDetail(null)}
+        />
+      )}
+
+      {previewingRoutine && (
+        <ProfileRoutinePreviewModal
+          isDark={isDark}
+          routine={previewingRoutine}
+          language={language}
+          onCopy={() => handleCopyRoutine(previewingRoutine)}
+          onClose={() => setPreviewingRoutine(null)}
         />
       )}
 

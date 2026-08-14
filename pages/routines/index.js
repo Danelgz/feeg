@@ -8,7 +8,7 @@ import { Icon, Button, EmptyState, PageHeader, ConfirmModal } from "../../compon
 
 export default function Routines() {
   const router = useRouter();
-  const { routines, completedWorkouts, deleteRoutine, deleteCompletedWorkout, endRoutine, theme, t, authUser, refreshData, isMobile } = useUser();
+  const { routines, completedWorkouts, deleteRoutine, updateRoutine, deleteCompletedWorkout, endRoutine, theme, t, authUser, refreshData, isMobile } = useUser();
   const isDark = theme === 'dark';
   const tk = getTokens(isDark);
 
@@ -150,7 +150,32 @@ export default function Routines() {
                       "--feeg-hover-border": tk.accent,
                     }}
                   >
-                    <h3 style={{ margin: "0 0 8px 0", color: tk.text }}>{routine.name}</h3>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", marginBottom: "8px" }}>
+                      <h3 style={{ margin: 0, color: tk.text }}>{routine.name}</h3>
+                      <button
+                        onClick={() => updateRoutine({ ...routine, public: routine.public === false })}
+                        className="feeg-press"
+                        title={routine.public === false ? "Rutina privada — solo tú la ves. Toca para hacerla pública." : "Rutina pública — visible en tu perfil. Toca para hacerla privada."}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          flexShrink: 0,
+                          padding: "5px 10px",
+                          borderRadius: tk.radius.pill,
+                          border: `1px solid ${tk.border}`,
+                          backgroundColor: "transparent",
+                          color: routine.public === false ? tk.textMuted : tk.accent,
+                          fontSize: "0.72rem",
+                          fontWeight: "700",
+                          cursor: "pointer",
+                          "--feeg-press-scale": 0.94,
+                        }}
+                      >
+                        <Icon name={routine.public === false ? "eyeOff" : "eye"} size={13} />
+                        {routine.public === false ? "Privada" : "Pública"}
+                      </button>
+                    </div>
                     <p style={{ margin: "0 0 12px 0", color: tk.textMuted }}>
                       {routine.exercises.length} {t("exercises").toLowerCase()} · {routine.exercises.reduce((sum, ex) => sum + ex.series.length, 0)} {t("series").toLowerCase()}
                     </p>

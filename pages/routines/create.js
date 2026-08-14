@@ -111,10 +111,13 @@ export default function CreateRoutine() {
       await updateCompletedWorkout(updatedWorkout);
       router.push("/profile");
     } else if (isEditMode) {
-      await contextUpdateRoutine({ id: Number(id), ...buildRoutinePayload() });
+      // Se preserva `public` del original en vez de dejar que buildRoutinePayload lo pise: no
+      // devuelve ese campo, pero updateRoutine sustituye la rutina entera, así que omitirlo aquí
+      // resetearía a "pública" cualquier rutina que el usuario hubiera marcado como privada.
+      await contextUpdateRoutine({ id: Number(id), public: sourceRoutine?.public ?? true, ...buildRoutinePayload() });
       router.push("/routines");
     } else {
-      await contextSaveRoutine({ id: Date.now(), ...buildRoutinePayload() });
+      await contextSaveRoutine({ id: Date.now(), public: true, ...buildRoutinePayload() });
       router.push("/routines");
     }
   };

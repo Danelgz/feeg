@@ -12,3 +12,6 @@ export { default as ProfileEditModal } from "./ProfileEditModal";
 export { default as ProfileImageCropper } from "./ProfileImageCropper";
 export { default as ProfileFollowListModal } from "./ProfileFollowListModal";
 export { default as ProfilePhotoViewer } from "./ProfilePhotoViewer";
+export { default as ProfileRoutinesSection } from "./ProfileRoutinesSection";
+export { default as ProfileRoutineCard } from "./ProfileRoutineCard";
+export { default as ProfileRoutinePreviewModal } from "./ProfileRoutinePreviewModal";

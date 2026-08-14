@@ -659,14 +659,30 @@ export function UserProvider({ children }) {
     }
   };
 
+  // Las rutinas son públicas por defecto (routine.public !== false cubre tanto `true` explícito
+  // como las rutinas antiguas que no tienen el campo todavía) y se reflejan en usersPublic/{uid}
+  // para que el perfil de otra persona pueda listarlas sin poder leer el documento privado
+  // users/{uid}. Mismo patrón dual-write que saveUser: la escritura pública nunca bloquea ni
+  // condiciona la privada.
+  const buildPublicRoutines = (list) =>
+    list
+      .filter((r) => r.public !== false)
+      .map((r) => ({ id: r.id, name: r.name, exercises: r.exercises }));
+
+  const syncRoutinesToCloud = async (newList) => {
+    if (!authUser) return;
+    await Promise.all([
+      saveToCloud(`users/${authUser.uid}`, { routines: newList }),
+      saveToCloud(`usersPublic/${authUser.uid}`, { routines: buildPublicRoutines(newList) }),
+    ]);
+  };
+
   const saveRoutine = async (newRoutine) => {
     lastLocalUpdate.current = Date.now();
     const newList = [newRoutine, ...routines];
     setRoutines(newList);
     localStorage.setItem('routines', JSON.stringify(newList));
-    if (authUser) {
-      await saveToCloud(`users/${authUser.uid}`, { routines: newList });
-    }
+    await syncRoutinesToCloud(newList);
   };
 
   const updateRoutine = async (updatedRoutine) => {
@@ -674,9 +690,7 @@ export function UserProvider({ children }) {
     const newList = routines.map(r => r.id === updatedRoutine.id ? updatedRoutine : r);
     setRoutines(newList);
     localStorage.setItem('routines', JSON.stringify(newList));
-    if (authUser) {
-      await saveToCloud(`users/${authUser.uid}`, { routines: newList });
-    }
+    await syncRoutinesToCloud(newList);
   };
 
   const deleteRoutine = async (id) => {
@@ -684,9 +698,7 @@ export function UserProvider({ children }) {
     const newList = routines.filter(r => r.id !== id);
     setRoutines(newList);
     localStorage.setItem('routines', JSON.stringify(newList));
-    if (authUser) {
-      await saveToCloud(`users/${authUser.uid}`, { routines: newList });
-    }
+    await syncRoutinesToCloud(newList);
   };
   
   const saveMeasures = async (newMeasures) => {

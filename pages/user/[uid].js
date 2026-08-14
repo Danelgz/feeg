@@ -47,6 +47,7 @@ export default function UserProfile() {
   const [viewingWorkoutDetail, setViewingWorkoutDetail] = useState(null);
   const [previewingRoutine, setPreviewingRoutine] = useState(null);
   const [showRankMap, setShowRankMap] = useState(false);
+  const [routinesOpen, setRoutinesOpen] = useState(false);
 
   useEffect(() => {
     if (uid) {
@@ -185,7 +186,14 @@ export default function UserProfile() {
             onOpenFollowers={handleOpenFollowers}
             onOpenFollowing={handleOpenFollowing}
             hasRoutines={publicRoutines.length > 0}
-            onViewRoutines={() => document.getElementById("profile-routines-section")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            onViewRoutines={() => {
+              setRoutinesOpen(true);
+              // El siguiente frame: si la caja estaba cerrada, su contenido (y el resto de la
+              // altura de la página) todavía no existía en el DOM cuando se pidió el scroll.
+              requestAnimationFrame(() => {
+                document.getElementById("profile-routines-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              });
+            }}
           />
 
           <ProfileRoutinesSection
@@ -195,6 +203,8 @@ export default function UserProfile() {
             onCopyRoutine={handleCopyRoutine}
             hasRankMap={targetUser.overallLevel != null}
             onViewRankMap={() => setShowRankMap(true)}
+            routinesOpen={routinesOpen}
+            onToggleRoutines={() => setRoutinesOpen((v) => !v)}
           />
 
           <ProfileActivityChart

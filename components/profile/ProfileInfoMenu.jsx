@@ -25,6 +25,7 @@ export default function ProfileInfoMenu({ isDark = true, extraItems = [] }) {
 
   return (
     <div style={{ marginBottom: "30px" }}>
+      <style>{`@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap");`}</style>
       <button
         onClick={() => setOpen(!open)}
         style={{
@@ -37,8 +38,9 @@ export default function ProfileInfoMenu({ isDark = true, extraItems = [] }) {
           color: tk.text,
           border: `1px solid ${open ? tk.accent : tk.border}`,
           borderRadius: "15px",
-          fontSize: "1.1rem",
-          fontWeight: "600",
+          fontFamily: "'Manrope', -apple-system, 'Segoe UI', sans-serif",
+          fontSize: "1.05rem",
+          fontWeight: "700",
           cursor: "pointer",
           transition: "all 0.3s ease",
           boxShadow: open ? tk.shadow.accent : "none",
@@ -95,8 +97,9 @@ export default function ProfileInfoMenu({ isDark = true, extraItems = [] }) {
                 color: tk.text,
                 border: `1px solid ${tk.border}`,
                 borderRadius: "15px",
-                fontSize: "0.9rem",
-                fontWeight: "600",
+                fontFamily: "'Manrope', -apple-system, 'Segoe UI', sans-serif",
+                fontSize: "0.88rem",
+                fontWeight: "700",
                 cursor: "pointer",
                 transition: "all 0.2s ease",
               }}

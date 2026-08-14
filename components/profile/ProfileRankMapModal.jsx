@@ -54,6 +54,7 @@ export default function ProfileRankMapModal({
       }}
     >
       <style>{`
+        @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap");
         @keyframes profileRankMapIn { from { opacity: 0; transform: scale(0.96) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         @media (prefers-reduced-motion: reduce) { .profile-rankmap-dialog { animation: none; } }
       `}</style>
@@ -75,6 +76,7 @@ export default function ProfileRankMapModal({
           border: `1px solid ${tk.border}`,
           boxShadow: "0 28px 90px rgba(0,0,0,0.42)",
           animation: "profileRankMapIn 220ms cubic-bezier(0.16, 1, 0.3, 1)",
+          fontFamily: "'Manrope', -apple-system, 'Segoe UI', sans-serif",
         }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "14px", padding: "20px 22px 16px", borderBottom: `1px solid ${tk.border}` }}>

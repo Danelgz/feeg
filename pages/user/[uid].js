@@ -184,9 +184,6 @@ export default function UserProfile() {
             onOpenPhoto={() => setIsPhotoFullScreen(true)}
             onOpenFollowers={handleOpenFollowers}
             onOpenFollowing={handleOpenFollowing}
-            overallLevel={targetUser.overallLevel}
-            prestigeLevels={targetUser.prestigeLevels}
-            onViewRankMap={targetUser.overallLevel != null ? () => setShowRankMap(true) : undefined}
             hasRoutines={publicRoutines.length > 0}
             onViewRoutines={() => document.getElementById("profile-routines-section")?.scrollIntoView({ behavior: "smooth", block: "start" })}
           />
@@ -196,6 +193,8 @@ export default function UserProfile() {
             routines={publicRoutines}
             onOpenPreview={(routine) => setPreviewingRoutine(routine)}
             onCopyRoutine={handleCopyRoutine}
+            hasRankMap={targetUser.overallLevel != null}
+            onViewRankMap={() => setShowRankMap(true)}
           />
 
           <ProfileActivityChart

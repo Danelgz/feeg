@@ -215,6 +215,20 @@ export function UserProvider({ children }) {
         if (cloudData.routines) {
           setRoutines(cloudData.routines);
           localStorage.setItem('routines', JSON.stringify(cloudData.routines));
+
+          // Backfill: quien creó sus rutinas antes de que existiera el reflejo público nunca tuvo
+          // usersPublic/{uid}.routines escrito — sin esto, sus rutinas no aparecerían en su perfil
+          // ajeno hasta la próxima vez que guardara/editara/borrara una (saveRoutine/updateRoutine/
+          // deleteRoutine son las únicas que sincronizan hoy). Se compara con lo que ya hay en
+          // publicData (ya lo hemos leído arriba, sin lectura extra) para no reescribir en cada
+          // refresco cuando ya coincide — buildPublicRoutines está definida más abajo en este mismo
+          // componente, pero como aquí solo se referencia dentro del cuerpo de una función que se
+          // invoca después del render (nunca en éste), ya está inicializada para cuando se ejecute.
+          const expectedPublicRoutines = buildPublicRoutines(cloudData.routines);
+          const currentPublicRoutines = publicData?.routines || [];
+          if (JSON.stringify(expectedPublicRoutines) !== JSON.stringify(currentPublicRoutines)) {
+            saveToCloud(`usersPublic/${authUser.uid}`, { routines: expectedPublicRoutines }).catch(() => {});
+          }
         }
         if (cloudData.measures) {
           setMeasures(cloudData.measures);

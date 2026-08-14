@@ -297,9 +297,6 @@ export default function Profile() {
             onOpenPhoto={() => setIsPhotoFullScreen(true)}
             onOpenFollowers={handleOpenFollowers}
             onOpenFollowing={handleOpenFollowing}
-            overallLevel={ranks.available ? ranks.overallLevel : undefined}
-            prestigeLevels={ranks.prestigeLevels}
-            onViewRankMap={ranks.available ? () => setShowRankMap(true) : undefined}
           />
 
           <ProfileActivityChart isDark={isDark} completedWorkouts={completedWorkouts} />

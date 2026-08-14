@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { getTokens } from "../../lib/tokens";
-import { RankArt } from "../ui";
-import { getRankPosition } from "../../data/ranks";
 
 /**
  * Cabecera de perfil: username, nombre, foto, contadores y descripción. La esquina superior
@@ -9,11 +7,10 @@ import { getRankPosition } from "../../data/ranks";
  * o un botón seguir/siguiendo en el de otra persona (isFollowing/onToggleFollow) — mismo layout,
  * misma estética, la parte que cambia es solo la acción disponible.
  *
- * overallLevel/prestigeLevels vienen de fuentes distintas según de quién es el perfil: en el
- * propio se calculan en vivo con useRanks() (tienes tus propias medidas), en el ajeno se leen ya
- * calculados de usersPublic/{uid} (sus medidas son privadas) — ver pages/profile.js y
- * pages/user/[uid].js. Aquí simplemente se pintan si llegan; si no hay datos suficientes para
- * calcular rango, ambas páginas pasan undefined y la insignia no se muestra.
+ * El rango no vive aquí: la insignia junto al nombre resultó ni el sitio ni la tipografía
+ * adecuados. Ahora es una entrada más junto a "Rutinas" en ProfileRoutinesSection (perfil ajeno)
+ * o en el menú "Información" (perfil propio, ver pages/profile.js) — debajo de la descripción,
+ * no compitiendo con la identidad de la cabecera.
  */
 export default function ProfileHeader({
   isDark,
@@ -28,11 +25,8 @@ export default function ProfileHeader({
   onOpenPhoto,
   onOpenFollowers,
   onOpenFollowing,
-  overallLevel,
-  prestigeLevels,
   hasRoutines,
   onViewRoutines,
-  onViewRankMap,
 }) {
   const tk = getTokens(isDark);
   const [followPulse, setFollowPulse] = useState(false);
@@ -43,7 +37,7 @@ export default function ProfileHeader({
     window.setTimeout(() => setFollowPulse(false), 450);
   };
 
-  const statDividerStyle = { width: "1px", alignSelf: "stretch", backgroundColor: tk.border };
+  const statLabelStyle = { color: tk.textFaint, fontSize: "0.78rem", fontWeight: "600", marginTop: "2px" };
 
   return (
     <>
@@ -53,26 +47,6 @@ export default function ProfileHeader({
         </h1>
         {onToggleFollow ? (
           <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-            {typeof overallLevel === "number" && onViewRankMap && (
-              <button
-                onClick={onViewRankMap}
-                className="feeg-press feeg-hover"
-                style={{
-                  padding: "9px 14px",
-                  borderRadius: "10px",
-                  border: `1px solid ${tk.border}`,
-                  backgroundColor: "transparent",
-                  color: tk.text,
-                  fontWeight: "700",
-                  fontSize: "0.85rem",
-                  cursor: "pointer",
-                  "--feeg-hover-bg": tk.surfaceHover,
-                  "--feeg-press-scale": 0.95,
-                }}
-              >
-                Rangos
-              </button>
-            )}
             {hasRoutines && (
               <button
                 onClick={onViewRoutines}
@@ -125,34 +99,9 @@ export default function ProfileHeader({
         )}
       </div>
 
-      <div style={{ fontSize: "1rem", color: tk.accent, fontWeight: "600", marginBottom: "16px" }}>
+      <div style={{ fontSize: "1rem", color: tk.accent, fontWeight: "600", marginBottom: "20px" }}>
         {user?.firstName || "Sin nombre"}
       </div>
-
-      {typeof overallLevel === "number" && (() => {
-        const position = getRankPosition(overallLevel, prestigeLevels || 0);
-        const Wrapper = onViewRankMap ? "button" : "div";
-        return (
-          <Wrapper
-            onClick={onViewRankMap}
-            className={onViewRankMap ? "feeg-press" : undefined}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              marginBottom: "16px",
-              border: "none",
-              background: "none",
-              padding: 0,
-              cursor: onViewRankMap ? "pointer" : "default",
-              "--feeg-press-scale": 0.96,
-            }}
-          >
-            <RankArt rank={position.rank} tier={position.tier} size={22} />
-            <span style={{ fontSize: "0.85rem", fontWeight: 800, color: position.rank.color }}>{position.label}</span>
-          </Wrapper>
-        );
-      })()}
 
       <div style={{ display: "flex", gap: "25px", alignItems: "center", marginBottom: "25px" }}>
         <div
@@ -177,20 +126,18 @@ export default function ProfileHeader({
           )}
         </div>
 
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", textAlign: "center" }}>
-          <div style={{ flex: 1, cursor: "pointer" }}>
-            <div style={{ fontSize: "1.2rem", fontWeight: "800", color: tk.text }}>{workoutsCount || 0}</div>
-            <div style={{ color: tk.textMuted, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px" }}>Entrenos</div>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-around", textAlign: "center" }}>
+          <div style={{ cursor: "pointer" }}>
+            <div style={{ fontSize: "1.25rem", fontWeight: "800", color: tk.text }}>{workoutsCount || 0}</div>
+            <div style={statLabelStyle}>Entrenos</div>
           </div>
-          <div style={statDividerStyle} />
-          <div onClick={onOpenFollowers} style={{ flex: 1, cursor: "pointer" }}>
-            <div style={{ fontSize: "1.2rem", fontWeight: "800", color: tk.text }}>{followersCount || 0}</div>
-            <div style={{ color: tk.textMuted, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px" }}>Seguidores</div>
+          <div onClick={onOpenFollowers} style={{ cursor: "pointer" }}>
+            <div style={{ fontSize: "1.25rem", fontWeight: "800", color: tk.text }}>{followersCount || 0}</div>
+            <div style={statLabelStyle}>Seguidores</div>
           </div>
-          <div style={statDividerStyle} />
-          <div onClick={onOpenFollowing} style={{ flex: 1, cursor: "pointer" }}>
-            <div style={{ fontSize: "1.2rem", fontWeight: "800", color: tk.text }}>{followingCount || 0}</div>
-            <div style={{ color: tk.textMuted, fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px" }}>Siguiendo</div>
+          <div onClick={onOpenFollowing} style={{ cursor: "pointer" }}>
+            <div style={{ fontSize: "1.25rem", fontWeight: "800", color: tk.text }}>{followingCount || 0}</div>
+            <div style={statLabelStyle}>Siguiendo</div>
           </div>
         </div>
       </div>

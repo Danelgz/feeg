@@ -1,6 +1,7 @@
+import { useEffect, useRef } from "react";
 import { getTokens } from "../../lib/tokens";
 import ProfileWorkoutCard from "./ProfileWorkoutCard";
-import { Button, Spinner } from "../ui";
+import { Spinner } from "../ui";
 
 /**
  * Sección "Entrenamientos" del perfil: cabecera con borrar-todo + lista ordenada de tarjetas.
@@ -8,6 +9,9 @@ import { Button, Spinner } from "../ui";
  * perfil de otra persona, y entonces las tarjetas solo muestran "Ver detalles". hasMore/onLoadMore
  * son opcionales también, para el perfil público que pagina contra Firestore (el propio no lo
  * necesita: su historial ya está sincronizado localmente entero).
+ *
+ * La siguiente página se pide sola al acercarse al final de la lista (IntersectionObserver sobre
+ * un centinela tras la última tarjeta), no con un botón "Cargar más" que había que ir a buscar.
  */
 export default function ProfileWorkoutsSection({
   completedWorkouts,
@@ -26,6 +30,24 @@ export default function ProfileWorkoutsSection({
   t,
 }) {
   const tk = getTokens(isDark);
+  const sentinelRef = useRef(null);
+
+  useEffect(() => {
+    if (!hasMore || !onLoadMore) return undefined;
+    const node = sentinelRef.current;
+    if (!node) return undefined;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) onLoadMore();
+      },
+      // 200px de margen: pide la siguiente página un poco antes de que el centinela entre en
+      // pantalla, para que las tarjetas nuevas ya estén ahí cuando el dedo llega abajo del todo.
+      { rootMargin: "200px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore, onLoadMore, completedWorkouts?.length]);
 
   return (
     <>
@@ -89,10 +111,8 @@ export default function ProfileWorkoutsSection({
       </div>
 
       {hasMore && (
-        <div style={{ display: "flex", justifyContent: "center", padding: "20px 0 0" }}>
-          <Button isDark={isDark} variant="secondary" onClick={onLoadMore} disabled={isLoadingMore}>
-            {isLoadingMore ? <Spinner isDark={isDark} size={16} /> : "Cargar más"}
-          </Button>
+        <div ref={sentinelRef} style={{ display: "flex", justifyContent: "center", padding: "20px 0 0" }}>
+          {isLoadingMore && <Spinner isDark={isDark} size={16} />}
         </div>
       )}
     </>

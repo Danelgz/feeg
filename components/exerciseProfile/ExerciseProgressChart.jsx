@@ -3,11 +3,14 @@ import { getTokens } from "../../lib/tokens";
 import { filterSessionsByPeriod } from "../../lib/exerciseProfile";
 
 const SPANISH_MONTHS_SHORT = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-const POINT_SPACING = 46;
+// Espacio mínimo entre dos puntos consecutivos, en unidades de viewBox — por debajo de esto un
+// punto pisa la etiqueta de fecha del siguiente.
+const MIN_POINT_GAP = 46;
 const PAD_X = 24;
 const CHART_H = 150;
 const PAD_TOP = 18;
 const PAD_BOTTOM = 8;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const PERIODS = [
   { key: "30d", label: "30 días", days: 30 },
@@ -19,19 +22,29 @@ const PERIODS = [
 /**
  * Progreso del mejor set por sesión: puntos unidos por una línea (no barras) — un punto por
  * SESIÓN de este ejercicio, no por semana, porque con la frecuencia real de un ejercicio concreto
- * agrupar por semana dejaría casi todo vacío. Ancho fijo por punto dentro de un contenedor con
- * scroll horizontal en vez de comprimir todos los puntos en el ancho de la tarjeta: con "Siempre"
- * puede haber decenas de sesiones, y apretarlas todas ilegibles no ayuda más que poder deslizar.
+ * agrupar por semana dejaría casi todo vacío.
  *
- * El scroll está contenido en `scrollRef` (`overflow-x: auto`, scrollbar oculta): sólo el propio
- * gráfico se desliza a los lados, nunca la página — el selector de periodo de arriba vive fuera de
- * este contenedor así que se queda fijo pase lo que pase con el gráfico.
+ * El eje X es cronológico de verdad, no "un punto tras otro": la posición horizontal representa la
+ * fecha real dentro del periodo elegido, así que "30 días" se ve como un tramo de 30 días (con
+ * hueco donde no hay sesiones) y no como las sesiones pegadas unas a otras sin más. El periodo
+ * siempre llega hasta hoy — "3 meses" es literalmente [hoy-90d, hoy] — salvo "Siempre", que va de
+ * la primera sesión registrada a hoy. Después de calcular esa posición cronológica se hace una
+ * pasada de izquierda a derecha que separa cualquier par de puntos a menos de MIN_POINT_GAP: sin
+ * eso, varias sesiones el mismo día (o muy seguidas dentro de "1 año"/"Siempre") quedarían
+ * literalmente encima unas de otras.
+ *
+ * El ancho del SVG no es un pixel fijo: es `max(100%, anchoNecesario)` (ver el estilo `width` más
+ * abajo). Si el periodo cabe holgado, el gráfico se estira para ocupar toda la tarjeta — nunca deja
+ * hueco en blanco a la derecha. Si no cabe (muchas sesiones muy seguidas), se queda a su ancho real
+ * en píxeles y el contenedor (`scrollRef`, `overflow-x: auto`, scrollbar oculta) permite deslizarlo
+ * — sólo el propio gráfico se mueve, nunca la página: el selector de periodo vive fuera de ese
+ * contenedor y se queda fijo.
  *
  * La lectura de un punto no depende de acertarle con precisión: tocar/pulsar en cualquier parte
  * del gráfico selecciona el punto más cercano en X, y con ratón se puede arrastrar para recorrerlos
  * en vivo sin soltar — deslizar por el trazo, no ir tocando uno a uno. En táctil el arrastre se dejó
- * para el scroll nativo del contenedor (que sigue haciendo falta con "Siempre"); ahí cada toque
- * selecciona el punto más cercano de un gesto.
+ * para el scroll nativo del contenedor (que sigue haciendo falta cuando no cabe todo); ahí cada
+ * toque selecciona el punto más cercano de un gesto.
  */
 export default function ExerciseProgressChart({ isDark = true, sessions, unit }) {
   const tk = getTokens(isDark);
@@ -54,8 +67,25 @@ export default function ExerciseProgressChart({ isDark = true, sessions, unit })
   const plotH = CHART_H - PAD_TOP - PAD_BOTTOM;
   const midY = PAD_TOP + plotH / 2;
 
-  const chartW = Math.max(200, PAD_X * 2 + POINT_SPACING * Math.max(0, filtered.length - 1));
-  const getX = (i) => PAD_X + i * POINT_SPACING;
+  // Ventana de tiempo real que cubre el eje X. Con periodo acotado siempre es [hoy - N días, hoy] —
+  // así "30 días" es un tramo real de 30 días, no solo "las sesiones que hay". "Siempre" no tiene
+  // límite inferior natural, así que usa la sesión más antigua como arranque.
+  const now = Date.now();
+  const periodStart = periodDays ? now - periodDays * DAY_MS : (filtered[0]?.date.getTime() ?? now);
+  const span = Math.max(DAY_MS, now - periodStart);
+  // Ancho "de referencia" para repartir el periodo proporcionalmente — no es el ancho final (ver
+  // `chartW`), solo la base sobre la que se calcula la posición cronológica de cada punto antes de
+  // separar los que quedarían pegados.
+  const baseWidth = Math.max(300, PAD_X * 2 + MIN_POINT_GAP * Math.max(0, filtered.length - 1));
+  const rawX = (date) => PAD_X + ((date.getTime() - periodStart) / span) * (baseWidth - PAD_X * 2);
+  const xPositions = [];
+  filtered.forEach((s, i) => {
+    let x = rawX(s.date);
+    if (i > 0 && x - xPositions[i - 1] < MIN_POINT_GAP) x = xPositions[i - 1] + MIN_POINT_GAP;
+    xPositions.push(x);
+  });
+  const chartW = Math.max(baseWidth, (xPositions[xPositions.length - 1] ?? PAD_X) + PAD_X);
+  const getX = (i) => xPositions[i];
   // Peso más bajo abajo del todo, más alto arriba del todo. Cuando todas las sesiones pesan lo
   // mismo, rangeW es 0 — sin este caso aparte, (weight - minW) / rangeW da 0/0 = NaN y el punto no
   // se pinta; con él, la línea queda recta en el medio en vez de desaparecer o (el bug real) irse
@@ -146,9 +176,14 @@ export default function ExerciseProgressChart({ isDark = true, sessions, unit })
         <div ref={scrollRef} className="feeg-exercise-chart-scroll" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
           <svg
             ref={svgRef}
-            width={chartW}
+            viewBox={`0 0 ${chartW} ${CHART_H}`}
+            preserveAspectRatio="none"
             height={CHART_H}
-            style={{ display: "block", cursor: "pointer", touchAction: "pan-x" }}
+            // El ancho real es el mayor entre "toda la tarjeta" y "lo que necesitan los puntos para
+            // no pisarse": si el periodo cabe holgado se estira a ocupar el 100% (nunca deja hueco
+            // en blanco); si no cabe, se queda a `chartW` px reales y el contenedor de arriba lo
+            // hace deslizable.
+            style={{ display: "block", width: `max(100%, ${chartW}px)`, cursor: "pointer", touchAction: "pan-x" }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={stopScrubbing}

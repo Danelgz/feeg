@@ -13,6 +13,8 @@ interface ChipNavProps {
   isDark: boolean;
   /** `sm` para filtros secundarios (periodo), `md` para la navegación principal de la pantalla. */
   size?: "sm" | "md";
+  /** Envuelve los chips para que la sección nunca dependa de un gesto horizontal. */
+  wrap?: boolean;
   ariaLabel: string;
 }
 
@@ -34,7 +36,7 @@ interface ChipNavProps {
  *   dentro se circula con las flechas. Sin ello, tabular por esta pantalla obligaba a pasar por los
  *   doce chips uno a uno antes de llegar al contenido.
  */
-export default function ChipNav({ items, activeKey, onChange, isDark, size = "md", ariaLabel }: ChipNavProps) {
+export default function ChipNav({ items, activeKey, onChange, isDark, size = "md", wrap = false, ariaLabel }: ChipNavProps) {
   const tk = getTokens(isDark);
   const isSmall = size === "sm";
   const listRef = useRef<HTMLDivElement>(null);
@@ -70,7 +72,7 @@ export default function ChipNav({ items, activeKey, onChange, isDark, size = "md
   };
 
   return (
-    <div className="chipnav" role="tablist" aria-label={ariaLabel} ref={listRef} onKeyDown={handleKeyDown}>
+    <div className={`chipnav${wrap ? " chipnav-wrap" : ""}`} role="tablist" aria-label={ariaLabel} ref={listRef} onKeyDown={handleKeyDown}>
       {items.map((item) => {
         const isActive = item.key === activeKey;
         return (
@@ -117,6 +119,11 @@ export default function ChipNav({ items, activeKey, onChange, isDark, size = "md
           -ms-overflow-style: none;
           scroll-snap-type: x proximity;
           -webkit-overflow-scrolling: touch;
+        }
+        .chipnav-wrap {
+          flex-wrap: wrap;
+          overflow-x: visible;
+          scroll-snap-type: none;
         }
         .chipnav::-webkit-scrollbar {
           display: none;

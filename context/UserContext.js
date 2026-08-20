@@ -73,6 +73,9 @@ export function UserProvider({ children }) {
   // Objetivo personal por ejercicio ({ weight, reps }) — una meta que se pone el propio usuario,
   // distinta del rango (que compara contra baremos poblacionales). Mismo patrón que lo de arriba.
   const [exerciseGoals, setExerciseGoals] = useState({});
+  // Objetivos de constancia y volumen creados por el usuario. Se calculan contra el historial al
+  // pintar estadísticas; solo se persiste la definición, nunca un progreso duplicado.
+  const [trainingGoals, setTrainingGoals] = useState([]);
   const [following, setFollowing] = useState([]);
   const [followers, setFollowers] = useState([]);
   const [notifications, setNotifications] = useState([]);
@@ -124,6 +127,7 @@ export function UserProvider({ children }) {
     const savedExerciseNotes = localStorage.getItem('exerciseNotes');
     const savedFavoriteExercises = localStorage.getItem('favoriteExercises');
     const savedExerciseGoals = localStorage.getItem('exerciseGoals');
+    const savedTrainingGoals = localStorage.getItem('trainingGoals');
     const savedSoundEnabled = localStorage.getItem('soundEnabled');
     const savedAiVoiceEnabled = localStorage.getItem('aiVoiceEnabled');
     const savedAiVoiceURI = localStorage.getItem('aiVoiceURI');
@@ -141,6 +145,7 @@ export function UserProvider({ children }) {
     if (savedExerciseNotes) try { setExerciseNotes(JSON.parse(savedExerciseNotes)); } catch (e) {}
     if (savedFavoriteExercises) try { setFavoriteExercises(JSON.parse(savedFavoriteExercises)); } catch (e) {}
     if (savedExerciseGoals) try { setExerciseGoals(JSON.parse(savedExerciseGoals)); } catch (e) {}
+    if (savedTrainingGoals) try { setTrainingGoals(JSON.parse(savedTrainingGoals)); } catch (e) {}
     if (savedSoundEnabled !== null) setSoundEnabledState(savedSoundEnabled === 'true');
     if (savedAiVoiceEnabled !== null) setAiVoiceEnabledState(savedAiVoiceEnabled === 'true');
     if (savedAiVoiceURI) setAiVoiceURIState(savedAiVoiceURI);
@@ -260,6 +265,10 @@ export function UserProvider({ children }) {
         if (cloudData.exerciseGoals) {
           setExerciseGoals(cloudData.exerciseGoals);
           localStorage.setItem('exerciseGoals', JSON.stringify(cloudData.exerciseGoals));
+        }
+        if (cloudData.trainingGoals) {
+          setTrainingGoals(cloudData.trainingGoals);
+          localStorage.setItem('trainingGoals', JSON.stringify(cloudData.trainingGoals));
         }
         if (cloudData.activeRoutine) {
           setActiveRoutine(cloudData.activeRoutine);
@@ -482,6 +491,7 @@ export function UserProvider({ children }) {
     localStorage.removeItem('exerciseNotes');
     localStorage.removeItem('favoriteExercises');
     localStorage.removeItem('exerciseGoals');
+    localStorage.removeItem('trainingGoals');
     localStorage.removeItem('activeRoutine');
     setCompletedWorkouts([]);
     setRoutines([]);
@@ -489,6 +499,7 @@ export function UserProvider({ children }) {
     setExerciseNotes({});
     setFavoriteExercises([]);
     setExerciseGoals({});
+    setTrainingGoals([]);
     setActiveRoutine(null);
     setFollowing([]);
     setFollowers([]);
@@ -806,6 +817,30 @@ export function UserProvider({ children }) {
     }
   };
 
+  const saveTrainingGoal = async (goal) => {
+    const normalized = {
+      id: goal.id || `goal_${Date.now()}`,
+      type: goal.type || 'sessions_week',
+      title: String(goal.title || '').trim(),
+      target: Number(goal.target) || 0,
+      createdAt: goal.createdAt || new Date().toISOString(),
+    };
+    if (!normalized.title || normalized.target <= 0) return;
+    lastLocalUpdate.current = Date.now();
+    const newGoals = [normalized, ...trainingGoals.filter((item) => item.id !== normalized.id)];
+    setTrainingGoals(newGoals);
+    localStorage.setItem('trainingGoals', JSON.stringify(newGoals));
+    if (authUser) await saveToCloud(`users/${authUser.uid}`, { trainingGoals: newGoals });
+  };
+
+  const deleteTrainingGoal = async (goalId) => {
+    lastLocalUpdate.current = Date.now();
+    const newGoals = trainingGoals.filter((goal) => goal.id !== goalId);
+    setTrainingGoals(newGoals);
+    localStorage.setItem('trainingGoals', JSON.stringify(newGoals));
+    if (authUser) await saveToCloud(`users/${authUser.uid}`, { trainingGoals: newGoals });
+  };
+
   const startRoutine = async (routineData) => {
     lastLocalUpdate.current = Date.now();
     setActiveRoutine(routineData);
@@ -899,6 +934,9 @@ export function UserProvider({ children }) {
       toggleFavoriteExercise,
       exerciseGoals,
       saveExerciseGoal,
+      trainingGoals,
+      saveTrainingGoal,
+      deleteTrainingGoal,
       following,
       followers,
       isMobile,

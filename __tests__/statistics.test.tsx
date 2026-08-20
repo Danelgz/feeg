@@ -71,8 +71,8 @@ describe("pantalla de estadísticas", () => {
   it("presenta las vistas como chips accesibles, sin la rejilla de tarjetas con descripción", async () => {
     renderStats();
     const tabs = await screen.findAllByRole("tab");
-    // 8 vistas + 4 periodos (Resumen es la vista inicial y sí usa periodo).
-    expect(tabs).toHaveLength(12);
+    // 9 vistas + 4 periodos (Resumen es la vista inicial y sí usa periodo).
+    expect(tabs).toHaveLength(13);
     expect(tab("Rangos")).toBeTruthy();
     expect(tab("Resumen").getAttribute("aria-selected")).toBe("true");
 

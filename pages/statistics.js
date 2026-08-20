@@ -18,6 +18,8 @@ import {
   MonthlyReportSection,
   ExerciseStatsSection,
   RecordsSection,
+  WeeklyReportSection,
+  GoalsAndMilestonesSection,
 } from "../components/statistics";
 
 // `usesPeriod` marca las vistas que de verdad reaccionan al filtro de periodo. Las demás miran al
@@ -35,6 +37,7 @@ const VIEWS = [
   { key: 'ranks', label: 'Rangos', usesPeriod: false },
   { key: 'seriesByGroup', label: 'Series por grupo', usesPeriod: true },
   { key: 'distChart', label: 'Distribución', usesPeriod: true },
+  { key: 'weekly', label: 'Semanal', usesPeriod: false },
   { key: 'monthly', label: 'Mensual', usesPeriod: false },
   { key: 'exerciseStats', label: 'Ejercicios', usesPeriod: false },
 ];
@@ -54,7 +57,7 @@ function sumVolume(list) {
 }
 
 export default function Statistics() {
-  const { t, theme, isMobile, language, completedWorkouts: workouts, user } = useUser();
+  const { t, theme, isMobile, language, completedWorkouts: workouts, user, trainingGoals, saveTrainingGoal, deleteTrainingGoal } = useUser();
   const isDark = theme === 'dark';
   const tk = getTokens(isDark);
   const prefersReducedMotion = useReducedMotion();
@@ -155,6 +158,7 @@ export default function Statistics() {
         activeKey={activeView}
         onChange={changeView}
         isDark={isDark}
+        wrap={isNarrow}
         ariaLabel="Vistas de estadísticas"
       />
 
@@ -166,6 +170,7 @@ export default function Statistics() {
             onChange={setSelectedPeriod}
             isDark={isDark}
             size="sm"
+            wrap={isNarrow}
             ariaLabel="Periodo"
           />
         </div>
@@ -223,6 +228,14 @@ export default function Statistics() {
                 mezclar las dos señales hacía que esta sección cambiara de 4 a 2 columnas en un ancho
                 distinto al de la rejilla que tiene justo encima. */}
             <OverviewSection isDark={isDark} isMobile={isNarrow} workouts={filteredWorkouts} t={t} stats={stats} />
+            <GoalsAndMilestonesSection
+              isDark={isDark}
+              isMobile={isNarrow}
+              workouts={workouts || []}
+              goals={trainingGoals || []}
+              saveTrainingGoal={saveTrainingGoal}
+              deleteTrainingGoal={deleteTrainingGoal}
+            />
           </>
         )}
 
@@ -267,6 +280,10 @@ export default function Statistics() {
 
         {activeView === 'distChart' && (
           <DistributionChartSection isDark={isDark} isMobile={isNarrow} seriesByGroup={seriesByGroup} t={t} />
+        )}
+
+        {activeView === 'weekly' && (
+          <WeeklyReportSection isDark={isDark} isMobile={isNarrow} workouts={workouts || []} t={t} />
         )}
 
         {activeView === 'monthly' && (

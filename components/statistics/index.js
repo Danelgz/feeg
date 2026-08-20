@@ -13,5 +13,7 @@ export { default as RankHeroCard } from "./RankHeroCard";
 export { default as MuscleRankList } from "./MuscleRankList";
 export { default as MuscleDetailSection } from "./MuscleDetailSection";
 export { default as MonthlyReportSection } from "./MonthlyReportSection";
+export { default as WeeklyReportSection } from "./WeeklyReportSection";
+export { default as GoalsAndMilestonesSection } from "./GoalsAndMilestonesSection";
 export { default as ExerciseStatsSection } from "./ExerciseStatsSection";
 export { default as RecordsSection } from "./RecordsSection";

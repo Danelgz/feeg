@@ -115,9 +115,10 @@ export default function RecordsSection({ isDark, isMobile, workouts, t, language
         <div
           style={{
             display: "grid",
-            // `auto-fill` con un mínimo de 200px: a 375px cae a una columna sola y a partir de ahí
-            // añade columnas según cabe, sin puntos de ruptura escritos a mano.
-            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+            // A una columna en móvil la tarjeta ocupa la fila entera: por eso su contenido ya no se
+            // apila a la izquierda (ver el layout de dentro), sino que se reparte de borde a borde.
+            // En pantallas anchas sigue habiendo sitio para varias por fila.
+            gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(220px, 1fr))",
             gap: tk.space.md,
           }}
         >
@@ -174,27 +175,36 @@ export default function RecordsSection({ isDark, isMobile, workouts, t, language
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", alignItems: "baseline", gap: tk.space.xs }}>
-                    <span
-                      style={{
-                        fontSize: tk.fontSize.xl,
-                        fontWeight: tk.weight.heavy,
-                        color,
-                        letterSpacing: "-0.02em",
-                        fontVariantNumeric: "tabular-nums",
-                      }}
-                    >
-                      {formatWeight(rec.oneRM)}
-                    </span>
-                    <span style={{ fontSize: tk.fontSize.xs, color: tk.textFaint, fontWeight: tk.weight.medium }}>
-                      kg 1RM est.
-                    </span>
-                  </div>
-                  <div style={{ fontSize: tk.fontSize.xs, color: tk.textMuted, marginTop: "2px" }}>
-                    Mejor serie: {formatWeight(rec.weight)} kg × {rec.reps}
-                  </div>
-                  <div style={{ fontSize: tk.fontSize.xs, color: tk.textFaint, marginTop: tk.space.sm }}>
-                    {formatDate(rec.date)}
+                  {/* De borde a borde en vez de tres líneas apiladas a la izquierda: con una sola
+                      columna en móvil, la tarjeta ocupa toda la fila y apilar dejaba media tarjeta
+                      vacía a la derecha del número. El 1RM sigue siendo el dato protagonista; el
+                      resto se reparte a la derecha como un bloque de dos líneas, del mismo modo que
+                      el resto de la pantalla resuelve "dato grande + detalle" (ver MiniStat). */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: tk.space.md }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: tk.space.xs, minWidth: 0 }}>
+                      <span
+                        style={{
+                          fontSize: tk.fontSize.xl,
+                          fontWeight: tk.weight.heavy,
+                          color,
+                          letterSpacing: "-0.02em",
+                          fontVariantNumeric: "tabular-nums",
+                        }}
+                      >
+                        {formatWeight(rec.oneRM)}
+                      </span>
+                      <span style={{ fontSize: tk.fontSize.xs, color: tk.textFaint, fontWeight: tk.weight.medium, whiteSpace: "nowrap" }}>
+                        kg 1RM est.
+                      </span>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: tk.fontSize.xs, color: tk.textMuted, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
+                        {formatWeight(rec.weight)} kg × {rec.reps}
+                      </div>
+                      <div style={{ fontSize: tk.fontSize.xs, color: tk.textFaint, marginTop: "2px" }}>
+                        {formatDate(rec.date)}
+                      </div>
+                    </div>
                   </div>
                 </Card>
               </motion.div>

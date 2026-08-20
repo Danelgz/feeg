@@ -75,17 +75,34 @@ export default function RankLadderSection({ currentRank, isDark, isMobile = fals
                   </span>
                 </div>
 
-                <span
-                  style={{
-                    flexShrink: 0,
-                    fontSize: tk.fontSize.xs,
-                    fontWeight: tk.weight.bold,
-                    color: rank.color,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {formatRarity(rank)}
-                </span>
+                {/* Bloque de dos líneas y no un solo texto pequeño: una etiqueta suelta a la derecha
+                    de un icono de 36px dejaba un hueco enorme en el medio de la fila, sobre todo en
+                    móvil donde la fila ocupa todo el ancho. Con etiqueta + valor el lado derecho
+                    pesa visualmente como el izquierdo (icono + nombre + nivel) y la fila deja de
+                    leerse como "texto metido en un extremo con la mitad de la tarjeta vacía". */}
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div
+                    style={{
+                      fontSize: tk.fontSize.xs,
+                      color: tk.textFaint,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                    }}
+                  >
+                    Rareza
+                  </div>
+                  <div
+                    style={{
+                      fontSize: tk.fontSize.md,
+                      fontWeight: tk.weight.bold,
+                      color: rank.color,
+                      whiteSpace: 'nowrap',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    {formatRarity(rank)}
+                  </div>
+                </div>
               </div>
             );
           })}

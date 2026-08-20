@@ -8,6 +8,7 @@ import { getTokens } from "../lib/tokens";
 import { Icon, Button, LoadingOverlay, ConfirmModal } from "./ui";
 import { readLiveElapsedFromSnapshot } from "../lib/workoutStorage";
 import { useMinDurationLoading } from "../hooks/useMinDurationLoading";
+import ActiveRoutineDock from "./ActiveRoutineDock";
 
 export default function Layout({ children, hideBottomNav = false }) {
   const { theme, isMobile, activeRoutine, endRoutine, isSyncing, isInitialSync, t } = useUser();
@@ -166,6 +167,8 @@ export default function Layout({ children, hideBottomNav = false }) {
             transition: background-color 0.3s ease;
             height: 100%;
             width: 100%;
+            overflow-x: hidden;
+            overscroll-behavior-x: none;
             font-family: var(--font-feeg), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             /* Los saltos con ancla dejan de teletransportar la vista. */
             scroll-behavior: smooth;
@@ -190,6 +193,8 @@ export default function Layout({ children, hideBottomNav = false }) {
           }
           #__next {
             min-height: 100%;
+            max-width: 100%;
+            overflow-x: clip;
           }
           @keyframes fadeInPage {
             0% {
@@ -391,85 +396,20 @@ export default function Layout({ children, hideBottomNav = false }) {
               {/* Navegación Inferior para Móvil */}
               {currentIsMobile && !hideBottomNav && <BottomNavigation />}
 
-              {/* Pestaña de Rutina Activa */}
-              {activeRoutine && router.asPath !== (activeRoutine?.id ? `/routines/${activeRoutine.id}` : activeRoutine.path) && !router.pathname.startsWith('/exercise-history') && (
-                <div style={{
-                  position: "fixed",
-                  bottom: currentIsMobile ? "80px" : "20px",
-                  right: "20px",
-                  backgroundColor: tk.surface,
-                  border: `2px solid ${tk.accent}`,
-                  borderRadius: tk.radius.md,
-                  padding: "15px",
-                  boxShadow: tk.shadow.float,
-                  zIndex: 3000,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px",
-                  minWidth: "220px",
-                  animation: "fadeInUp 0.3s ease-out"
-                }}>
-                  <style>{`
-                    @keyframes fadeInUp {
-                      from { opacity: 0; transform: translateY(20px); }
-                      to { opacity: 1; transform: translateY(0); }
-                    }
-                  `}</style>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <span style={{
-                        fontSize: "0.75rem",
-                        color: tk.textMuted,
-                        textTransform: "uppercase",
-                        letterSpacing: "1px",
-                        fontWeight: "bold",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px"
-                      }}>
-                        {t("active_routine_in_progress")}
-                        {liveElapsed !== null && (
-                          <span style={{ color: tk.accent, fontVariantNumeric: "tabular-nums" }}>
-                            · {formatElapsed(liveElapsed)}
-                          </span>
-                        )}
-                      </span>
-                      <span style={{
-                        fontWeight: "bold",
-                        color: tk.text,
-                        fontSize: "1.1rem",
-                        marginTop: "2px"
-                      }}>
-                        {activeRoutine.name}
-                      </span>
-                    </div>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setConfirmEndRoutine(true); }}
-                      title={t("delete_routine_short")}
-                      style={{
-                        background: tk.surfaceHover,
-                        border: "none",
-                        color: tk.danger,
-                        cursor: "pointer",
-                        width: "24px",
-                        height: "24px",
-                        borderRadius: tk.radius.full,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        transition: tk.transition
-                      }}
-                      onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.1)"}
-                      onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
-                    >
-                      <Icon name="close" size={14} />
-                    </button>
-                  </div>
-                  <Button isDark={isDark} fullWidth onClick={() => router.push(activeRoutine?.id ? `/routines/${activeRoutine.id}` : activeRoutine.path)}>
-                    {t("continue_routine")}
-                  </Button>
-                </div>
-              )}
+              {/* Rutina activa: se puede recolocar libremente y ocultar en una esquina sin perderla. */}
+              {activeRoutine &&
+                router.asPath !== (activeRoutine?.id ? `/routines/${activeRoutine.id}` : activeRoutine.path) &&
+                !router.pathname.startsWith('/exercise-history') && (
+                  <ActiveRoutineDock
+                    activeRoutine={activeRoutine}
+                    liveElapsed={liveElapsed}
+                    isMobile={currentIsMobile}
+                    isDark={isDark}
+                    t={t}
+                    onContinue={() => router.push(activeRoutine?.id ? `/routines/${activeRoutine.id}` : activeRoutine.path)}
+                    onEnd={() => setConfirmEndRoutine(true)}
+                  />
+                )}
 
               <ConfirmModal
                 isDark={isDark}

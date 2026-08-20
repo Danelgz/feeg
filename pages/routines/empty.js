@@ -264,7 +264,7 @@ export default function EmptyRoutine() {
   }
 
   return (
-    <Layout hideBottomNav>
+    <Layout>
       <div className="feeg-active-workout-viewport" style={{ maxWidth: "900px", width: "100%", height: "100dvh", minHeight: 0, margin: "0 auto", display: "flex", flexDirection: "column", overflow: "hidden", touchAction: "pan-y", overscrollBehaviorX: "none" }}>
         <WorkoutHeader mode="live" title="Entreno Vacío" onBack={() => setShowDiscardConfirm(true)} primaryLabel={t("finish_button")} onPrimaryAction={openFinishForm} />
 
@@ -305,6 +305,9 @@ export default function EmptyRoutine() {
       <style>{`
         html, body { overflow: hidden; overscroll-behavior: none; }
         .feeg-active-workout-viewport { max-width: 100%; }
+        @media (max-width: 768px) {
+          .feeg-active-workout-viewport { height: calc(100dvh - 80px) !important; }
+        }
       `}</style>
 
       <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} totalRestSeconds={totalRestSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} />

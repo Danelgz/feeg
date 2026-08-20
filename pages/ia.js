@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { getAuth } from "firebase/auth";
+import { useRouter } from "next/router";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { useVoice } from "../hooks/useVoice";
@@ -107,7 +108,14 @@ export default function IA() {
   } = useUser();
   const isDark = theme === 'dark';
   const tk = getTokens(isDark);
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("chat"); // chat, training, technique
+
+  useEffect(() => {
+    if (!router.isReady) return;
+    const requestedTab = Array.isArray(router.query.tab) ? router.query.tab[0] : router.query.tab;
+    if (TABS.some((tab) => tab.key === requestedTab)) setActiveTab(requestedTab);
+  }, [router.isReady, router.query.tab]);
 
   // States for Chat — conversaciones independientes en vez de un único hilo.
   const [conversations, setConversations] = useState([]);

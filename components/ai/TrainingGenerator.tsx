@@ -23,7 +23,9 @@ interface TrainingAnswers {
   level: string;
   days: string;
   time: string;
+  split: string;
   material: string[];
+  focusGroups: string[];
   age: string;
   sex: string;
   height: string;
@@ -32,7 +34,7 @@ interface TrainingAnswers {
 }
 
 const EMPTY_ANSWERS: TrainingAnswers = {
-  goal: "", level: "", days: "", time: "", material: [],
+  goal: "", level: "", days: "", time: "", split: "", material: [], focusGroups: [],
   age: "", sex: "", height: "", weight: "", preferences: "",
 };
 
@@ -82,6 +84,17 @@ const TIME_CHOICES = [
   { value: "45", label: "45 min" },
   { value: "60", label: "60 min" },
   { value: "90", label: "90+ min" },
+];
+
+const SPLIT_OPTIONS = [
+  { value: "sin preferencia", label: "Me da igual", desc: "Elige la distribución más eficiente para ti." },
+  { value: "full body", label: "Cuerpo completo", desc: "Trabaja todo el cuerpo en cada sesión." },
+  { value: "torso-pierna", label: "Torso / pierna", desc: "Alterna tren superior y tren inferior." },
+  { value: "empuje-tiron-pierna", label: "Empuje / tirón / pierna", desc: "Más volumen por grupo muscular." },
+];
+
+const FOCUS_GROUPS = [
+  "Pecho", "Espalda", "Hombros", "Brazos", "Piernas", "Glúteos", "Core", "Cuerpo equilibrado",
 ];
 
 const MATERIAL_OPTIONS = [
@@ -354,7 +367,7 @@ function PlanCard({ tk, isMobile, plan, optionLabel, isExpanded, onToggleExpand,
   );
 }
 
-const STEP_COUNT = 8; // 7 preguntas + resumen final
+const STEP_COUNT = 10; // 9 preguntas + resumen final
 
 export default function TrainingGenerator({
   isDark, isMobile, onSaveRoutine, showNotification,
@@ -404,6 +417,20 @@ export default function TrainingGenerator({
     }));
   };
 
+  const toggleFocusGroup = (value: string) => {
+    setAnswers((a) => {
+      if (value === "Cuerpo equilibrado") {
+        return { ...a, focusGroups: a.focusGroups.includes(value) ? [] : [value] };
+      }
+      return {
+        ...a,
+        focusGroups: a.focusGroups.includes(value)
+          ? a.focusGroups.filter((group) => group !== value)
+          : [...a.focusGroups.filter((group) => group !== "Cuerpo equilibrado"), value],
+      };
+    });
+  };
+
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
@@ -413,7 +440,11 @@ export default function TrainingGenerator({
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
         body: JSON.stringify({
-          trainingData: { ...answers, material: answers.material.join(", ") },
+          trainingData: {
+            ...answers,
+            material: answers.material.join(", "),
+            focusGroups: answers.focusGroups.join(", "),
+          },
         }),
       });
       const data = await response.json();
@@ -492,7 +523,7 @@ export default function TrainingGenerator({
         </div>
         <h3 style={{ margin: "0 0 8px", color: tk.text, fontSize: isMobile ? "1.25rem" : "1.5rem" }}>¿Necesitas un plan a tu medida?</h3>
         <p style={{ color: tk.textMuted, fontSize: tk.fontSize.sm, margin: "0 auto 24px", maxWidth: "420px" }}>
-          Siete preguntas rápidas y tu Coach IA te propone dos planes distintos para que elijas el que más te convenza.
+          Nueve preguntas rápidas sobre tu objetivo, disponibilidad, material y prioridades. Tu Coach IA te propone dos planes distintos para que elijas el que más te convenza.
         </p>
         <Button isDark={isDark} size="lg" onClick={() => setPhase("wizard")} style={{ margin: "0 auto" }}>
           Empezar
@@ -593,7 +624,7 @@ export default function TrainingGenerator({
 
   if (step === 0) {
     content = (
-      <StepShell tk={tk} isMobile={isMobile} eyebrow="Pregunta 1 de 7" title="¿Cuál es tu objetivo principal?" onBack={back} progress={progress}>
+      <StepShell tk={tk} isMobile={isMobile} eyebrow="Pregunta 1 de 9" title="¿Cuál es tu objetivo principal?" onBack={back} progress={progress}>
         <div style={{ display: "grid", gridTemplateColumns: gridCols, gap: "12px" }}>
           {GOALS.map((g) => (
             <OptionCard key={g.value} tk={tk} selected={answers.goal === g.value} onClick={() => selectAndAdvance({ goal: g.value })} icon={<Icon name={g.icon} size={18} />} label={g.label} desc={g.desc} />
@@ -603,7 +634,7 @@ export default function TrainingGenerator({
     );
   } else if (step === 1) {
     content = (
-      <StepShell tk={tk} isMobile={isMobile} eyebrow="Pregunta 2 de 7" title="¿Cuál es tu nivel de experiencia?" onBack={back} progress={progress}>
+      <StepShell tk={tk} isMobile={isMobile} eyebrow="Pregunta 2 de 9" title="¿Cuál es tu nivel de experiencia?" onBack={back} progress={progress}>
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {LEVELS.map((l) => (
             <OptionCard key={l.value} tk={tk} layout="row" selected={answers.level === l.value} onClick={() => selectAndAdvance({ level: l.value })}
@@ -615,7 +646,7 @@ export default function TrainingGenerator({
     );
   } else if (step === 2) {
     content = (
-      <StepShell tk={tk} isMobile={isMobile} eyebrow="Pregunta 3 de 7" title="¿Cuántos días a la semana puedes entrenar?" onBack={back} progress={progress}>
+      <StepShell tk={tk} isMobile={isMobile} eyebrow="Pregunta 3 de 9" title="¿Cuántos días a la semana puedes entrenar?" onBack={back} progress={progress}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
           {DAY_CHOICES.map((d) => {
             const selected = answers.days === d;
@@ -641,7 +672,7 @@ export default function TrainingGenerator({
     );
   } else if (step === 3) {
     content = (
-      <StepShell tk={tk} isMobile={isMobile} eyebrow="Pregunta 4 de 7" title="¿Cuánto tiempo tienes por sesión?" onBack={back} progress={progress}>
+      <StepShell tk={tk} isMobile={isMobile} eyebrow="Pregunta 4 de 9" title="¿Cuánto tiempo tienes por sesión?" onBack={back} progress={progress}>
         <div style={{ display: "grid", gridTemplateColumns: gridCols, gap: "12px" }}>
           {TIME_CHOICES.map((t) => (
             <OptionCard key={t.value} tk={tk} selected={answers.time === t.value} onClick={() => selectAndAdvance({ time: t.value })} icon={<Icon name="clock" size={16} />} label={t.label} />
@@ -651,8 +682,18 @@ export default function TrainingGenerator({
     );
   } else if (step === 4) {
     content = (
+      <StepShell tk={tk} isMobile={isMobile} eyebrow="Pregunta 5 de 9" title="¿Cómo te gustaría repartir los entrenamientos?" subtitle="FEEG lo respetará siempre que encaje con tus días y tu objetivo." onBack={back} progress={progress}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          {SPLIT_OPTIONS.map((option) => (
+            <OptionCard key={option.value} tk={tk} layout="row" selected={answers.split === option.value} onClick={() => selectAndAdvance({ split: option.value })} label={option.label} desc={option.desc} icon={<Icon name="barChart" size={17} />} />
+          ))}
+        </div>
+      </StepShell>
+    );
+  } else if (step === 5) {
+    content = (
       <StepShell
-        tk={tk} isMobile={isMobile} eyebrow="Pregunta 5 de 7" title="¿Qué material tienes disponible?"
+        tk={tk} isMobile={isMobile} eyebrow="Pregunta 6 de 9" title="¿Qué material tienes disponible?"
         subtitle="Puedes elegir varios." onBack={back} progress={progress}
         footer={continueFooter(next, "Continuar", answers.material.length === 0)}
       >
@@ -663,10 +704,24 @@ export default function TrainingGenerator({
         </div>
       </StepShell>
     );
-  } else if (step === 5) {
+  } else if (step === 6) {
     content = (
       <StepShell
-        tk={tk} isMobile={isMobile} eyebrow="Pregunta 6 de 7" title="Cuéntame un poco sobre ti"
+        tk={tk} isMobile={isMobile} eyebrow="Pregunta 7 de 9" title="¿Qué grupos quieres priorizar?"
+        subtitle="Puedes elegir varios. Si no tienes una prioridad, elige cuerpo equilibrado." onBack={back} progress={progress}
+        footer={continueFooter(next, "Continuar", answers.focusGroups.length === 0)}
+      >
+        <div style={{ display: "grid", gridTemplateColumns: gridCols, gap: "10px" }}>
+          {FOCUS_GROUPS.map((group) => (
+            <OptionCard key={group} tk={tk} selected={answers.focusGroups.includes(group)} onClick={() => toggleFocusGroup(group)} label={group} icon={<Icon name={group === "Core" ? "bodyweight" : "dumbbell"} size={17} />} />
+          ))}
+        </div>
+      </StepShell>
+    );
+  } else if (step === 7) {
+    content = (
+      <StepShell
+        tk={tk} isMobile={isMobile} eyebrow="Pregunta 8 de 9" title="Cuéntame un poco sobre ti"
         subtitle="Opcional, pero ayuda a ajustar cargas y volumen." onBack={back} progress={progress}
         footer={continueFooter(next)}
       >
@@ -686,10 +741,10 @@ export default function TrainingGenerator({
         </div>
       </StepShell>
     );
-  } else if (step === 6) {
+  } else if (step === 8) {
     content = (
       <StepShell
-        tk={tk} isMobile={isMobile} eyebrow="Pregunta 7 de 7" title="¿Alguna lesión o preferencia?"
+        tk={tk} isMobile={isMobile} eyebrow="Pregunta 9 de 9" title="¿Alguna lesión o preferencia?"
         subtitle="Opcional — ej. 'molestia en el hombro', 'no me gusta correr'." onBack={back} progress={progress}
         footer={continueFooter(next)}
       >
@@ -715,9 +770,11 @@ export default function TrainingGenerator({
       { label: "Nivel", value: LEVELS.find((l) => l.value === answers.level)?.label || "—", step: 1 },
       { label: "Días por semana", value: answers.days ? `${answers.days} días` : "—", step: 2 },
       { label: "Duración por sesión", value: TIME_CHOICES.find((t) => t.value === answers.time)?.label || "—", step: 3 },
-      { label: "Material", value: answers.material.length ? answers.material.map((v) => MATERIAL_OPTIONS.find((m) => m.value === v)?.label || v).join(", ") : "—", step: 4 },
-      { label: "Sobre ti", value: aboutYou, step: 5 },
-      { label: "Lesiones / preferencias", value: answers.preferences || "Ninguna", step: 6 },
+      { label: "Distribución", value: SPLIT_OPTIONS.find((option) => option.value === answers.split)?.label || "—", step: 4 },
+      { label: "Material", value: answers.material.length ? answers.material.map((v) => MATERIAL_OPTIONS.find((m) => m.value === v)?.label || v).join(", ") : "—", step: 5 },
+      { label: "Prioridad", value: answers.focusGroups.length ? answers.focusGroups.join(", ") : "—", step: 6 },
+      { label: "Sobre ti", value: aboutYou, step: 7 },
+      { label: "Lesiones / preferencias", value: answers.preferences || "Ninguna", step: 8 },
     ];
 
     content = (

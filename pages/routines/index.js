@@ -129,9 +129,14 @@ export default function Routines() {
                 icon="dumbbell"
                 title={t("no_routines_yet")}
                 action={
-                  <Link href="/routines/create" style={{ textDecoration: "none" }}>
-                    <Button isDark={isDark}>{t("create_new_routine")}</Button>
-                  </Link>
+                  <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "10px" }}>
+                    <Link href="/ia?tab=training" style={{ textDecoration: "none" }}>
+                      <Button isDark={isDark} icon="zap">Personalizar con encuesta</Button>
+                    </Link>
+                    <Link href="/routines/create" style={{ textDecoration: "none" }}>
+                      <Button isDark={isDark} variant="secondary">{t("create_new_routine")}</Button>
+                    </Link>
+                  </div>
                 }
               />
             ) : (
@@ -203,11 +208,16 @@ export default function Routines() {
                 ))}
 
                 <div style={{ marginTop: "20px" }}>
-                  <Link href="/routines/create" style={{ textDecoration: "none" }}>
-                    <Button isDark={isDark} variant="secondary" fullWidth size="lg" icon="plus">
-                      {t("create_new_routine")}
-                    </Button>
-                  </Link>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "10px" }}>
+                    <Link href="/ia?tab=training" style={{ textDecoration: "none" }}>
+                      <Button isDark={isDark} fullWidth size="lg" icon="zap">Personalizar con encuesta</Button>
+                    </Link>
+                    <Link href="/routines/create" style={{ textDecoration: "none" }}>
+                      <Button isDark={isDark} variant="secondary" fullWidth size="lg" icon="plus">
+                        {t("create_new_routine")}
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             )}

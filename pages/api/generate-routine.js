@@ -80,11 +80,15 @@ Datos del usuario:
 - Nivel: ${trainingData.level || 'Intermedio'}
 - Días disponibles a la semana: ${trainingData.days || 3}
 - Tiempo disponible por sesión: ${trainingData.time ? trainingData.time + ' minutos' : 'No especificado'}
+- Distribución preferida: ${trainingData.split || 'Sin preferencia'}
 - Material disponible: ${trainingData.material || 'Gimnasio completo'}
+- Grupos prioritarios: ${trainingData.focusGroups || 'Cuerpo equilibrado'}
 - Lesiones o preferencias: ${trainingData.preferences || 'Ninguna'}
 
 Reglas importantes:
 - Los dos planes deben cumplir igual de bien los datos del usuario (mismos días, mismo tiempo, mismo material, mismo nivel), pero con un enfoque de verdad distinto entre sí — no renombres el mismo plan. Por ejemplo, splits diferentes (full body vs torso-pierna vs empuje-tirón-pierna), énfasis distinto dentro del objetivo, o selección de ejercicios distinta. La diferencia debe notarse en los ejercicios, no solo en el nombre.
+- Respeta la distribución preferida si es compatible con el número de días; si no lo es, explica la adaptación en el resumen y elige una distribución realista.
+- Da prioridad visible a los grupos indicados sin abandonar el equilibrio del cuerpo: ningún grupo prioritario debe quedarse sin trabajo y evita sobrecargarlo con volumen absurdo.
 - Ajusta el número de ejercicios por día para que quepan cómodamente en el tiempo disponible por sesión (contando calentamiento, series y descansos) — no lo ignores.
 - Usa solo ejercicios de gimnasio reales y coherentes con el material disponible.
 - Responde ÚNICAMENTE en el formato JSON exacto solicitado, en español.`;

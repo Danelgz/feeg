@@ -147,7 +147,11 @@ export default function RankMapSection({ isDark, isMobile = false, t, language }
         translateExercise={(name) => translateExerciseName(name, language)}
       />
 
-      <div style={{ display: 'grid', gap: tk.space.lg }}>
+      {/* `minmax(0, 1fr)` y no una columna implícita "auto": sin ella, un solo hijo con contenido
+          que no puede encogerse (una palabra larga, un bloque `flexShrink: 0`) fuerza la pista de la
+          grid entera por encima del ancho de la pantalla — y como todas las secciones de Rangos
+          comparten esta grid, el desbordamiento de UNA fila desplaza a las demás con ella. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: tk.space.lg }}>
         <StatSection title="Tu cuerpo por rango" isDark={isDark} isMobile={isMobile}>
           <MuscleMap
             seriesByMuscle={{}}

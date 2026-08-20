@@ -80,7 +80,7 @@ export default function WeeklyReportSection({ isDark, isMobile, workouts, t }: {
       {workouts.length === 0 ? (
         <EmptyState isDark={isDark} icon="clock" title={t("stats_no_data")} description="Completa tu primer entrenamiento para empezar a ver tu ritmo semanal." />
       ) : (
-        <div style={{ display: "grid", gap: tk.space.md }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: tk.space.md }}>
           {entries.map((entry, index) => (
             <motion.div
               key={entry.key}

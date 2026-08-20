@@ -53,6 +53,7 @@ export default function OverviewSection({ isDark, isMobile, workouts, t }) {
             WebkitOverflowScrolling: "touch",
             paddingRight: tk.space.sm,
             display: "grid",
+            gridTemplateColumns: "minmax(0, 1fr)",
             gap: tk.space.md,
           }}
         >

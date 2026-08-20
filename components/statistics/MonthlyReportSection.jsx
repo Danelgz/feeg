@@ -49,7 +49,7 @@ export default function MonthlyReportSection({ isDark, isMobile, workouts, t }) 
           description="Cuando acumules entrenamientos verás aquí el resumen de cada mes."
         />
       ) : (
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: tk.space.md }}>
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: tk.space.md }}>
           {entries.map(([month, v], index) => (
             <motion.li
               key={month}

@@ -76,7 +76,7 @@ export default function GoalsAndMilestonesSection({
 
   return (
     <StatSection title="Objetivos y hitos" meta="Tu siguiente paso" isDark={isDark} isMobile={isMobile}>
-      <div style={{ display: "grid", gap: tk.space.md }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: tk.space.md }}>
         <div className="feeg-surface" style={{ borderRadius: tk.radius.md, padding: tk.space.lg, "--feeg-bg": tk.surfaceAlt, "--feeg-border": tk.border } as React.CSSProperties}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: tk.space.md, alignItems: "center" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -111,7 +111,7 @@ export default function GoalsAndMilestonesSection({
 
         {showForm ? (
           <div className="feeg-surface" style={{ borderRadius: tk.radius.md, padding: tk.space.lg, "--feeg-bg": tk.surfaceAlt, "--feeg-border": tk.accent } as React.CSSProperties}>
-            <div style={{ display: "grid", gap: tk.space.sm }}>
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: tk.space.sm }}>
               <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Nombre del objetivo" aria-label="Nombre del objetivo" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: tk.radius.sm, border: `1px solid ${tk.border}`, backgroundColor: tk.surface, color: tk.text, font: "inherit" }} />
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 120px", gap: tk.space.sm }}>
                 <select value={type} onChange={(event) => setType(event.target.value as TrainingGoal["type"])} aria-label="Tipo de objetivo" style={{ padding: "10px 12px", borderRadius: tk.radius.sm, border: `1px solid ${tk.border}`, backgroundColor: tk.surface, color: tk.text, font: "inherit" }}>

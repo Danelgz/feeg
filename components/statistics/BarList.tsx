@@ -61,7 +61,7 @@ export default function BarList({
   const reference = (scale === "total" ? total : max) || 1;
 
   return (
-    <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: tk.space.md }}>
+    <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: tk.space.md }}>
       {items.map((item, index) => {
         const pct = Math.min(100, (item.value / reference) * 100);
 

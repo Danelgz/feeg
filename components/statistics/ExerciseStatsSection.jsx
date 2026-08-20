@@ -97,7 +97,7 @@ export default function ExerciseStatsSection({ isDark, isMobile, workouts, t, la
           }
         />
       ) : (
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: tk.space.md }}>
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: tk.space.md }}>
           {results.map((entry, index) => (
             <motion.li
               key={entry.name}

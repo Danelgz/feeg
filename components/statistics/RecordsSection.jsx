@@ -219,7 +219,7 @@ export default function RecordsSection({ isDark, isMobile, workouts, t, language
         isDark={isDark}
         isMobile={isMobile}
       >
-        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: tk.space.sm }}>
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: tk.space.sm }}>
           {visibleMilestones.map((m, index) => (
             <motion.li
               key={m.id}

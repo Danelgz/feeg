@@ -74,7 +74,7 @@ export default function MuscleRankList({
   const name = (group: string) => translateGroup?.(group) || group;
 
   return (
-    <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: tk.space.sm }}>
+    <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: tk.space.sm }}>
       {rows.ranked.map((groupRank) => {
         const position = getRankPosition(groupRank.level);
         const isOpen = expandedGroup === groupRank.group;

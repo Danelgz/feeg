@@ -116,7 +116,7 @@ export default function MuscleDetailSection({ isDark, isMobile, group, workouts,
           description="El volumen de los últimos 7 días aparecerá aquí en cuanto lo trabajes."
         />
       ) : (
-        <div style={{ display: 'grid', gap: tk.space.md }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: tk.space.md }}>
           {results.map((entry, idx) => (
             <div
               key={entry.name}

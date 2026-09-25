@@ -4,7 +4,7 @@ import ProfileWorkoutCard from "./ProfileWorkoutCard";
 import { Spinner } from "../ui";
 
 /**
- * Sección "Entrenamientos" del perfil: cabecera con borrar-todo + lista ordenada de tarjetas.
+ * Pestaña "Entrenos" del perfil: publicaciones ordenadas de la más reciente, con borrar-todo al final.
  * onAddToRoutine/onDeleteWorkout/onEditWorkout/onDeleteAll son opcionales — se omiten al ver el
  * perfil de otra persona, y entonces las tarjetas solo muestran "Ver detalles". hasMore/onLoadMore
  * son opcionales también, para el perfil público que pagina contra Firestore (el propio no lo
@@ -26,6 +26,8 @@ export default function ProfileWorkoutsSection({
   currentUserId,
   onToggleLike,
   onAddComment,
+  onAddPhoto,
+  language,
   isDark = true,
   t,
 }) {
@@ -49,71 +51,50 @@ export default function ProfileWorkoutsSection({
     return () => observer.disconnect();
   }, [hasMore, onLoadMore, completedWorkouts?.length]);
 
+  const sorted = [...(completedWorkouts || [])].sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+
   return (
     <>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-        <h3 style={{ fontSize: "1.2rem", fontWeight: "bold", margin: 0, color: tk.text, display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ width: "4px", height: "20px", backgroundColor: tk.accent, borderRadius: "2px" }}></span>
-          Entrenamientos
-        </h3>
-        {completedWorkouts?.length > 0 && onDeleteAll && (
-          <button
-            onClick={onDeleteAll}
-            style={{
-              backgroundColor: "transparent",
-              color: tk.danger,
-              border: `1px solid ${tk.danger}`,
-              borderRadius: "8px",
-              padding: "4px 10px",
-              fontSize: "0.75rem",
-              fontWeight: "600",
-              cursor: "pointer",
-              transition: "all 0.2s",
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = tk.danger;
-              e.currentTarget.style.color = "#fff";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
-              e.currentTarget.style.color = tk.danger;
-            }}
-          >
-            {t("delete_all")}
-          </button>
-        )}
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-        {!completedWorkouts || completedWorkouts.length === 0 ? (
-          <div style={{ padding: "30px", textAlign: "center", backgroundColor: tk.surfaceAlt, borderRadius: "12px", color: tk.textMuted }}>
-            No hay entrenamientos registrados aún.
-          </div>
-        ) : (
-          [...completedWorkouts]
-            .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
-            .map((workout) => (
-              <ProfileWorkoutCard
-                key={workout.id}
-                isDark={isDark}
-                workout={workout}
-                onOpenDetail={() => onOpenDetail(workout)}
-                onAddToRoutine={onAddToRoutine ? () => onAddToRoutine(workout.id) : undefined}
-                onDelete={onDeleteWorkout ? () => onDeleteWorkout(workout.id) : undefined}
-                onEdit={onEditWorkout ? () => onEditWorkout(workout) : undefined}
-                liked={!!(currentUserId && workout.likes?.includes(currentUserId))}
-                onToggleLike={onToggleLike ? () => onToggleLike(workout.id) : undefined}
-                onAddComment={onAddComment ? (text) => onAddComment(workout.id, text) : undefined}
-                t={t}
-              />
-            ))
-        )}
-      </div>
+      {sorted.length === 0 ? (
+        <div style={{ padding: "36px 12px", textAlign: "center", color: tk.textMuted, fontSize: "0.9rem" }}>
+          No hay entrenamientos registrados aún.
+        </div>
+      ) : (
+        <div style={{ borderBottom: `1px solid ${tk.hairline}` }}>
+          {sorted.map((workout) => (
+            <ProfileWorkoutCard
+              key={workout.id}
+              isDark={isDark}
+              workout={workout}
+              language={language}
+              onOpenDetail={() => onOpenDetail(workout)}
+              onAddToRoutine={onAddToRoutine ? () => onAddToRoutine(workout.id) : undefined}
+              onDelete={onDeleteWorkout ? () => onDeleteWorkout(workout.id) : undefined}
+              onEdit={onEditWorkout ? () => onEditWorkout(workout) : undefined}
+              onAddPhoto={onAddPhoto ? () => onAddPhoto(workout) : undefined}
+              liked={!!(currentUserId && workout.likes?.includes(currentUserId))}
+              onToggleLike={onToggleLike ? () => onToggleLike(workout.id) : undefined}
+              onAddComment={onAddComment ? (text) => onAddComment(workout.id, text) : undefined}
+              t={t}
+            />
+          ))}
+        </div>
+      )}
 
       {hasMore && (
         <div ref={sentinelRef} style={{ display: "flex", justifyContent: "center", padding: "20px 0 0" }}>
           {isLoadingMore && <Spinner isDark={isDark} size={16} />}
         </div>
+      )}
+
+      {sorted.length > 0 && onDeleteAll && (
+        <button
+          onClick={onDeleteAll}
+          className="feeg-press"
+          style={{ display: "block", margin: "18px auto 0", background: "none", border: "none", color: tk.danger, fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", padding: 8 }}
+        >
+          {t("delete_all")}
+        </button>
       )}
     </>
   );

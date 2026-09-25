@@ -4,7 +4,11 @@ import Layout from "../../components/Layout";
 import { useUser } from "../../context/UserContext";
 import { getFromCloud, getUserWorkouts, getUserWorkoutsCount, getFollowersCount, getFollowersList, getFollowingList, likeWorkout, addWorkoutComment } from "../../lib/firebase";
 import { getTokens } from "../../lib/tokens";
-import { Spinner, EmptyState } from "../../components/ui";
+import { Spinner, EmptyState, ChipNav } from "../../components/ui";
+import { shareLink } from "../../lib/share";
+import ProfileWeekStrip from "../../components/profile/ProfileWeekStrip";
+import ProfilePhotoGrid from "../../components/profile/ProfilePhotoGrid";
+import ProfileRoutineCard from "../../components/profile/ProfileRoutineCard";
 import ReadOnlyWorkoutModal from "../../components/workout/ReadOnlyWorkoutModal";
 import {
   ProfileHeader,
@@ -12,7 +16,6 @@ import {
   ProfileWorkoutsSection,
   ProfileFollowListModal,
   ProfilePhotoViewer,
-  ProfileRoutinesSection,
   ProfileRoutinePreviewModal,
   ProfileRankMapModal,
 } from "../../components/profile";
@@ -47,7 +50,7 @@ export default function UserProfile() {
   const [viewingWorkoutDetail, setViewingWorkoutDetail] = useState(null);
   const [previewingRoutine, setPreviewingRoutine] = useState(null);
   const [showRankMap, setShowRankMap] = useState(false);
-  const [routinesOpen, setRoutinesOpen] = useState(false);
+  const [tab, setTab] = useState("workouts");
 
   useEffect(() => {
     if (uid) {
@@ -169,55 +172,93 @@ export default function UserProfile() {
 
   const isFollowing = following.includes(uid);
   const publicRoutines = targetUser.routines || [];
+  const tabs = [
+    { key: "workouts", label: "Entrenos" },
+    { key: "photos", label: "Fotos" },
+    ...(publicRoutines.length ? [{ key: "routines", label: "Rutinas" }] : []),
+    { key: "progress", label: "Progreso" },
+  ];
+
+  const handleShare = async () => {
+    const result = await shareLink(window.location.href, `${targetUser.firstName || targetUser.username} en FEEG`);
+    if (result === "copied") showNotification("Enlace del perfil copiado", "success");
+    else if (result === "failed") showNotification("No se pudo compartir el perfil", "error");
+  };
 
   return (
     <>
-      <Layout>
-        <div style={{ backgroundColor: tk.bg, color: tk.text, minHeight: "100vh", padding: isMobile ? "10px" : "20px" }}>
+      <Layout gutter>
+        <div style={{ color: tk.text, maxWidth: 680, margin: "0 auto", padding: isMobile ? "0" : "8px 0" }}>
           <ProfileHeader
             isDark={isDark}
             user={targetUser}
             workoutsCount={workoutsTotalCount}
             followersCount={targetUser.followersCount}
             followingCount={targetUser.following?.length}
+            rankLevel={targetUser.overallLevel ?? null}
+            prestigeLevels={targetUser.prestigeLevels || 0}
+            onOpenRank={targetUser.overallLevel != null ? () => setShowRankMap(true) : undefined}
             isFollowing={isFollowing}
-            onToggleFollow={() => (isFollowing ? handleUnfollow(uid) : handleFollow(uid))}
+            onToggleFollow={authUser ? () => (isFollowing ? handleUnfollow(uid) : handleFollow(uid)) : undefined}
+            onShare={handleShare}
             onOpenPhoto={() => setIsPhotoFullScreen(true)}
             onOpenFollowers={handleOpenFollowers}
             onOpenFollowing={handleOpenFollowing}
           />
 
-          <ProfileRoutinesSection
-            isDark={isDark}
-            routines={publicRoutines}
-            onOpenPreview={(routine) => setPreviewingRoutine(routine)}
-            onCopyRoutine={handleCopyRoutine}
-            hasRankMap={targetUser.overallLevel != null}
-            onViewRankMap={() => setShowRankMap(true)}
-            routinesOpen={routinesOpen}
-            onToggleRoutines={() => setRoutinesOpen((v) => !v)}
-          />
+          <ProfileWeekStrip isDark={isDark} workouts={workouts} />
 
-          <ProfileActivityChart
-            isDark={isDark}
-            completedWorkouts={workouts}
-            hasMore={workoutsHasMore}
-            isLoadingMore={isLoadingMoreWorkouts}
-            onLoadMore={handleLoadMoreWorkouts}
-          />
+          <div style={{ marginBottom: 4 }}>
+            <ChipNav items={tabs} activeKey={tab} onChange={setTab} isDark={isDark} variant="underline" fill ariaLabel="Secciones del perfil" />
+          </div>
 
-          <ProfileWorkoutsSection
-            isDark={isDark}
-            completedWorkouts={workouts}
-            onOpenDetail={(workout) => setViewingWorkoutDetail(workout)}
-            hasMore={workoutsHasMore}
-            onLoadMore={handleLoadMoreWorkouts}
-            isLoadingMore={isLoadingMoreWorkouts}
-            currentUserId={authUser?.uid}
-            onToggleLike={handleToggleLike}
-            onAddComment={handleAddComment}
-            t={t}
-          />
+          {tab === "workouts" && (
+            <ProfileWorkoutsSection
+              isDark={isDark}
+              completedWorkouts={workouts}
+              language={language}
+              onOpenDetail={(workout) => setViewingWorkoutDetail(workout)}
+              hasMore={workoutsHasMore}
+              onLoadMore={handleLoadMoreWorkouts}
+              isLoadingMore={isLoadingMoreWorkouts}
+              currentUserId={authUser?.uid}
+              onToggleLike={authUser ? handleToggleLike : undefined}
+              onAddComment={authUser ? handleAddComment : undefined}
+              t={t}
+            />
+          )}
+
+          {tab === "photos" && (
+            <div style={{ paddingTop: 14 }}>
+              <ProfilePhotoGrid isDark={isDark} workouts={workouts} onOpenWorkout={(workout) => setViewingWorkoutDetail(workout)} />
+            </div>
+          )}
+
+          {tab === "routines" && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, paddingTop: 16 }}>
+              {publicRoutines.map((routine) => (
+                <ProfileRoutineCard
+                  key={routine.id}
+                  isDark={isDark}
+                  routine={routine}
+                  onOpenPreview={() => setPreviewingRoutine(routine)}
+                  onCopy={() => handleCopyRoutine(routine)}
+                />
+              ))}
+            </div>
+          )}
+
+          {tab === "progress" && (
+            <div style={{ paddingTop: 16 }}>
+              <ProfileActivityChart
+                isDark={isDark}
+                completedWorkouts={workouts}
+                hasMore={workoutsHasMore}
+                isLoadingMore={isLoadingMoreWorkouts}
+                onLoadMore={handleLoadMoreWorkouts}
+              />
+            </div>
+          )}
         </div>
       </Layout>
 

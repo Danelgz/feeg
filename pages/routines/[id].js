@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
+import { useWorkoutPhoto } from "../../components/workout/WorkoutPhotoPicker";
 import Layout from "../../components/Layout";
 import { useUser } from "../../context/UserContext";
 import ExerciseSelector from "../../components/ExerciseSelector";
@@ -50,6 +51,7 @@ export default function RoutineDetail() {
   const [showRoutineActiveAlert, setShowRoutineActiveAlert] = useState(false);
   const [finishName, setFinishName] = useState("");
   const [finishComments, setFinishComments] = useState("");
+  const { photo: finishPhoto, pick: pickFinishPhoto, retry: retryFinishPhoto, remove: removeFinishPhoto } = useWorkoutPhoto();
   const [finishTotalTime, setFinishTotalTime] = useState(0);
   const [updateOriginalRoutine, setUpdateOriginalRoutine] = useState(false);
   const [savingWorkout, setSavingWorkout] = useState(false);
@@ -60,11 +62,11 @@ export default function RoutineDetail() {
   // Salto automático al siguiente ejercicio: al completar la última serie pendiente de uno, el
   // pager avanza solo tras un pequeño respiro (deja verse el pulso del check antes de moverse).
   const pagerRef = useRef(null);
-  const handleToggleComplete = (exercise, serieUid) => {
+  const handleToggleComplete = (exercise, serieUid, fill) => {
     const serie = exercise.series.find((s) => s.uid === serieUid);
     const willComplete = !!serie && !serie.completed;
     const wasLastPending = willComplete && exercise.series.every((s) => s.uid === serieUid || s.completed);
-    actions.toggleSeriesComplete(exercise.uid, serieUid);
+    actions.toggleSeriesComplete(exercise.uid, serieUid, fill);
     if (wasLastPending) {
       window.setTimeout(() => pagerRef.current?.scrollToNext(), 650);
     }
@@ -177,6 +179,8 @@ export default function RoutineDetail() {
       id: Date.now(),
       name: finishName,
       comments: finishComments,
+      // Solo si la subida terminó: una foto a medio subir o fallida no se publica con el entreno.
+      ...(finishPhoto.status === "done" && finishPhoto.url ? { photoURL: finishPhoto.url } : {}),
       completedAt: new Date().toISOString(),
       totalTime: Number(finishTotalTime) || 0,
       elapsedTime: elapsedSeconds,
@@ -294,6 +298,10 @@ export default function RoutineDetail() {
           namePlaceholder={t("placeholder_workout_name")}
           comments={finishComments}
           onCommentsChange={setFinishComments}
+          photo={finishPhoto}
+          onPhotoPick={pickFinishPhoto}
+          onPhotoRetry={retryFinishPhoto}
+          onPhotoRemove={removeFinishPhoto}
           totalMinutes={finishTotalTime}
           onTotalMinutesChange={setFinishTotalTime}
           elapsedSeconds={elapsedSeconds}
@@ -334,7 +342,7 @@ export default function RoutineDetail() {
               progressionMode={user?.workoutPreferences?.progressionMode || "all"}
               onUpdateField={(serieUid, field, value) => actions.updateSeriesField(exercise.uid, serieUid, field, value)}
               onRirChange={(serieUid, value) => actions.updateSeriesRir(exercise.uid, serieUid, value)}
-              onToggleComplete={(serieUid) => handleToggleComplete(exercise, serieUid)}
+              onToggleComplete={(serieUid, fill) => handleToggleComplete(exercise, serieUid, fill)}
               onSetSeriesType={(serieUid, type) => actions.setSeriesType(exercise.uid, serieUid, type)}
               onAddSeries={() => actions.addSeries(exercise.uid)}
               onRemoveSeries={(serieUid) => actions.removeSeries(exercise.uid, serieUid)}

@@ -46,7 +46,7 @@ export default function ProfileWorkoutSocial({ isDark = true, liked, likesCount,
 
   return (
     <div style={{ marginTop: "12px" }}>
-      <div style={{ display: "flex", gap: "20px", borderTop: `1px solid ${tk.border}`, paddingTop: "10px" }}>
+      <div style={{ display: "flex", gap: "20px", borderTop: `1px solid ${tk.hairline}`, paddingTop: "10px" }}>
         <button
           onClick={onToggleLike}
           style={{
@@ -84,7 +84,7 @@ export default function ProfileWorkoutSocial({ isDark = true, liked, likesCount,
       </div>
 
       {commentsOpen && (
-        <div style={{ marginTop: "15px", paddingTop: "15px", borderTop: `1px solid ${tk.border}`, display: "flex", flexDirection: "column", gap: "18px" }}>
+        <div style={{ marginTop: "15px", paddingTop: "15px", borderTop: `1px solid ${tk.hairline}`, display: "flex", flexDirection: "column", gap: "18px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: "0.85rem", fontWeight: "bold", color: tk.textMuted }}>{t("comments_label")}</span>
             <span style={{ fontSize: "0.78rem", color: tk.accent, cursor: "pointer" }} onClick={() => setCommentsOpen(false)}>
@@ -124,7 +124,7 @@ export default function ProfileWorkoutSocial({ isDark = true, liked, likesCount,
                 </span>
               ))}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", backgroundColor: tk.surfaceAlt, borderRadius: "999px", padding: "5px 5px 5px 14px", border: `1px solid ${tk.border}` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", backgroundColor: tk.surfaceAlt, borderRadius: "999px", padding: "5px 5px 5px 14px", border: "none" }}>
               <input
                 ref={inputRef}
                 placeholder={t("add_comment_placeholder")}

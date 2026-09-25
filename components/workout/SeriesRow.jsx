@@ -13,6 +13,7 @@ function SeriesRow({
   onFieldChange,
   onRirChange,
   onToggleComplete,
+  onFillPrevious,
   onOpenType,
   readOnly = false,
 }) {
@@ -64,7 +65,14 @@ function SeriesRow({
   const badgeLabel = serie.type === "W" ? "W" : serie.type === "D" ? "D" : String(effectiveIndex);
   const badgeColor = readOnly ? tk.text : serie.type === "W" ? tk.accent : serie.type === "D" ? tk.warning : tk.text;
   const previousLabel = previous ? `${previous.weight}${weightUnit} × ${previous.reps}` : "—";
-  const fieldStyle = { width: "100%", alignSelf: "center", background: tk.surfaceAlt, borderRadius: "4px", color: tk.text, padding: "6px 0", textAlign: "center", fontSize: "1rem", boxSizing: "border-box" };
+  // Campos de 38px de alto y cifras en negrita: son lo que se toca con el pulgar entre series, con
+  // el pulso alto. En una serie completada el fondo del campo se funde con la fila verde.
+  const fieldStyle = {
+    width: "100%", height: 38, alignSelf: "center", background: serie.completed && !readOnly ? "rgba(0,0,0,0.22)" : tk.surfaceAlt, borderRadius: "9px", color: tk.text,
+    padding: "0", textAlign: "center", fontSize: "1.02rem", fontWeight: 700, boxSizing: "border-box", fontVariantNumeric: "tabular-nums",
+    display: "flex", alignItems: "center", justifyContent: "center",
+  };
+  const selectAll = (e) => e.target.select();
 
   return (
     <div
@@ -73,11 +81,12 @@ function SeriesRow({
       style={{
         display: "grid",
         alignItems: "center",
-        minHeight: "45px",
-        marginBottom: "5px",
-        borderRadius: "8px",
+        minHeight: "46px",
+        marginBottom: "4px",
+        borderRadius: "12px",
         boxSizing: "border-box",
-        padding: readOnly ? "0" : serie.completed ? "6px 8px" : "0",
+        // Mismo padding completada o no: antes la fila "saltaba" 8px a los lados al marcarla.
+        padding: readOnly ? "0" : "4px 6px",
         backgroundColor: readOnly ? "transparent" : serie.completed ? tk.accentSoft : "transparent",
         boxShadow: readOnly ? "none" : glow.shadow,
         transition: `background-color 400ms ease, ${glow.transition}`,
@@ -95,8 +104,9 @@ function SeriesRow({
           color: showRecordHighlight && !justAchieved ? tk.accent : badgeColor,
           fontWeight: "bold",
           fontSize: "1rem",
-          backgroundColor: tk.surfaceAlt,
-          borderRadius: "4px",
+          backgroundColor: "transparent",
+          height: 32,
+          borderRadius: "8px",
           border: showRecordHighlight ? `1.5px solid ${tk.accent}` : "1.5px solid transparent",
           padding: "4px 0",
           cursor: readOnly ? "default" : "pointer",
@@ -109,9 +119,16 @@ function SeriesRow({
       </div>
 
       {!readOnly && (
-        <div style={{ alignSelf: "center", color: tk.textFaint, fontSize: "0.8rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          <div style={{ lineHeight: 1.15 }}>{previousLabel}</div>
-        </div>
+        // Tocar la marca anterior la copia en la serie: repetir lo de la semana pasada es un toque.
+        <button
+          type="button"
+          onClick={previous && onFillPrevious ? onFillPrevious : undefined}
+          disabled={!previous || serie.completed}
+          aria-label={previous ? `Copiar serie anterior: ${previousLabel}` : undefined}
+          style={{ alignSelf: "center", textAlign: "left", background: "none", border: "none", padding: 0, color: tk.textFaint, fontSize: "0.8rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: previous && !serie.completed ? "pointer" : "default", fontVariantNumeric: "tabular-nums" }}
+        >
+          {previousLabel}
+        </button>
       )}
 
       {readOnly ? (
@@ -120,6 +137,8 @@ function SeriesRow({
         <input
           aria-label="Peso de la serie"
           type="number"
+          inputMode="decimal"
+          onFocus={selectAll}
           value={serie.weight}
           onChange={(e) => onFieldChange("weight", e.target.value === "" ? "" : Number(e.target.value))}
           placeholder={previous ? String(previous.weight) : "0"}
@@ -133,6 +152,8 @@ function SeriesRow({
         <input
           aria-label="Repeticiones de la serie"
           type="number"
+          inputMode="numeric"
+          onFocus={selectAll}
           value={serie.reps}
           onChange={(e) => onFieldChange("reps", e.target.value === "" ? "" : Number(e.target.value))}
           placeholder={previous ? String(previous.reps) : "0"}
@@ -149,7 +170,7 @@ function SeriesRow({
           aria-label="Repeticiones en reserva"
           value={serie.rir ?? ""}
           onChange={(e) => onRirChange?.(e.target.value === "" ? "" : Number(e.target.value))}
-          style={{ ...fieldStyle, color: serie.rir === "" || serie.rir === undefined ? tk.textFaint : tk.text, fontSize: "0.85rem" }}
+          style={{ ...fieldStyle, border: "none", appearance: "none", WebkitAppearance: "none", textAlignLast: "center", color: serie.rir === "" || serie.rir === undefined ? tk.textFaint : tk.text, fontSize: "0.9rem" }}
         >
           <option value="">—</option>
           {[0, 1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value}</option>)}
@@ -165,11 +186,11 @@ function SeriesRow({
             className={checkPulse ? "feeg-check-pulse" : undefined}
             style={{
               position: "relative",
-              width: 30, height: 30, borderRadius: "50%", border: `1.5px solid ${serie.completed ? tk.accent : tk.border}`, backgroundColor: serie.completed ? tk.accent : "transparent", color: serie.completed ? tk.onAccent : tk.textFaint, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+              width: 34, height: 34, borderRadius: "10px", border: "none", backgroundColor: serie.completed ? tk.accent : tk.surfaceAlt, color: serie.completed ? tk.onAccent : tk.textFaint, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
               "--feeg-pulse-color": tk.accent,
             }}
           >
-            <Icon name="check" size={15} />
+            <Icon name="check" size={17} strokeWidth={2.6} />
           </button>
         ) : null}
       </div>}

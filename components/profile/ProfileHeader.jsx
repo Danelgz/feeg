@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { getTokens } from "../../lib/tokens";
+import { getRankPosition } from "../../data/ranks";
+import { Icon, RankArt } from "../ui";
 
 /**
- * Cabecera de perfil: username, nombre, foto, contadores y descripción. La esquina superior
- * derecha cambia según de quién es el perfil: editar+ajustes en el tuyo (onEdit/onOpenSettings),
- * o un botón seguir/siguiendo en el de otra persona (isFollowing/onToggleFollow) — mismo layout,
- * misma estética, la parte que cambia es solo la acción disponible.
+ * Cabecera de perfil, igual para el propio y el ajeno; lo que cambia son las acciones:
+ * editar/compartir/ajustes en el tuyo (onEdit/onOpenSettings), seguir/compartir en el de otra
+ * persona (isFollowing/onToggleFollow).
  *
- * El rango no vive aquí: la insignia junto al nombre resultó ni el sitio ni la tipografía
- * adecuados. Ahora es una entrada más junto a "Rutinas" en ProfileRoutinesSection (perfil ajeno)
- * o en el menú "Información" (perfil propio, ver pages/profile.js) — debajo de la descripción,
- * no compitiendo con la identidad de la cabecera.
+ * - Avatar grande con un aro del color del rango y la insignia encima: el rango es parte de la
+ *   identidad del perfil, no una entrada escondida en un menú.
+ * - Nombre como titular y @usuario debajo (antes era al revés, con el nombre en verde).
+ * - Cifras en una fila con separadores finos, pulsables las de seguidores/siguiendo.
+ * - La bio es texto normal, sin caja con borde lateral.
  */
 export default function ProfileHeader({
   isDark,
@@ -25,9 +27,17 @@ export default function ProfileHeader({
   onOpenPhoto,
   onOpenFollowers,
   onOpenFollowing,
+  rankLevel = null,
+  prestigeLevels = 0,
+  onOpenRank,
+  onShare,
 }) {
   const tk = getTokens(isDark);
   const [followPulse, setFollowPulse] = useState(false);
+  const position = rankLevel != null ? getRankPosition(rankLevel, prestigeLevels) : null;
+  const ringColor = position ? position.rank.color : tk.accent;
+  const displayName = user?.firstName || user?.username || "Usuario";
+  const initials = displayName.trim().slice(0, 1).toUpperCase();
 
   const handleToggleFollow = () => {
     onToggleFollow();
@@ -35,105 +45,119 @@ export default function ProfileHeader({
     window.setTimeout(() => setFollowPulse(false), 450);
   };
 
-  const statLabelStyle = { color: tk.textFaint, fontSize: "0.78rem", fontWeight: "600", marginTop: "2px" };
+  const stats = [
+    { key: "workouts", label: "Entrenos", value: workoutsCount || 0 },
+    { key: "followers", label: "Seguidores", value: followersCount || 0, onClick: onOpenFollowers },
+    { key: "following", label: "Siguiendo", value: followingCount || 0, onClick: onOpenFollowing },
+  ];
+
+  const secondaryButton = {
+    flex: 1,
+    height: 40,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    border: "none",
+    borderRadius: 12,
+    background: tk.hairline,
+    color: tk.text,
+    fontWeight: 700,
+    fontSize: "0.88rem",
+    cursor: "pointer",
+  };
 
   return (
-    <>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "5px", gap: "12px" }}>
-        <h1 style={{ fontSize: "1.6rem", fontWeight: "800", margin: 0, letterSpacing: "-0.5px", color: tk.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {user?.username || "Usuario"}
-        </h1>
-        {onToggleFollow ? (
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-            <button
-              onClick={handleToggleFollow}
-              className={`feeg-press${followPulse ? " feeg-check-pulse" : ""}`}
-              style={{
-                position: "relative",
-                padding: "9px 20px",
-                borderRadius: "10px",
-                border: isFollowing ? `1px solid ${tk.border}` : "none",
-                backgroundColor: isFollowing ? "transparent" : tk.accent,
-                color: isFollowing ? tk.text : tk.onAccent,
-                fontWeight: "700",
-                fontSize: "0.9rem",
-                cursor: "pointer",
-                "--feeg-press-scale": 0.93,
-                "--feeg-pulse-color": tk.accent,
-              }}
-            >
-              {isFollowing ? "Siguiendo" : "Seguir"}
-            </button>
-          </div>
-        ) : (
-          <div style={{ display: "flex", gap: "18px", flexShrink: 0 }}>
-            <button onClick={onEdit} style={{ background: "none", border: "none", cursor: "pointer", color: tk.text, padding: "5px" }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-            </button>
-            <button onClick={onOpenSettings} style={{ background: "none", border: "none", cursor: "pointer", color: tk.text, padding: "5px" }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0 1.51-1V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div style={{ fontSize: "1rem", color: tk.accent, fontWeight: "600", marginBottom: "20px" }}>
-        {user?.firstName || "Sin nombre"}
-      </div>
-
-      <div style={{ display: "flex", gap: "25px", alignItems: "center", marginBottom: "25px" }}>
-        <div
+    <header style={{ marginBottom: 18 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <button
+          type="button"
           onClick={onOpenPhoto}
-          style={{
-            width: "100px",
-            height: "100px",
-            borderRadius: "50%",
-            backgroundColor: "transparent",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            overflow: "hidden",
-            cursor: "pointer",
-            flexShrink: 0,
-          }}
+          aria-label="Ver foto de perfil"
+          style={{ position: "relative", flexShrink: 0, width: 92, height: 92, padding: 3, border: "none", borderRadius: "50%", cursor: "pointer", background: `conic-gradient(from 210deg, ${ringColor}, ${ringColor}55, ${ringColor})` }}
         >
-          {user?.photoURL ? (
-            <img src={user.photoURL} alt="Perfil" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          ) : (
-            <span style={{ fontSize: "2rem" }}>👤</span>
+          <span style={{ display: "block", width: "100%", height: "100%", borderRadius: "50%", padding: 3, background: tk.bg, boxSizing: "border-box" }}>
+            <span style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", borderRadius: "50%", overflow: "hidden", background: tk.surface, color: tk.text, fontSize: "2rem", fontWeight: 800 }}>
+              {user?.photoURL ? <img src={user.photoURL} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : initials}
+            </span>
+          </span>
+          {position && (
+            <span style={{ position: "absolute", right: -4, bottom: -4, padding: 2, borderRadius: "50%", background: tk.bg }}>
+              <RankArt rank={position.rank} tier={position.tier} size={34} />
+            </span>
+          )}
+        </button>
+
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <h1 style={{ margin: 0, fontSize: "1.45rem", fontWeight: 900, letterSpacing: "-0.02em", color: tk.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {displayName}
+          </h1>
+          <div style={{ fontSize: "0.86rem", color: tk.textMuted, fontWeight: 600, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            @{user?.username || "usuario"}
+          </div>
+          {position && (
+            <button
+              type="button"
+              onClick={onOpenRank}
+              disabled={!onOpenRank}
+              className="feeg-press"
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 8, padding: "4px 10px 4px 8px", border: "none", borderRadius: 99, background: `${position.rank.color}1f`, color: position.rank.color, fontWeight: 800, fontSize: "0.76rem", cursor: onOpenRank ? "pointer" : "default" }}
+            >
+              <Icon name="award" size={13} /> {position.label}
+              {onOpenRank && <Icon name="chevronRight" size={12} />}
+            </button>
           )}
         </div>
-
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-around", textAlign: "center" }}>
-          <div style={{ cursor: "pointer" }}>
-            <div style={{ fontSize: "1.25rem", fontWeight: "800", color: tk.text }}>{workoutsCount || 0}</div>
-            <div style={statLabelStyle}>Entrenos</div>
-          </div>
-          <div onClick={onOpenFollowers} style={{ cursor: "pointer" }}>
-            <div style={{ fontSize: "1.25rem", fontWeight: "800", color: tk.text }}>{followersCount || 0}</div>
-            <div style={statLabelStyle}>Seguidores</div>
-          </div>
-          <div onClick={onOpenFollowing} style={{ cursor: "pointer" }}>
-            <div style={{ fontSize: "1.25rem", fontWeight: "800", color: tk.text }}>{followingCount || 0}</div>
-            <div style={statLabelStyle}>Siguiendo</div>
-          </div>
-        </div>
       </div>
 
-      <div
-        style={{
-          marginBottom: "30px",
-          fontSize: "0.95rem",
-          color: tk.textMuted,
-          lineHeight: "1.5",
-          backgroundColor: tk.surfaceAlt,
-          padding: "12px 15px",
-          borderRadius: "12px",
-          borderLeft: `3px solid ${tk.accent}`,
-        }}
-      >
-        {user?.description || "Sin descripción"}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", marginTop: 18, borderTop: `1px solid ${tk.hairline}`, borderBottom: `1px solid ${tk.hairline}` }}>
+        {stats.map((s, i) => (
+          <button
+            key={s.key}
+            type="button"
+            onClick={s.onClick}
+            disabled={!s.onClick}
+            style={{ padding: "11px 0", border: "none", borderLeft: i ? `1px solid ${tk.hairline}` : "none", background: "none", cursor: s.onClick ? "pointer" : "default", textAlign: "center" }}
+          >
+            <div style={{ fontSize: "1.2rem", fontWeight: 900, color: tk.text, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.01em" }}>{Number(s.value).toLocaleString("es-ES")}</div>
+            <div style={{ fontSize: "0.72rem", color: tk.textMuted, fontWeight: 600, marginTop: 1 }}>{s.label}</div>
+          </button>
+        ))}
       </div>
-    </>
+
+      {user?.description && user.description !== "Sin descripción" && (
+        <p style={{ margin: "14px 0 0", fontSize: "0.92rem", color: tk.text, lineHeight: 1.5, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{user.description}</p>
+      )}
+
+      <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+        {onToggleFollow ? (
+          <button
+            type="button"
+            onClick={handleToggleFollow}
+            className={`feeg-press${followPulse ? " feeg-check-pulse" : ""}`}
+            style={{ ...secondaryButton, background: isFollowing ? tk.hairline : tk.accent, color: isFollowing ? tk.text : tk.onAccent, "--feeg-pulse-color": tk.accent }}
+          >
+            <Icon name={isFollowing ? "check" : "plus"} size={15} />
+            {isFollowing ? "Siguiendo" : "Seguir"}
+          </button>
+        ) : (
+          onEdit && (
+            <button type="button" onClick={onEdit} className="feeg-press" style={secondaryButton}>
+              <Icon name="edit" size={15} /> Editar perfil
+            </button>
+          )
+        )}
+        {onShare && (
+          <button type="button" onClick={onShare} className="feeg-press" style={secondaryButton}>
+            <Icon name="share" size={15} /> Compartir
+          </button>
+        )}
+        {onOpenSettings && (
+          <button type="button" onClick={onOpenSettings} aria-label="Ajustes" className="feeg-press" style={{ ...secondaryButton, flex: "0 0 40px" }}>
+            <Icon name="settings" size={17} />
+          </button>
+        )}
+      </div>
+    </header>
   );
 }

@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { getWorkoutTokens } from "../../lib/tokens";
 import { pickPrimaryPRType } from "../../lib/exerciseStats";
 import { Icon, RankArt, ExerciseRankList } from "../ui";
+import WorkoutPhoto from "./WorkoutPhoto";
 import { useRankUps } from "../../hooks/useRankUps";
 import { useRanks } from "../../hooks/useRanks";
 import { getRankPosition } from "../../data/ranks";
@@ -237,8 +238,14 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
             <div style={{ display: "flex", alignItems: "center", gap: "9px", marginTop: "22px", color: tk.textFaint, fontSize: "0.82rem" }}>
               <span style={{ width: 7, height: 7, borderRadius: "50%", background: tk.accent, boxShadow: `0 0 12px ${tk.accent}` }} />
               <span>{workout.name}</span>
+              {workout.photoURL && <span style={{ color: tk.accent, fontWeight: 700 }}>· con foto, visible para tus seguidores</span>}
             </div>
           </div>
+          {workout.photoURL && (
+            <div style={{ width: "min(180px, 38vw)", flexShrink: 0, marginTop: 18 }}>
+              <WorkoutPhoto url={workout.photoURL} width={180} radius={18} alt="Foto del entreno" />
+            </div>
+          )}
         </motion.div>
 
         <motion.div variants={itemVariants} className="summary-metrics">

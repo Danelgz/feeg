@@ -210,6 +210,8 @@ function ExerciseCard({
             display: "grid",
             marginBottom: "8px",
             padding: "8px 8px",
+            // Sin esto el 100% de ancho + 16px de padding desbordaba la tarjeta por la derecha.
+            boxSizing: "border-box",
             borderRadius: tk.radius.sm,
             backgroundColor: tk.surfaceAlt,
             color: tk.textFaint,
@@ -219,7 +221,8 @@ function ExerciseCard({
             letterSpacing: "0.06em",
           }}
         >
-          <div>SERIE</div>
+          {/* "SERIE" no cabe en la columna de 32px de móvil y se montaba sobre "ANTERIOR". */}
+          <div><span className="feeg-series-h-long">SERIE</span><span className="feeg-series-h-short">#</span></div>
           {!readOnly && <div>ANTERIOR</div>}
           <div style={{ textAlign: "center" }}>{isTimeBased ? "TIEMPO" : weightUnit === "L" ? "LASTRE" : "KG"}</div>
           <div style={{ textAlign: "center" }}>{isTimeBased ? "KM/H" : "REPS"}</div>
@@ -291,7 +294,17 @@ function ExerciseCard({
         .feeg-series-grid > * {
           min-width: 0;
         }
+        .feeg-series-h-short {
+          display: none;
+        }
         @media (max-width: 520px) {
+          .feeg-series-h-long {
+            display: none;
+          }
+          .feeg-series-h-short {
+            display: inline;
+            padding-left: 8px;
+          }
           .feeg-series-grid {
             gap: 5px;
           }

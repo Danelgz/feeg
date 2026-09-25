@@ -222,12 +222,17 @@ export default function Layout({ children, hideBottomNav = false, gutter = false
               transform: none;
             }
           }
+          /* fill-mode "backwards" y NO "both": con "both" el último fotograma se queda aplicado
+             para siempre y <main> pasa a ser un contexto de apilamiento (y bloque contenedor de
+             los position:fixed). Todo lo fijo que vive dentro de una página — modales, hojas de
+             acciones, la barra del temporizador de descanso — quedaba entonces por DEBAJO de la
+             barra de pestañas, que vive fuera de <main>, por mucho z-index que tuviera. */
           .page-transition {
-            animation: enterPage 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+            animation: enterPage 0.38s cubic-bezier(0.16, 1, 0.3, 1) backwards;
           }
           @media (prefers-reduced-motion: reduce) {
             .page-transition {
-              animation: fadeInPage 0.2s ease both;
+              animation: fadeInPage 0.2s ease backwards;
             }
           }
           /* Indicador de sincronización de fondo: por encima de la barra superior (z-index 500)
@@ -421,7 +426,10 @@ export default function Layout({ children, hideBottomNav = false, gutter = false
               {/* Rutina activa: se puede recolocar libremente y ocultar en una esquina sin perderla. */}
               {activeRoutine &&
                 router.asPath !== (activeRoutine?.id ? `/routines/${activeRoutine.id}` : activeRoutine.path) &&
-                !router.pathname.startsWith('/exercise-history') && (
+                !router.pathname.startsWith('/exercise-history') &&
+                // Inicio ya muestra "Rutina en curso" como tarjeta principal (TodayPanel): el dock
+                // flotante encima sería el mismo botón dos veces.
+                router.pathname !== '/' && (
                   <ActiveRoutineDock
                     activeRoutine={activeRoutine}
                     liveElapsed={liveElapsed}

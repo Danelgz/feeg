@@ -355,7 +355,7 @@ export default function RoutineDetail() {
         html, body { overflow: hidden; overscroll-behavior: none; }
         .feeg-active-workout-viewport { max-width: 100%; }
         @media (max-width: 768px) {
-          .feeg-active-workout-viewport { height: calc(100dvh - 80px) !important; }
+          .feeg-active-workout-viewport { height: calc(100dvh - ${BOTTOM_NAV_HEIGHT}px - env(safe-area-inset-bottom, 0px)) !important; }
         }
       `}</style>
 

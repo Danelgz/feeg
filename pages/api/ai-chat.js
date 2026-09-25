@@ -1,6 +1,12 @@
 import { getAuth } from 'firebase-admin/auth';
 import admin from 'firebase-admin';
 import { AI_TOOL_DECLARATIONS, AI_PROPOSAL_TOOL_DECLARATIONS, AI_PROPOSAL_TOOL_NAMES, runAiTool } from '../../lib/aiTools';
+import { splitSuggestions, toolLabels } from '../../lib/aiReply';
+
+// El cliente manda su historial local compacto (ver lib/aiContext.ts): FEEG es local-first y lo
+// que ve el usuario en pantalla puede ir por delante de Firestore. 1 MB (el límite por defecto)
+// se queda corto para historiales largos.
+export const config = { api: { bodyParser: { sizeLimit: '2mb' } } };
 
 // Evitamos inicializar fuera del handler para que no colapse todo Vercel si faltan las variables de entorno.
 function initAdmin() {
@@ -25,8 +31,11 @@ const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 // llamadas a función mal encadenada deje la petición colgada o dispare coste sin fin.
 const MAX_TOOL_ROUNDS = 4;
 
-function buildSystemInstruction(userProfile) {
-    let prompt = `Eres el Coach IA de FEEG, un entrenador personal virtual experto, cercano y motivador, integrado dentro de la app de entrenamiento FEEG.
+function buildSystemInstruction(userProfile, clientContext) {
+    const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    let prompt = `Hoy es ${today}.
+
+Eres el Coach IA de FEEG, un entrenador personal virtual experto, cercano y motivador, integrado dentro de la app de entrenamiento FEEG.
 
 REGLAS IMPORTANTES:
 - Tienes acceso a herramientas que consultan los datos REALES del usuario (su historial de entrenamientos, rutinas, volumen, récords...). Úsalas siempre que la pregunta dependa de datos concretos (progreso, estancamientos, volumen, comparaciones, resúmenes, rutina actual, etc.) en vez de inventar cifras o suponer.
@@ -34,10 +43,17 @@ REGLAS IMPORTANTES:
 - Cuando el usuario pida crear/modificar una rutina, sustituir un ejercicio, montar una sesión rápida o registrar una serie por chat, usa la herramienta propose_* correspondiente en vez de decir que ya lo has hecho: esa herramienta NO aplica el cambio, solo genera una propuesta que el usuario verá como una tarjeta y deberá confirmar. Llama primero a list_exercises (y a get_routines si hace falta conocer una rutina existente) para no inventar ejercicios que no existen en el catálogo de la app. Después de llamar a una herramienta propose_*, responde con un resumen breve y motivador de lo que has propuesto, dejando claro que puede confirmarlo o pedirte cambios.
 - Sobre nutrición: la app NO registra comidas ni calorías, así que nunca inventes cifras exactas de macros/calorías del usuario. Puedes dar consejos generales y breves cuando encajen de forma natural (ej. "quizá te vendría bien subir algo los carbohidratos en días de entreno duro"), siempre dejando claro que son orientativos.
 - Sé conciso, claro y motivador. Nunca devuelvas la información desordenada. Usa listas cortas cuando ayuden a la claridad.
-- Si el usuario pregunta algo completamente ajeno a fitness, salud o bienestar, recuérdale amablemente que eres su entrenador personal virtual y que solo puedes ayudar en esa materia.`;
+- Si el usuario pregunta algo completamente ajeno a fitness, salud o bienestar, recuérdale amablemente que eres su entrenador personal virtual y que solo puedes ayudar en esa materia.
+- Para "¿qué entreno hoy?" o dudas de recuperación, llama a get_training_status y recomienda los grupos que llevan más días sin trabajarse, evitando los entrenados en las últimas 48 h. Si encaja, ofrece montarle la sesión con propose_quick_workout.
+- Para preguntas sobre rangos, nivel o "cómo de fuerte soy", usa get_strength_ranks; para récords, get_personal_records; para peso corporal, get_body_metrics.
+- Da cifras concretas (kg, series, fechas) sacadas de las herramientas. Formato: frases cortas, **negritas** para las cifras clave, listas con "- " y, si hace falta, títulos con "### ". Nada de tablas.
+- Termina SIEMPRE con una última línea exactamente con este formato, con 2 o 3 preguntas breves (máx. 8 palabras) que el usuario podría hacerte a continuación, escritas en su voz: [[sugerencias: pregunta 1 | pregunta 2 | pregunta 3]]`;
 
     if (userProfile) {
         prompt += `\n\n[DATOS DEL USUARIO]:
+- Nombre: ${userProfile.firstName || userProfile.username || 'No definido'}
+- Objetivo: ${userProfile.goal || 'No definido'}
+- Entrenos por semana que se ha propuesto: ${clientContext?.weeklyGoal || userProfile.weeklyGoal || 'No definido'}
 - Experiencia/Nivel: ${userProfile.level || 'No definido'}
 - Altura: ${userProfile.height ? userProfile.height + ' cm' : 'No definida'}
 - Peso: ${userProfile.weight ? userProfile.weight + ' kg' : 'No definido'}
@@ -69,7 +85,7 @@ export default async function handler(req, res) {
         }
         const uid = decodedToken.uid;
 
-        const { messages, userProfile } = req.body;
+        const { messages, userProfile, clientContext } = req.body;
         if (!messages || !Array.isArray(messages) || messages.length === 0) {
             return res.status(400).json({ error: 'Invalid messages array' });
         }
@@ -81,14 +97,30 @@ export default async function handler(req, res) {
         // Cargamos historial de entrenos + rutinas UNA vez por petición y se lo pasamos a las
         // herramientas como contexto en memoria — evita ida y vuelta a Firestore por cada
         // function call que Gemini decida hacer dentro del mismo turno.
-        const db = admin.firestore();
-        const [workoutsSnap, userDoc] = await Promise.all([
-            db.collection('workouts').where('userId', '==', uid).orderBy('completedAt', 'desc').limit(500).get(),
-            db.collection('users').doc(uid).get(),
-        ]);
-        const workouts = workoutsSnap.docs.map((d) => d.data());
-        const userData = userDoc.exists ? userDoc.data() : {};
-        const toolCtx = { workouts, routines: userData.routines || [] };
+        // Si el cliente manda su historial local, se usa ese (es lo que el usuario ve en pantalla);
+        // si no, se lee de Firestore como antes. Las herramientas sólo LEEN estos datos, y las que
+        // proponen cambios nunca los aplican: aunque el cliente mandara datos alterados, sólo
+        // afectaría a las respuestas de su propia sesión.
+        const hasClientWorkouts = Array.isArray(clientContext?.workouts);
+        let workouts = hasClientWorkouts ? clientContext.workouts.slice(0, 400) : [];
+        let routines = Array.isArray(clientContext?.routines) ? clientContext.routines.slice(0, 60) : null;
+        if (!hasClientWorkouts || !routines) {
+            const db = admin.firestore();
+            const [workoutsSnap, userDoc] = await Promise.all([
+                hasClientWorkouts ? null : db.collection('workouts').where('userId', '==', uid).orderBy('completedAt', 'desc').limit(500).get(),
+                routines ? null : db.collection('users').doc(uid).get(),
+            ]);
+            if (workoutsSnap) workouts = workoutsSnap.docs.map((d) => d.data());
+            if (userDoc) routines = (userDoc.exists ? userDoc.data().routines : null) || [];
+        }
+        const toolCtx = {
+            workouts,
+            routines: routines || [],
+            ranks: clientContext?.ranks || null,
+            body: clientContext?.body || null,
+            weeklyGoal: Number(clientContext?.weeklyGoal) || undefined,
+        };
+        const toolsUsed = [];
 
         const contents = messages
             .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && m.content)
@@ -98,7 +130,7 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Invalid messages array' });
         }
 
-        const systemInstruction = { parts: [{ text: buildSystemInstruction(userProfile) }] };
+        const systemInstruction = { parts: [{ text: buildSystemInstruction(userProfile, clientContext) }] };
         const tools = [{ functionDeclarations: [...AI_TOOL_DECLARATIONS, ...AI_PROPOSAL_TOOL_DECLARATIONS] }];
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`;
 
@@ -143,6 +175,7 @@ export default async function handler(req, res) {
             // responde un simple acuse de recibo para que el modelo siga con su respuesta final.
             contents.push({ role: 'model', parts });
             const functionResponseParts = functionCalls.map((fc) => {
+                toolsUsed.push(fc.name);
                 if (AI_PROPOSAL_TOOL_NAMES.has(fc.name)) {
                     pendingAction = { type: fc.name, payload: fc.args || {} };
                     return { functionResponse: { name: fc.name, response: { result: { proposed: true } } } };
@@ -159,7 +192,8 @@ export default async function handler(req, res) {
             finalText = 'He tardado demasiado analizando tus datos. Prueba a reformular la pregunta de forma más concreta.';
         }
 
-        res.status(200).json({ reply: finalText, pendingAction });
+        const { text, suggestions } = splitSuggestions(finalText);
+        res.status(200).json({ reply: text, pendingAction, suggestions, toolsUsed: toolLabels(toolsUsed) });
     } catch (error) {
         console.error('AI Chat API Error:', error.message || error);
         res.status(500).json({ error: error.message || 'Internal Server Error' });

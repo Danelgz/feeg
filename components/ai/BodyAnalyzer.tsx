@@ -3,7 +3,7 @@ import { getAuth } from 'firebase/auth';
 import { useUser } from '../../context/UserContext';
 import MuscleMap from '../MuscleMap';
 import type { MuscleGroup } from '../../data/muscleMapRegions';
-import { Button, Card, Icon } from '../ui';
+import { Button, Icon } from '../ui';
 import { getTokens } from '../../lib/tokens';
 
 type Photo = {
@@ -216,7 +216,7 @@ export default function BodyAnalyzer({ isDark, isMobile }: { isDark: boolean; is
           <Button isDark={isDark} variant="secondary" icon="plus" onClick={reset}>Nuevo análisis</Button>
         </div>
 
-        <div style={{ padding: tk.space.lg, borderRadius: tk.radius.lg, background: `linear-gradient(135deg, ${tk.accentSoft}, ${tk.surface})`, border: `1px solid ${tk.accent}` }}>
+        <div style={{ padding: tk.space.lg, borderRadius: 16, background: `linear-gradient(135deg, ${tk.accentSoft}, transparent)` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: tk.space.sm, marginBottom: tk.space.sm, color: tk.accent }}>
             <Icon name="zap" size={17} />
             <span style={{ fontSize: tk.fontSize.xs, fontWeight: tk.weight.bold, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{confidenceLabel(analysis.confidence)}</span>
@@ -231,7 +231,7 @@ export default function BodyAnalyzer({ isDark, isMobile }: { isDark: boolean; is
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.05fr) minmax(300px, 0.95fr)', gap: tk.space.lg, alignItems: 'start' }}>
-          <Card isDark={isDark} onClick={() => undefined} style={{ padding: isMobile ? tk.space.md : tk.space.lg }}>
+          <section style={{ paddingTop: 16, borderTop: `1px solid ${tk.hairline}` }}>
             <SectionHeading tk={tk} eyebrow="Mapa corporal" title="Dónde está tu margen" icon="user" />
             <MuscleMap
               isDark={isDark}
@@ -247,7 +247,7 @@ export default function BodyAnalyzer({ isDark, isMobile }: { isDark: boolean; is
               hint="Toca una zona para leer la estimación del analizador."
               legend={<MapLegend tk={tk} />}
             />
-          </Card>
+          </section>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: tk.space.md }}>
             <FindingCard tk={tk} title="Puntos fuertes" icon="trendUp" color={tk.accent} items={analysis.strengths} />
@@ -255,24 +255,24 @@ export default function BodyAnalyzer({ isDark, isMobile }: { isDark: boolean; is
           </div>
         </div>
 
-            <Card isDark={isDark} onClick={() => undefined} style={{ padding: isMobile ? tk.space.md : tk.space.lg }}>
+            <section style={{ paddingTop: 16, borderTop: `1px solid ${tk.hairline}` }}>
           <SectionHeading tk={tk} eyebrow="Proporciones" title="La lectura de conjunto" icon="barChart" />
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: tk.space.sm }}>
             {analysis.proportions.map((item) => <InfoRow key={item.label} tk={tk} label={item.label} value={item.value} detail={item.reading} />)}
           </div>
-        </Card>
+        </section>
 
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: tk.space.md }}>
-          <Card isDark={isDark} onClick={() => undefined} style={{ padding: isMobile ? tk.space.md : tk.space.lg }}>
+          <section style={{ paddingTop: 16, borderTop: `1px solid ${tk.hairline}` }}>
             <SectionHeading tk={tk} eyebrow="Siguiente bloque" title="Recomendaciones de entrenamiento" icon="dumbbell" />
             <ol style={{ margin: 0, paddingLeft: '20px', color: tk.text, display: 'flex', flexDirection: 'column', gap: tk.space.md }}>
               {analysis.recommendations.map((recommendation) => <li key={recommendation} style={{ paddingLeft: '4px', lineHeight: 1.5 }}>{recommendation}</li>)}
             </ol>
-          </Card>
-          <Card isDark={isDark} onClick={() => undefined} style={{ padding: isMobile ? tk.space.md : tk.space.lg }}>
+          </section>
+          <section style={{ paddingTop: 16, borderTop: `1px solid ${tk.hairline}` }}>
             <SectionHeading tk={tk} eyebrow="Evolución" title={analysis.evolution.headline} icon="trendUp" />
             {analysis.evolution.points.length > 0 ? <ul style={{ margin: 0, paddingLeft: '18px', color: tk.text, display: 'flex', flexDirection: 'column', gap: tk.space.sm }}>{analysis.evolution.points.map((point) => <li key={point} style={{ lineHeight: 1.5 }}>{point}</li>)}</ul> : <p style={{ color: tk.textMuted, margin: 0, lineHeight: 1.5 }}>Guarda otra foto de progreso y vuelve a analizarla para ver cambios en el tiempo.</p>}
-          </Card>
+          </section>
         </div>
 
         <div style={{ display: 'flex', gap: tk.space.sm, alignItems: 'flex-start', padding: tk.space.md, borderRadius: tk.radius.md, backgroundColor: tk.warningSoft, color: tk.textMuted, fontSize: tk.fontSize.xs, lineHeight: 1.5 }}>
@@ -285,7 +285,7 @@ export default function BodyAnalyzer({ isDark, isMobile }: { isDark: boolean; is
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: tk.space.lg }}>
-      <div style={{ padding: isMobile ? tk.space.lg : tk.space.xl, borderRadius: tk.radius.lg, background: `radial-gradient(circle at top right, ${tk.accentSoft}, transparent 48%), ${tk.surface}`, border: `1px solid ${tk.border}`, boxShadow: tk.shadow.card }}>
+      <div style={{ padding: isMobile ? '4px 0 8px' : '8px 0 12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: tk.space.sm, color: tk.accent, marginBottom: tk.space.sm }}><Icon name="user" size={19} /><span style={{ fontSize: tk.fontSize.xs, fontWeight: tk.weight.bold, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Visión + entrenamiento</span></div>
         <h2 style={{ margin: '0 0 10px', color: tk.text, fontSize: isMobile ? '1.6rem' : '2rem', lineHeight: 1.08, letterSpacing: '-0.03em' }}>Conoce dónde estás para saber dónde ir.</h2>
         <p style={{ margin: 0, maxWidth: '620px', color: tk.textMuted, fontSize: tk.fontSize.md, lineHeight: 1.6 }}>Sube 2 o 3 fotos consistentes y FEEG te dará una lectura visual orientativa de desarrollo, simetría, proporciones y próximos pasos.</p>
@@ -294,26 +294,26 @@ export default function BodyAnalyzer({ isDark, isMobile }: { isDark: boolean; is
         </div>
       </div>
 
-        <Card isDark={isDark} onClick={() => undefined} style={{ padding: isMobile ? tk.space.md : tk.space.lg }}>
+        <section style={{ paddingTop: 16, borderTop: `1px solid ${tk.hairline}` }}>
         <SectionHeading tk={tk} eyebrow="Paso 1 · Fotos actuales" title="Elige 2 o 3 ángulos" icon="plus" />
         <p style={{ color: tk.textMuted, fontSize: tk.fontSize.sm, lineHeight: 1.5, margin: `0 0 ${tk.space.md}` }}>Misma distancia, luz neutra y postura relajada. Las fotos se preparan en tu dispositivo y solo se envían al analizar.</p>
         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: tk.space.sm }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: tk.space.sm }}>
           {PHOTO_SLOTS.map((slot) => {
             const photo = photos.find((item) => item.id === slot.id);
-            return <button key={slot.id} type="button" onClick={() => { setSelectedSlot(slot.id); fileInputRef.current?.click(); }} className="feeg-press feeg-hover" style={{ minHeight: isMobile ? '92px' : '178px', padding: photo ? '6px' : tk.space.md, borderRadius: tk.radius.md, border: `1px solid ${photo ? tk.accent : tk.border}`, backgroundColor: photo ? tk.surfaceAlt : tk.surfaceAlt, color: tk.text, cursor: 'pointer', position: 'relative', overflow: 'hidden', textAlign: 'left' }}>
-              {photo ? <><img src={photo.dataUrl} alt={`Vista ${slot.label}`} style={{ width: '100%', height: '100%', minHeight: '158px', objectFit: 'cover', borderRadius: tk.radius.sm, display: 'block' }} /><span style={{ position: 'absolute', bottom: '12px', left: '12px', right: '12px', padding: '6px 8px', borderRadius: tk.radius.sm, backgroundColor: 'rgba(0,0,0,0.72)', color: '#fff', fontSize: tk.fontSize.xs }}>{slot.label}</span><span role="button" tabIndex={0} aria-label={`Eliminar ${slot.label}`} onClick={(event) => { event.stopPropagation(); removePhoto(slot.id); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); removePhoto(slot.id); } }} style={{ position: 'absolute', top: '12px', right: '12px', width: '28px', height: '28px', borderRadius: tk.radius.full, display: 'grid', placeItems: 'center', backgroundColor: 'rgba(0,0,0,0.72)', color: '#fff' }}><Icon name="trash" size={14} /></span></> : <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: tk.space.sm, height: '100%', minHeight: isMobile ? '76px' : '154px' }}><span style={{ width: '38px', height: '38px', borderRadius: tk.radius.full, display: 'grid', placeItems: 'center', backgroundColor: tk.accentSoft, color: tk.accent }}><Icon name="plus" size={20} /></span><span style={{ fontSize: tk.fontSize.sm, fontWeight: tk.weight.medium }}>{slot.label}</span><span style={{ fontSize: tk.fontSize.xs, color: tk.textFaint }}>Añadir foto</span></div>}
+            return <button key={slot.id} type="button" onClick={() => { setSelectedSlot(slot.id); fileInputRef.current?.click(); }} className="feeg-press feeg-hover" style={{ minHeight: isMobile ? '132px' : '178px', padding: photo ? '6px' : tk.space.sm, borderRadius: tk.radius.md, border: 'none', backgroundColor: tk.isDark ? 'rgba(255,255,255,0.05)' : '#fff', color: tk.text, cursor: 'pointer', position: 'relative', overflow: 'hidden', textAlign: 'left' }}>
+              {photo ? <><img src={photo.dataUrl} alt={`Vista ${slot.label}`} style={{ width: '100%', height: '100%', minHeight: isMobile ? '118px' : '158px', objectFit: 'cover', borderRadius: tk.radius.sm, display: 'block' }} /><span style={{ position: 'absolute', bottom: '12px', left: '12px', right: '12px', padding: '6px 8px', borderRadius: tk.radius.sm, backgroundColor: 'rgba(0,0,0,0.72)', color: '#fff', fontSize: tk.fontSize.xs }}>{slot.label}</span><span role="button" tabIndex={0} aria-label={`Eliminar ${slot.label}`} onClick={(event) => { event.stopPropagation(); removePhoto(slot.id); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); removePhoto(slot.id); } }} style={{ position: 'absolute', top: '12px', right: '12px', width: '28px', height: '28px', borderRadius: tk.radius.full, display: 'grid', placeItems: 'center', backgroundColor: 'rgba(0,0,0,0.72)', color: '#fff' }}><Icon name="trash" size={14} /></span></> : <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: tk.space.sm, height: '100%', minHeight: isMobile ? '116px' : '154px', textAlign: 'center' }}><span style={{ width: '38px', height: '38px', borderRadius: tk.radius.full, display: 'grid', placeItems: 'center', backgroundColor: tk.accentSoft, color: tk.accent }}><Icon name="plus" size={20} /></span><span style={{ fontSize: tk.fontSize.sm, fontWeight: tk.weight.medium }}>{slot.label}</span><span style={{ fontSize: tk.fontSize.xs, color: tk.textFaint }}>Añadir foto</span></div>}
             </button>;
           })}
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: tk.space.md, alignItems: 'center', marginTop: tk.space.md, color: photos.length >= 2 ? tk.accent : tk.textMuted, fontSize: tk.fontSize.xs }}><span>{photos.length}/3 fotos añadidas · mínimo 2</span><span>{photos.length >= 2 ? 'Listo para analizar' : 'Añade otro ángulo'}</span></div>
-      </Card>
+      </section>
 
-      <Card isDark={isDark} onClick={() => undefined} style={{ padding: isMobile ? tk.space.md : tk.space.lg }}>
+      <section style={{ paddingTop: 16, borderTop: `1px solid ${tk.hairline}` }}>
         <SectionHeading tk={tk} eyebrow="Paso 2 · Comparativa opcional" title="¿Quieres ver tu evolución?" icon="clock" />
         <p style={{ color: tk.textMuted, fontSize: tk.fontSize.sm, lineHeight: 1.5, margin: `0 0 ${tk.space.md}` }}>Puedes contrastar el análisis con una foto guardada en Medidas. Si no eliges ninguna, recibirás solo la lectura actual.</p>
-        {progressPhotos.length > 0 ? <select value={previousMeasureId} onChange={(event) => setPreviousMeasureId(event.target.value)} style={{ width: '100%', padding: '12px 14px', borderRadius: tk.radius.md, border: `1px solid ${tk.border}`, backgroundColor: tk.surfaceAlt, color: tk.text, font: 'inherit' }}><option value="">Sin comparativa anterior</option>{progressPhotos.map((measure, index) => <option key={progressMeasureKey(measure, index)} value={progressMeasureKey(measure, index)}>{formatDate(measure)}</option>)}</select> : <div style={{ padding: tk.space.md, borderRadius: tk.radius.md, backgroundColor: tk.surfaceAlt, color: tk.textMuted, fontSize: tk.fontSize.sm }}>Aún no tienes fotos guardadas en Medidas. Puedes añadir una allí para compararla en el próximo análisis.</div>}
-      </Card>
+        {progressPhotos.length > 0 ? <select value={previousMeasureId} onChange={(event) => setPreviousMeasureId(event.target.value)} style={{ width: '100%', padding: '12px 14px', borderRadius: tk.radius.md, border: 'none', backgroundColor: tk.isDark ? 'rgba(255,255,255,0.06)' : '#fff', color: tk.text, font: 'inherit' }}><option value="">Sin comparativa anterior</option>{progressPhotos.map((measure, index) => <option key={progressMeasureKey(measure, index)} value={progressMeasureKey(measure, index)}>{formatDate(measure)}</option>)}</select> : <div style={{ padding: tk.space.md, borderRadius: tk.radius.md, backgroundColor: tk.surfaceAlt, color: tk.textMuted, fontSize: tk.fontSize.sm }}>Aún no tienes fotos guardadas en Medidas. Puedes añadir una allí para compararla en el próximo análisis.</div>}
+      </section>
 
       {error && <div role="alert" style={{ display: 'flex', gap: tk.space.sm, alignItems: 'flex-start', padding: tk.space.md, borderRadius: tk.radius.md, backgroundColor: tk.dangerSoft, color: tk.text, fontSize: tk.fontSize.sm, lineHeight: 1.5 }}><Icon name="alertCircle" size={18} color={tk.danger} /><span>{error}</span></div>}
 
@@ -329,11 +329,11 @@ function SectionHeading({ tk, eyebrow, title, icon }: { tk: ReturnType<typeof ge
 }
 
 function MetricCard({ tk, label, value, detail }: { tk: ReturnType<typeof getTokens>; label: string; value: string; detail: string }) {
-  return <div style={{ padding: tk.space.md, borderRadius: tk.radius.md, border: `1px solid ${tk.border}`, backgroundColor: tk.surface }}><div style={{ color: tk.textMuted, fontSize: tk.fontSize.xs, marginBottom: '7px' }}>{label}</div><div style={{ color: tk.accent, fontSize: '1.45rem', fontWeight: tk.weight.bold, letterSpacing: '-0.03em' }}>{value}</div><div style={{ color: tk.textFaint, fontSize: tk.fontSize.xs, lineHeight: 1.4, marginTop: '5px' }}>{detail}</div></div>;
+  return <div style={{ padding: tk.space.md, borderRadius: 14, backgroundColor: tk.isDark ? 'rgba(255,255,255,0.05)' : '#fff' }}><div style={{ color: tk.textMuted, fontSize: tk.fontSize.xs, marginBottom: '7px' }}>{label}</div><div style={{ color: tk.accent, fontSize: '1.45rem', fontWeight: tk.weight.bold, letterSpacing: '-0.03em' }}>{value}</div><div style={{ color: tk.textFaint, fontSize: tk.fontSize.xs, lineHeight: 1.4, marginTop: '5px' }}>{detail}</div></div>;
 }
 
 function FindingCard({ tk, title, icon, color, items }: { tk: ReturnType<typeof getTokens>; title: string; icon: string; color: string; items: string[] }) {
-  return <Card isDark={tk.isDark} onClick={() => undefined} style={{ padding: tk.space.md }}><div style={{ display: 'flex', alignItems: 'center', gap: tk.space.sm, color, marginBottom: tk.space.md }}><Icon name={icon} size={17} /><h3 style={{ margin: 0, color: tk.text, fontSize: tk.fontSize.md }}>{title}</h3></div>{items.length ? <ul style={{ margin: 0, paddingLeft: '18px', color: tk.text, display: 'flex', flexDirection: 'column', gap: tk.space.sm }}>{items.map((item) => <li key={item} style={{ lineHeight: 1.45 }}>{item}</li>)}</ul> : <span style={{ color: tk.textMuted, fontSize: tk.fontSize.sm }}>Sin señales claras en las fotos.</span>}</Card>;
+  return <section style={{ padding: tk.space.md, borderRadius: 14, backgroundColor: tk.isDark ? 'rgba(255,255,255,0.05)' : '#fff' }}><div style={{ display: 'flex', alignItems: 'center', gap: tk.space.sm, color, marginBottom: tk.space.md }}><Icon name={icon} size={17} /><h3 style={{ margin: 0, color: tk.text, fontSize: tk.fontSize.md }}>{title}</h3></div>{items.length ? <ul style={{ margin: 0, paddingLeft: '18px', color: tk.text, display: 'flex', flexDirection: 'column', gap: tk.space.sm }}>{items.map((item) => <li key={item} style={{ lineHeight: 1.45 }}>{item}</li>)}</ul> : <span style={{ color: tk.textMuted, fontSize: tk.fontSize.sm }}>Sin señales claras en las fotos.</span>}</section>;
 }
 
 function InfoRow({ tk, label, value, detail }: { tk: ReturnType<typeof getTokens>; label: string; value: string; detail: string }) {

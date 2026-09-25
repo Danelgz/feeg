@@ -3,6 +3,7 @@ import { getWorkoutTokens } from "../../lib/tokens";
 import { toReadOnlyWorkoutExercises } from "../../lib/readOnlyWorkout";
 import { translateExerciseName } from "../../lib/exerciseTranslation";
 import { ExerciseCard, WorkoutHeader, WorkoutStatsBar, WorkoutExercisePager } from "./index";
+import WorkoutPhoto from "./WorkoutPhoto";
 
 const noop = () => {};
 
@@ -102,22 +103,20 @@ export default function ReadOnlyWorkoutModal({ workout, language, translate, onC
           t={translate}
         />
 
-        {workout.comments && (
-          <div
-            style={{
-              margin: "0 15px 12px",
-              padding: "12px 14px",
-              borderLeft: `3px solid ${tk.accent}`,
-              borderRadius: tk.radius.sm,
-              backgroundColor: tk.surface,
-              color: tk.textMuted,
-              fontSize: "0.9rem",
-              fontWeight: 600,
-              fontStyle: "italic",
-              flexShrink: 0,
-            }}
-          >
-            “{workout.comments}”
+        {/* Foto y nota en una sola fila: la foto como miniatura (se abre entera al tocarla) para
+            no robarle la pantalla al pager de ejercicios. */}
+        {(workout.photoURL || workout.comments) && (
+          <div style={{ display: "flex", gap: 12, alignItems: "center", margin: "12px 15px", flexShrink: 0 }}>
+            {workout.photoURL && (
+              <div style={{ width: 72, flexShrink: 0 }}>
+                <WorkoutPhoto url={workout.photoURL} width={72} radius={12} alt={`Foto de ${workout.name || "entreno"}`} />
+              </div>
+            )}
+            {workout.comments && (
+              <div style={{ flex: 1, minWidth: 0, color: tk.textMuted, fontSize: "0.9rem", fontWeight: 600, fontStyle: "italic", lineHeight: 1.45 }}>
+                “{workout.comments}”
+              </div>
+            )}
           </div>
         )}
 

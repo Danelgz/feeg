@@ -17,12 +17,12 @@ export default function WorkoutStatsBar({ mode = "live", elapsedSeconds, totalVo
     mode === "live"
       ? [
           { key: "duration", label: translate("duration_label"), value: formatElapsed(elapsedSeconds || 0), accent: true },
-          { key: "volume", label: translate("volume"), value: `${(totalVolume || 0).toLocaleString()} kg`, accent: false },
+          { key: "volume", label: translate("volume"), value: `${Math.round(totalVolume || 0).toLocaleString("es-ES")} kg`, accent: false },
           { key: "series", label: translate("series_label"), value: totalSeries || 0, accent: true },
         ]
       : [
           { key: "exercises", label: translate("exercises_count"), value: exerciseCount || 0, accent: true },
-          { key: "volume", label: `${translate("volume")} Est.`, value: `${(totalVolume || 0).toLocaleString()} kg`, accent: false },
+          { key: "volume", label: `${translate("volume")} Est.`, value: `${Math.round(totalVolume || 0).toLocaleString("es-ES")} kg`, accent: false },
           { key: "series", label: translate("series_label"), value: totalSeries || 0, accent: true },
         ];
 
@@ -31,15 +31,15 @@ export default function WorkoutStatsBar({ mode = "live", elapsedSeconds, totalVo
       style={{
         display: "flex",
         justifyContent: "space-between",
-        padding: "0 20px 20px 20px",
+        padding: "0 20px 14px 20px",
         backgroundColor: tk.bg,
-        borderBottom: `1px solid ${tk.surfaceAlt}`,
+        borderBottom: `1px solid ${tk.hairline}`,
       }}
     >
       {items.map((item) => (
         <div key={item.key}>
           <div style={{ color: tk.textFaint, fontSize: "0.75rem", marginBottom: "4px" }}>{item.label}</div>
-          <div style={{ color: item.accent ? tk.accent : tk.text, fontSize: "1.1rem", fontWeight: 500 }}>
+          <div style={{ color: item.accent ? tk.accent : tk.text, fontSize: "1.15rem", fontWeight: 800, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.01em" }}>
             {item.value}
           </div>
         </div>

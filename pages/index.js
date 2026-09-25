@@ -5,7 +5,7 @@ import { getWorkoutsFeed, getPublicWorkoutDocId, searchUsers, likeWorkout, addWo
 import { useRouter } from "next/router";
 import { getTokens } from "../lib/tokens";
 import { translateExerciseName } from "../lib/exerciseTranslation";
-import { ExerciseThumb } from "../components/workout";
+import { ExerciseThumb, WorkoutPhoto } from "../components/workout";
 import ReadOnlyWorkoutModal from "../components/workout/ReadOnlyWorkoutModal";
 import TodayPanel from "../components/home/TodayPanel";
 import { Icon, Button, Spinner, EmptyState, Avatar, SkeletonPage } from "../components/ui";
@@ -436,6 +436,12 @@ export default function Home() {
                   <div style={{ fontSize: "1.15rem", fontWeight: 800, color: tk.text, marginBottom: "14px" }}>
                     {workout.name}
                   </div>
+
+                  {workout.photoURL && (
+                    <div style={{ marginBottom: "14px" }}>
+                      <WorkoutPhoto url={workout.photoURL} alt={`Foto de ${workout.name || "entreno"}`} />
+                    </div>
+                  )}
 
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", marginBottom: "14px" }}>
                     {[

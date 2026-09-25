@@ -6,6 +6,12 @@ import { useUser } from "../context/UserContext";
 import { getFollowersList, getFollowingList, saveToCloud } from "../lib/firebase";
 import { useRanks } from "../hooks/useRanks";
 import { getTokens } from "../lib/tokens";
+import { ChipNav } from "../components/ui";
+import { compressImage, uploadImage } from "../lib/imageUpload";
+import { shareLink } from "../lib/share";
+import { resolveWeeklyGoal } from "../lib/exerciseStats";
+import ProfileWeekStrip from "../components/profile/ProfileWeekStrip";
+import ProfilePhotoGrid from "../components/profile/ProfilePhotoGrid";
 import ReadOnlyWorkoutModal from "../components/workout/ReadOnlyWorkoutModal";
 import {
   ProfileLoginPrompt,
@@ -43,6 +49,7 @@ export default function Profile() {
     showNotification,
     saveRoutine,
     language,
+    updateCompletedWorkout,
   } = useUser();
   const isDark = theme === "dark";
   const tk = getTokens(isDark);
@@ -87,6 +94,37 @@ export default function Profile() {
   const [routineName, setRoutineName] = useState("");
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [cropSourceURL, setCropSourceURL] = useState(null);
+  const [tab, setTab] = useState("workouts");
+  // Foto añadida a un entreno ya guardado (menú "⋯" de la publicación).
+  const photoInputRef = useRef(null);
+  const photoTargetRef = useRef(null);
+
+  const handleAddPhotoToWorkout = (workout) => {
+    photoTargetRef.current = workout;
+    photoInputRef.current?.click();
+  };
+
+  const handleWorkoutPhotoSelected = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    const workout = photoTargetRef.current;
+    if (!file || !workout) return;
+    showNotification("Subiendo foto…", "info");
+    try {
+      const url = await uploadImage(await compressImage(file), "feeg/workouts");
+      await updateCompletedWorkout({ ...workout, photoURL: url });
+      showNotification("Foto añadida al entreno", "success");
+    } catch (e) {
+      showNotification(e.message || "No se pudo subir la foto", "error");
+    }
+  };
+
+  const handleShareProfile = async () => {
+    const url = `${window.location.origin}/user/${authUser.uid}`;
+    const result = await shareLink(url, `${user?.firstName || user?.username} en FEEG`, "Mira mis entrenos en FEEG");
+    if (result === "copied") showNotification("Enlace del perfil copiado", "success");
+    else if (result === "failed") showNotification("No se pudo compartir el perfil", "error");
+  };
 
   const [editData, setEditData] = useState({
     username: "",
@@ -188,24 +226,8 @@ export default function Profile() {
       // Si el photoURL es un blob URL, significa que es una foto nueva recortada localmente
       if (editData.photoURL && editData.photoURL.startsWith("blob:")) {
         setIsProcessingImage(true);
-
         const blob = await fetch(editData.photoURL).then((r) => r.blob());
-
-        const formData = new FormData();
-        formData.append("file", blob);
-        formData.append("upload_preset", "feeg_profile");
-
-        const response = await fetch("https://api.cloudinary.com/v1_1/dfs9hazxo/image/upload", {
-          method: "POST",
-          body: formData,
-        });
-        const data = await response.json();
-
-        if (data.secure_url) {
-          finalPhotoURL = data.secure_url;
-        } else {
-          throw new Error("Error al subir la imagen a Cloudinary");
-        }
+        finalPhotoURL = await uploadImage(blob);
       }
 
       const updatedUser = {
@@ -282,34 +304,77 @@ export default function Profile() {
   return (
     <>
       <Layout gutter>
-        <div style={{ backgroundColor: tk.bg, color: tk.text, minHeight: "100vh", padding: isMobile ? "0" : "20px" }}>
+        <div style={{ color: tk.text, maxWidth: 680, margin: "0 auto", padding: isMobile ? "0" : "8px 0" }}>
           <ProfileHeader
             isDark={isDark}
             user={user}
             workoutsCount={completedWorkouts?.length}
             followersCount={followers?.length}
             followingCount={following?.length}
+            rankLevel={ranks.available && Object.keys(ranks.groupRanks).length ? ranks.overallLevel : null}
+            prestigeLevels={ranks.prestigeLevels}
+            onOpenRank={() => router.push("/statistics?view=ranks")}
             onEdit={() => setIsEditing(true)}
+            onShare={handleShareProfile}
             onOpenSettings={() => router.push("/settings")}
             onOpenPhoto={() => setIsPhotoFullScreen(true)}
             onOpenFollowers={handleOpenFollowers}
             onOpenFollowing={handleOpenFollowing}
           />
 
-          <ProfileActivityChart isDark={isDark} completedWorkouts={completedWorkouts} />
+          <ProfileWeekStrip isDark={isDark} workouts={completedWorkouts || []} weeklyGoal={resolveWeeklyGoal(user)} />
 
           <ProfileInfoMenu isDark={isDark} />
 
-          <ProfileWorkoutsSection
-            isDark={isDark}
-            completedWorkouts={completedWorkouts}
-            onOpenDetail={(workout) => setViewingWorkoutDetail(workout)}
-            onAddToRoutine={(id) => setAddingToRoutine(id)}
-            onDeleteWorkout={(id) => setConfirmDelete(id)}
-            onEditWorkout={(workout) => router.push(`/routines/create?editWorkout=${workout.id}`)}
-            onDeleteAll={() => setConfirmDeleteAll(true)}
-            t={t}
-          />
+          <div style={{ marginBottom: 4 }}>
+            <ChipNav
+              items={[
+                { key: "workouts", label: "Entrenos" },
+                { key: "photos", label: "Fotos" },
+                { key: "progress", label: "Progreso" },
+              ]}
+              activeKey={tab}
+              onChange={setTab}
+              isDark={isDark}
+              variant="underline"
+              fill
+              ariaLabel="Secciones del perfil"
+            />
+          </div>
+
+          {tab === "workouts" && (
+            <ProfileWorkoutsSection
+              isDark={isDark}
+              completedWorkouts={completedWorkouts}
+              language={language}
+              onOpenDetail={(workout) => setViewingWorkoutDetail(workout)}
+              onAddToRoutine={(id) => setAddingToRoutine(id)}
+              onDeleteWorkout={(id) => setConfirmDelete(id)}
+              onEditWorkout={(workout) => router.push(`/routines/create?editWorkout=${workout.id}`)}
+              onAddPhoto={handleAddPhotoToWorkout}
+              onDeleteAll={() => setConfirmDeleteAll(true)}
+              t={t}
+            />
+          )}
+
+          {tab === "photos" && (
+            <div style={{ paddingTop: 14 }}>
+              <ProfilePhotoGrid
+                isDark={isDark}
+                workouts={completedWorkouts || []}
+                onOpenWorkout={(workout) => setViewingWorkoutDetail(workout)}
+                emptyHint="Al terminar un entreno puedes hacerte una foto o subirla; también desde el menú ⋯ de cualquier entreno."
+              />
+            </div>
+          )}
+
+          {tab === "progress" && (
+            <div style={{ paddingTop: 16 }}>
+              <ProfileActivityChart isDark={isDark} completedWorkouts={completedWorkouts} />
+            </div>
+          )}
+
+          <input ref={photoInputRef} type="file" accept="image/*" onChange={handleWorkoutPhotoSelected} style={{ display: "none" }} />
         </div>
       </Layout>
 

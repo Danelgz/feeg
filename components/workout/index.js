@@ -12,3 +12,4 @@ export { default as WorkoutExercisePager } from "./WorkoutExercisePager";
 export { default as WorkoutSummaryScreen } from "./WorkoutSummaryScreen";
 export { default as WorkoutFinishScreen } from "./WorkoutFinishScreen";
 export { default as DurationPickerModal } from "./DurationPickerModal";
+export { default as WorkoutPhoto } from "./WorkoutPhoto";

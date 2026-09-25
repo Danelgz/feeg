@@ -3,7 +3,7 @@ import { getTokens } from "../../lib/tokens";
 import { Icon } from "../ui";
 
 /**
- * Tarjeta de una rutina ajena, dentro del carrusel de ProfileRoutinesSection. Dos acciones:
+ * Tarjeta de una rutina ajena, en la pestaña "Rutinas" de su perfil. Dos acciones:
  * tocar la tarjeta abre la vista previa de ejercicios (onOpenPreview, ver
  * ProfileRoutinePreviewModal), y el botón de abajo la copia directamente a "Mis rutinas" sin
  * salir del perfil (onCopy). El propio botón da el feedback de éxito (icono + pulso) en vez de

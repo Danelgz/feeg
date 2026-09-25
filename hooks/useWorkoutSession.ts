@@ -196,10 +196,27 @@ export function useWorkoutSession({
   }, []);
 
   const toggleSeriesComplete = useCallback(
-    (exerciseUid: string, serieUid: string) => {
+    (exerciseUid: string, serieUid: string, fill?: { weight?: number | string | null; reps?: number | string | null } | null) => {
       const exercise = stateRef.current.exercises.find((ex) => ex.uid === exerciseUid);
-      const serie = exercise?.series.find((s) => s.uid === serieUid);
-      const willBeCompleted = !!serie && !serie.completed;
+      const rawSerie = exercise?.series.find((s) => s.uid === serieUid);
+      const willBeCompleted = !!rawSerie && !rawSerie.completed;
+
+      // Marcar una serie con los campos vacíos la completa con lo de la vez anterior (lo que ya
+      // se ve como placeholder): repetir la marca de la semana pasada es un toque, no tres. Se
+      // despacha antes del toggle para que el récord se calcule con los valores reales.
+      let serie = rawSerie;
+      if (willBeCompleted && rawSerie && fill) {
+        const patch: Partial<Record<"weight" | "reps", number>> = {};
+        (["weight", "reps"] as const).forEach((field) => {
+          const empty = rawSerie[field] === "" || rawSerie[field] === null || rawSerie[field] === undefined;
+          const value = fill[field];
+          if (empty && value !== "" && value !== null && value !== undefined && Number.isFinite(Number(value))) {
+            patch[field] = Number(value);
+            dispatch({ type: "UPDATE_SERIES_FIELD", exerciseUid, serieUid, field, value: Number(value) });
+          }
+        });
+        serie = { ...rawSerie, ...patch };
+      }
 
       const prResult =
         willBeCompleted && exercise && serie

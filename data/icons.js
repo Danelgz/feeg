@@ -252,6 +252,15 @@ export const ICONS = {
     { tag: 'path', d: 'M11 3.5l1.7 4.6a2 2 0 0 0 1.2 1.2l4.6 1.7-4.6 1.7a2 2 0 0 0-1.2 1.2L11 18.5l-1.7-4.6a2 2 0 0 0-1.2-1.2L3.5 11l4.6-1.7a2 2 0 0 0 1.2-1.2z' },
     { tag: 'path', d: 'M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z' },
   ],
+  camera: [
+    { tag: 'path', d: 'M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z' },
+    { tag: 'circle', cx: 12, cy: 13, r: 4 },
+  ],
+  image: [
+    { tag: 'rect', x: 3, y: 3, width: 18, height: 18, rx: 2 },
+    { tag: 'circle', cx: 8.5, cy: 8.5, r: 1.5 },
+    { tag: 'polyline', points: '21 15 16 10 5 21' },
+  ],
   calendar: [
     { tag: 'rect', x: 3.5, y: 4.5, width: 17, height: 16, rx: 3 },
     { tag: 'line', x1: 3.5, y1: 9.5, x2: 20.5, y2: 9.5 },

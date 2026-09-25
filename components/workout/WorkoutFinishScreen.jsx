@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { getWorkoutTokens } from "../../lib/tokens";
 import { Icon } from "../ui";
 import DurationPickerModal from "./DurationPickerModal";
+import WorkoutPhotoPicker from "./WorkoutPhotoPicker";
 
 function formatDuration(totalMinutes) {
   const m = Math.round(totalMinutes || 0);
@@ -35,6 +36,10 @@ export default function WorkoutFinishScreen({
   savingWorkout,
   onCancel,
   onSave,
+  photo,
+  onPhotoPick,
+  onPhotoRetry,
+  onPhotoRemove,
   t,
 }) {
   const tk = getWorkoutTokens();
@@ -50,7 +55,7 @@ export default function WorkoutFinishScreen({
     { label: translate("exercises_count"), value: exerciseCount ?? 0 },
     { label: translate("series_label"), value: totals?.totalSeries ?? 0 },
     { label: translate("reps_label"), value: totals?.totalReps ?? 0 },
-    { label: translate("total_volume"), value: `${(totals?.totalVolume ?? 0).toFixed(1)}kg` },
+    { label: translate("total_volume"), value: `${Math.round(totals?.totalVolume ?? 0).toLocaleString("es-ES")} kg` },
   ];
 
   return (
@@ -67,11 +72,11 @@ export default function WorkoutFinishScreen({
         .finish-name-input { width: 100%; background: none; border: none; outline: none; color: ${tk.text}; font-size: clamp(1.5rem, 6vw, 2.1rem); font-weight: 800; letter-spacing: -0.02em; padding: 6px 0 12px; box-sizing: border-box; border-bottom: 1.5px solid ${tk.border}; transition: border-color 180ms ease; }
         .finish-name-input:focus { border-color: ${tk.accent}; }
         .finish-name-input::placeholder { color: ${tk.textFaint}; }
-        .finish-row { display: flex; align-items: center; gap: 12px; width: 100%; background: ${tk.surface}; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px 16px; margin-top: 14px; box-sizing: border-box; text-align: left; cursor: pointer; }
+        .finish-row { display: flex; align-items: center; gap: 12px; width: 100%; background: ${tk.surface}; border: none; border-radius: 16px; padding: 14px 16px; margin-top: 14px; box-sizing: border-box; text-align: left; cursor: pointer; }
         .finish-note-toggle { color: ${tk.accent}; background: none; border: none; font-weight: 700; font-size: 0.88rem; padding: 14px 2px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-        .finish-note-textarea { width: 100%; background: ${tk.surface}; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; color: ${tk.text}; padding: 14px 16px; font-size: 0.92rem; min-height: 76px; box-sizing: border-box; resize: vertical; margin-top: 14px; font: inherit; }
+        .finish-note-textarea { width: 100%; background: ${tk.surface}; border: none; border-radius: 16px; color: ${tk.text}; padding: 14px 16px; font-size: 0.92rem; min-height: 76px; box-sizing: border-box; resize: vertical; margin-top: 14px; font: inherit; }
         .finish-note-textarea::placeholder { color: ${tk.textFaint}; }
-        .finish-improved { background: ${tk.accentSoft}; border: 1px solid rgba(46,230,197,0.35); border-radius: 14px; padding: 15px 16px; margin-top: 14px; }
+        .finish-improved { background: ${tk.accentSoft}; border: none; border-radius: 16px; padding: 15px 16px; margin-top: 14px; }
         .finish-stats { display: grid; grid-template-columns: repeat(2, 1fr); border-top: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08); margin-top: 22px; }
         .finish-stats > div { border-bottom: 1px solid rgba(255,255,255,0.08); }
         .finish-stats > div:nth-last-child(-n+2) { border-bottom: none; }
@@ -105,6 +110,10 @@ export default function WorkoutFinishScreen({
           onChange={(e) => onNameChange(e.target.value)}
           placeholder={namePlaceholder}
         />
+
+        {onPhotoPick && photo && (
+          <WorkoutPhotoPicker photo={photo} onPick={onPhotoPick} onRetry={onPhotoRetry} onRemove={onPhotoRemove} />
+        )}
 
         <div className="finish-row" onClick={() => setDurationPickerOpen(true)}>
           <div style={{ width: "38px", height: "38px", borderRadius: "11px", background: tk.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -148,7 +157,7 @@ export default function WorkoutFinishScreen({
               </strong>
               .
             </p>
-            <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", color: tk.text, backgroundColor: tk.surface, padding: "10px", borderRadius: tk.radius.sm, border: `1px solid ${tk.border}` }}>
+            <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", color: tk.text, backgroundColor: tk.surface, padding: "10px", borderRadius: 12 }}>
               <input
                 type="checkbox"
                 checked={updateOriginalRoutine}
@@ -175,10 +184,10 @@ export default function WorkoutFinishScreen({
           type="button"
           className="finish-save feeg-press"
           onClick={onSave}
-          disabled={savingWorkout}
-          style={{ opacity: savingWorkout ? 0.7 : 1, cursor: savingWorkout ? "not-allowed" : "pointer" }}
+          disabled={savingWorkout || photo?.status === "uploading"}
+          style={{ opacity: savingWorkout || photo?.status === "uploading" ? 0.7 : 1, cursor: savingWorkout || photo?.status === "uploading" ? "not-allowed" : "pointer" }}
         >
-          {savingWorkout ? translate("saving") : translate("save_workout")}
+          {savingWorkout ? translate("saving") : photo?.status === "uploading" ? "Subiendo foto…" : translate("save_workout")}
         </button>
       </div>
 

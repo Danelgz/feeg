@@ -50,6 +50,10 @@ function ExerciseCard({
   const [confirmDeleteExercise, setConfirmDeleteExercise] = useState(false);
   const [confirmDeleteSerieUid, setConfirmDeleteSerieUid] = useState(null);
   const [appliedRecommendationUids, setAppliedRecommendationUids] = useState(() => new Set());
+  // La nota va plegada tras un botón: un campo de texto vacío en cada ejercicio ocupaba ~50px
+  // de una pantalla donde lo que importa son las series. Si ya hay nota, se muestra abierta.
+  const [notesOpen, setNotesOpen] = useState(!!exercise.notes);
+  const doneCount = exercise.series.filter((s) => s.completed).length;
   const seriesRowRefs = useRef({});
 
   const weightUnit = weightUnitFor(exercise);
@@ -102,17 +106,24 @@ function ExerciseCard({
 
   return (
     <div style={{ marginBottom: "40px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", gap: 10 }}>
         <div
-          style={{ display: "flex", alignItems: "center", gap: "15px", cursor: onOpenHistory ? "pointer" : "default", minWidth: 0 }}
+          style={{ display: "flex", alignItems: "center", gap: "12px", cursor: onOpenHistory ? "pointer" : "default", minWidth: 0 }}
           onClick={onOpenHistory}
         >
           <ExerciseThumb name={exercise.name} />
           <div style={{ minWidth: 0 }}>
-            <h2 style={{ margin: 0, color: tk.accent, fontSize: "1.15rem", fontWeight: 500, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <h2 style={{ margin: 0, color: tk.text, fontSize: "1.12rem", fontWeight: 800, letterSpacing: "-0.01em", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {tName(exercise.name)}
             </h2>
-            <span style={{ fontSize: "0.75rem", color: tk.textFaint, textTransform: "uppercase" }}>{t(exercise.muscleGroup)}</span>
+            <span style={{ fontSize: "0.74rem", color: tk.textFaint, fontWeight: 600 }}>
+              {t(exercise.muscleGroup)}
+              {mode === "live" && !readOnly && (
+                <span style={{ color: doneCount === exercise.series.length && doneCount > 0 ? tk.accent : tk.textFaint }}>
+                  {" "}· {doneCount}/{exercise.series.length} series
+                </span>
+              )}
+            </span>
           </div>
         </div>
 
@@ -131,10 +142,28 @@ function ExerciseCard({
         />}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: "10px", color: tk.accent, marginBottom: "16px", fontSize: "0.95rem" }}>
-        <span onClick={readOnly ? undefined : () => setRestPickerOpen(true)} style={{ cursor: readOnly ? "default" : "pointer", fontWeight: 500 }}>
-          {t("rest_prefix")}: {formatRest(exercise.restSeconds)}
-        </span>
+      {/* Descanso y nota como fichas en una sola fila, en vez de una línea de texto verde y un
+          campo de texto siempre visible. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+        <button
+          type="button"
+          onClick={readOnly ? undefined : () => setRestPickerOpen(true)}
+          disabled={readOnly}
+          className="feeg-press"
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 11px", borderRadius: 99, border: "none", background: tk.accentSoft, color: tk.accent, fontSize: "0.8rem", fontWeight: 700, cursor: readOnly ? "default" : "pointer" }}
+        >
+          <Icon name="timer" size={14} /> {formatRest(exercise.restSeconds)}
+        </button>
+        {!readOnly && mode === "live" && !notesOpen && (
+          <button
+            type="button"
+            onClick={() => setNotesOpen(true)}
+            className="feeg-press"
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 11px", borderRadius: 99, border: "none", background: tk.surfaceAlt, color: tk.textMuted, fontSize: "0.8rem", fontWeight: 700, cursor: "pointer" }}
+          >
+            <Icon name="edit" size={13} /> Nota
+          </button>
+        )}
       </div>
 
       {!readOnly && mode === "live" && primaryRecommendation && primarySerie && (
@@ -145,10 +174,8 @@ function ExerciseCard({
             gap: "12px",
             marginBottom: "16px",
             padding: "12px 14px",
-            borderRadius: tk.radius.md,
-            background: `linear-gradient(100deg, ${tk.accentSoft}, rgba(26,26,26,0.75))`,
-            border: `1px solid ${tk.accent}55`,
-            boxShadow: `0 8px 24px rgba(0, 18, 15, 0.24)`,
+            borderRadius: 14,
+            background: `linear-gradient(100deg, ${tk.accentSoft}, rgba(26,26,26,0.6))`,
           }}
         >
           <div style={{ width: "34px", height: "34px", display: "grid", placeItems: "center", flexShrink: 0, borderRadius: "11px", background: tk.accent, color: tk.onAccent }}>
@@ -169,24 +196,25 @@ function ExerciseCard({
           <button
             type="button"
             onClick={() => applyRecommendation(primarySerie, primaryRecommendation)}
-            style={{ flexShrink: 0, border: `1px solid ${tk.accent}88`, borderRadius: "9px", padding: "8px 10px", background: "transparent", color: tk.accent, fontSize: "0.72rem", fontWeight: 800, cursor: "pointer" }}
+            style={{ flexShrink: 0, border: "none", borderRadius: "10px", padding: "9px 12px", background: tk.accent, color: tk.onAccent, fontSize: "0.76rem", fontWeight: 800, cursor: "pointer" }}
           >
             {t("recommendation_apply")}
           </button>
         </div>
       )}
 
-      {!readOnly && mode === "live" && (
+      {!readOnly && mode === "live" && notesOpen && (
         <input
           type="text"
           value={exercise.notes}
           onChange={(e) => onSetNotes(e.target.value)}
           placeholder={t("notes_placeholder")}
+          autoFocus={!exercise.notes}
           style={{
             width: "100%",
             background: tk.surfaceAlt,
-            border: `1px solid ${tk.border}`,
-            borderRadius: tk.radius.sm,
+            border: "none",
+            borderRadius: 10,
             color: tk.text,
             padding: "8px 12px",
             fontSize: "0.85rem",
@@ -198,7 +226,7 @@ function ExerciseCard({
       )}
 
       {readOnly && exercise.notes && (
-        <div style={{ marginBottom: "16px", padding: "9px 12px", background: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.sm, color: tk.textMuted, fontSize: "0.85rem" }}>
+        <div style={{ marginBottom: "16px", padding: "9px 12px", background: tk.surfaceAlt, borderRadius: 10, color: tk.textMuted, fontSize: "0.85rem" }}>
           {exercise.notes}
         </div>
       )}
@@ -208,12 +236,10 @@ function ExerciseCard({
           className={`feeg-series-grid ${readOnly ? (showRir ? "feeg-series-grid--readonly-rir" : "feeg-series-grid--readonly") : showRir ? "feeg-series-grid--rir" : "feeg-series-grid--no-rir"}`}
           style={{
             display: "grid",
-            marginBottom: "8px",
-            padding: "8px 8px",
-            // Sin esto el 100% de ancho + 16px de padding desbordaba la tarjeta por la derecha.
+            marginBottom: "4px",
+            padding: "0 6px 6px",
+            // Sin esto el 100% de ancho + 12px de padding desbordaba la tarjeta por la derecha.
             boxSizing: "border-box",
-            borderRadius: tk.radius.sm,
-            backgroundColor: tk.surfaceAlt,
             color: tk.textFaint,
             fontSize: "0.7rem",
             fontWeight: 700,
@@ -246,7 +272,13 @@ function ExerciseCard({
               weightUnit={weightUnit}
               onFieldChange={(field, value) => onUpdateField(serie.uid, field, value)}
               onRirChange={(value) => onRirChange?.(serie.uid, value)}
-              onToggleComplete={() => onToggleComplete(serie.uid)}
+              onToggleComplete={() => onToggleComplete(serie.uid, previousSeries?.[idx] || null)}
+              onFillPrevious={() => {
+                const prev = previousSeries?.[idx];
+                if (!prev) return;
+                if (prev.weight !== undefined && prev.weight !== "") onUpdateField(serie.uid, "weight", Number(prev.weight));
+                if (prev.reps !== undefined && prev.reps !== "") onUpdateField(serie.uid, "reps", Number(prev.reps));
+              }}
               onOpenType={() => setTypeModalSerieUid(serie.uid)}
             />
         ))}
@@ -256,13 +288,13 @@ function ExerciseCard({
         onClick={onAddSeries}
         style={{
           width: "100%",
-          padding: "10px",
-          backgroundColor: tk.surfaceAlt,
-          color: tk.text,
+          padding: "11px",
+          backgroundColor: tk.accentSoft,
+          color: tk.accent,
           border: "none",
-          borderRadius: tk.radius.sm,
+          borderRadius: 12,
           fontSize: "0.9rem",
-          fontWeight: 500,
+          fontWeight: 700,
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
@@ -280,10 +312,10 @@ function ExerciseCard({
           gap: 10px;
         }
         .feeg-series-grid--rir {
-          grid-template-columns: 40px minmax(0, 1fr) 62px 62px 52px 38px;
+          grid-template-columns: 40px minmax(0, 1fr) 70px 66px 56px 38px;
         }
         .feeg-series-grid--no-rir {
-          grid-template-columns: 40px minmax(0, 1fr) 70px 70px 45px;
+          grid-template-columns: 40px minmax(0, 1fr) 76px 72px 40px;
         }
         .feeg-series-grid--readonly-rir {
           grid-template-columns: 40px minmax(0, 1fr) 62px 62px 52px;
@@ -309,10 +341,10 @@ function ExerciseCard({
             gap: 5px;
           }
           .feeg-series-grid--rir {
-            grid-template-columns: 32px minmax(0, 1fr) 50px 50px 38px 32px;
+            grid-template-columns: 30px minmax(0, 1fr) 54px 50px 38px 34px;
           }
           .feeg-series-grid--no-rir {
-            grid-template-columns: 32px minmax(0, 1fr) 50px 50px 34px;
+            grid-template-columns: 30px minmax(0, 1fr) 60px 56px 34px;
           }
           .feeg-series-grid--readonly-rir {
             grid-template-columns: 32px minmax(0, 1fr) 50px 50px 38px;

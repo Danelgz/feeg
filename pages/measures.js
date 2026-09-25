@@ -120,7 +120,7 @@ export default function Measures() {
     }
   }, [user]);
 
-  if (!isLoaded) return <Layout><SkeletonPage isDark={isDark} isMobile={isMobile} /></Layout>;
+  if (!isLoaded) return <Layout gutter><SkeletonPage isDark={isDark} isMobile={isMobile} /></Layout>;
 
   const updateUnits = async (type, val) => {
     if (units[type] === val) return;
@@ -233,7 +233,7 @@ export default function Measures() {
   const latest = measures[0] || {};
 
   return (
-    <Layout>
+    <Layout gutter>
       <PageHeader
         isDark={isDark}
         isMobile={isMobile}

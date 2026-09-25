@@ -24,7 +24,7 @@ export default function Settings() {
   ];
 
   return (
-    <Layout>
+    <Layout gutter>
       <PageHeader isDark={isDark} isMobile={isMobile} title={t("settings")} />
 
       <Card isDark={isDark} padding={isMobile ? "sm" : "lg"} style={{ display: "flex", flexDirection: "column" }}>

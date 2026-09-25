@@ -10,12 +10,14 @@ import { getLatestExerciseSeries } from "../../lib/workoutRecommendations";
 import { getWorkoutTokens } from "../../lib/tokens";
 import { translateExerciseName } from "../../lib/exerciseTranslation";
 import { ConfirmModal, Spinner } from "../../components/ui";
+import RoutinePreview from "../../components/workout/RoutinePreview";
+import { BOTTOM_NAV_HEIGHT } from "../../components/BottomNavigation";
 import { ExerciseCard, WorkoutHeader, WorkoutStatsBar, WorkoutExercisePager, FloatingRestTimer, WorkoutSummaryScreen, WorkoutFinishScreen, PRToast } from "../../components/workout";
 
 export default function RoutineDetail() {
   const router = useRouter();
   const { id } = router.query;
-  const { routines: allRoutines, activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, completedWorkouts, soundEnabled, t, language, updateRoutine, theme, user } = useUser();
+  const { routines: allRoutines, activeRoutine, startRoutine, endRoutine, saveCompletedWorkout, completedWorkouts, soundEnabled, t, language, updateRoutine, theme, user, isMobile } = useUser();
   const isDark = theme === "dark";
   const tk = getWorkoutTokens();
   const workoutId = id ? id.toString() : "";
@@ -243,51 +245,18 @@ export default function RoutineDetail() {
   }
 
   if (state.status === "preview") {
-    const previewExercises = foundRoutine?.exercises || [];
     return (
       <Layout>
-        <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-          <h1 style={{ color: tk.text }}>{foundRoutine?.name}</h1>
-          <p style={{ color: tk.textMuted, marginBottom: "20px" }}>
-            {previewExercises.length} {t("exercises_count")} · {previewExercises.reduce((sum, ex) => sum + ex.series.length, 0)} {t("total_series")}
-          </p>
-
-          <div style={{ backgroundColor: tk.surface, border: `1px solid ${tk.border}`, borderRadius: tk.radius.md, padding: "20px", marginBottom: "20px" }}>
-            <h2 style={{ marginTop: 0, color: tk.text }}>{t("workout_summary")}</h2>
-            {previewExercises.map((exercise, idx) => {
-              const info = getExerciseInfo(exercise.name);
-              return (
-                <div key={idx} style={{ backgroundColor: tk.surfaceAlt, padding: "12px", marginBottom: "10px", borderRadius: tk.radius.sm, border: `1px solid ${tk.border}` }}>
-                  <h3 style={{ margin: "0 0 8px 0", color: tk.accent }}>{translateExerciseName(exercise.name, language)}</h3>
-                  <p style={{ margin: 0, color: tk.textMuted }}>
-                    {exercise.series.length} {t("series_label")} · {t("rest_between_series")} {exercise.rest}s
-                  </p>
-                  {exercise.series.map((serie, sIdx) => (
-                    <div key={sIdx} style={{ fontSize: "0.9rem", color: tk.textFaint, marginLeft: "10px" }}>
-                      {t("series_label")} {sIdx + 1}: {serie.reps} {info?.type === "time" ? "m" : t("reps_label")}
-                      {(info?.type === "weight_reps" || !info?.type) && ` - ${serie.weight}${info?.unit === "lastre" ? "L" : "kg"}`}
-                      {info?.type === "time" && ` - ${serie.weight}m`}
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
-          </div>
-
-          <button
-            onClick={handleStart}
-            className="feeg-surface feeg-press feeg-hover"
-            style={{
-              padding: "12px 30px", fontSize: "1.1rem", border: "none", borderRadius: tk.radius.md, fontWeight: "600", cursor: "pointer",
-              "--feeg-bg": tk.accent,
-              "--feeg-fg": tk.onAccent,
-              "--feeg-hover-bg": tk.accentHover,
-              "--feeg-border-width": "0px",
-            }}
-          >
-            {t("start_routine")}
-          </button>
-        </div>
+        <RoutinePreview
+          routine={foundRoutine || { id: workoutId, name: state.name || "", exercises: [] }}
+          completedWorkouts={completedWorkouts}
+          language={language}
+          t={t}
+          onStart={handleStart}
+          onEdit={() => router.push(`/routines/create?id=${workoutId}`)}
+          onBack={() => router.push("/routines")}
+          bottomOffset={isMobile ? `calc(${BOTTOM_NAV_HEIGHT}px + env(safe-area-inset-bottom))` : "0px"}
+        />
 
         {showRoutineActiveAlert && (
           <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 3000, padding: "20px" }}>
@@ -386,7 +355,7 @@ export default function RoutineDetail() {
         html, body { overflow: hidden; overscroll-behavior: none; }
         .feeg-active-workout-viewport { max-width: 100%; }
         @media (max-width: 768px) {
-          .feeg-active-workout-viewport { height: calc(100dvh - 80px) !important; }
+          .feeg-active-workout-viewport { height: calc(100dvh - ${BOTTOM_NAV_HEIGHT}px - env(safe-area-inset-bottom, 0px)) !important; }
         }
       `}</style>
 

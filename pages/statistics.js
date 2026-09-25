@@ -4,7 +4,7 @@ import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { getTokens } from "../lib/tokens";
 import { PageHeader, ChipNav } from "../components/ui";
-import { computeSeriesByGroup, computeWeeklyStreak } from "../lib/exerciseStats";
+import { computeSeriesByGroup, computeWeeklyStreak, resolveWeeklyGoal } from "../lib/exerciseStats";
 import {
   HeroMetricCard,
   WeeklyStreakCard,
@@ -74,6 +74,14 @@ export default function Statistics() {
     setSelectedMuscle(null);
   };
 
+  // Enlace profundo a una vista (?view=muscleMap), p.ej. desde "Músculos esta semana" en Inicio.
+  // Se lee de window.location al montar (no con useRouter): navegar a esta página siempre la
+  // monta de nuevo, y así la pantalla no depende de un router montado (los tests la renderizan sola).
+  useEffect(() => {
+    const view = new URLSearchParams(window.location.search).get('view');
+    if (view && VIEWS.some((v) => v.key === view)) setActiveView(view);
+  }, []);
+
   useEffect(() => {
     const check = () => setIsNarrow(window.innerWidth <= 768);
     check();
@@ -135,7 +143,8 @@ export default function Statistics() {
 
   // Sobre TODO el histórico, no sobre el periodo: una racha que baja porque has tocado un filtro no
   // es una métrica, es un bug de percepción.
-  const weeklyStreak = useMemo(() => computeWeeklyStreak(workouts || []), [workouts]);
+  const weeklyGoal = resolveWeeklyGoal(user);
+  const weeklyStreak = useMemo(() => computeWeeklyStreak(workouts || [], weeklyGoal), [workouts, weeklyGoal]);
 
   const seriesByGroup = useMemo(() => computeSeriesByGroup(filteredWorkouts), [filteredWorkouts]);
 
@@ -145,12 +154,13 @@ export default function Statistics() {
   }, [stats.totalVolume, previousVolume]);
 
   return (
-    <Layout>
+    <Layout gutter>
       <PageHeader
         isDark={isDark}
         isMobile={isNarrow}
         title={t("statistics")}
-        subtitle="Analiza tu progreso y mejora tu entrenamiento con datos detallados"
+        compact
+        subtitle={isNarrow ? undefined : "Analiza tu progreso y mejora tu entrenamiento con datos detallados"}
       />
 
       <ChipNav
@@ -158,7 +168,6 @@ export default function Statistics() {
         activeKey={activeView}
         onChange={changeView}
         isDark={isDark}
-        wrap={isNarrow}
         ariaLabel="Vistas de estadísticas"
       />
 
@@ -170,7 +179,6 @@ export default function Statistics() {
             onChange={setSelectedPeriod}
             isDark={isDark}
             size="sm"
-            wrap={isNarrow}
             ariaLabel="Periodo"
           />
         </div>

@@ -22,10 +22,14 @@ const TAGS = {
  *   color?: string,
  *   strokeWidth?: number,
  *   style?: import("react").CSSProperties,
+ *   filled?: boolean,
  * } & Record<string, any>} props
+ *
+ * `filled` pinta la variante `<name>Fill` si existe (estado activo de la barra de pestañas) y cae
+ * a la versión outline si no, para que ningún consumidor tenga que saber qué iconos la tienen.
  */
-export default function Icon({ name, size = 24, color = "currentColor", strokeWidth = 2, style, ...rest }) {
-  const shapes = ICONS[name];
+export default function Icon({ name, size = 24, color = "currentColor", strokeWidth = 2, style, filled = false, ...rest }) {
+  const shapes = (filled && ICONS[`${name}Fill`]) || ICONS[name];
   if (!shapes) return null;
 
   return (

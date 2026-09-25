@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { getTokens } from "../lib/tokens";
 import { Icon } from "./ui";
+import { BOTTOM_NAV_HEIGHT } from "./BottomNavigation";
 
 type Corner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 
@@ -26,13 +27,21 @@ const DOCK_WIDTH = 260;
 const DOCK_HEIGHT = 132;
 const EDGE_DISTANCE = 46;
 
+// En móvil la barra de pestañas ocupa el borde inferior: el dock no debe aparcarse encima de ella
+// (tapaba "Inicio"/"Entreno" y el botón de continuar quedaba medio debajo del pulgar). Mismo corte
+// que isMobile en UserContext.
+function bottomReserve(): number {
+  if (typeof window === "undefined") return 0;
+  return window.innerWidth <= 768 ? BOTTOM_NAV_HEIGHT + 8 : 0;
+}
+
 function getDefaultPosition(): DockPosition {
   if (typeof window === "undefined") {
     return { left: 24, top: 24, hidden: false, corner: "bottom-right" };
   }
   return {
     left: Math.max(12, window.innerWidth - DOCK_WIDTH - 22),
-    top: Math.max(12, window.innerHeight - DOCK_HEIGHT - 22),
+    top: Math.max(12, window.innerHeight - DOCK_HEIGHT - 22 - bottomReserve()),
     hidden: false,
     corner: "bottom-right",
   };
@@ -43,7 +52,10 @@ function readStoredPosition(): DockPosition {
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
     if (stored && Number.isFinite(stored.left) && Number.isFinite(stored.top)) {
-      return { ...getDefaultPosition(), ...stored };
+      const merged = { ...getDefaultPosition(), ...stored };
+      // Posiciones guardadas antes de reservar el hueco de la barra de pestañas podían quedar
+      // encima de ella: se reencajan (salvo si está escondido en una esquina a propósito).
+      return merged.hidden ? merged : { ...merged, ...clampPosition(merged.left, merged.top) };
     }
   } catch (_) {
     // Una preferencia corrupta no debe impedir que se pueda continuar el entrenamiento.
@@ -55,7 +67,7 @@ function clampPosition(left: number, top: number) {
   if (typeof window === "undefined") return { left, top };
   return {
     left: Math.min(Math.max(8, left), Math.max(8, window.innerWidth - DOCK_WIDTH - 8)),
-    top: Math.min(Math.max(8, top), Math.max(8, window.innerHeight - DOCK_HEIGHT - 8)),
+    top: Math.min(Math.max(8, top), Math.max(8, window.innerHeight - DOCK_HEIGHT - 8 - bottomReserve())),
   };
 }
 
@@ -64,7 +76,7 @@ function getCorner(left: number, top: number): Corner | null {
   const nearLeft = left <= EDGE_DISTANCE;
   const nearRight = left + DOCK_WIDTH >= window.innerWidth - EDGE_DISTANCE;
   const nearTop = top <= EDGE_DISTANCE;
-  const nearBottom = top + DOCK_HEIGHT >= window.innerHeight - EDGE_DISTANCE;
+  const nearBottom = top + DOCK_HEIGHT >= window.innerHeight - bottomReserve() - EDGE_DISTANCE;
   if (!nearTop && !nearBottom) return null;
   if (!nearLeft && !nearRight) return null;
   return `${nearTop ? "top" : "bottom"}-${nearLeft ? "left" : "right"}` as Corner;

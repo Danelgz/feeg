@@ -120,6 +120,14 @@ export default function ChipNav({ items, activeKey, onChange, isDark, size = "md
           scroll-snap-type: x proximity;
           -webkit-overflow-scrolling: touch;
         }
+        /* Desvanecido en el borde derecho: la señal de "hay más a la derecha" que en una fila
+           desplazable sin barra de scroll no existe. Sin él la fila parece terminar en el último
+           chip visible y las vistas de más allá quedan escondidas. */
+        .chipnav:not(.chipnav-wrap) {
+          -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 28px), transparent 100%);
+          mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 28px), transparent 100%);
+          padding-right: 28px;
+        }
         .chipnav-wrap {
           flex-wrap: wrap;
           overflow-x: visible;

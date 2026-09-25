@@ -62,6 +62,19 @@ export default function InteractionStyles() {
         }
       }
 
+      /* Punto "en directo" (entreno en curso): late suave para decir que algo sigue corriendo. */
+      @keyframes feegLivePulse {
+        0% { box-shadow: 0 0 0 0 rgba(29, 209, 161, 0.55); }
+        70% { box-shadow: 0 0 0 7px rgba(29, 209, 161, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(29, 209, 161, 0); }
+      }
+      .feeg-live-dot {
+        animation: feegLivePulse 1.8s ease-out infinite;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .feeg-live-dot { animation: none; }
+      }
+
       /* Anillo de foco visible solo para navegación por teclado. :where() mantiene especificidad 0
          para no competir con nada. Antes no había ninguno: la app era inusable con teclado. */
       :where(button, a, [role="button"], input, select, textarea, [tabindex]):focus-visible {

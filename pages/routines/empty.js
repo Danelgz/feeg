@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import Layout from "../../components/Layout";
+import { BOTTOM_NAV_HEIGHT } from "../../components/BottomNavigation";
 import { useUser } from "../../context/UserContext";
 import ExerciseSelector from "../../components/ExerciseSelector";
 import { useWorkoutSession } from "../../hooks/useWorkoutSession";
@@ -306,7 +307,7 @@ export default function EmptyRoutine() {
         html, body { overflow: hidden; overscroll-behavior: none; }
         .feeg-active-workout-viewport { max-width: 100%; }
         @media (max-width: 768px) {
-          .feeg-active-workout-viewport { height: calc(100dvh - 80px) !important; }
+          .feeg-active-workout-viewport { height: calc(100dvh - ${BOTTOM_NAV_HEIGHT}px - env(safe-area-inset-bottom, 0px)) !important; }
         }
       `}</style>
 

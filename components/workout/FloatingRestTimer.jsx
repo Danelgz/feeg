@@ -1,6 +1,7 @@
 import { getWorkoutTokens } from "../../lib/tokens";
 import { useUser } from "../../context/UserContext";
 import { Icon } from "../ui";
+import { BOTTOM_NAV_HEIGHT } from "../BottomNavigation";
 
 function formatMinSec(total) {
   const m = Math.floor(total / 60);
@@ -104,7 +105,9 @@ export default function FloatingRestTimer({
     <div
       style={{
         position: "fixed",
-        bottom: 0,
+        // En móvil la barra de pestañas sigue visible durante el entreno (para poder salir a
+        // mirar otra cosa sin cerrarlo), así que el temporizador se apoya ENCIMA de ella.
+        bottom: isMobile ? `calc(${BOTTOM_NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px))` : 0,
         left: isMobile ? 0 : "230px",
         right: 0,
         zIndex: 1500,
@@ -115,7 +118,7 @@ export default function FloatingRestTimer({
           backgroundColor: tk.surface,
           borderTop: `1px solid ${tk.border}`,
           padding: "12px 16px",
-          paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))",
+          paddingBottom: isMobile ? "12px" : "calc(12px + env(safe-area-inset-bottom, 0px))",
           display: "flex",
           alignItems: "center",
           justifyContent: restActive ? "space-between" : "center",

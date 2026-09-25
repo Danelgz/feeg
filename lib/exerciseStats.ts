@@ -603,6 +603,18 @@ export function computeLongestStreak(workouts: CompletedWorkout[]): number {
 // frecuencia concreta que no encaje con todos los objetivos o niveles de experiencia.
 export const DEFAULT_WEEKLY_GOAL = 1;
 
+/**
+ * Objetivo semanal del usuario (entrenos por semana, 1-7) guardado en su perfil como
+ * `weeklyGoal`. Sin él se usa DEFAULT_WEEKLY_GOAL, así que la racha de quien nunca lo ha fijado
+ * sigue siendo exactamente la de antes. Estadísticas e Inicio lo leen de aquí para que la racha sea
+ * la misma cifra en las dos pantallas.
+ */
+export function resolveWeeklyGoal(profile: { weeklyGoal?: unknown } | null | undefined): number {
+  const raw = Number(profile?.weeklyGoal);
+  if (!Number.isFinite(raw) || raw < 1) return DEFAULT_WEEKLY_GOAL;
+  return Math.min(7, Math.round(raw));
+}
+
 export interface WeeklyStreakResult {
   /** Semanas consecutivas cumpliendo el objetivo, hasta la de hoy. */
   streak: number;

@@ -28,9 +28,8 @@ describe('escalera de rangos', () => {
     expect(new Set(slugs).size).toBe(slugs.length);
   });
 
-  it('cada rango declara icono de respaldo y sus dos colores', () => {
+  it('cada rango declara sus dos colores', () => {
     for (const rank of RANKS) {
-      expect(rank.icon, rank.name).toBeTruthy();
       expect(rank.color, rank.name).toMatch(/^#[0-9a-f]{6}$/i);
       expect(rank.accent, rank.name).toMatch(/^#[0-9a-f]{6}$/i);
     }

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { getTokens } from "../../lib/tokens";
-import { Icon, Button } from "../ui";
+import { Icon, Button, ProgressRing } from "../ui";
 import StatSection from "./StatSection";
 
 interface Workout {
@@ -74,59 +74,81 @@ export default function GoalsAndMilestonesSection({
     setShowForm(false);
   };
 
+  // Filas planas con separador de 1px, cada una con su anillo de progreso: antes cada objetivo era
+  // una tarjeta con borde dentro de la sección, y tres objetivos ocupaban media pantalla.
+  const row = (key: string, ring: number, ringColor: string, icon: React.ReactNode, title: string, sub: string, right: React.ReactNode, action?: React.ReactNode) => (
+    <li key={key} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 0", borderTop: `1px solid ${tk.hairline}` }}>
+      <ProgressRing value={ring} size={40} stroke={4} color={ringColor} trackColor={tk.hairline}>
+        <span style={{ color: ringColor, display: "flex" }}>{icon}</span>
+      </ProgressRing>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ color: tk.text, fontWeight: 700, fontSize: "0.9rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</div>
+        <div style={{ color: tk.textMuted, fontSize: "0.75rem", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub}</div>
+      </div>
+      <div style={{ color: tk.text, fontWeight: 800, fontSize: "0.9rem", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{right}</div>
+      {action}
+    </li>
+  );
+
+  const fieldStyle: React.CSSProperties = { width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: 10, border: `1px solid ${tk.hairline}`, backgroundColor: tk.surface, color: tk.text, font: "inherit" };
+
   return (
-    <StatSection title="Objetivos y hitos" meta="Tu siguiente paso" isDark={isDark} isMobile={isMobile}>
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: tk.space.md }}>
-        <div className="feeg-surface" style={{ borderRadius: tk.radius.md, padding: tk.space.lg, "--feeg-bg": tk.surfaceAlt, "--feeg-border": tk.border } as React.CSSProperties}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: tk.space.md, alignItems: "center" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <div style={{ width: 36, height: 36, borderRadius: tk.radius.md, backgroundColor: tk.accentSoft, color: tk.accent, display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="award" size={18} /></div>
-              <div>
-                <div style={{ color: tk.text, fontWeight: tk.weight.bold }}>Hitos de entrenamiento</div>
-                <div style={{ color: tk.textMuted, fontSize: tk.fontSize.xs }}>{milestone.completed >= milestone.next ? "Has completado todos los hitos actuales" : `${milestone.next - milestone.completed} entrenos para tu siguiente hito`}</div>
-              </div>
-            </div>
-            <strong style={{ color: tk.accent, fontVariantNumeric: "tabular-nums" }}>{milestone.completed}/{milestone.next}</strong>
-          </div>
-          <div style={{ height: 6, backgroundColor: tk.border, borderRadius: tk.radius.pill, overflow: "hidden", marginTop: tk.space.md }}><div style={{ width: `${milestone.progress * 100}%`, height: "100%", backgroundColor: tk.accent, borderRadius: tk.radius.pill }} /></div>
-        </div>
+    <StatSection
+      title="Objetivos y hitos"
+      meta={
+        !showForm && (
+          <button type="button" onClick={() => setShowForm(true)} className="feeg-press" style={{ display: "inline-flex", alignItems: "center", gap: 4, border: "none", background: "none", color: tk.accent, fontWeight: 700, fontSize: "0.78rem", cursor: "pointer", padding: 0 }}>
+            <Icon name="plus" size={14} /> Añadir objetivo
+          </button>
+        )
+      }
+      isDark={isDark}
+      isMobile={isMobile}
+    >
+      <ul style={{ listStyle: "none", margin: 0, padding: 0, borderBottom: `1px solid ${tk.hairline}` }}>
+        {row(
+          "milestone",
+          milestone.progress,
+          tk.accent,
+          <Icon name="award" size={16} />,
+          "Hitos de entrenamiento",
+          milestone.completed >= milestone.next ? "Has completado todos los hitos actuales" : `${milestone.next - milestone.completed} entrenos para tu siguiente hito`,
+          <>
+            {milestone.completed}
+            <span style={{ color: tk.textFaint, fontWeight: 600 }}>/{milestone.next}</span>
+          </>
+        )}
 
         {goals.map((goal) => {
           const current = getCurrentValue(goal.type, workouts);
           const progress = Math.min(1, current / goal.target);
           const unit = goal.type === "sessions_week" ? "entrenos esta semana" : "kg este mes";
-          return (
-            <div key={goal.id} className="feeg-surface" style={{ borderRadius: tk.radius.md, padding: tk.space.lg, "--feeg-bg": tk.surface, "--feeg-border": tk.border } as React.CSSProperties}>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: tk.space.md }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ color: tk.text, fontWeight: tk.weight.bold }}>{goal.title}</div>
-                  <div style={{ color: tk.textMuted, fontSize: tk.fontSize.xs, marginTop: "3px" }}>{Math.round(current).toLocaleString("es-ES")} / {goal.target.toLocaleString("es-ES")} {unit}</div>
-                </div>
-                <button type="button" onClick={() => deleteTrainingGoal(goal.id)} aria-label="Eliminar objetivo" className="feeg-surface feeg-press feeg-hover" style={{ border: "none", background: "transparent", color: tk.textFaint, cursor: "pointer", padding: 4, display: "flex", "--feeg-hover-fg": tk.danger } as React.CSSProperties}><Icon name="trash" size={15} /></button>
-              </div>
-              <div style={{ height: 6, backgroundColor: tk.border, borderRadius: tk.radius.pill, overflow: "hidden", marginTop: tk.space.md }}><div style={{ width: `${progress * 100}%`, height: "100%", backgroundColor: progress >= 1 ? tk.accent : tk.warning, borderRadius: tk.radius.pill }} /></div>
-            </div>
+          return row(
+            goal.id,
+            progress,
+            progress >= 1 ? tk.accent : tk.warning,
+            <Icon name={goal.type === "sessions_week" ? "calendar" : "trendUp"} size={16} />,
+            goal.title,
+            `${Math.round(current).toLocaleString("es-ES")} / ${goal.target.toLocaleString("es-ES")} ${unit}`,
+            `${Math.round(progress * 100)}%`,
+            <button type="button" onClick={() => deleteTrainingGoal(goal.id)} aria-label="Eliminar objetivo" className="feeg-surface feeg-press feeg-hover" style={{ border: "none", background: "transparent", color: tk.textFaint, cursor: "pointer", padding: 4, display: "flex", "--feeg-hover-fg": tk.danger } as React.CSSProperties}><Icon name="trash" size={15} /></button>
           );
         })}
+      </ul>
 
-        {showForm ? (
-          <div className="feeg-surface" style={{ borderRadius: tk.radius.md, padding: tk.space.lg, "--feeg-bg": tk.surfaceAlt, "--feeg-border": tk.accent } as React.CSSProperties}>
-            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: tk.space.sm }}>
-              <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Nombre del objetivo" aria-label="Nombre del objetivo" style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: tk.radius.sm, border: `1px solid ${tk.border}`, backgroundColor: tk.surface, color: tk.text, font: "inherit" }} />
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 120px", gap: tk.space.sm }}>
-                <select value={type} onChange={(event) => setType(event.target.value as TrainingGoal["type"])} aria-label="Tipo de objetivo" style={{ padding: "10px 12px", borderRadius: tk.radius.sm, border: `1px solid ${tk.border}`, backgroundColor: tk.surface, color: tk.text, font: "inherit" }}>
-                  <option value="sessions_week">Entrenos por semana</option>
-                  <option value="volume_month">Volumen mensual</option>
-                </select>
-                <input value={target} onChange={(event) => setTarget(event.target.value)} type="number" min="1" aria-label="Objetivo numérico" style={{ padding: "10px 12px", borderRadius: tk.radius.sm, border: `1px solid ${tk.border}`, backgroundColor: tk.surface, color: tk.text, font: "inherit" }} />
-              </div>
-              <div style={{ display: "flex", gap: tk.space.sm }}><Button isDark={isDark} size="sm" onClick={submitGoal}>Guardar objetivo</Button><Button isDark={isDark} size="sm" variant="ghost" onClick={() => setShowForm(false)}>Cancelar</Button></div>
-            </div>
+      {showForm && (
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: tk.space.sm, marginTop: 12 }}>
+          <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Nombre del objetivo" aria-label="Nombre del objetivo" style={fieldStyle} />
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "minmax(0, 1fr) 96px" : "1fr 120px", gap: tk.space.sm }}>
+            <select value={type} onChange={(event) => setType(event.target.value as TrainingGoal["type"])} aria-label="Tipo de objetivo" style={fieldStyle}>
+              <option value="sessions_week">Entrenos por semana</option>
+              <option value="volume_month">Volumen mensual</option>
+            </select>
+            <input value={target} onChange={(event) => setTarget(event.target.value)} type="number" min="1" aria-label="Objetivo numérico" style={fieldStyle} />
           </div>
-        ) : (
-          <Button isDark={isDark} variant="secondary" icon="plus" onClick={() => setShowForm(true)}>Añadir objetivo</Button>
-        )}
-      </div>
+          <div style={{ display: "flex", gap: tk.space.sm }}><Button isDark={isDark} size="sm" onClick={submitGoal}>Guardar objetivo</Button><Button isDark={isDark} size="sm" variant="ghost" onClick={() => setShowForm(false)}>Cancelar</Button></div>
+        </div>
+      )}
     </StatSection>
   );
 }

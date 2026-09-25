@@ -17,6 +17,7 @@ export default function MuscleMapSection({ isDark, isMobile, workouts, t, sex, f
 
   return (
     <StatSection
+      first
       title="Mapa muscular semanal"
       meta="Últimos 7 días"
       isDark={isDark}

@@ -61,10 +61,11 @@ export default function ExerciseStatsSection({ isDark, isMobile, workouts, t, la
       .sort((a, b) => score(b) - score(a) || b.sessions - a.sessions);
   }, [index, query, language, sortBy, trends]);
 
-  const line = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
+  const line = tk.hairline;
 
   return (
     <StatSection
+      first
       title="Estadísticas por ejercicio"
       meta={`${results.length} ${results.length === 1 ? 'ejercicio' : 'ejercicios'}`}
       isDark={isDark}
@@ -99,8 +100,8 @@ export default function ExerciseStatsSection({ isDark, isMobile, workouts, t, la
             borderRadius: tk.radius.md,
             // El foco se lleva con estado de React en vez de mutando `e.target.style` a mano: así el
             // estilo sale del render como todo lo demás y no hay dos fuentes de verdad.
-            border: `1px solid ${isSearchFocused ? tk.accent : tk.border}`,
-            backgroundColor: tk.surfaceAlt,
+            border: `1px solid ${isSearchFocused ? tk.accent : 'transparent'}`,
+            backgroundColor: tk.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
             color: tk.text,
             outline: 'none',
             fontSize: tk.fontSize.md,
@@ -121,8 +122,8 @@ export default function ExerciseStatsSection({ isDark, isMobile, workouts, t, la
               style={{
                 padding: '6px 12px',
                 borderRadius: 99,
-                border: `1px solid ${on ? tk.accent : tk.border}`,
-                background: on ? tk.accentSoft : 'transparent',
+                border: 'none',
+                background: on ? tk.accentSoft : tk.hairline,
                 color: on ? tk.accent : tk.textMuted,
                 fontSize: '0.76rem',
                 fontWeight: on ? 800 : 600,
@@ -147,7 +148,7 @@ export default function ExerciseStatsSection({ isDark, isMobile, workouts, t, la
           }
         />
       ) : (
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, borderRadius: 20, border: `1px solid ${tk.border}`, background: tk.surface, overflow: 'hidden' }}>
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0, borderTop: `1px solid ${line}`, borderBottom: `1px solid ${line}` }}>
           {results.map((entry, index) => {
             const rank = rankByExercise[entry.name];
             const position = rank ? getRankPosition(rank.level) : null;
@@ -167,13 +168,13 @@ export default function ExerciseStatsSection({ isDark, isMobile, workouts, t, la
                     display: 'flex',
                     alignItems: 'center',
                     gap: 12,
-                    padding: '11px 14px 11px 12px',
+                    padding: '11px 0',
                     textDecoration: 'none',
                     '--feeg-bg': 'transparent',
                     '--feeg-fg': tk.text,
-                    '--feeg-hover-bg': tk.surfaceHover,
+                    '--feeg-hover-bg': 'transparent',
                     '--feeg-border-width': '0px',
-                    '--feeg-press-scale': 0.99,
+                    '--feeg-press-scale': 0.985,
                   }}
                 >
                   <ExerciseThumb name={entry.name} size={36} />
@@ -189,13 +190,13 @@ export default function ExerciseStatsSection({ isDark, isMobile, workouts, t, la
                         otro distinto allí. Sólo los puntuables con marca llevan insignia. */}
                     {position && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
-                        <RankArt rank={position.rank} tier={position.tier} size={15} animated={false} />
+                        <RankArt rank={position.rank} tier={position.tier} size={16} />
                         <span style={{ fontSize: '0.7rem', fontWeight: 800, color: tk.text }}>{position.label}</span>
                         <span style={{ fontSize: '0.68rem', color: tk.textFaint }}>· {rank.ratio.toFixed(2)}× tu peso</span>
                       </div>
                     )}
                   </div>
-                  <Sparkline values={trend.values} width={52} height={24} color={tk.accent} surface={tk.surface} />
+                  <Sparkline values={trend.values} width={56} height={24} color={tk.accent} surface={tk.bg} />
                   <div style={{ minWidth: 44, textAlign: 'right' }}>
                     {trend.delta !== null ? (
                       <span style={{ fontSize: '0.8rem', fontWeight: 800, color: trend.delta >= 0 ? tk.accent : tk.textMuted }}>

@@ -74,7 +74,7 @@ export default function MuscleRankList({
   const name = (group: string) => translateGroup?.(group) || group;
 
   return (
-    <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: tk.space.sm }}>
+    <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', borderBottom: `1px solid ${tk.hairline}` }}>
       {rows.ranked.map((groupRank) => {
         const position = getRankPosition(groupRank.level);
         const isOpen = expandedGroup === groupRank.group;
@@ -84,103 +84,67 @@ export default function MuscleRankList({
           <li
             key={groupRank.group}
             id={muscleRankRowId(groupRank.group)}
-            className="feeg-surface"
             style={{
-              borderRadius: tk.radius.md,
-              overflow: 'hidden',
-              // El color del rango se queda en la insignia y en el nombre. Teñir las doce tarjetas
-              // convertiría la lista en un mosaico: diez rangos con colores tan dispares como el
-              // gris de Principiante y el oro de Élite no forman una escala, forman ruido.
-              '--feeg-bg': isOpen ? tk.surfaceHover : tk.surfaceAlt,
-              '--feeg-border': isOpen ? `${position.rank.color}59` : tk.border,
+              // Filas planas separadas por una línea: el color del rango se queda en la insignia y
+              // en el nombre. Doce tarjetas con borde (una por grupo) eran un mosaico de recuadros.
+              borderTop: `1px solid ${tk.hairline}`,
               scrollMarginTop: '80px',
-            } as CSSProperties}
+            }}
           >
             <button
               type="button"
               onClick={() => onToggleGroup(groupRank.group)}
               aria-expanded={isOpen}
-              className="feeg-press feeg-hover"
+              className="feeg-press"
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: tk.space.md,
+                gap: 12,
                 width: '100%',
-                padding: tk.space.md,
+                padding: '10px 0',
                 background: 'none',
                 border: 'none',
                 textAlign: 'left',
                 cursor: 'pointer',
                 color: 'inherit',
                 '--feeg-press-scale': 0.985,
-                '--feeg-hover-bg': tk.surfaceHover,
               } as CSSProperties}
             >
-              <span
-                style={{
-                  width: '46px',
-                  height: '46px',
-                  borderRadius: tk.radius.md,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  backgroundColor: `${position.rank.color}1f`,
-                  border: `1px solid ${position.rank.color}52`,
-                }}
-              >
-                <RankArt rank={position.rank} tier={position.tier} size={30} animated={false} />
-              </span>
+              <RankArt rank={position.rank} tier={position.tier} size={40} />
 
               <span style={{ minWidth: 0, flex: 1 }}>
-                <span
-                  style={{
-                    display: 'block',
-                    color: tk.text,
-                    fontSize: tk.fontSize.md,
-                    fontWeight: tk.weight.bold,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {name(groupRank.group)}
-                </span>
-                <span style={{ display: 'block', fontSize: tk.fontSize.xs, marginTop: '2px' }}>
+                <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
                   <span
                     style={{
-                      color: position.rank.color,
-                      fontWeight: tk.weight.bold,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
+                      color: tk.text,
+                      fontSize: '0.95rem',
+                      fontWeight: 700,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
                     }}
                   >
-                    {position.label}
+                    {name(groupRank.group)}
                   </span>
-                  <span style={{ color: tk.textFaint }}> · nivel {position.level}</span>
+                  <span style={{ color: position.rank.color, fontSize: '0.78rem', fontWeight: 800, whiteSpace: 'nowrap' }}>{position.label}</span>
                 </span>
 
-                <span
-                  aria-hidden="true"
-                  style={{
-                    display: 'block',
-                    height: '3px',
-                    marginTop: tk.space.sm,
-                    borderRadius: tk.radius.pill,
-                    backgroundColor: tk.border,
-                    overflow: 'hidden',
-                  }}
-                >
-                  <span
-                    style={{
-                      display: 'block',
-                      height: '100%',
-                      width: `${Math.round(position.progressToNext * 100)}%`,
-                      borderRadius: tk.radius.pill,
-                      backgroundColor: position.rank.color,
-                      transition: `width ${tk.motion.css.slow}`,
-                    }}
-                  />
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+                  <span aria-hidden="true" style={{ flex: 1, height: 4, borderRadius: 99, backgroundColor: tk.hairline, overflow: 'hidden' }}>
+                    <span
+                      style={{
+                        display: 'block',
+                        height: '100%',
+                        width: `${Math.round(position.progressToNext * 100)}%`,
+                        borderRadius: 99,
+                        backgroundColor: position.rank.color,
+                        transition: `width ${tk.motion.css.slow}`,
+                      }}
+                    />
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: tk.textFaint, fontWeight: 600, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                    nv {position.level}
+                  </span>
                 </span>
               </span>
 
@@ -194,7 +158,7 @@ export default function MuscleRankList({
                 }
                 style={{ display: 'flex', color: isOpen ? position.rank.color : tk.textFaint, flexShrink: 0 }}
               >
-                <Icon name="chevronRight" size={18} />
+                <Icon name="chevronRight" size={16} />
               </motion.span>
             </button>
 
@@ -207,8 +171,9 @@ export default function MuscleRankList({
                   transition={{ duration: tk.motion.duration.base, ease: tk.motion.ease.standard }}
                   style={{ overflow: 'hidden' }}
                 >
-                  <div style={{ padding: `0 ${tk.space.md} ${tk.space.md}` }}>
+                  <div style={{ padding: '0 0 12px 52px' }}>
                     <ExerciseRankList
+                      layout="grid"
                       ranks={groupExercises}
                       bodyweightKg={bodyweightKg}
                       sex={sex}
@@ -237,10 +202,8 @@ export default function MuscleRankList({
       {rows.pending.length > 0 && (
         <li
           style={{
-            padding: tk.space.md,
-            borderRadius: tk.radius.md,
-            // Borde discontinuo: es un hueco por rellenar, no una tarjeta apagada.
-            border: `1px dashed ${tk.border}`,
+            padding: '12px 0',
+            borderTop: `1px solid ${tk.hairline}`,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: tk.fontSize.xs, color: tk.textFaint, marginBottom: tk.space.sm }}>
@@ -258,7 +221,7 @@ export default function MuscleRankList({
                   color: tk.textMuted,
                   padding: '4px 10px',
                   borderRadius: 99,
-                  background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+                  border: `1px dashed ${tk.borderStrong}`,
                   scrollMarginTop: '80px',
                 }}
               >

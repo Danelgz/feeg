@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import { getTokens } from "../../lib/tokens";
 
 export interface ChipItem {
@@ -17,6 +18,12 @@ interface ChipNavProps {
   wrap?: boolean;
   /** Reparte el ancho a partes iguales entre los chips (pocas vistas que deben caber sin scroll). */
   fill?: boolean;
+  /**
+   * `chip` (por defecto): píldoras sueltas. `underline`: pestañas de texto con una raya de acento
+   * que se desliza — sin bordes ni fondos, para la navegación principal de una pantalla.
+   * `segmented`: una sola pista con la opción activa resaltada, para filtros cortos (periodo).
+   */
+  variant?: "chip" | "underline" | "segmented";
   ariaLabel: string;
 }
 
@@ -38,10 +45,12 @@ interface ChipNavProps {
  *   dentro se circula con las flechas. Sin ello, tabular por esta pantalla obligaba a pasar por los
  *   doce chips uno a uno antes de llegar al contenido.
  */
-export default function ChipNav({ items, activeKey, onChange, isDark, size = "md", wrap = false, fill = false, ariaLabel }: ChipNavProps) {
+export default function ChipNav({ items, activeKey, onChange, isDark, size = "md", wrap = false, fill = false, variant = "chip", ariaLabel }: ChipNavProps) {
   const tk = getTokens(isDark);
   const isSmall = size === "sm";
   const listRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
+  const indicatorId = `chipnav-${useId()}`;
 
   useEffect(() => {
     const active = listRef.current?.querySelector<HTMLElement>('[aria-selected="true"]');
@@ -72,6 +81,70 @@ export default function ChipNav({ items, activeKey, onChange, isDark, size = "md
     const buttons = listRef.current?.querySelectorAll<HTMLElement>('[role="tab"]');
     buttons?.[next]?.focus();
   };
+
+  if (variant !== "chip") {
+    const underline = variant === "underline";
+    return (
+      <div
+        role="tablist"
+        aria-label={ariaLabel}
+        ref={listRef}
+        onKeyDown={handleKeyDown}
+        className="chipnav-alt"
+        style={{
+          display: "flex",
+          overflowX: fill ? "visible" : "auto",
+          scrollbarWidth: "none",
+          ...(underline
+            ? { gap: fill ? 0 : 18, borderBottom: `1px solid ${tk.hairline}` }
+            : { gap: 2, padding: 3, borderRadius: 12, background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", width: fill ? undefined : "fit-content", maxWidth: "100%" }),
+        }}
+      >
+        {items.map((item) => {
+          const isActive = item.key === activeKey;
+          return (
+            <button
+              key={item.key}
+              role="tab"
+              aria-selected={isActive}
+              tabIndex={isActive ? 0 : -1}
+              onClick={() => onChange(item.key)}
+              className="feeg-press"
+              style={{
+                position: "relative",
+                flex: fill ? "1 1 0" : "0 0 auto",
+                minWidth: 0,
+                border: "none",
+                background: "none",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                color: isActive ? tk.text : tk.textMuted,
+                fontWeight: isActive ? 800 : 600,
+                fontSize: underline ? (isSmall ? "0.8rem" : "0.86rem") : "0.76rem",
+                padding: underline ? "10px 2px 11px" : "6px 12px",
+                transition: "color .2s ease",
+                "--feeg-press-scale": 0.96,
+              } as React.CSSProperties}
+            >
+              {isActive && (
+                <motion.span
+                  layoutId={indicatorId}
+                  aria-hidden
+                  transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 40 }}
+                  style={
+                    underline
+                      ? { position: "absolute", left: fill ? "18%" : 0, right: fill ? "18%" : 0, bottom: -1, height: 2.5, borderRadius: 2, background: tk.accent }
+                      : { position: "absolute", inset: 0, borderRadius: 9, background: isDark ? "rgba(255,255,255,0.13)" : "#fff", boxShadow: isDark ? "none" : "0 1px 3px rgba(0,0,0,0.1)" }
+                  }
+                />
+              )}
+              <span style={{ position: "relative" }}>{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <div className={`chipnav${wrap ? " chipnav-wrap" : ""}${fill ? " chipnav-fill" : ""}`} role="tablist" aria-label={ariaLabel} ref={listRef} onKeyDown={handleKeyDown}>

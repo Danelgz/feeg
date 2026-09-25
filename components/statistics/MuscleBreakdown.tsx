@@ -4,6 +4,7 @@ import { getTokens } from "../../lib/tokens";
 import { ALL_MUSCLE_GROUPS, computeSeriesByGroup, type CompletedWorkout } from "../../lib/exerciseStats";
 import BarList from "./BarList";
 import { EmptyState } from "../ui";
+import { SectionHeader } from "./StatSection";
 
 interface MuscleBreakdownProps {
   workouts: CompletedWorkout[];
@@ -52,19 +53,16 @@ export default function MuscleBreakdown({ workouts, isDark, t, periodLabel }: Mu
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "4px 0 10px" }}>
-        <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: tk.text }}>Reparto por grupo</h2>
-        <span style={{ fontSize: "0.76rem", color: tk.textMuted, fontWeight: 600 }}>{periodLabel}</span>
-      </div>
+      <SectionHeader title="Reparto por grupo" meta={periodLabel} isDark={isDark} />
 
       {/* Resumen en una línea de cifras */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", borderRadius: 20, border: `1px solid ${tk.border}`, background: tk.surface, marginBottom: 12, overflow: "hidden" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", borderTop: `1px solid ${tk.hairline}`, borderBottom: `1px solid ${tk.hairline}`, marginBottom: 16 }}>
         {[
           { label: "Series", value: total.toLocaleString("es-ES") },
           { label: "Grupos", value: `${worked.filter((g) => !NON_MUSCLE.has(g)).length}/${muscleGroups.length}` },
           { label: "Más trabajado", value: t(worked[0]) || worked[0] },
         ].map((s, i) => (
-          <div key={s.label} style={{ padding: "11px 12px", borderLeft: i ? `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)"}` : "none", minWidth: 0 }}>
+          <div key={s.label} style={{ padding: `11px 8px 11px ${i ? 14 : 0}px`, borderLeft: i ? `1px solid ${tk.hairline}` : "none", minWidth: 0 }}>
             <div style={{ fontSize: "0.7rem", color: tk.textMuted, fontWeight: 600 }}>{s.label}</div>
             <div style={{ fontSize: "1.1rem", fontWeight: 800, color: tk.text, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.value}</div>
           </div>
@@ -72,7 +70,7 @@ export default function MuscleBreakdown({ workouts, isDark, t, periodLabel }: Mu
       </div>
 
       {/* Balances: barra de dos segmentos con hueco de 2px y etiqueta directa en cada extremo */}
-      <div style={{ borderRadius: 20, border: `1px solid ${tk.border}`, background: tk.surface, padding: 14, marginBottom: 12, display: "grid", gap: 14 }}>
+      <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: `1px solid ${tk.hairline}`, display: "grid", gap: 16 }}>
         {balances.map((bal, bi) => {
           const all = bal.a.v + bal.b.v;
           const pa = all ? bal.a.v / all : 0.5;
@@ -115,7 +113,7 @@ export default function MuscleBreakdown({ workouts, isDark, t, periodLabel }: Mu
         })}
       </div>
 
-      <div style={{ borderRadius: 20, border: `1px solid ${tk.border}`, background: tk.surface, padding: 14 }}>
+      <div>
         <BarList
           isDark={isDark}
           scale="total"
@@ -123,7 +121,7 @@ export default function MuscleBreakdown({ workouts, isDark, t, periodLabel }: Mu
           formatValue={(v, tot) => `${Math.round((v / (tot || 1)) * 100)}%`}
         />
         {pending.length > 0 && (
-          <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)"}` }}>
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${tk.hairline}` }}>
             <div style={{ fontSize: "0.72rem", color: tk.textMuted, fontWeight: 700, marginBottom: 8 }}>Sin trabajar en este periodo</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {pending.map((g) => (

@@ -99,28 +99,14 @@ export default function ExerciseRankList({
                 boxSizing: 'border-box',
                 gap: tk.space.md,
                 padding: `${tk.space.sm} 2px`,
-                borderBottom: isLast ? 'none' : `1px solid ${tk.border}`,
+                borderBottom: isLast ? 'none' : `1px solid ${tk.hairline}`,
                 cursor: onExerciseClick ? 'pointer' : undefined,
                 ...(onExerciseClick
                   ? ({ '--feeg-bg': 'transparent', '--feeg-hover-bg': tk.surfaceAlt, '--feeg-press-scale': 0.99 } as CSSProperties)
                   : null),
               }}
             >
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: tk.radius.full,
-                  backgroundColor: `${position.rank.color}1f`,
-                  border: `1px solid ${position.rank.color}59`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <RankArt rank={position.rank} tier={position.tier} size={18} />
-              </div>
+              <RankArt rank={position.rank} tier={position.tier} size={30} />
 
               <div style={{ minWidth: 0, flex: '1 1 auto', maxWidth: '100%' }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: tk.space.sm, minWidth: 0, maxWidth: '100%' }}>
@@ -186,21 +172,7 @@ export default function ExerciseRankList({
                 : null),
             }}
           >
-            <div
-              style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: tk.radius.full,
-                backgroundColor: `${position.rank.color}1f`,
-                border: `1px solid ${position.rank.color}59`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <RankArt rank={position.rank} tier={position.tier} size={19} />
-            </div>
+            <RankArt rank={position.rank} tier={position.tier} size={32} />
 
             <div style={{ minWidth: 0, flex: 1 }}>
               <div

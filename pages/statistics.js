@@ -180,17 +180,20 @@ export default function Statistics() {
         onChange={changeView}
         isDark={isDark}
         fill={isNarrow}
+        variant="underline"
         ariaLabel="Vistas de estadísticas"
       />
 
       {currentView.usesPeriod && (workouts || []).length > 0 && (
-        <div style={{ marginTop: tk.space.sm, marginBottom: tk.space.lg }}>
+        <div style={{ marginTop: 14, marginBottom: 14 }}>
           <ChipNav
             items={PERIOD_OPTIONS}
             activeKey={selectedPeriod}
             onChange={setSelectedPeriod}
             isDark={isDark}
             size="sm"
+            variant="segmented"
+            fill={isNarrow}
             ariaLabel="Periodo"
           />
         </div>
@@ -242,28 +245,29 @@ export default function Statistics() {
               unit="kg"
               deltaPct={deltaPct}
               deltaLabel={period.days ? `vs ${period.days} días antes` : undefined}
-              footer={[
-                { label: "Entrenos", value: stats.sessions },
-                { label: "Series", value: stats.totalSeries.toLocaleString('es-ES') },
-                { label: "Repeticiones", value: stats.totalReps.toLocaleString('es-ES') },
-              ]}
             />
 
+            {/* Una sola rejilla de seis cifras en vez de un pie del titular + otra tira de cuatro:
+                eran dos bloques de números sueltos seguidos, con dos bordes. */}
             <StatStrip
               isDark={isDark}
-              columns={isNarrow ? 2 : 4}
+              columns={isNarrow ? 3 : 6}
+              marginBottom={0}
+              bottomRule={false}
               items={[
+                { key: 'sessions', label: 'Entrenos', value: stats.sessions },
+                { key: 'series', label: 'Series', value: stats.totalSeries.toLocaleString('es-ES'), sub: stats.sessions ? `${(stats.totalSeries / stats.sessions).toLocaleString('es-ES', { maximumFractionDigits: 1 })} por entreno` : undefined },
+                { key: 'reps', label: 'Repeticiones', value: stats.totalReps.toLocaleString('es-ES') },
                 {
                   key: 'streak',
                   label: 'Racha semanal',
                   value: weeklyStreak.streak === 0 ? 'Sin racha' : `${weeklyStreak.streak} ${weeklyStreak.streak === 1 ? 'semana' : 'semanas'}`,
                   highlight: weeklyStreak.goalMet,
                   progress: weeklyStreak.thisWeek / weeklyStreak.goal,
-                  sub: `${weeklyStreak.thisWeek} de ${weeklyStreak.goal} esta semana · mejor: ${weeklyStreak.best}`,
+                  sub: `${weeklyStreak.thisWeek} de ${weeklyStreak.goal} esta semana`,
                 },
                 { key: 'avgTime', label: 'Tiempo medio', value: `${stats.avgTimeMin} min`, sub: 'por entreno' },
-                { key: 'avgVolume', label: 'Volumen medio', value: `${stats.avgVolume.toLocaleString('es-ES')} kg`, sub: 'por entreno' },
-                { key: 'density', label: 'Series por entreno', value: stats.sessions ? (stats.totalSeries / stats.sessions).toLocaleString('es-ES', { maximumFractionDigits: 1 }) : '—', sub: stats.bestDay ? `más entrenos en ${stats.bestDay}` : undefined },
+                { key: 'avgVolume', label: 'Volumen medio', value: `${(stats.avgVolume / 1000).toLocaleString('es-ES', { maximumFractionDigits: 1 })} t`, sub: stats.bestDay ? `más en ${stats.bestDay}` : 'por entreno' },
               ]}
             />
 
@@ -313,6 +317,8 @@ export default function Statistics() {
                   onChange={setSelectedPeriod}
                   isDark={isDark}
                   size="sm"
+                  variant="segmented"
+                  fill={isNarrow}
                   ariaLabel="Periodo"
                 />
               </div>

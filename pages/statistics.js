@@ -3,7 +3,8 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { getTokens } from "../lib/tokens";
-import { PageHeader, ChipNav } from "../components/ui";
+import Link from "next/link";
+import { PageHeader, ChipNav, EmptyState } from "../components/ui";
 import { computeWeeklyStreak, resolveWeeklyGoal } from "../lib/exerciseStats";
 import {
   HeroMetricCard,
@@ -164,6 +165,7 @@ export default function Statistics() {
 
   return (
     <Layout gutter>
+      <div style={{ maxWidth: 920, margin: '0 auto' }}>
       <PageHeader
         isDark={isDark}
         isMobile={isNarrow}
@@ -181,7 +183,7 @@ export default function Statistics() {
         ariaLabel="Vistas de estadísticas"
       />
 
-      {currentView.usesPeriod && (
+      {currentView.usesPeriod && (workouts || []).length > 0 && (
         <div style={{ marginTop: tk.space.sm, marginBottom: tk.space.lg }}>
           <ChipNav
             items={PERIOD_OPTIONS}
@@ -210,7 +212,27 @@ export default function Statistics() {
       >
         {/* Los totales solo acompañan al Resumen. En las demás vistas eran ruido repetido siete
             veces por encima de un contenido que ya trae sus propios números. */}
-        {activeView === 'overview' && (
+        {/* Sin ningún entreno, el Resumen eran ceros, una gráfica vacía y un mapa gris: una pantalla
+            que parece rota. Un único estado vacío con la acción que lo arregla. */}
+        {activeView === 'overview' && (workouts || []).length === 0 && (
+          <EmptyState
+            isDark={isDark}
+            icon="barChart"
+            title="Tus estadísticas empiezan con tu primer entreno"
+            description="Registra un entrenamiento y aquí verás tu volumen, tu progreso semana a semana, tu constancia y tus récords."
+            action={
+              <Link
+                href="/routines"
+                className="feeg-press"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 18px', borderRadius: 99, background: tk.accent, color: tk.onAccent, fontWeight: 800, textDecoration: 'none', boxShadow: tk.shadow.accent }}
+              >
+                Empezar a entrenar
+              </Link>
+            }
+          />
+        )}
+
+        {activeView === 'overview' && (workouts || []).length > 0 && (
           <>
             <HeroMetricCard
               isDark={isDark}
@@ -315,6 +337,7 @@ export default function Statistics() {
         )}
       </motion.div>
       </AnimatePresence>
+      </div>
     </Layout>
   );
 }

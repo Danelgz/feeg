@@ -60,7 +60,8 @@ export default function ConsistencyHeatmap({ workouts, isDark, caption }: Consis
     return new Date(2026, 0, 5 + best).toLocaleDateString("es-ES", { weekday: "long" });
   }, [grid]);
 
-  const cell = Math.max(8, Math.floor((width - LABEL_W - GAP * (WEEKS - 1)) / WEEKS));
+  // Tope de 18px: en escritorio las celdas crecían hasta ser bloques de 50px.
+  const cell = Math.min(18, Math.max(8, Math.floor((width - LABEL_W - GAP * (WEEKS - 1)) / WEEKS)));
   const gridW = LABEL_W + WEEKS * cell + (WEEKS - 1) * GAP;
   const monthRowH = 14;
   const empty = isDark ? "rgba(255,255,255,0.055)" : "rgba(0,0,0,0.05)";

@@ -15,6 +15,8 @@ interface ChipNavProps {
   size?: "sm" | "md";
   /** Envuelve los chips para que la sección nunca dependa de un gesto horizontal. */
   wrap?: boolean;
+  /** Reparte el ancho a partes iguales entre los chips (pocas vistas que deben caber sin scroll). */
+  fill?: boolean;
   ariaLabel: string;
 }
 
@@ -36,7 +38,7 @@ interface ChipNavProps {
  *   dentro se circula con las flechas. Sin ello, tabular por esta pantalla obligaba a pasar por los
  *   doce chips uno a uno antes de llegar al contenido.
  */
-export default function ChipNav({ items, activeKey, onChange, isDark, size = "md", wrap = false, ariaLabel }: ChipNavProps) {
+export default function ChipNav({ items, activeKey, onChange, isDark, size = "md", wrap = false, fill = false, ariaLabel }: ChipNavProps) {
   const tk = getTokens(isDark);
   const isSmall = size === "sm";
   const listRef = useRef<HTMLDivElement>(null);
@@ -72,7 +74,7 @@ export default function ChipNav({ items, activeKey, onChange, isDark, size = "md
   };
 
   return (
-    <div className={`chipnav${wrap ? " chipnav-wrap" : ""}`} role="tablist" aria-label={ariaLabel} ref={listRef} onKeyDown={handleKeyDown}>
+    <div className={`chipnav${wrap ? " chipnav-wrap" : ""}${fill ? " chipnav-fill" : ""}`} role="tablist" aria-label={ariaLabel} ref={listRef} onKeyDown={handleKeyDown}>
       {items.map((item) => {
         const isActive = item.key === activeKey;
         return (
@@ -86,9 +88,10 @@ export default function ChipNav({ items, activeKey, onChange, isDark, size = "md
             onClick={() => onChange(item.key)}
             className="feeg-surface feeg-press feeg-hover"
             style={{
-              padding: isSmall ? "7px 14px" : "9px 16px",
+              padding: fill ? "8px 2px" : isSmall ? "7px 14px" : "9px 16px",
+              ...(fill ? { flex: "1 1 0", minWidth: 0, textAlign: "center" } : {}),
               borderRadius: tk.radius.pill,
-              fontSize: isSmall ? tk.fontSize.xs : tk.fontSize.sm,
+              fontSize: fill ? "0.78rem" : isSmall ? tk.fontSize.xs : tk.fontSize.sm,
               fontWeight: isActive ? tk.weight.bold : tk.weight.medium,
               cursor: "pointer",
               whiteSpace: "nowrap",
@@ -127,6 +130,13 @@ export default function ChipNav({ items, activeKey, onChange, isDark, size = "md
           -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 28px), transparent 100%);
           mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 28px), transparent 100%);
           padding-right: 28px;
+        }
+        .chipnav.chipnav-fill {
+          -webkit-mask-image: none;
+          mask-image: none;
+          padding-right: 2px;
+          gap: 6px;
+          overflow: visible;
         }
         .chipnav-wrap {
           flex-wrap: wrap;

@@ -47,15 +47,17 @@ export default function HeroMetricCard({
 
   return (
     <div
-      className="feeg-surface"
       style={{
-        borderRadius: tk.radius.lg,
-        padding: isMobile ? tk.space.xl : tk.space.huge,
-        marginBottom: tk.space.lg,
-        "--feeg-bg": tk.surface,
-        "--feeg-border": tk.border,
-        "--feeg-shadow": tk.shadow.card,
-      } as React.CSSProperties}
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: 22,
+        padding: isMobile ? "16px 16px 14px" : tk.space.huge,
+        marginBottom: 12,
+        background: isDark
+          ? "linear-gradient(150deg, rgba(29,209,161,0.13) 0%, #121412 45%, #0c0c0c 100%)"
+          : "linear-gradient(150deg, rgba(29,209,161,0.14) 0%, #ffffff 50%)",
+        border: `1px solid ${isDark ? "rgba(29,209,161,0.18)" : "rgba(29,209,161,0.25)"}`,
+      }}
     >
       <div
         style={{
@@ -72,13 +74,14 @@ export default function HeroMetricCard({
       <div style={{ display: "flex", alignItems: "baseline", gap: tk.space.md, flexWrap: "wrap", marginTop: tk.space.sm }}>
         <span
           style={{
-            fontSize: isMobile ? "2.4rem" : "3rem",
+            fontSize: isMobile ? "2.9rem" : "3.4rem",
             fontWeight: tk.weight.heavy,
             color: tk.text,
             lineHeight: 1,
-            letterSpacing: "-0.02em",
-            // Evita que el número "baile" de ancho al cambiar de periodo.
-            fontVariantNumeric: "tabular-nums",
+            letterSpacing: "-0.035em",
+            // Cifras proporcionales: en un número grande y solo, las tabulares dejan huecos (un
+            // "121" con cada dígito del ancho de un "0" se ve suelto).
+            fontVariantNumeric: "proportional-nums",
           }}
         >
           {value}
@@ -113,12 +116,12 @@ export default function HeroMetricCard({
       {footer.length > 0 && (
         <div
           style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: isMobile ? tk.space.lg : tk.space.huge,
-            marginTop: tk.space.xl,
-            paddingTop: tk.space.lg,
-            borderTop: `1px solid ${tk.border}`,
+            display: "grid",
+            gridTemplateColumns: `repeat(${footer.length}, minmax(0, 1fr))`,
+            gap: tk.space.md,
+            marginTop: tk.space.lg,
+            paddingTop: tk.space.md,
+            borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"}`,
           }}
         >
           {footer.map((item) => (

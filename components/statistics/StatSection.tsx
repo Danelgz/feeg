@@ -25,16 +25,26 @@ interface StatSectionProps {
 export default function StatSection({ title, meta, children, isDark, isMobile = false }: StatSectionProps) {
   const tk = getTokens(isDark);
 
+  // En móvil la sección NO es una tarjeta: el contenido de cada vista ya trae sus propias
+  // superficies (filas, gráficas, listas) y envolverlo en otra tarjeta con 20px de padding por lado
+  // metía tarjetas dentro de tarjetas y se comía ~40px de un ancho de 360. En escritorio, con aire
+  // de sobra, la carcasa sigue ayudando a agrupar.
+  const flat = isMobile;
   return (
     <section
-      className="feeg-surface"
-      style={{
-        borderRadius: tk.radius.lg,
-        padding: isMobile ? tk.space.xl : tk.space.xxl,
-        "--feeg-bg": tk.surface,
-        "--feeg-border": tk.border,
-        "--feeg-shadow": tk.shadow.card,
-      } as CSSProperties}
+      className={flat ? undefined : "feeg-surface"}
+      style={
+        flat
+          ? { marginBottom: tk.space.xl }
+          : ({
+              borderRadius: tk.radius.lg,
+              padding: tk.space.xxl,
+              marginBottom: tk.space.xl,
+              "--feeg-bg": tk.surface,
+              "--feeg-border": tk.border,
+              "--feeg-shadow": tk.shadow.card,
+            } as CSSProperties)
+      }
     >
       <header
         style={{
@@ -44,15 +54,15 @@ export default function StatSection({ title, meta, children, isDark, isMobile = 
           // lo que hace que un título grande y una meta pequeña se lean como una sola fila.
           alignItems: "baseline",
           gap: tk.space.md,
-          marginBottom: tk.space.xl,
+          marginBottom: flat ? tk.space.md : tk.space.xl,
         }}
       >
         <h2
           style={{
             margin: 0,
             color: tk.text,
-            fontSize: tk.fontSize.xl,
-            fontWeight: tk.weight.bold,
+            fontSize: flat ? "1.1rem" : tk.fontSize.xl,
+            fontWeight: 800,
             letterSpacing: "-0.01em",
           }}
         >
@@ -62,7 +72,7 @@ export default function StatSection({ title, meta, children, isDark, isMobile = 
           <span
             style={{
               fontSize: tk.fontSize.xs,
-              color: tk.accent,
+              color: tk.textMuted,
               fontWeight: tk.weight.medium,
               whiteSpace: "nowrap",
               flexShrink: 0,

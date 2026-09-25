@@ -39,17 +39,6 @@ export default function MuscleMapSection({ isDark, isMobile, workouts, t, sex, f
             onMuscleClick={onSelectMuscle}
             labelForGroup={(group) => t(group) || group}
           />
-          <p
-            style={{
-              textAlign: "center",
-              color: tk.textFaint,
-              fontSize: tk.fontSize.xs,
-              marginTop: tk.space.md,
-              marginBottom: 0,
-            }}
-          >
-            Toca un músculo para ver qué ejercicios lo han trabajado esta semana.
-          </p>
         </>
       )}
     </StatSection>

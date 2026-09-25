@@ -1,8 +1,16 @@
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
-import MiniStat from "./MiniStat";
 import StatSection from "./StatSection";
-import { EmptyState, Icon, RankArt } from "../ui";
+import { EmptyState, Icon, RankArt, Sparkline } from "../ui";
+import { exerciseTrend, trendDelta } from "../../lib/statsSeries";
+import ExerciseThumb from "../workout/ExerciseThumb";
+
+const SORTS = [
+  { key: "sessions", label: "Frecuencia" },
+  { key: "volume", label: "Volumen" },
+  { key: "progress", label: "Progreso" },
+];
 import { getTokens } from "../../lib/tokens";
 import { computeExerciseIndex } from "../../lib/exerciseStats";
 import { translateExerciseName } from "../../lib/exerciseTranslation";
@@ -18,6 +26,7 @@ export default function ExerciseStatsSection({ isDark, isMobile, workouts, t, la
   const prefersReducedMotion = useReducedMotion();
   const [query, setQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [sortBy, setSortBy] = useState('sessions');
 
   // El índice recorre TODO el historial: recalcularlo en cada pulsación del buscador era un barrido
   // completo por tecla. Ahora sólo se rehace cuando cambian los entrenos.
@@ -33,12 +42,26 @@ export default function ExerciseStatsSection({ isDark, isMobile, workouts, t, la
     [exerciseRanks]
   );
 
+  // Tendencia del 1RM estimado por ejercicio (últimas 12 sesiones) y su variación: alimenta la
+  // mini-gráfica de cada fila y el orden "Progreso".
+  const trends = useMemo(() => {
+    const out = {};
+    for (const name of Object.keys(index)) {
+      const pts = exerciseTrend(workouts, name).slice(-12);
+      out[name] = { values: pts.map((p) => p.value), delta: trendDelta(pts) };
+    }
+    return out;
+  }, [index, workouts]);
+
   const results = useMemo(() => {
     const needle = query.trim().toLowerCase();
+    const score = (e) => (sortBy === 'volume' ? e.volume : sortBy === 'progress' ? (trends[e.name]?.delta ?? -Infinity) : e.sessions);
     return Object.values(index)
       .filter((entry) => !needle || translateExerciseName(entry.name, language).toLowerCase().includes(needle))
-      .sort((a, b) => b.sessions - a.sessions);
-  }, [index, query, language]);
+      .sort((a, b) => score(b) - score(a) || b.sessions - a.sessions);
+  }, [index, query, language, sortBy, trends]);
+
+  const line = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
 
   return (
     <StatSection
@@ -47,7 +70,7 @@ export default function ExerciseStatsSection({ isDark, isMobile, workouts, t, la
       isDark={isDark}
       isMobile={isMobile}
     >
-      <div style={{ position: 'relative', marginBottom: tk.space.xl }}>
+      <div style={{ position: 'relative', marginBottom: tk.space.md }}>
         <div
           style={{
             position: 'absolute',
@@ -70,6 +93,7 @@ export default function ExerciseStatsSection({ isDark, isMobile, workouts, t, la
           aria-label="Buscar ejercicio"
           style={{
             width: '100%',
+            boxSizing: 'border-box',
             // Hueco a la izquierda para el icono; a la derecha, el mismo aire visual.
             padding: `${tk.space.md} ${tk.space.lg} ${tk.space.md} 46px`,
             borderRadius: tk.radius.md,
@@ -85,6 +109,32 @@ export default function ExerciseStatsSection({ isDark, isMobile, workouts, t, la
         />
       </div>
 
+      <div role="group" aria-label="Ordenar por" style={{ display: 'flex', gap: 6, marginBottom: tk.space.md }}>
+        {SORTS.map((o) => {
+          const on = sortBy === o.key;
+          return (
+            <button
+              key={o.key}
+              type="button"
+              aria-pressed={on}
+              onClick={() => setSortBy(o.key)}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 99,
+                border: `1px solid ${on ? tk.accent : tk.border}`,
+                background: on ? tk.accentSoft : 'transparent',
+                color: on ? tk.accent : tk.textMuted,
+                fontSize: '0.76rem',
+                fontWeight: on ? 800 : 600,
+                cursor: 'pointer',
+              }}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+
       {results.length === 0 ? (
         <EmptyState
           isDark={isDark}
@@ -97,102 +147,70 @@ export default function ExerciseStatsSection({ isDark, isMobile, workouts, t, la
           }
         />
       ) : (
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: tk.space.md }}>
-          {results.map((entry, index) => (
-            <motion.li
-              key={entry.name}
-              // Sin `cursor: pointer` ni desplazamiento al pasar por encima: la versión anterior los
-              // tenía, pero estas tarjetas no llevan `onClick`. Parecían pulsables y no hacían nada,
-              // que es peor que no insinuarlo — el borde se ilumina para dar respuesta táctil sin
-              // prometer una navegación que no existe.
-              className="feeg-surface feeg-hover"
-              initial={prefersReducedMotion || index >= ANIMATED_ROWS ? false : { opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: tk.motion.duration.base,
-                ease: tk.motion.ease.out,
-                delay: prefersReducedMotion ? 0 : Math.min(index, ANIMATED_ROWS) * tk.motion.stagger,
-              }}
-              style={{
-                borderRadius: tk.radius.md,
-                padding: tk.space.lg,
-                '--feeg-bg': tk.surfaceAlt,
-                '--feeg-border': tk.border,
-                '--feeg-hover-border': tk.accent,
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'baseline',
-                  gap: tk.space.md,
-                  marginBottom: tk.space.md,
-                }}
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0, borderRadius: 20, border: `1px solid ${tk.border}`, background: tk.surface, overflow: 'hidden' }}>
+          {results.map((entry, index) => {
+            const rank = rankByExercise[entry.name];
+            const position = rank ? getRankPosition(rank.level) : null;
+            const trend = trends[entry.name] || { values: [], delta: null };
+            return (
+              <motion.li
+                key={entry.name}
+                initial={prefersReducedMotion || index >= ANIMATED_ROWS ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: tk.motion.duration.base, delay: prefersReducedMotion ? 0 : Math.min(index, ANIMATED_ROWS) * 0.03 }}
+                style={{ borderTop: index ? `1px solid ${line}` : 'none' }}
               >
-                <strong
+                <Link
+                  href={`/exercise-history?exercise=${encodeURIComponent(entry.name)}`}
+                  className="feeg-press feeg-surface feeg-hover"
                   style={{
-                    color: tk.text,
-                    fontSize: tk.fontSize.md,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '11px 14px 11px 12px',
+                    textDecoration: 'none',
+                    '--feeg-bg': 'transparent',
+                    '--feeg-fg': tk.text,
+                    '--feeg-hover-bg': tk.surfaceHover,
+                    '--feeg-border-width': '0px',
+                    '--feeg-press-scale': 0.99,
                   }}
                 >
-                  {translateExerciseName(entry.name, language)}
-                </strong>
-                <span
-                  style={{
-                    fontSize: tk.fontSize.xs,
-                    color: tk.textFaint,
-                    fontWeight: tk.weight.medium,
-                    flexShrink: 0,
-                    fontVariantNumeric: 'tabular-nums',
-                  }}
-                >
-                  #{index + 1}
-                </span>
-              </div>
-
-              {rankByExercise[entry.name] && (() => {
-                const rank = rankByExercise[entry.name];
-                const position = getRankPosition(rank.level);
-                return (
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: tk.space.sm,
-                      marginBottom: tk.space.md,
-                      paddingBottom: tk.space.md,
-                      borderBottom: `1px solid ${tk.border}`,
-                    }}
-                  >
-                    <RankArt rank={position.rank} tier={position.tier} size={20} animated={false} />
-                    <span style={{ fontSize: tk.fontSize.sm, fontWeight: tk.weight.bold, color: position.rank.color }}>
-                      {position.label}
-                    </span>
-                    <span style={{ fontSize: tk.fontSize.xs, color: tk.textFaint }}>
-                      · {rank.ratio.toFixed(2)}× tu peso
-                    </span>
+                  <ExerciseThumb name={entry.name} size={36} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {translateExerciseName(entry.name, language)}
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: tk.textMuted, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {entry.sessions} ses. · {entry.series} series
+                      {entry.volume > 0 ? ` · ${entry.volume >= 10000 ? `${(entry.volume / 1000).toLocaleString('es-ES', { maximumFractionDigits: 1 })} t` : `${Math.round(entry.volume).toLocaleString('es-ES')} kg`}` : ''}
+                    </div>
+                    {/* Mismo motor que la pestaña Rangos: un ejercicio no puede tener un rango aquí y
+                        otro distinto allí. Sólo los puntuables con marca llevan insignia. */}
+                    {position && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
+                        <RankArt rank={position.rank} tier={position.tier} size={15} animated={false} />
+                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: tk.text }}>{position.label}</span>
+                        <span style={{ fontSize: '0.68rem', color: tk.textFaint }}>· {rank.ratio.toFixed(2)}× tu peso</span>
+                      </div>
+                    )}
                   </div>
-                );
-              })()}
-
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-                  gap: tk.space.md,
-                }}
-              >
-                <MiniStat label="Sesiones" value={entry.sessions} isDark={isDark} />
-                <MiniStat label="Series" value={entry.series} isDark={isDark} />
-                <MiniStat label="Reps" value={entry.reps} isDark={isDark} />
-                <MiniStat label="Volumen" value={`${Math.round(entry.volume).toLocaleString('es-ES')} kg`} isDark={isDark} />
-              </div>
-            </motion.li>
-          ))}
+                  <Sparkline values={trend.values} width={52} height={24} color={tk.accent} surface={tk.surface} />
+                  <div style={{ minWidth: 44, textAlign: 'right' }}>
+                    {trend.delta !== null ? (
+                      <span style={{ fontSize: '0.8rem', fontWeight: 800, color: trend.delta >= 0 ? tk.accent : tk.textMuted }}>
+                        {trend.delta >= 0 ? '+' : '−'}
+                        {Math.abs(Math.round(trend.delta))}%
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '0.72rem', color: tk.textFaint }}>—</span>
+                    )}
+                    <div style={{ fontSize: '0.62rem', color: tk.textFaint }}>1RM</div>
+                  </div>
+                </Link>
+              </motion.li>
+            );
+          })}
         </ul>
       )}
     </StatSection>

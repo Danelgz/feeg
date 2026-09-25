@@ -1,9 +1,12 @@
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import { getTokens } from "../../lib/tokens";
 import { computePRTimeline } from "../../lib/exerciseStats";
 import { translateExerciseName } from "../../lib/exerciseTranslation";
-import { Icon, Card, EmptyState } from "../ui";
+import { Icon, EmptyState, Sparkline } from "../ui";
+import { exerciseTrend } from "../../lib/statsSeries";
+import ExerciseThumb from "../workout/ExerciseThumb";
 import StatSection from "./StatSection";
 
 const SHORT_MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
@@ -103,114 +106,97 @@ export default function RecordsSection({ isDark, isMobile, workouts, t, language
   }
 
   const visibleMilestones = timelineExpanded ? milestones : milestones.slice(0, TIMELINE_PAGE_SIZE);
+  const monthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const recentCount = milestones.filter((m) => m.tier !== "first" && new Date(m.date).getTime() >= monthAgo).length;
+  const strongest = currentRecords.reduce((best, r) => (!best || r.oneRM > best.oneRM ? r : best), null);
+  const line = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)";
+
+  // Hitos agrupados por mes para leer el historial como una línea de tiempo, no como una pila.
+  const groupedMilestones = [];
+  for (const m of visibleMilestones) {
+    const d = new Date(m.date);
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    let g = groupedMilestones[groupedMilestones.length - 1];
+    if (!g || g.key !== key) {
+      g = { key, label: d.toLocaleDateString("es-ES", { month: "long", year: "numeric" }), items: [] };
+      groupedMilestones.push(g);
+    }
+    g.items.push(m);
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: tk.space.lg }}>
+      {/* Resumen de récords en una sola superficie */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", borderRadius: 20, border: `1px solid ${tk.border}`, background: tk.surface, overflow: "hidden" }}>
+        {[
+          { label: "Últimos 30 días", value: recentCount, sub: recentCount === 1 ? "récord" : "récords", accent: recentCount > 0 },
+          { label: "Ejercicios", value: currentRecords.length, sub: "con marca" },
+          { label: "Más fuerte", value: strongest ? `${formatWeight(strongest.oneRM)} kg` : "—", sub: strongest ? translateExerciseName(strongest.exerciseName, language) : "" },
+        ].map((c, i) => (
+          <div key={c.label} style={{ padding: "12px", borderLeft: i ? `1px solid ${line}` : "none", minWidth: 0 }}>
+            <div style={{ fontSize: "0.7rem", color: tk.textMuted, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.label}</div>
+            <div style={{ fontSize: "1.2rem", fontWeight: 800, color: c.accent ? tk.accent : tk.text, marginTop: 2, whiteSpace: "nowrap" }}>{c.value}</div>
+            <div style={{ fontSize: "0.68rem", color: tk.textFaint, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.sub}</div>
+          </div>
+        ))}
+      </div>
+
       <StatSection
         title="Récords actuales"
         meta={`${currentRecords.length} ${currentRecords.length === 1 ? "ejercicio" : "ejercicios"}`}
         isDark={isDark}
         isMobile={isMobile}
       >
-        <div
-          style={{
-            display: "grid",
-            // A una columna en móvil la tarjeta ocupa la fila entera: por eso su contenido ya no se
-            // apila a la izquierda (ver el layout de dentro), sino que se reparte de borde a borde.
-            // En pantallas anchas sigue habiendo sitio para varias por fila.
-            gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(220px, 1fr))",
-            gap: tk.space.md,
-          }}
-        >
+        {/* Lista agrupada: una fila de ~60px por ejercicio (antes una tarjeta de ~90px), con la
+            tendencia del 1RM estimado dibujada al lado del número para ver si sigue subiendo. */}
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, borderRadius: 20, border: `1px solid ${tk.border}`, background: tk.surface, overflow: "hidden" }}>
           {currentRecords.map((rec, index) => {
-            const color = tierColor(tk, rec.tier);
+            const trend = exerciseTrend(workouts, rec.exerciseName).slice(-10).map((p) => p.value);
+            const historic = rec.tier === "historic";
             return (
-              <motion.div
+              <motion.li
                 key={rec.exerciseName}
-                initial={prefersReducedMotion || index >= 12 ? false : { opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: tk.motion.duration.base,
-                  ease: tk.motion.ease.out,
-                  delay: prefersReducedMotion ? 0 : Math.min(index, 12) * tk.motion.stagger,
-                }}
+                initial={prefersReducedMotion || index >= 12 ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: tk.motion.duration.base, delay: prefersReducedMotion ? 0 : Math.min(index, 12) * 0.03 }}
+                style={{ borderTop: index ? `1px solid ${line}` : "none" }}
               >
-                <Card isDark={isDark} padding="sm" interactive>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
-                      gap: tk.space.sm,
-                      marginBottom: tk.space.md,
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontWeight: tk.weight.bold,
-                        fontSize: tk.fontSize.sm,
-                        color: tk.text,
-                        lineHeight: 1.3,
-                        overflow: "hidden",
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                      }}
-                    >
+                <Link
+                  href={`/exercise-history?exercise=${encodeURIComponent(rec.exerciseName)}`}
+                  className="feeg-press feeg-surface feeg-hover"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "11px 14px 11px 12px",
+                    textDecoration: "none",
+                    "--feeg-bg": "transparent",
+                    "--feeg-fg": tk.text,
+                    "--feeg-hover-bg": tk.surfaceHover,
+                    "--feeg-border-width": "0px",
+                    "--feeg-press-scale": 0.99,
+                  }}
+                >
+                  <ExerciseThumb name={rec.exerciseName} size={36} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: "0.9rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {translateExerciseName(rec.exerciseName, language)}
                     </div>
-                    <div
-                      style={{
-                        width: "30px",
-                        height: "30px",
-                        borderRadius: tk.radius.full,
-                        backgroundColor: tierSoft(tk, rec.tier),
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Icon name={rec.tier === "historic" ? "award" : "trendUp"} size={14} color={color} />
+                    <div style={{ fontSize: "0.74rem", color: tk.textMuted, marginTop: 2, whiteSpace: "nowrap" }}>
+                      {formatWeight(rec.weight)} kg × {rec.reps} · {formatDate(rec.date)}
+                      {historic && <span style={{ color: tk.warning, fontWeight: 700 }}> · histórico</span>}
                     </div>
                   </div>
-
-                  {/* De borde a borde en vez de tres líneas apiladas a la izquierda: con una sola
-                      columna en móvil, la tarjeta ocupa toda la fila y apilar dejaba media tarjeta
-                      vacía a la derecha del número. El 1RM sigue siendo el dato protagonista; el
-                      resto se reparte a la derecha como un bloque de dos líneas, del mismo modo que
-                      el resto de la pantalla resuelve "dato grande + detalle" (ver MiniStat). */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: tk.space.md }}>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: tk.space.xs, minWidth: 0 }}>
-                      <span
-                        style={{
-                          fontSize: tk.fontSize.xl,
-                          fontWeight: tk.weight.heavy,
-                          color,
-                          letterSpacing: "-0.02em",
-                          fontVariantNumeric: "tabular-nums",
-                        }}
-                      >
-                        {formatWeight(rec.oneRM)}
-                      </span>
-                      <span style={{ fontSize: tk.fontSize.xs, color: tk.textFaint, fontWeight: tk.weight.medium, whiteSpace: "nowrap" }}>
-                        kg 1RM est.
-                      </span>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: tk.fontSize.xs, color: tk.textMuted, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
-                        {formatWeight(rec.weight)} kg × {rec.reps}
-                      </div>
-                      <div style={{ fontSize: tk.fontSize.xs, color: tk.textFaint, marginTop: "2px" }}>
-                        {formatDate(rec.date)}
-                      </div>
-                    </div>
+                  <Sparkline values={trend} width={52} height={24} color={tk.accent} surface={tk.surface} />
+                  <div style={{ textAlign: "right", minWidth: 58 }}>
+                    <div style={{ fontSize: "1.08rem", fontWeight: 800, color: tk.text, lineHeight: 1.1 }}>{formatWeight(rec.oneRM)}</div>
+                    <div style={{ fontSize: "0.64rem", color: tk.textFaint, fontWeight: 600 }}>kg 1RM est.</div>
                   </div>
-                </Card>
-              </motion.div>
+                </Link>
+              </motion.li>
             );
           })}
-        </div>
+        </ul>
       </StatSection>
 
       <StatSection
@@ -219,77 +205,40 @@ export default function RecordsSection({ isDark, isMobile, workouts, t, language
         isDark={isDark}
         isMobile={isMobile}
       >
-        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: tk.space.sm }}>
-          {visibleMilestones.map((m, index) => (
-            <motion.li
-              key={m.id}
-              // Sólo se animan las filas nuevas al desplegar: reanimar las diez de arriba cada vez
-              // que se pulsa "ver más" convierte una acción menor en un parpadeo de toda la lista.
-              initial={prefersReducedMotion || index < TIMELINE_PAGE_SIZE ? false : { opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: tk.motion.duration.base,
-                ease: tk.motion.ease.out,
-                delay: prefersReducedMotion ? 0 : Math.min(index - TIMELINE_PAGE_SIZE, 10) * tk.motion.stagger,
-              }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: tk.space.md,
-                backgroundColor: tk.surfaceAlt,
-                border: `1px solid ${tk.border}`,
-                borderRadius: tk.radius.md,
-                padding: tk.space.md,
-              }}
-            >
-              <div
-                style={{
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: tk.radius.full,
-                  backgroundColor: tierSoft(tk, m.tier),
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <Icon name={TIER_META[m.tier]?.icon || "trendUp"} size={16} color={tierColor(tk, m.tier)} />
-              </div>
-
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: tk.space.sm, flexWrap: "wrap" }}>
-                  <span style={{ fontWeight: tk.weight.bold, fontSize: tk.fontSize.sm, color: tk.text }}>
-                    {translateExerciseName(m.exerciseName, language)}
-                  </span>
-                  <TierBadge tk={tk} tier={m.tier} />
-                </div>
-                <div
-                  style={{
-                    fontSize: tk.fontSize.xs,
-                    color: tk.textMuted,
-                    marginTop: "3px",
-                    fontVariantNumeric: "tabular-nums",
-                  }}
-                >
-                  {formatWeight(m.weight)} kg × {m.reps} · 1RM est. {formatWeight(m.oneRM)} kg
-                  {m.deltaOneRMPercent != null && ` · +${Math.round(m.deltaOneRMPercent)}%`}
-                </div>
-              </div>
-
-              <span
-                style={{
-                  fontSize: tk.fontSize.xs,
-                  color: tk.textFaint,
-                  flexShrink: 0,
-                  fontVariantNumeric: "tabular-nums",
-                }}
-              >
-                {formatDate(m.date)}
-              </span>
-            </motion.li>
+        <div style={{ borderRadius: 20, border: `1px solid ${tk.border}`, background: tk.surface, padding: "4px 14px 10px" }}>
+          {groupedMilestones.map((g) => (
+            <div key={g.key}>
+              <div style={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: tk.textMuted, padding: "10px 0 6px" }}>{g.label}</div>
+              <ul style={{ listStyle: "none", margin: 0, padding: 0, position: "relative" }}>
+                {/* Línea de tiempo: hairline vertical que une los puntos del mes */}
+                <span aria-hidden style={{ position: "absolute", left: 5, top: 8, bottom: 8, width: 1, background: line }} />
+                {g.items.map((m) => {
+                  const color = tierColor(tk, m.tier);
+                  const showBadge = m.tier === "major" || m.tier === "historic";
+                  return (
+                    <li key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "7px 0", position: "relative" }}>
+                      <span aria-hidden style={{ width: 11, height: 11, borderRadius: 99, background: color, boxShadow: `0 0 0 2px ${tk.surface}`, flexShrink: 0, opacity: m.tier === "first" ? 0.5 : 1 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                          <span style={{ fontWeight: 700, fontSize: "0.86rem", color: tk.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {translateExerciseName(m.exerciseName, language)}
+                          </span>
+                          {showBadge && <TierBadge tk={tk} tier={m.tier} />}
+                        </div>
+                        <div style={{ fontSize: "0.72rem", color: tk.textMuted, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {m.tier === "first" ? "Primera marca · " : ""}
+                          {formatWeight(m.weight)} kg × {m.reps} · 1RM {formatWeight(m.oneRM)} kg
+                          {m.deltaOneRMPercent != null && <b style={{ color: tk.accent }}> +{Math.round(m.deltaOneRMPercent)}%</b>}
+                        </div>
+                      </div>
+                      <span style={{ fontSize: "0.72rem", color: tk.textFaint, flexShrink: 0 }}>{formatDate(m.date)}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
 
         {milestones.length > TIMELINE_PAGE_SIZE && (
           <button

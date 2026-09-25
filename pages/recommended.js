@@ -26,10 +26,10 @@ export default function Recommended() {
     loadUsers();
   }, [isLoaded]);
 
-  if (!isLoaded) return <Layout><SkeletonPage isDark={isDark} isMobile={isMobile} /></Layout>;
+  if (!isLoaded) return <Layout gutter><SkeletonPage isDark={isDark} isMobile={isMobile} /></Layout>;
 
   return (
-    <Layout>
+    <Layout gutter>
       <div style={{
         maxWidth: isMobile ? "100%" : "600px",
         margin: "0 auto",

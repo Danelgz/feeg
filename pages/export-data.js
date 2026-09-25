@@ -496,14 +496,14 @@ export default function ExportData() {
 
   if (!authUser) {
     return (
-      <Layout>
+      <Layout gutter>
         <EmptyState isDark={isDark} icon="user" title={t("please_login_to_import")} />
       </Layout>
     );
   }
 
   return (
-    <Layout>
+    <Layout gutter>
       <div style={{ maxWidth: "800px", margin: "0 auto" }}>
         <PageHeader
           isDark={isDark}

@@ -12,7 +12,7 @@ export default function NotFound() {
   const tk = getTokens(theme === "dark");
 
   return (
-    <Layout>
+    <Layout gutter>
       <main
         style={{
           display: "flex",

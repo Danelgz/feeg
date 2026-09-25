@@ -8,7 +8,7 @@ import { PageHeader, Card } from "../ui";
  */
 export default function SettingsSubpage({ isDark, isMobile, title, subtitle, children }) {
   return (
-    <Layout>
+    <Layout gutter>
       <PageHeader isDark={isDark} isMobile={isMobile} title={title} subtitle={subtitle} />
       <Card isDark={isDark} padding={isMobile ? "sm" : "lg"} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
         {children}

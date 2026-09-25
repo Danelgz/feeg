@@ -58,7 +58,7 @@ export default function Calendar() {
     return months;
   }, [completedWorkouts]);
 
-  if (!isLoaded) return <Layout><SkeletonPage isDark={isDark} isMobile={isMobile} /></Layout>;
+  if (!isLoaded) return <Layout gutter><SkeletonPage isDark={isDark} isMobile={isMobile} /></Layout>;
 
   const spanishMonths = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -144,7 +144,7 @@ export default function Calendar() {
   };
 
   return (
-    <Layout>
+    <Layout gutter>
       <PageHeader
         isDark={isDark}
         isMobile={isMobile}

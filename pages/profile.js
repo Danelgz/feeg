@@ -241,7 +241,7 @@ export default function Profile() {
   // los datos ya estuvieran en estado desde localStorage.
   if (!isLoaded && !user) {
     return (
-      <Layout>
+      <Layout gutter>
         <div style={{ padding: isMobile ? "0" : "20px" }}>
           <h1 style={{ fontSize: isMobile ? "1.8rem" : "2rem", marginBottom: "1rem", color: tk.text }}>{t("profile_title")}</h1>
           <p style={{ color: tk.textMuted }}>{t("loading")}</p>
@@ -253,7 +253,7 @@ export default function Profile() {
   // Si no hay usuario autenticado, mostrar opciones de login/registro
   if (!authUser) {
     return (
-      <Layout>
+      <Layout gutter>
         <ProfileLoginPrompt isDark={isDark} isMobile={isMobile} t={t} loginWithGoogle={loginWithGoogle} isLoggingIn={isLoggingIn} />
       </Layout>
     );
@@ -262,7 +262,7 @@ export default function Profile() {
   // Si autenticado pero sin perfil completado, pedir datos actuales
   if (authUser && !user) {
     return (
-      <Layout>
+      <Layout gutter>
         <div style={{ padding: isMobile ? "0" : "20px" }}>
           <RegisterForm
             onRegister={(data) => {
@@ -281,8 +281,8 @@ export default function Profile() {
 
   return (
     <>
-      <Layout>
-        <div style={{ backgroundColor: tk.bg, color: tk.text, minHeight: "100vh", padding: isMobile ? "10px" : "20px" }}>
+      <Layout gutter>
+        <div style={{ backgroundColor: tk.bg, color: tk.text, minHeight: "100vh", padding: isMobile ? "0" : "20px" }}>
           <ProfileHeader
             isDark={isDark}
             user={user}

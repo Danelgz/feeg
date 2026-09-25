@@ -1,5 +1,5 @@
 import Sidebar from "./Sidebar";
-import BottomNavigation from "./BottomNavigation";
+import BottomNavigation, { BOTTOM_NAV_HEIGHT } from "./BottomNavigation";
 import { useUser } from "../context/UserContext";
 import { useState, useEffect } from "react";
 import Head from "next/head";
@@ -10,7 +10,10 @@ import { readLiveElapsedFromSnapshot } from "../lib/workoutStorage";
 import { useMinDurationLoading } from "../hooks/useMinDurationLoading";
 import ActiveRoutineDock from "./ActiveRoutineDock";
 
-export default function Layout({ children, hideBottomNav = false }) {
+// `gutter`: margen lateral estándar en móvil (16px). Las páginas que gestionan su propio sangrado
+// (feed a sangre, Coach IA, modo entreno) no lo piden; el resto lo pide en vez de repetir cada una
+// su propio `padding: isMobile ? ...`, que es como varias acabaron pegadas al borde de la pantalla.
+export default function Layout({ children, hideBottomNav = false, gutter = false }) {
   const { theme, isMobile, activeRoutine, endRoutine, isSyncing, isInitialSync, t } = useUser();
   // El overlay a pantalla completa se reserva para la carga en frío: sincronizando SIN nada local
   // que mostrar (ver isInitialSync en context/UserContext.js). Antes se mostraba para cualquier
@@ -59,7 +62,10 @@ export default function Layout({ children, hideBottomNav = false }) {
     return `${m}:${s}`;
   };
 
-  const topLevelPages = ["/", "/routines", "/exercises", "/ia", "/statistics", "/profile", "/settings", "/routines/create", "/routines/[id]", "/routines/empty", "/user/[uid]", "/exercise-history"];
+  // Calendario, Medidas, Exportar y Avisos son destinos de la hoja "Más" (ver data/navigation.js):
+  // se llega a ellos desde la navegación principal, así que no llevan barra de "atrás" (era una tira
+  // de ~60px con un único botón encima de cada una).
+  const topLevelPages = ["/", "/routines", "/exercises", "/ia", "/statistics", "/profile", "/settings", "/calendar", "/measures", "/export-data", "/notifications", "/routines/create", "/routines/[id]", "/routines/empty", "/user/[uid]", "/exercise-history"];
   const isTopLevel = topLevelPages.includes(router.pathname) || topLevelPages.includes(router.asPath);
 
   // Las tres pantallas de "modo entreno" reducen el chrome a propósito (ver getWorkoutTokens en
@@ -204,9 +210,25 @@ export default function Layout({ children, hideBottomNav = false }) {
               opacity: 1;
             }
           }
+          /* Entrada de página: fundido + un ascenso corto. Sólo opacidad y transform (compuestos en
+             GPU) y sin will-change permanente, que dejaría una capa extra viva en cada página. */
+          @keyframes enterPage {
+            0% {
+              opacity: 0;
+              transform: translate3d(0, 10px, 0);
+            }
+            100% {
+              opacity: 1;
+              transform: none;
+            }
+          }
           .page-transition {
-            animation: fadeInPage 0.3s ease both;
-            will-change: opacity;
+            animation: enterPage 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .page-transition {
+              animation: fadeInPage 0.2s ease both;
+            }
           }
           /* Indicador de sincronización de fondo: por encima de la barra superior (z-index 500)
              pero sin capturar clics ni desplazar el layout. */
@@ -372,7 +394,7 @@ export default function Layout({ children, hideBottomNav = false }) {
                   style={{
                     flex: 1,
                     minHeight: 0,
-                    padding: currentIsMobile ? "0" : "20px",
+                    padding: currentIsMobile ? (gutter ? "14px 16px 0" : "0") : "20px",
                     // Los 80px son el hueco reservado para BottomNavigation — solo hace falta
                     // cuando esa barra realmente se pinta debajo (ver más abajo). Reservarlo
                     // también en pantallas con hideBottomNav (el modo entreno en vivo) dejaba la
@@ -381,7 +403,7 @@ export default function Layout({ children, hideBottomNav = false }) {
                     // compitiendo con el scroll-snap del pager de ejercicios, que es el único que
                     // debe cambiar de ejercicio. Con esto la página mide justo 100dvh y solo queda
                     // el scroll interno del pager.
-                    paddingBottom: currentIsMobile ? (hideBottomNav ? "0" : "80px") : "20px",
+                    paddingBottom: currentIsMobile ? (hideBottomNav ? "0" : `calc(${BOTTOM_NAV_HEIGHT + 18}px + env(safe-area-inset-bottom))`) : "20px",
                     backgroundColor: isDark ? "#000000" : "#f0f2f5",
                     color: isDark ? "#fff" : "#333",
                     transition: "background-color 0.3s ease",

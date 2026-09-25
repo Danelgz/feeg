@@ -7,6 +7,7 @@ import { getTokens } from "../lib/tokens";
 import { translateExerciseName } from "../lib/exerciseTranslation";
 import { ExerciseThumb } from "../components/workout";
 import ReadOnlyWorkoutModal from "../components/workout/ReadOnlyWorkoutModal";
+import TodayPanel from "../components/home/TodayPanel";
 import { Icon, Button, Spinner, EmptyState, Avatar, SkeletonPage } from "../components/ui";
 
 function formatFeedDuration(workout) {
@@ -241,8 +242,21 @@ export default function Home() {
         boxSizing: "border-box"
       }}>
 
+        {/* Panel personal: objetivo semanal, rutina que toca y último entreno. Va antes del feed
+            porque es lo que se viene a hacer al abrir la app; lo social queda justo debajo. */}
+        <div style={{ margin: isMobile ? "0" : "0 -16px" }}>
+          <TodayPanel isDark={isDark} onOpenWorkout={setSelectedWorkout} />
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: isMobile ? "28px 16px 0" : "28px 0 0" }}>
+          <h2 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 800, color: tk.text, display: "flex", alignItems: "center", gap: "8px" }}>
+            <Icon name="users" size={18} color={tk.accent} />
+            {t("community_title")}
+          </h2>
+        </div>
+
         {/* Buscador de usuarios interactivo */}
-        <div style={{ marginBottom: "30px", position: "relative", padding: isMobile ? "16px 15px 0" : "0" }}>
+        <div style={{ marginBottom: "18px", position: "relative", padding: isMobile ? "12px 16px 0" : "12px 0 0" }}>
           <div style={{ display: "flex", gap: "10px" }}>
             <div style={{ position: "relative", flex: 1 }}>
               <span style={{ position: "absolute", left: "15px", top: "50%", transform: "translateY(-50%)", color: tk.textFaint, display: "flex" }}>
@@ -371,11 +385,6 @@ export default function Home() {
             </div>
           )}
         </div>
-
-        <h1 style={{ fontSize: "1.8rem", fontWeight: "bold", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px", padding: isMobile ? "0 15px" : "0", color: tk.text }}>
-          <span style={{ width: "4px", height: "24px", backgroundColor: tk.accent, borderRadius: "2px" }}></span>
-          {t("feed")}
-        </h1>
 
         {/* Feed de Entrenamientos */}
         <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "0" : "20px", padding: isMobile ? "0" : "0" }}>

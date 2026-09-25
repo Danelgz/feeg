@@ -61,7 +61,7 @@ export default function Exercises() {
   ];
 
   return (
-    <Layout>
+    <Layout gutter>
       <PageHeader isDark={isDark} isMobile={isMobile} title={t("exercises")} />
 
       <div style={{ position: "relative", maxWidth: "900px", marginBottom: "20px" }}>

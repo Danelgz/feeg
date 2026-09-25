@@ -4,15 +4,14 @@
 
 export const ICONS = {
   home: [
-    { tag: 'path', d: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
-    { tag: 'polyline', points: '9 22 9 12 15 12 15 22' },
+    { tag: 'path', d: 'M3.5 10.2 12 3.5l8.5 6.7V19a2 2 0 0 1-2 2H15v-5.5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1V21H5.5a2 2 0 0 1-2-2z' },
   ],
   dumbbell: [
-    { tag: 'path', d: 'M4 9v6', strokeLinecap: 'round' },
-    { tag: 'path', d: 'M2 10v4', strokeLinecap: 'round' },
-    { tag: 'path', d: 'M20 9v6', strokeLinecap: 'round' },
-    { tag: 'path', d: 'M22 10v4', strokeLinecap: 'round' },
-    { tag: 'line', x1: 6, y1: 12, x2: 18, y2: 12 },
+    { tag: 'rect', x: 2, y: 9, width: 2.6, height: 6, rx: 1.1 },
+    { tag: 'rect', x: 4.6, y: 6.5, width: 3.2, height: 11, rx: 1.3 },
+    { tag: 'line', x1: 7.8, y1: 12, x2: 16.2, y2: 12 },
+    { tag: 'rect', x: 16.2, y: 6.5, width: 3.2, height: 11, rx: 1.3 },
+    { tag: 'rect', x: 19.4, y: 9, width: 2.6, height: 6, rx: 1.1 },
   ],
   list: [
     { tag: 'line', x1: 8, y1: 6, x2: 21, y2: 6 },
@@ -30,13 +29,13 @@ export const ICONS = {
     { tag: 'path', d: 'M17 2c-2.5 2-2.5 5.5-2.5 8.5 0 2 1.2 3 2.5 3v8.5' },
   ],
   barChart: [
-    { tag: 'line', x1: 18, y1: 20, x2: 18, y2: 10 },
-    { tag: 'line', x1: 12, y1: 20, x2: 12, y2: 4 },
-    { tag: 'line', x1: 6, y1: 20, x2: 6, y2: 14 },
+    { tag: 'rect', x: 3.5, y: 12, width: 4.2, height: 8.5, rx: 1.4 },
+    { tag: 'rect', x: 9.9, y: 3.5, width: 4.2, height: 17, rx: 1.4 },
+    { tag: 'rect', x: 16.3, y: 8, width: 4.2, height: 12.5, rx: 1.4 },
   ],
   user: [
-    { tag: 'path', d: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2' },
-    { tag: 'circle', cx: 12, cy: 7, r: 4 },
+    { tag: 'circle', cx: 12, cy: 8, r: 4 },
+    { tag: 'path', d: 'M4 20.5c0-3.9 3.6-6.5 8-6.5s8 2.6 8 6.5' },
   ],
   download: [
     { tag: 'path', d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' },
@@ -214,5 +213,98 @@ export const ICONS = {
     { tag: 'path', d: 'M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19' },
     { tag: 'path', d: 'M14.12 14.12a3 3 0 1 1-4.24-4.24' },
     { tag: 'line', x1: 1, y1: 1, x2: 23, y2: 23 },
+  ],
+  // --- Variantes rellenas: estado ACTIVO de la barra de pestañas. Mismo contorno que su versión
+  // outline para que el cambio se lea como "se enciende", no como "cambia de icono".
+  homeFill: [
+    { tag: 'path', d: 'M3.5 10.2 12 3.5l8.5 6.7V19a2 2 0 0 1-2 2H15v-5.5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1V21H5.5a2 2 0 0 1-2-2z', fill: 'currentColor' },
+  ],
+  dumbbellFill: [
+    { tag: 'rect', x: 2, y: 9, width: 2.6, height: 6, rx: 1.1, fill: 'currentColor' },
+    { tag: 'rect', x: 4.6, y: 6.5, width: 3.2, height: 11, rx: 1.3, fill: 'currentColor' },
+    { tag: 'line', x1: 7.8, y1: 12, x2: 16.2, y2: 12, strokeWidth: 2.6 },
+    { tag: 'rect', x: 16.2, y: 6.5, width: 3.2, height: 11, rx: 1.3, fill: 'currentColor' },
+    { tag: 'rect', x: 19.4, y: 9, width: 2.6, height: 6, rx: 1.1, fill: 'currentColor' },
+  ],
+  barChartFill: [
+    { tag: 'rect', x: 3.5, y: 12, width: 4.2, height: 8.5, rx: 1.4, fill: 'currentColor' },
+    { tag: 'rect', x: 9.9, y: 3.5, width: 4.2, height: 17, rx: 1.4, fill: 'currentColor' },
+    { tag: 'rect', x: 16.3, y: 8, width: 4.2, height: 12.5, rx: 1.4, fill: 'currentColor' },
+  ],
+  userFill: [
+    { tag: 'circle', cx: 12, cy: 8, r: 4, fill: 'currentColor' },
+    { tag: 'path', d: 'M4 20.5c0-3.9 3.6-6.5 8-6.5s8 2.6 8 6.5z', fill: 'currentColor' },
+  ],
+  grid: [
+    { tag: 'rect', x: 3.5, y: 3.5, width: 7, height: 7, rx: 2 },
+    { tag: 'rect', x: 13.5, y: 3.5, width: 7, height: 7, rx: 2 },
+    { tag: 'rect', x: 3.5, y: 13.5, width: 7, height: 7, rx: 2 },
+    { tag: 'rect', x: 13.5, y: 13.5, width: 7, height: 7, rx: 3.5 },
+  ],
+  gridFill: [
+    { tag: 'rect', x: 3.5, y: 3.5, width: 7, height: 7, rx: 2, fill: 'currentColor' },
+    { tag: 'rect', x: 13.5, y: 3.5, width: 7, height: 7, rx: 2, fill: 'currentColor' },
+    { tag: 'rect', x: 3.5, y: 13.5, width: 7, height: 7, rx: 2, fill: 'currentColor' },
+    { tag: 'rect', x: 13.5, y: 13.5, width: 7, height: 7, rx: 3.5, fill: 'currentColor' },
+  ],
+  // --- Iconos de producto (menú Más, panel de Hoy, tarjetas de rutina).
+  sparkles: [
+    { tag: 'path', d: 'M11 3.5l1.7 4.6a2 2 0 0 0 1.2 1.2l4.6 1.7-4.6 1.7a2 2 0 0 0-1.2 1.2L11 18.5l-1.7-4.6a2 2 0 0 0-1.2-1.2L3.5 11l4.6-1.7a2 2 0 0 0 1.2-1.2z' },
+    { tag: 'path', d: 'M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z' },
+  ],
+  calendar: [
+    { tag: 'rect', x: 3.5, y: 4.5, width: 17, height: 16, rx: 3 },
+    { tag: 'line', x1: 3.5, y1: 9.5, x2: 20.5, y2: 9.5 },
+    { tag: 'line', x1: 8, y1: 2.5, x2: 8, y2: 6 },
+    { tag: 'line', x1: 16, y1: 2.5, x2: 16, y2: 6 },
+    { tag: 'circle', cx: 12, cy: 15, r: 1.2, fill: 'currentColor', stroke: 'none' },
+  ],
+  trophy: [
+    { tag: 'path', d: 'M7.5 4h9v5.5a4.5 4.5 0 0 1-9 0z' },
+    { tag: 'path', d: 'M16.5 5.5h2.2a1.3 1.3 0 0 1 1.3 1.3v.4a3.8 3.8 0 0 1-3.8 3.8' },
+    { tag: 'path', d: 'M7.5 5.5H5.3A1.3 1.3 0 0 0 4 6.8v.4a3.8 3.8 0 0 0 3.8 3.8' },
+    { tag: 'line', x1: 12, y1: 14, x2: 12, y2: 17.5 },
+    { tag: 'path', d: 'M8.5 20.5h7a1 1 0 0 0-1-3h-5a1 1 0 0 0-1 3z' },
+  ],
+  play: [{ tag: 'path', d: 'M7.5 5.2v13.6a1 1 0 0 0 1.5.86l11.3-6.8a1 1 0 0 0 0-1.72L9 4.34a1 1 0 0 0-1.5.86z', fill: 'currentColor' }],
+  target: [
+    { tag: 'circle', cx: 12, cy: 12, r: 9 },
+    { tag: 'circle', cx: 12, cy: 12, r: 5 },
+    { tag: 'circle', cx: 12, cy: 12, r: 1.3, fill: 'currentColor' },
+  ],
+  ruler: [
+    { tag: 'path', d: 'M3.6 15.9 15.9 3.6a1.4 1.4 0 0 1 2 0l2.5 2.5a1.4 1.4 0 0 1 0 2L8.1 20.4a1.4 1.4 0 0 1-2 0l-2.5-2.5a1.4 1.4 0 0 1 0-2z' },
+    { tag: 'line', x1: 7.5, y1: 12, x2: 9.5, y2: 14 },
+    { tag: 'line', x1: 10.5, y1: 9, x2: 12, y2: 10.5 },
+    { tag: 'line', x1: 13.5, y1: 6, x2: 15.5, y2: 8 },
+  ],
+  activity: [{ tag: 'polyline', points: '21.5 12 17.5 12 14.5 20.5 9.5 3.5 6.5 12 2.5 12' }],
+  timer: [
+    { tag: 'circle', cx: 12, cy: 13.5, r: 7.5 },
+    { tag: 'line', x1: 12, y1: 13.5, x2: 12, y2: 9.5 },
+    { tag: 'line', x1: 9.5, y1: 2.5, x2: 14.5, y2: 2.5 },
+    { tag: 'line', x1: 18.5, y1: 6.5, x2: 19.8, y2: 5.2 },
+  ],
+  history: [
+    { tag: 'path', d: 'M3.5 12a8.5 8.5 0 1 0 2.6-6.1L3.5 8.5' },
+    { tag: 'polyline', points: '3.5 3.5 3.5 8.5 8.5 8.5' },
+    { tag: 'polyline', points: '12 7.5 12 12 15 14' },
+  ],
+  chevronDown: [{ tag: 'polyline', points: '6 9 12 15 18 9' }],
+  chevronUp: [{ tag: 'polyline', points: '6 15 12 9 18 15' }],
+  moreHorizontal: [
+    { tag: 'circle', cx: 5, cy: 12, r: 1.3, fill: 'currentColor' },
+    { tag: 'circle', cx: 12, cy: 12, r: 1.3, fill: 'currentColor' },
+    { tag: 'circle', cx: 19, cy: 12, r: 1.3, fill: 'currentColor' },
+  ],
+  copy: [
+    { tag: 'rect', x: 8.5, y: 8.5, width: 12, height: 12, rx: 2.5 },
+    { tag: 'path', d: 'M15.5 8.5V6a2.5 2.5 0 0 0-2.5-2.5H6A2.5 2.5 0 0 0 3.5 6v7A2.5 2.5 0 0 0 6 15.5h2.5' },
+  ],
+  star: [{ tag: 'polygon', points: '12 3 14.8 8.7 21 9.6 16.5 14 17.6 20.2 12 17.3 6.4 20.2 7.5 14 3 9.6 9.2 8.7 12 3' }],
+  layers: [
+    { tag: 'polygon', points: '12 3 21.5 8 12 13 2.5 8 12 3' },
+    { tag: 'polyline', points: '2.5 12.5 12 17.5 21.5 12.5' },
+    { tag: 'polyline', points: '2.5 16.5 12 21.5 21.5 16.5' },
   ],
 };

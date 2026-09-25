@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useRouter } from "next/router";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { getTokens } from "../lib/tokens";
@@ -76,11 +75,12 @@ export default function Statistics() {
   };
 
   // Enlace profundo a una vista (?view=muscleMap), p.ej. desde "Músculos esta semana" en Inicio.
-  const router = useRouter();
+  // Se lee de window.location al montar (no con useRouter): navegar a esta página siempre la
+  // monta de nuevo, y así la pantalla no depende de un router montado (los tests la renderizan sola).
   useEffect(() => {
-    const view = router.query.view;
-    if (typeof view === 'string' && VIEWS.some((v) => v.key === view)) setActiveView(view);
-  }, [router.query.view]);
+    const view = new URLSearchParams(window.location.search).get('view');
+    if (view && VIEWS.some((v) => v.key === view)) setActiveView(view);
+  }, []);
 
   useEffect(() => {
     const check = () => setIsNarrow(window.innerWidth <= 768);

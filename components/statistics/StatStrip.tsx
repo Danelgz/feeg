@@ -15,6 +15,8 @@ interface StatStripProps {
   items: StatStripItem[];
   isDark: boolean;
   columns?: number;
+  /** Margen inferior; 0 cuando el contenedor ya separa con `gap`. */
+  marginBottom?: number;
 }
 
 /**
@@ -22,7 +24,7 @@ interface StatStripProps {
  * Cuatro tarjetas con borde, sombra y padding propios ocupaban ~260px de alto para cuatro números;
  * aquí los mismos datos caben en ~130px y se leen como un bloque, no como cuatro cosas sueltas.
  */
-export default function StatStrip({ items, isDark, columns = 2 }: StatStripProps) {
+export default function StatStrip({ items, isDark, columns = 2, marginBottom = 20 }: StatStripProps) {
   const tk = getTokens(isDark);
   const line = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)";
   return (
@@ -34,7 +36,7 @@ export default function StatStrip({ items, isDark, columns = 2 }: StatStripProps
         background: tk.surface,
         border: `1px solid ${tk.border}`,
         overflow: "hidden",
-        marginBottom: 20,
+        marginBottom,
       }}
     >
       {items.map((it, i) => {

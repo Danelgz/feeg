@@ -71,8 +71,8 @@ describe("pantalla de estadísticas", () => {
   it("presenta las vistas como chips accesibles, sin la rejilla de tarjetas con descripción", async () => {
     renderStats();
     const tabs = await screen.findAllByRole("tab");
-    // 9 vistas + 4 periodos (Resumen es la vista inicial y sí usa periodo).
-    expect(tabs).toHaveLength(13);
+    // 5 vistas + 4 periodos (Resumen es la vista inicial y sí usa periodo).
+    expect(tabs).toHaveLength(9);
     expect(tab("Rangos")).toBeTruthy();
     expect(tab("Resumen").getAttribute("aria-selected")).toBe("true");
 
@@ -86,7 +86,7 @@ describe("pantalla de estadísticas", () => {
     await screen.findAllByRole("tab");
     // Con doce chips, dejarlos todos tabulables obliga a pasar por los doce antes de llegar al
     // contenido. El patrón de pestañas deja sólo el activo y se circula con las flechas.
-    const views = ["Resumen", "Récords", "Mapa muscular", "Rangos"];
+    const views = ["Resumen", "Músculos", "Récords", "Rangos"];
     expect(tab("Resumen").getAttribute("tabindex")).toBe("0");
     for (const name of views.slice(1)) {
       expect(tab(name).getAttribute("tabindex"), name).toBe("-1");
@@ -98,9 +98,9 @@ describe("pantalla de estadísticas", () => {
     await screen.findAllByRole("tab");
 
     fireEvent.keyDown(tab("Resumen"), { key: "ArrowRight" });
-    await waitFor(() => expect(tab("Récords").getAttribute("aria-selected")).toBe("true"));
+    await waitFor(() => expect(tab("Músculos").getAttribute("aria-selected")).toBe("true"));
 
-    fireEvent.keyDown(tab("Récords"), { key: "ArrowLeft" });
+    fireEvent.keyDown(tab("Músculos"), { key: "ArrowLeft" });
     await waitFor(() => expect(tab("Resumen").getAttribute("aria-selected")).toBe("true"));
 
     // Da la vuelta en lugar de quedarse atascado en el primero.
@@ -116,9 +116,10 @@ describe("pantalla de estadísticas", () => {
     // 7200 + 4800 en los últimos 7 días, con separador de miles español.
     expect(await screen.findByText("12.000")).toBeTruthy();
     expect(screen.getByText("kg")).toBeTruthy();
-    // Frente a los 6.000 kg de los 7 días anteriores.
-    expect(screen.getByText(/100%/)).toBeTruthy();
-    expect(screen.getByText(/vs 7 días antes/)).toBeTruthy();
+    // Frente a los 6.000 kg de los 7 días anteriores. Se busca dentro de la píldora de la métrica
+    // protagonista: la gráfica de Progreso también enseña su propia variación semanal.
+    const deltaPill = screen.getByText(/vs 7 días antes/).parentElement!;
+    expect(deltaPill.textContent).toMatch(/100%/);
   });
 
   it("solo ofrece el filtro de periodo en las vistas que de verdad reaccionan a él", async () => {
@@ -131,8 +132,8 @@ describe("pantalla de estadísticas", () => {
       expect(screen.queryByRole("tab", { name: "7 días" })).toBeNull();
     });
 
-    // Series por grupo sí lo usa, así que vuelve a aparecer.
-    fireEvent.click(tab("Series por grupo"));
+    // Músculos lo usa para el reparto por grupo, así que vuelve a aparecer.
+    fireEvent.click(tab("Músculos"));
     expect(await screen.findByRole("tab", { name: "7 días" })).toBeTruthy();
   });
 
@@ -140,7 +141,7 @@ describe("pantalla de estadísticas", () => {
     renderStats();
     expect(await screen.findByText("Racha semanal")).toBeTruthy();
 
-    fireEvent.click(tab("Mapa muscular"));
+    fireEvent.click(tab("Músculos"));
     await waitFor(() => {
       expect(screen.queryByText("Racha semanal")).toBeNull();
     });

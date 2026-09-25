@@ -399,7 +399,7 @@ export default function TodayPanel({ isDark, onOpenWorkout }: TodayPanelProps) {
       {streak.thisWeek > 0 && (
         <motion.div variants={item}>
           <Link
-            href="/statistics?view=muscleMap"
+            href="/statistics?view=muscles"
             className="feeg-press"
             style={{ ...glassCard(tk, isDark), display: "block", padding: "14px 0 14px", textDecoration: "none", color: tk.text, ["--feeg-press-scale" as string]: 0.99 } as React.CSSProperties}
           >

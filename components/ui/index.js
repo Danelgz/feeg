@@ -20,3 +20,4 @@ export { default as MuscleGroupIcon } from "./MuscleGroupIcon";
 export { default as ProgressRing } from "./ProgressRing";
 export { default as ActionSheet } from "./ActionSheet";
 export { default as SegmentedControl } from "./SegmentedControl";
+export { default as Sparkline } from "./Sparkline";

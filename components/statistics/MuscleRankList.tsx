@@ -231,47 +231,43 @@ export default function MuscleRankList({
         );
       })}
 
-      {rows.pending.map((group) => (
+      {/* Los grupos sin rango van juntos como fichas en una sola fila, no como una tarjeta de
+          ~60px cada uno: son una lista de tareas pendientes, no filas de datos. Cada ficha conserva
+          su id para que tocar el grupo en el cuerpo haga scroll hasta ella. */}
+      {rows.pending.length > 0 && (
         <li
-          key={group}
-          id={muscleRankRowId(group)}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: tk.space.md,
             padding: tk.space.md,
             borderRadius: tk.radius.md,
-            // Borde discontinuo: es un hueco por rellenar, no una tarjeta apagada. Se distingue de
-            // un rango real sin necesidad de leer el texto.
+            // Borde discontinuo: es un hueco por rellenar, no una tarjeta apagada.
             border: `1px dashed ${tk.border}`,
-            scrollMarginTop: '80px',
           }}
         >
-          <span
-            style={{
-              width: '46px',
-              height: '46px',
-              borderRadius: tk.radius.md,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              color: tk.textFaint,
-              border: `1px dashed ${tk.border}`,
-            }}
-          >
-            <Icon name="award" size={20} />
-          </span>
-          <span style={{ minWidth: 0 }}>
-            <span style={{ display: 'block', color: tk.textMuted, fontSize: tk.fontSize.md, fontWeight: tk.weight.medium }}>
-              {name(group)}
-            </span>
-            <span style={{ display: 'block', fontSize: tk.fontSize.xs, color: tk.textFaint, marginTop: '2px' }}>
-              Sin rango todavía · registra un ejercicio puntuable
-            </span>
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: tk.fontSize.xs, color: tk.textFaint, marginBottom: tk.space.sm }}>
+            <Icon name="award" size={14} />
+            Sin rango todavía · registra un ejercicio puntuable
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {rows.pending.map((group) => (
+              <span
+                key={group}
+                id={muscleRankRowId(group)}
+                style={{
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  color: tk.textMuted,
+                  padding: '4px 10px',
+                  borderRadius: 99,
+                  background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+                  scrollMarginTop: '80px',
+                }}
+              >
+                {name(group)}
+              </span>
+            ))}
+          </div>
         </li>
-      ))}
+      )}
     </ul>
   );
 }

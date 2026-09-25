@@ -3,24 +3,22 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { getTokens } from "../lib/tokens";
-import { PageHeader, ChipNav } from "../components/ui";
-import { computeSeriesByGroup, computeWeeklyStreak, resolveWeeklyGoal } from "../lib/exerciseStats";
+import Link from "next/link";
+import { PageHeader, ChipNav, EmptyState } from "../components/ui";
+import { computeWeeklyStreak, resolveWeeklyGoal } from "../lib/exerciseStats";
 import {
   HeroMetricCard,
-  WeeklyStreakCard,
-  MiniStatCard,
-  OverviewSection,
   MuscleMapSection,
   RankMapSection,
   MuscleDetailSection,
-  SeriesByGroupSection,
-  DistributionChartSection,
-  MonthlyReportSection,
   ExerciseStatsSection,
   RecordsSection,
-  WeeklyReportSection,
   GoalsAndMilestonesSection,
 } from "../components/statistics";
+import ProgressChart from "../components/statistics/ProgressChart";
+import ConsistencyHeatmap from "../components/statistics/ConsistencyHeatmap";
+import StatStrip from "../components/statistics/StatStrip";
+import MuscleBreakdown from "../components/statistics/MuscleBreakdown";
 
 // `usesPeriod` marca las vistas que de verdad reaccionan al filtro de periodo. Las demás miran al
 // histórico completo a propósito (un récord sigue vigente aunque se batiera hace un año; el mapa
@@ -28,19 +26,31 @@ import {
 // siempre, así que en "Récords" el usuario veía unas píldoras de "7 días" que no hacían nada y,
 // encima, una fila de totales filtrados a 7 días encima de un contenido histórico. Ahora el filtro
 // solo aparece donde tiene efecto.
+// Cinco vistas, no nueve. "Series por grupo" y "Distribución" pintaban el mismo dato dos veces y
+// el mapa muscular una tercera: ahora son una sola vista, Músculos. "Semanal" y "Mensual" eran
+// listas de tarjetas idénticas con cuatro números cada una; ahora son la gráfica de Progreso del
+// Resumen, que se lee de un vistazo en vez de comparando cifras de memoria.
 const VIEWS = [
   { key: 'overview', label: 'Resumen', usesPeriod: true },
+  // El periodo de Músculos sólo afecta al reparto (el mapa es siempre la última semana), así que su
+  // selector va junto al reparto y no arriba, donde parecería que también cambia el mapa.
+  { key: 'muscles', label: 'Músculos', usesPeriod: false },
   { key: 'records', label: 'Récords', usesPeriod: false },
-  { key: 'muscleMap', label: 'Mapa muscular', usesPeriod: false },
   // Los rangos miran al histórico completo por definición: un récord que te subió de rango sigue
   // valiendo aunque lo hicieras hace meses, así que el filtro de periodo no le aplica.
   { key: 'ranks', label: 'Rangos', usesPeriod: false },
-  { key: 'seriesByGroup', label: 'Series por grupo', usesPeriod: true },
-  { key: 'distChart', label: 'Distribución', usesPeriod: true },
-  { key: 'weekly', label: 'Semanal', usesPeriod: false },
-  { key: 'monthly', label: 'Mensual', usesPeriod: false },
-  { key: 'exerciseStats', label: 'Ejercicios', usesPeriod: false },
+  { key: 'exercises', label: 'Ejercicios', usesPeriod: false },
 ];
+
+// Enlaces antiguos (?view=muscleMap de versiones anteriores, marcadores...) siguen llevando a su contenido.
+const LEGACY_VIEWS = {
+  muscleMap: 'muscles',
+  seriesByGroup: 'muscles',
+  distChart: 'muscles',
+  weekly: 'overview',
+  monthly: 'overview',
+  exerciseStats: 'exercises',
+};
 
 const PERIOD_OPTIONS = [
   { key: '7days', label: '7 días', days: 7 },
@@ -74,11 +84,12 @@ export default function Statistics() {
     setSelectedMuscle(null);
   };
 
-  // Enlace profundo a una vista (?view=muscleMap), p.ej. desde "Músculos esta semana" en Inicio.
+  // Enlace profundo a una vista (?view=muscles), p.ej. desde "Músculos esta semana" en Inicio.
   // Se lee de window.location al montar (no con useRouter): navegar a esta página siempre la
   // monta de nuevo, y así la pantalla no depende de un router montado (los tests la renderizan sola).
   useEffect(() => {
-    const view = new URLSearchParams(window.location.search).get('view');
+    const raw = new URLSearchParams(window.location.search).get('view');
+    const view = LEGACY_VIEWS[raw] || raw;
     if (view && VIEWS.some((v) => v.key === view)) setActiveView(view);
   }, []);
 
@@ -146,7 +157,6 @@ export default function Statistics() {
   const weeklyGoal = resolveWeeklyGoal(user);
   const weeklyStreak = useMemo(() => computeWeeklyStreak(workouts || [], weeklyGoal), [workouts, weeklyGoal]);
 
-  const seriesByGroup = useMemo(() => computeSeriesByGroup(filteredWorkouts), [filteredWorkouts]);
 
   const deltaPct = useMemo(() => {
     if (previousVolume === null || previousVolume === 0) return null;
@@ -155,6 +165,7 @@ export default function Statistics() {
 
   return (
     <Layout gutter>
+      <div style={{ maxWidth: 920, margin: '0 auto' }}>
       <PageHeader
         isDark={isDark}
         isMobile={isNarrow}
@@ -168,10 +179,11 @@ export default function Statistics() {
         activeKey={activeView}
         onChange={changeView}
         isDark={isDark}
+        fill={isNarrow}
         ariaLabel="Vistas de estadísticas"
       />
 
-      {currentView.usesPeriod && (
+      {currentView.usesPeriod && (workouts || []).length > 0 && (
         <div style={{ marginTop: tk.space.sm, marginBottom: tk.space.lg }}>
           <ChipNav
             items={PERIOD_OPTIONS}
@@ -200,7 +212,27 @@ export default function Statistics() {
       >
         {/* Los totales solo acompañan al Resumen. En las demás vistas eran ruido repetido siete
             veces por encima de un contenido que ya trae sus propios números. */}
-        {activeView === 'overview' && (
+        {/* Sin ningún entreno, el Resumen eran ceros, una gráfica vacía y un mapa gris: una pantalla
+            que parece rota. Un único estado vacío con la acción que lo arregla. */}
+        {activeView === 'overview' && (workouts || []).length === 0 && (
+          <EmptyState
+            isDark={isDark}
+            icon="barChart"
+            title="Tus estadísticas empiezan con tu primer entreno"
+            description="Registra un entrenamiento y aquí verás tu volumen, tu progreso semana a semana, tu constancia y tus récords."
+            action={
+              <Link
+                href="/routines"
+                className="feeg-press"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 18px', borderRadius: 99, background: tk.accent, color: tk.onAccent, fontWeight: 800, textDecoration: 'none', boxShadow: tk.shadow.accent }}
+              >
+                Empezar a entrenar
+              </Link>
+            }
+          />
+        )}
+
+        {activeView === 'overview' && (workouts || []).length > 0 && (
           <>
             <HeroMetricCard
               isDark={isDark}
@@ -217,25 +249,30 @@ export default function Statistics() {
               ]}
             />
 
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: isNarrow ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-                gap: tk.space.md,
-                marginBottom: tk.space.xxl,
-              }}
-            >
-              <WeeklyStreakCard streak={weeklyStreak} isDark={isDark} />
-              <MiniStatCard label="Tiempo medio" value={`${stats.avgTimeMin} min`} isDark={isDark} />
-              <MiniStatCard label="Volumen medio" value={`${stats.avgVolume.toLocaleString('es-ES')} kg`} isDark={isDark} />
-              <MiniStatCard label="Mejor día" value={stats.bestDay || '—'} isDark={isDark} />
-            </div>
+            <StatStrip
+              isDark={isDark}
+              columns={isNarrow ? 2 : 4}
+              items={[
+                {
+                  key: 'streak',
+                  label: 'Racha semanal',
+                  value: weeklyStreak.streak === 0 ? 'Sin racha' : `${weeklyStreak.streak} ${weeklyStreak.streak === 1 ? 'semana' : 'semanas'}`,
+                  highlight: weeklyStreak.goalMet,
+                  progress: weeklyStreak.thisWeek / weeklyStreak.goal,
+                  sub: `${weeklyStreak.thisWeek} de ${weeklyStreak.goal} esta semana · mejor: ${weeklyStreak.best}`,
+                },
+                { key: 'avgTime', label: 'Tiempo medio', value: `${stats.avgTimeMin} min`, sub: 'por entreno' },
+                { key: 'avgVolume', label: 'Volumen medio', value: `${stats.avgVolume.toLocaleString('es-ES')} kg`, sub: 'por entreno' },
+                { key: 'density', label: 'Series por entreno', value: stats.sessions ? (stats.totalSeries / stats.sessions).toLocaleString('es-ES', { maximumFractionDigits: 1 }) : '—', sub: stats.bestDay ? `más entrenos en ${stats.bestDay}` : undefined },
+              ]}
+            />
 
-            {/* `isNarrow` y no el `isMobile` del contexto: el resto de la página (PageHeader,
-                HeroMetricCard, la rejilla de mini-tarjetas) decide su layout con `isNarrow`, así que
-                mezclar las dos señales hacía que esta sección cambiara de 4 a 2 columnas en un ancho
-                distinto al de la rejilla que tiene justo encima. */}
-            <OverviewSection isDark={isDark} isMobile={isNarrow} workouts={filteredWorkouts} t={t} stats={stats} />
+            <ProgressChart workouts={workouts || []} isDark={isDark} />
+            <ConsistencyHeatmap
+              workouts={workouts || []}
+              isDark={isDark}
+              caption={weeklyStreak.goalMet ? 'Objetivo de la semana cumplido' : undefined}
+            />
             <GoalsAndMilestonesSection
               isDark={isDark}
               isMobile={isNarrow}
@@ -247,11 +284,7 @@ export default function Statistics() {
           </>
         )}
 
-        {activeView === 'records' && (
-          <RecordsSection isDark={isDark} isMobile={isNarrow} workouts={workouts} t={t} language={language} />
-        )}
-
-        {activeView === 'muscleMap' && (
+        {activeView === 'muscles' && (
           selectedMuscle ? (
             <MuscleDetailSection
               isDark={isDark}
@@ -263,16 +296,33 @@ export default function Statistics() {
               onBack={() => setSelectedMuscle(null)}
             />
           ) : (
-            <MuscleMapSection
-              isDark={isDark}
-              isMobile={isNarrow}
-              workouts={workouts}
-              t={t}
-              sex={user?.sex ?? null}
-              faceStyleId={user?.faceStyle}
-              onSelectMuscle={setSelectedMuscle}
-            />
+            <>
+              <MuscleMapSection
+                isDark={isDark}
+                isMobile={isNarrow}
+                workouts={workouts}
+                t={t}
+                sex={user?.sex ?? null}
+                faceStyleId={user?.faceStyle}
+                onSelectMuscle={setSelectedMuscle}
+              />
+              <div style={{ marginBottom: tk.space.md }}>
+                <ChipNav
+                  items={PERIOD_OPTIONS}
+                  activeKey={selectedPeriod}
+                  onChange={setSelectedPeriod}
+                  isDark={isDark}
+                  size="sm"
+                  ariaLabel="Periodo"
+                />
+              </div>
+              <MuscleBreakdown workouts={filteredWorkouts} isDark={isDark} t={t} periodLabel={period.label} />
+            </>
           )
+        )}
+
+        {activeView === 'records' && (
+          <RecordsSection isDark={isDark} isMobile={isNarrow} workouts={workouts} t={t} language={language} />
         )}
 
         {/* Rangos no entra en MuscleDetailSection como hace el mapa muscular: su lista despliega los
@@ -282,27 +332,12 @@ export default function Statistics() {
           <RankMapSection isDark={isDark} isMobile={isNarrow} t={t} language={language} />
         )}
 
-        {activeView === 'seriesByGroup' && (
-          <SeriesByGroupSection isDark={isDark} isMobile={isNarrow} seriesByGroup={seriesByGroup} t={t} />
-        )}
-
-        {activeView === 'distChart' && (
-          <DistributionChartSection isDark={isDark} isMobile={isNarrow} seriesByGroup={seriesByGroup} t={t} />
-        )}
-
-        {activeView === 'weekly' && (
-          <WeeklyReportSection isDark={isDark} isMobile={isNarrow} workouts={workouts || []} t={t} />
-        )}
-
-        {activeView === 'monthly' && (
-          <MonthlyReportSection isDark={isDark} isMobile={isNarrow} workouts={workouts} t={t} />
-        )}
-
-        {activeView === 'exerciseStats' && (
+        {activeView === 'exercises' && (
           <ExerciseStatsSection isDark={isDark} isMobile={isNarrow} workouts={workouts} t={t} language={language} />
         )}
       </motion.div>
       </AnimatePresence>
+      </div>
     </Layout>
   );
 }

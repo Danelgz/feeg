@@ -15,6 +15,7 @@ import { Icon, Badge, EmptyState, ChipNav, RankArt, Spinner } from "../component
 import { ExerciseThumb } from "../components/workout";
 import ExercisePhoto from "../components/exerciseProfile/ExercisePhoto";
 import ExerciseProgressChart from "../components/exerciseProfile/ExerciseProgressChart";
+import StatStrip from "../components/statistics/StatStrip";
 import ReadOnlyWorkoutModal from "../components/workout/ReadOnlyWorkoutModal";
 
 const RANK_SCALE = `linear-gradient(90deg, ${RANKS.map((r) => r.color).join(", ")})`;
@@ -154,14 +155,14 @@ export default function ExerciseHistoryPage() {
 
   if (!exerciseName) {
     return (
-      <Layout>
+      <Layout gutter>
         <Spinner isDark={isDark} fullPage label={t("loading_routine")} />
       </Layout>
     );
   }
 
   return (
-    <Layout>
+    <Layout gutter>
       <div style={{ maxWidth: "900px", margin: "0 auto", padding: isMobile ? "0" : "0 20px" }}>
         <button
           onClick={() => router.back()}
@@ -263,6 +264,79 @@ export default function ExerciseHistoryPage() {
         <div style={{ marginTop: "20px", marginBottom: "40px" }}>
           {activeTab === "resumen" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              {/* Lo primero: los números clave en una sola superficie (antes cuatro cajas sueltas al
+                  final de la pestaña, debajo del formulario de objetivo). */}
+              <StatStrip
+                isDark={isDark}
+                columns={isMobile ? 2 : 4}
+                marginBottom={0}
+                items={[
+                  { key: "e1rm", label: "1RM estimado", value: record ? `${record.best1RM.toFixed(1)} ${unit}` : "—", highlight: !!record },
+                  { key: "vol", label: "Mejor serie (volumen)", value: record ? `${Math.round(record.maxSingleSetVolume).toLocaleString("es-ES")} ${unit}` : "—" },
+                  { key: "sessions", label: "Sesiones", value: frequency.totalSessions || "—" },
+                  { key: "freq", label: "Frecuencia reciente", value: frequency.perWeekRecent > 0 ? `${frequency.perWeekRecent}/sem` : "—" },
+                ]}
+              />
+              <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
+                <p style={{ margin: "0 0 12px", color: tk.text, fontWeight: 800, fontSize: "1.02rem" }}>Progreso</p>
+                <ExerciseProgressChart isDark={isDark} sessions={sessions} unit={unit} />
+              </div>
+
+              {rankPosition && (
+                <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
+                  <p style={{ margin: "0 0 10px", color: tk.textFaint, fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                    Progreso hacia el siguiente rango
+                  </p>
+                  {!rankTarget?.isMaxed && rankTarget && (
+                    <div
+                      role="progressbar"
+                      aria-valuenow={Math.round((rank.level % 1) * 100)}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      style={{ height: "8px", backgroundColor: tk.surface, border: `1px solid ${tk.border}`, borderRadius: tk.radius.pill, overflow: "hidden", marginBottom: "10px" }}
+                    >
+                      <div style={{ width: `${Math.round((rank.level % 1) * 100)}%`, height: "100%", background: `linear-gradient(90deg, ${rankPosition.rank.accent}, ${rankPosition.rank.color})`, borderRadius: tk.radius.pill }} />
+                    </div>
+                  )}
+                  <p style={{ margin: 0, color: tk.textMuted, fontSize: "0.88rem" }}>
+                    {rankTarget?.isMaxed
+                      ? "Nivel máximo en este ejercicio."
+                      : rankTarget
+                      ? <>Faltan <strong style={{ color: tk.text }}>{rankTarget.deltaKg < 1 ? rankTarget.deltaKg.toFixed(1) : Math.ceil(rankTarget.deltaKg)} {unit}</strong> para {getRankPosition(rankTarget.targetLevel).label}</>
+                      : `${rank.ratio.toFixed(2)}× tu peso corporal`}
+                  </p>
+
+                  {resolvedStandard && standardProgress !== null && (
+                    <div style={{ marginTop: "18px" }}>
+                      <p style={{ margin: "0 0 8px", color: tk.textFaint, fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                        Dónde caes en el baremo completo
+                      </p>
+                      <div style={{ position: "relative", height: "8px" }}>
+                        <div style={{ position: "absolute", inset: 0, borderRadius: tk.radius.pill, background: RANK_SCALE, border: `1px solid ${tk.border}` }} />
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: "-3px",
+                            left: `${standardProgress * 100}%`,
+                            transform: "translateX(-50%)",
+                            width: "14px",
+                            height: "14px",
+                            borderRadius: "50%",
+                            backgroundColor: tk.text,
+                            border: `2px solid ${tk.surfaceAlt}`,
+                            boxShadow: tk.shadow.float,
+                          }}
+                        />
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "6px" }}>
+                        <span style={{ fontSize: "0.68rem", color: tk.textFaint, fontWeight: 700 }}>{RANKS[0].name}</span>
+                        <span style={{ fontSize: "0.68rem", color: tk.textFaint, fontWeight: 700 }}>{RANKS[RANKS.length - 1].name}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${goalReached ? tk.accent : tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
                 <p style={{ margin: "0 0 10px", color: tk.textFaint, fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
                   Tu objetivo
@@ -346,79 +420,6 @@ export default function ExerciseHistoryPage() {
                 </div>
               </div>
 
-              {rankPosition && (
-                <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
-                  <p style={{ margin: "0 0 10px", color: tk.textFaint, fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                    Progreso hacia el siguiente rango
-                  </p>
-                  {!rankTarget?.isMaxed && rankTarget && (
-                    <div
-                      role="progressbar"
-                      aria-valuenow={Math.round((rank.level % 1) * 100)}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      style={{ height: "8px", backgroundColor: tk.surface, border: `1px solid ${tk.border}`, borderRadius: tk.radius.pill, overflow: "hidden", marginBottom: "10px" }}
-                    >
-                      <div style={{ width: `${Math.round((rank.level % 1) * 100)}%`, height: "100%", background: `linear-gradient(90deg, ${rankPosition.rank.accent}, ${rankPosition.rank.color})`, borderRadius: tk.radius.pill }} />
-                    </div>
-                  )}
-                  <p style={{ margin: 0, color: tk.textMuted, fontSize: "0.88rem" }}>
-                    {rankTarget?.isMaxed
-                      ? "Nivel máximo en este ejercicio."
-                      : rankTarget
-                      ? <>Faltan <strong style={{ color: tk.text }}>{rankTarget.deltaKg < 1 ? rankTarget.deltaKg.toFixed(1) : Math.ceil(rankTarget.deltaKg)} {unit}</strong> para {getRankPosition(rankTarget.targetLevel).label}</>
-                      : `${rank.ratio.toFixed(2)}× tu peso corporal`}
-                  </p>
-
-                  {resolvedStandard && standardProgress !== null && (
-                    <div style={{ marginTop: "18px" }}>
-                      <p style={{ margin: "0 0 8px", color: tk.textFaint, fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                        Dónde caes en el baremo completo
-                      </p>
-                      <div style={{ position: "relative", height: "8px" }}>
-                        <div style={{ position: "absolute", inset: 0, borderRadius: tk.radius.pill, background: RANK_SCALE, border: `1px solid ${tk.border}` }} />
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: "-3px",
-                            left: `${standardProgress * 100}%`,
-                            transform: "translateX(-50%)",
-                            width: "14px",
-                            height: "14px",
-                            borderRadius: "50%",
-                            backgroundColor: tk.text,
-                            border: `2px solid ${tk.surfaceAlt}`,
-                            boxShadow: tk.shadow.float,
-                          }}
-                        />
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "6px" }}>
-                        <span style={{ fontSize: "0.68rem", color: tk.textFaint, fontWeight: 700 }}>{RANKS[0].name}</span>
-                        <span style={{ fontSize: "0.68rem", color: tk.textFaint, fontWeight: 700 }}>{RANKS[RANKS.length - 1].name}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
-                <p style={{ margin: "0 0 12px", color: tk.text, fontWeight: 800, fontSize: "1.02rem" }}>Progreso</p>
-                <ExerciseProgressChart isDark={isDark} sessions={sessions} unit={unit} />
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: "12px" }}>
-                {[
-                  { label: "1RM estimado", value: record ? `${record.best1RM.toFixed(1)} ${unit}` : "-" },
-                  { label: "Mayor volumen (serie)", value: record ? record.maxSingleSetVolume.toFixed(1) : "-" },
-                  { label: "Sesiones totales", value: frequency.totalSessions || "-" },
-                  { label: "Frecuencia reciente", value: frequency.perWeekRecent > 0 ? `${frequency.perWeekRecent}/sem` : "-" },
-                ].map((stat) => (
-                  <div key={stat.label} style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.md, padding: "14px 10px", textAlign: "center" }}>
-                    <div style={{ color: tk.accent, fontSize: isMobile ? "1.1rem" : "1.3rem", fontWeight: 800 }}>{stat.value}</div>
-                    <div style={{ color: tk.textFaint, fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", marginTop: "4px" }}>{stat.label}</div>
-                  </div>
-                ))}
-              </div>
             </div>
           )}
 

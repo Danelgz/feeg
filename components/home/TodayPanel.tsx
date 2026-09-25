@@ -4,12 +4,13 @@ import { useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useUser } from "../../context/UserContext";
 import { getTokens } from "../../lib/tokens";
-import { computeWeeklyStreak, resolveWeeklyGoal, type CompletedWorkout } from "../../lib/exerciseStats";
+import { computeSeriesByGroup, computeWeeklyStreak, resolveWeeklyGoal, type CompletedWorkout } from "../../lib/exerciseStats";
 import {
   calendarDaysSince,
   greetingKey,
   latestWorkout,
   routineMuscleGroups,
+  startOfWeek,
   suggestNextRoutine,
   weekActivity,
   weekVolumeComparison,
@@ -23,6 +24,11 @@ import ProgressRing from "../ui/ProgressRing";
 import MuscleGroupIcon from "../ui/MuscleGroupIcon";
 
 type Tokens = ReturnType<typeof getTokens>;
+
+// Grupos que se muestran en "Músculos esta semana": los grandes, que son los que alguien mira para
+// saber si le falta algo. Cuello, Aductor, Cardio... existen en el catálogo pero pintarlos siempre
+// como "pendiente" sería ruido.
+const WEEK_GROUPS = ["Pecho", "Espalda", "Hombros", "Bíceps", "Tríceps", "Cuádriceps", "Femoral", "Glúteos", "Gemelos", "Abdomen"];
 
 interface TodayPanelProps {
   isDark: boolean;
@@ -70,6 +76,14 @@ export default function TodayPanel({ isDark, onOpenWorkout }: TodayPanelProps) {
   const volume = useMemo(() => weekVolumeComparison(workouts, now), [workouts, now]);
   const last = useMemo(() => latestWorkout(workouts), [workouts]);
   const next = useMemo(() => suggestNextRoutine((routines || []) as InsightRoutine[], workouts), [routines, workouts]);
+
+  const weekGroups = useMemo(() => {
+    const start = startOfWeek(now).getTime();
+    const thisWeek = workouts.filter((w) => w.completedAt && new Date(w.completedAt).getTime() >= start);
+    const counts = computeSeriesByGroup(thisWeek as CompletedWorkout[], WEEK_GROUPS);
+    return WEEK_GROUPS.map((g) => ({ group: g, series: counts[g] || 0 })).sort((a, b) => b.series - a.series);
+  }, [workouts, now]);
+  const maxGroupSeries = Math.max(1, ...weekGroups.map((g) => g.series));
 
   const animatedCount = useCountUp(streak.thisWeek, 700);
   const animatedVolume = useCountUp(volume.current, 1000);
@@ -380,6 +394,74 @@ export default function TodayPanel({ isDark, onOpenWorkout }: TodayPanelProps) {
           </div>
         )}
       </motion.div>
+
+      {/* Músculos de la semana: qué se ha trabajado y qué falta, de un vistazo */}
+      {streak.thisWeek > 0 && (
+        <motion.div variants={item}>
+          <Link
+            href="/statistics?view=muscleMap"
+            className="feeg-press"
+            style={{ ...glassCard(tk, isDark), display: "block", padding: "14px 0 14px", textDecoration: "none", color: tk.text, ["--feeg-press-scale" as string]: 0.99 } as React.CSSProperties}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px 10px" }}>
+              <span style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: tk.textMuted }}>
+                {t("muscles_this_week")}
+              </span>
+              <Icon name="chevronRight" size={16} color={tk.textFaint} />
+            </div>
+            <div style={{ display: "flex", gap: 8, overflowX: "auto", scrollbarWidth: "none", padding: "0 16px" }}>
+              {weekGroups.map(({ group, series }) => {
+                const done = series > 0;
+                return (
+                  <div
+                    key={group}
+                    style={{
+                      flexShrink: 0,
+                      width: 70,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 5,
+                      opacity: done ? 1 : 0.45,
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 52,
+                        height: 52,
+                        borderRadius: 16,
+                        overflow: "hidden",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: tk.surfaceAlt,
+                        border: `1px solid ${done ? (isDark ? "rgba(29,209,161,0.35)" : "rgba(29,209,161,0.45)") : tk.border}`,
+                      }}
+                    >
+                      <MuscleGroupIcon group={group} isDark={isDark} size={46} />
+                    </span>
+                    <span style={{ fontSize: "0.68rem", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
+                      {t(group)}
+                    </span>
+                    {/* Barra de volumen relativo: se compara con el grupo más trabajado de la semana. */}
+                    <span style={{ width: 40, height: 4, borderRadius: 99, background: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)", overflow: "hidden" }}>
+                      <motion.span
+                        initial={reduceMotion ? false : { width: 0 }}
+                        animate={{ width: `${(series / maxGroupSeries) * 100}%` }}
+                        transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                        style={{ display: "block", height: "100%", borderRadius: 99, background: tk.accent }}
+                      />
+                    </span>
+                    <span style={{ fontSize: "0.62rem", color: done ? tk.textMuted : tk.textFaint, fontWeight: 600, marginTop: -2 }}>
+                      {done ? `${series} ${t("series_short")}` : t("pending_label")}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </Link>
+        </motion.div>
+      )}
 
       {/* Accesos rápidos */}
       <motion.div variants={item} style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>

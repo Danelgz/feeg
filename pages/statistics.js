@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useRouter } from "next/router";
 import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { getTokens } from "../lib/tokens";
@@ -73,6 +74,13 @@ export default function Statistics() {
     setActiveView(view);
     setSelectedMuscle(null);
   };
+
+  // Enlace profundo a una vista (?view=muscleMap), p.ej. desde "Músculos esta semana" en Inicio.
+  const router = useRouter();
+  useEffect(() => {
+    const view = router.query.view;
+    if (typeof view === 'string' && VIEWS.some((v) => v.key === view)) setActiveView(view);
+  }, [router.query.view]);
 
   useEffect(() => {
     const check = () => setIsNarrow(window.innerWidth <= 768);

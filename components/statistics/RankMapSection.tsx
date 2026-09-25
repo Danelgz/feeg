@@ -22,12 +22,6 @@ interface RankMapSectionProps {
   language?: string;
 }
 
-// La escalera como una sola tira continua, en vez de diez pastillas sueltas. Diez muestras de color
-// no son una leyenda: obligan a buscar cada tono en una lista para traducir lo que ves en el cuerpo,
-// que es justo el trabajo que una leyenda debería ahorrar. La tira dice lo único que hace falta
-// saber para leer el mapa — hacia dónde va la escala — y ocupa una línea.
-const RANK_SCALE = `linear-gradient(90deg, ${RANKS.map((r) => r.color).join(', ')})`;
-
 /**
  * Pestaña de Rangos: el rango global, el cuerpo teñido por rango y el ranking por grupo.
  *
@@ -151,7 +145,13 @@ export default function RankMapSection({ isDark, isMobile = false, t, language }
           que no puede encogerse (una palabra larga, un bloque `flexShrink: 0`) fuerza la pista de la
           grid entera por encima del ancho de la pantalla — y como todas las secciones de Rangos
           comparten esta grid, el desbordamiento de UNA fila desplaza a las demás con ella. */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: tk.space.lg }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', marginTop: 10 }}>
+        <RankLadderSection
+          currentRank={getRankPosition(overallLevel, prestigeLevels).rank}
+          currentTier={getRankPosition(overallLevel, prestigeLevels).tier}
+          isDark={isDark}
+          isMobile={isMobile}
+        />
         <StatSection title="Tu cuerpo por rango" isDark={isDark} isMobile={isMobile}>
           <MuscleMap
             seriesByMuscle={{}}
@@ -211,23 +211,18 @@ export default function RankMapSection({ isDark, isMobile = false, t, language }
                   display: 'flex',
                   alignItems: 'center',
                   gap: tk.space.sm,
-                  width: '100%',
-                  maxWidth: '380px',
+                  justifyContent: 'center',
                 }}
               >
                 <span style={{ fontSize: tk.fontSize.xs, color: tk.textFaint, flexShrink: 0 }}>
                   {RANKS[0].name}
                 </span>
-                <span
-                  aria-hidden="true"
-                  style={{
-                    flex: 1,
-                    height: '6px',
-                    borderRadius: tk.radius.pill,
-                    background: RANK_SCALE,
-                    border: `1px solid ${tk.border}`,
-                  }}
-                />
+                {/* Diez muestras separadas por 2px: una por rango, en el orden de la escalera. */}
+                <span aria-hidden="true" style={{ display: 'flex', gap: 2, width: 200 }}>
+                  {RANKS.map((r) => (
+                    <span key={r.slug} style={{ flex: 1, height: 6, borderRadius: 2, background: r.color }} />
+                  ))}
+                </span>
                 <span style={{ fontSize: tk.fontSize.xs, color: tk.textFaint, flexShrink: 0 }}>
                   {RANKS[RANKS.length - 1].name}
                 </span>
@@ -270,11 +265,6 @@ export default function RankMapSection({ isDark, isMobile = false, t, language }
           )}
         </StatSection>
 
-        <RankLadderSection
-          currentRank={getRankPosition(overallLevel, prestigeLevels).rank}
-          isDark={isDark}
-          isMobile={isMobile}
-        />
       </div>
     </>
   );

@@ -86,7 +86,10 @@ describe("estadísticas · rangos", () => {
     expect(await screen.findByText("Rango global")).toBeTruthy();
     // El nivel global es la media de los grupos, así que cae entre el mejor y el peor.
     expect(screen.getByText(/Nivel \d+ de 30/)).toBeTruthy();
-    expect(screen.getByText(/3 grupos · 3 ejercicios/)).toBeTruthy();
+    // Lo que sostiene el rango, en su fila de cifras bajo la barra de nivel.
+    const hero = screen.getByText("Rango global").closest("section")!;
+    expect(within(hero).getByText("Grupos").parentElement!.textContent).toBe("Grupos3");
+    expect(within(hero).getByText("Ejercicios").parentElement!.textContent).toBe("Ejercicios3");
   });
 
   it("ofrece la siguiente subida en kilos concretos en vez de un percentil inventado", async () => {
@@ -185,14 +188,21 @@ describe("estadísticas · rangos", () => {
     await screen.findByText("Tu cuerpo por rango");
 
     const section = (await screen.findByText("Escalera de rangos")).closest("section")!;
-    // Los diez rangos, de Leyenda a Principiante (orden descendente).
-    for (const name of ["Principiante", "Novato", "Aprendiz", "Constante", "Disciplinado", "Atleta", "Avanzado", "Élite", "Titán", "Leyenda"]) {
-      expect(within(section).getByText(name)).toBeTruthy();
-    }
-    // Principiante siempre está garantizado ("todo el mundo empieza aquí"); el resto lleva un "Top X%".
-    expect(within(section).getAllByText(/Top [\d.]+%/).length).toBe(9);
-    // Exactamente una fila se marca como la del usuario.
-    expect(within(section).getAllByText("Tú")).toHaveLength(1);
+    // Los diez rangos en una pista, cada uno con su insignia pulsable.
+    const steps = within(section).getAllByRole("radio");
+    expect(steps.map((s) => s.getAttribute("aria-label")?.replace(" (tu rango)", ""))).toEqual([
+      "Principiante", "Novato", "Aprendiz", "Constante", "Disciplinado", "Atleta", "Avanzado", "Élite", "Titán", "Leyenda",
+    ]);
+    // Exactamente uno se marca como el del usuario, y es el que aparece seleccionado al entrar.
+    const mine = steps.filter((s) => s.getAttribute("aria-label")?.endsWith("(tu rango)"));
+    expect(mine).toHaveLength(1);
+    expect(mine[0].getAttribute("aria-checked")).toBe("true");
+    expect(within(section).getByText(/estás aquí/)).toBeTruthy();
+
+    // Tocar otro peldaño enseña su tramo de niveles y su rareza.
+    fireEvent.click(within(section).getByRole("radio", { name: "Leyenda" }));
+    expect(await within(section).findByText(/niveles 28–30/)).toBeTruthy();
+    expect(within(section).getByText("Top 0.08%")).toBeTruthy();
   });
 
   it("manda a registrar el peso corporal cuando no hay con qué comparar", async () => {
@@ -203,12 +213,12 @@ describe("estadísticas · rangos", () => {
     expect(screen.queryByText("Rango global")).toBeNull();
   });
 
-  it("no deja la leyenda del mapa como diez muestras de color sueltas", async () => {
+  it("rotula la leyenda del mapa sólo por sus extremos", async () => {
     renderRanks();
     const mapSection = (await screen.findByText("Tu cuerpo por rango")).closest("section")!;
 
-    // La leyenda BAJO EL MAPA es una tira continua con los dos extremos escritos, no una pastilla
-    // por rango — eso es justo lo que enseña de sobra la escalera completa de más abajo.
+    // La leyenda BAJO EL MAPA son diez muestras sin nombre con los dos extremos escritos, no una
+    // pastilla rotulada por rango — los nombres ya los enseña la escalera.
     await waitFor(() => {
       expect(within(mapSection).getByText("Principiante")).toBeTruthy();
       expect(within(mapSection).getByText("Leyenda")).toBeTruthy();

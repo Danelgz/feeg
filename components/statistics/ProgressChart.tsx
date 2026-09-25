@@ -127,9 +127,9 @@ export default function ProgressChart({ workouts, isDark }: ProgressChartProps) 
   });
 
   return (
-    <section aria-label="Progreso" style={{ marginBottom: 20 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
-        <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: tk.text }}>Progreso</h2>
+    <section aria-label="Progreso" style={{ marginBottom: 22, paddingTop: 18, borderTop: `1px solid ${tk.hairline}` }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
+        <h2 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: tk.text, letterSpacing: "-0.01em" }}>Progreso</h2>
         <div role="group" aria-label="Agrupar por" style={{ display: "flex", padding: 3, borderRadius: 99, background: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)" }}>
           {(["week", "month"] as Granularity[]).map((g) => (
             <button
@@ -148,15 +148,8 @@ export default function ProgressChart({ workouts, isDark }: ProgressChartProps) 
         </div>
       </div>
 
-      <div
-        style={{
-          borderRadius: 20,
-          padding: "14px 14px 10px",
-          background: tk.surface,
-          border: `1px solid ${tk.border}`,
-        }}
-      >
-        <div role="group" aria-label="Métrica" style={{ display: "flex", gap: 2, marginBottom: 12, marginLeft: -4, overflowX: "auto", scrollbarWidth: "none" }}>
+      <div>
+        <div role="group" aria-label="Métrica" style={{ display: "flex", gap: 2, marginBottom: 12, marginLeft: -2, overflowX: "auto", scrollbarWidth: "none" }}>
           {METRICS.map((m) => (
             <button key={m.key} type="button" aria-pressed={metric === m.key} onClick={() => setMetric(m.key)} style={chipStyle(metric === m.key)}>
               {m.label}
@@ -195,7 +188,7 @@ export default function ProgressChart({ workouts, isDark }: ProgressChartProps) 
             {/* Rejilla: hairlines sólidas, recesivas */}
             {ticks.map((tv, i) => (
               <g key={i}>
-                <line x1={yLabelW} x2={width} y1={y(tv)} y2={y(tv)} stroke={isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)"} strokeWidth={1} />
+                <line x1={yLabelW} x2={width} y1={y(tv)} y2={y(tv)} stroke={tk.hairline} strokeWidth={1} />
                 <text x={yLabelW - 6} y={y(tv) + 3.5} textAnchor="end" fontSize={10} fill={tk.textFaint} style={{ fontVariantNumeric: "tabular-nums" }}>
                   {compactTick(metric, tv)}
                 </text>

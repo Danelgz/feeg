@@ -46,19 +46,9 @@ export default function HeroMetricCard({
   const isFlat = hasDelta && Math.round(deltaPct as number) === 0;
 
   return (
-    <div
-      style={{
-        position: "relative",
-        overflow: "hidden",
-        borderRadius: 22,
-        padding: isMobile ? "16px 16px 14px" : tk.space.huge,
-        marginBottom: 12,
-        background: isDark
-          ? "linear-gradient(150deg, rgba(29,209,161,0.13) 0%, #121412 45%, #0c0c0c 100%)"
-          : "linear-gradient(150deg, rgba(29,209,161,0.14) 0%, #ffffff 50%)",
-        border: `1px solid ${isDark ? "rgba(29,209,161,0.18)" : "rgba(29,209,161,0.25)"}`,
-      }}
-    >
+    // Sin caja: el número protagonista va sobre el fondo de la página. Lo que lo destaca es el
+    // tamaño, no un recuadro; y así el titular ocupa todo el ancho útil del móvil.
+    <div style={{ padding: isMobile ? "4px 0 14px" : "8px 0 18px" }}>
       <div
         style={{
           fontSize: tk.fontSize.xs,
@@ -74,7 +64,7 @@ export default function HeroMetricCard({
       <div style={{ display: "flex", alignItems: "baseline", gap: tk.space.md, flexWrap: "wrap", marginTop: tk.space.sm }}>
         <span
           style={{
-            fontSize: isMobile ? "2.9rem" : "3.4rem",
+            fontSize: isMobile ? "3.1rem" : "3.6rem",
             fontWeight: tk.weight.heavy,
             color: tk.text,
             lineHeight: 1,
@@ -100,9 +90,8 @@ export default function HeroMetricCard({
               borderRadius: tk.radius.pill,
               fontSize: tk.fontSize.xs,
               fontWeight: tk.weight.bold,
-              backgroundColor: isUp ? tk.accentSoft : "transparent",
+              backgroundColor: isUp ? tk.accentSoft : tk.hairline,
               color: isUp ? tk.accent : tk.textMuted,
-              border: `1px solid ${isUp ? tk.accent : tk.border}`,
             }}
           >
             {isFlat ? "=" : isUp ? "↑" : "↓"} {Math.abs(Math.round(deltaPct as number))}%
@@ -121,7 +110,7 @@ export default function HeroMetricCard({
             gap: tk.space.md,
             marginTop: tk.space.lg,
             paddingTop: tk.space.md,
-            borderTop: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"}`,
+            borderTop: `1px solid ${tk.hairline}`,
           }}
         >
           {footer.map((item) => (

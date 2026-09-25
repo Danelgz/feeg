@@ -94,9 +94,8 @@ export default function BarList({
             <div
               aria-hidden="true"
               style={{
-                height: "10px",
-                backgroundColor: tk.surfaceAlt,
-                border: `1px solid ${tk.border}`,
+                height: "8px",
+                backgroundColor: tk.hairline,
                 borderRadius: tk.radius.pill,
                 overflow: "hidden",
               }}

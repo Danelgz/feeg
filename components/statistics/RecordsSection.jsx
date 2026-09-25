@@ -109,7 +109,7 @@ export default function RecordsSection({ isDark, isMobile, workouts, t, language
   const monthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
   const recentCount = milestones.filter((m) => m.tier !== "first" && new Date(m.date).getTime() >= monthAgo).length;
   const strongest = currentRecords.reduce((best, r) => (!best || r.oneRM > best.oneRM ? r : best), null);
-  const line = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)";
+  const line = tk.hairline;
 
   // Hitos agrupados por mes para leer el historial como una línea de tiempo, no como una pila.
   const groupedMilestones = [];
@@ -125,17 +125,17 @@ export default function RecordsSection({ isDark, isMobile, workouts, t, language
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: tk.space.lg }}>
+    <div style={{ display: "flex", flexDirection: "column" }}>
       {/* Resumen de récords en una sola superficie */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", borderRadius: 20, border: `1px solid ${tk.border}`, background: tk.surface, overflow: "hidden" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", borderBottom: `1px solid ${line}`, marginBottom: 18 }}>
         {[
           { label: "Últimos 30 días", value: recentCount, sub: recentCount === 1 ? "récord" : "récords", accent: recentCount > 0 },
           { label: "Ejercicios", value: currentRecords.length, sub: "con marca" },
           { label: "Más fuerte", value: strongest ? `${formatWeight(strongest.oneRM)} kg` : "—", sub: strongest ? translateExerciseName(strongest.exerciseName, language) : "" },
         ].map((c, i) => (
-          <div key={c.label} style={{ padding: "12px", borderLeft: i ? `1px solid ${line}` : "none", minWidth: 0 }}>
+          <div key={c.label} style={{ padding: `4px 10px 14px ${i ? 14 : 0}px`, borderLeft: i ? `1px solid ${line}` : "none", minWidth: 0 }}>
             <div style={{ fontSize: "0.7rem", color: tk.textMuted, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.label}</div>
-            <div style={{ fontSize: "1.2rem", fontWeight: 800, color: c.accent ? tk.accent : tk.text, marginTop: 2, whiteSpace: "nowrap" }}>{c.value}</div>
+            <div style={{ fontSize: "1.35rem", fontWeight: 800, color: c.accent ? tk.accent : tk.text, marginTop: 2, whiteSpace: "nowrap", letterSpacing: "-0.01em" }}>{c.value}</div>
             <div style={{ fontSize: "0.68rem", color: tk.textFaint, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.sub}</div>
           </div>
         ))}
@@ -149,7 +149,7 @@ export default function RecordsSection({ isDark, isMobile, workouts, t, language
       >
         {/* Lista agrupada: una fila de ~60px por ejercicio (antes una tarjeta de ~90px), con la
             tendencia del 1RM estimado dibujada al lado del número para ver si sigue subiendo. */}
-        <ul style={{ listStyle: "none", margin: 0, padding: 0, borderRadius: 20, border: `1px solid ${tk.border}`, background: tk.surface, overflow: "hidden" }}>
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, borderTop: `1px solid ${line}`, borderBottom: `1px solid ${line}` }}>
           {currentRecords.map((rec, index) => {
             const trend = exerciseTrend(workouts, rec.exerciseName).slice(-10).map((p) => p.value);
             const historic = rec.tier === "historic";
@@ -168,13 +168,13 @@ export default function RecordsSection({ isDark, isMobile, workouts, t, language
                     display: "flex",
                     alignItems: "center",
                     gap: 12,
-                    padding: "11px 14px 11px 12px",
+                    padding: "11px 0",
                     textDecoration: "none",
                     "--feeg-bg": "transparent",
                     "--feeg-fg": tk.text,
-                    "--feeg-hover-bg": tk.surfaceHover,
+                    "--feeg-hover-bg": "transparent",
                     "--feeg-border-width": "0px",
-                    "--feeg-press-scale": 0.99,
+                    "--feeg-press-scale": 0.985,
                   }}
                 >
                   <ExerciseThumb name={rec.exerciseName} size={36} />
@@ -187,7 +187,7 @@ export default function RecordsSection({ isDark, isMobile, workouts, t, language
                       {historic && <span style={{ color: tk.warning, fontWeight: 700 }}> · histórico</span>}
                     </div>
                   </div>
-                  <Sparkline values={trend} width={52} height={24} color={tk.accent} surface={tk.surface} />
+                  <Sparkline values={trend} width={56} height={24} color={tk.accent} surface={tk.bg} />
                   <div style={{ textAlign: "right", minWidth: 58 }}>
                     <div style={{ fontSize: "1.08rem", fontWeight: 800, color: tk.text, lineHeight: 1.1 }}>{formatWeight(rec.oneRM)}</div>
                     <div style={{ fontSize: "0.64rem", color: tk.textFaint, fontWeight: 600 }}>kg 1RM est.</div>
@@ -205,7 +205,7 @@ export default function RecordsSection({ isDark, isMobile, workouts, t, language
         isDark={isDark}
         isMobile={isMobile}
       >
-        <div style={{ borderRadius: 20, border: `1px solid ${tk.border}`, background: tk.surface, padding: "4px 14px 10px" }}>
+        <div>
           {groupedMilestones.map((g) => (
             <div key={g.key}>
               <div style={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: tk.textMuted, padding: "10px 0 6px" }}>{g.label}</div>
@@ -217,7 +217,7 @@ export default function RecordsSection({ isDark, isMobile, workouts, t, language
                   const showBadge = m.tier === "major" || m.tier === "historic";
                   return (
                     <li key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "7px 0", position: "relative" }}>
-                      <span aria-hidden style={{ width: 11, height: 11, borderRadius: 99, background: color, boxShadow: `0 0 0 2px ${tk.surface}`, flexShrink: 0, opacity: m.tier === "first" ? 0.5 : 1 }} />
+                      <span aria-hidden style={{ width: 11, height: 11, borderRadius: 99, background: color, boxShadow: `0 0 0 2px ${tk.bg}`, flexShrink: 0, opacity: m.tier === "first" ? 0.5 : 1 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
                           <span style={{ fontWeight: 700, fontSize: "0.86rem", color: tk.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -249,8 +249,8 @@ export default function RecordsSection({ isDark, isMobile, workouts, t, language
               margin: `${tk.space.lg} auto 0`,
               padding: `${tk.space.sm} ${tk.space.xl}`,
               borderRadius: tk.radius.pill,
-              border: `1px solid ${tk.border}`,
-              backgroundColor: "transparent",
+              border: "none",
+              backgroundColor: tk.accentSoft,
               color: tk.accent,
               fontWeight: tk.weight.bold,
               fontSize: tk.fontSize.sm,

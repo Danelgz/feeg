@@ -17,25 +17,27 @@ interface StatStripProps {
   columns?: number;
   /** Margen inferior; 0 cuando el contenedor ya separa con `gap`. */
   marginBottom?: number;
+  /** Sin línea inferior cuando lo siguiente es una sección que ya dibuja la suya. */
+  bottomRule?: boolean;
 }
 
 /**
- * Indicadores secundarios en UNA superficie dividida en celdas, en lugar de una tarjeta por dato.
- * Cuatro tarjetas con borde, sombra y padding propios ocupaban ~260px de alto para cuatro números;
- * aquí los mismos datos caben en ~130px y se leen como un bloque, no como cuatro cosas sueltas.
+ * Indicadores secundarios como una rejilla de celdas separadas sólo por líneas de 1px.
+ *
+ * Sin caja alrededor: el borde exterior redondeado no delimitaba nada que las líneas internas no
+ * delimiten ya, y quitarlo devuelve el ancho completo a las cifras. Las celdas llevan su propio
+ * padding horizontal salvo la primera columna, que se alinea con el margen de la página.
  */
-export default function StatStrip({ items, isDark, columns = 2, marginBottom = 20 }: StatStripProps) {
+export default function StatStrip({ items, isDark, columns = 2, marginBottom = 20, bottomRule = true }: StatStripProps) {
   const tk = getTokens(isDark);
-  const line = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)";
+  const rows = Math.ceil(items.length / columns);
   return (
     <div
       style={{
         display: "grid",
         gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-        borderRadius: 20,
-        background: tk.surface,
-        border: `1px solid ${tk.border}`,
-        overflow: "hidden",
+        borderTop: `1px solid ${tk.hairline}`,
+        borderBottom: bottomRule ? `1px solid ${tk.hairline}` : "none",
         marginBottom,
       }}
     >
@@ -46,29 +48,29 @@ export default function StatStrip({ items, isDark, columns = 2, marginBottom = 2
           <div
             key={it.key}
             style={{
-              padding: "12px 14px",
-              borderLeft: col > 0 ? `1px solid ${line}` : "none",
-              borderTop: row > 0 ? `1px solid ${line}` : "none",
+              padding: `12px ${col === columns - 1 ? 0 : 12}px 12px ${col === 0 ? 0 : 14}px`,
+              borderLeft: col > 0 ? `1px solid ${tk.hairline}` : "none",
+              borderTop: row > 0 && row < rows ? `1px solid ${tk.hairline}` : "none",
               minWidth: 0,
             }}
           >
             <div style={{ fontSize: "0.7rem", color: tk.textMuted, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.label}</div>
             <div
               style={{
-                fontSize: "1.15rem",
+                fontSize: "1.2rem",
                 fontWeight: 800,
                 color: it.highlight ? tk.accent : tk.text,
                 marginTop: 3,
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
-                textTransform: "none",
+                letterSpacing: "-0.01em",
               }}
             >
               {it.value}
             </div>
             {it.progress !== undefined && (
-              <div style={{ height: 4, borderRadius: 99, background: line, marginTop: 7, overflow: "hidden" }}>
+              <div style={{ height: 4, borderRadius: 99, background: tk.hairline, marginTop: 7, overflow: "hidden" }}>
                 <div style={{ width: `${Math.min(1, Math.max(0, it.progress)) * 100}%`, height: "100%", background: tk.accent, borderRadius: 99 }} />
               </div>
             )}

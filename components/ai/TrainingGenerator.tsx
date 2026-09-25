@@ -164,8 +164,8 @@ function OptionCard({ tk, selected, onClick, icon, label, desc, layout = "grid" 
         alignItems: isRow ? "center" : "flex-start",
         gap: isRow ? "14px" : "10px",
         textAlign: "left",
-        padding: isRow ? "16px" : "18px 16px",
-        borderRadius: tk.radius.lg,
+        padding: isRow ? "14px" : "16px 14px",
+        borderRadius: 14,
         cursor: "pointer",
         position: "relative",
         width: "100%",
@@ -173,8 +173,8 @@ function OptionCard({ tk, selected, onClick, icon, label, desc, layout = "grid" 
         ...(selected
           ? { backgroundColor: tk.accentSoft, border: `1.5px solid ${tk.accent}` }
           : {
-              "--feeg-bg": tk.surface,
-              "--feeg-border": tk.border,
+              "--feeg-bg": tk.isDark ? "rgba(255,255,255,0.05)" : "#fff",
+              "--feeg-border": "transparent",
               "--feeg-hover-border": tk.accent,
               "--feeg-border-width": "1.5px",
             }),
@@ -239,8 +239,8 @@ function StepShell({ tk, isMobile, eyebrow, title, subtitle, onBack, progress, c
           style={{
             width: "32px", height: "32px", borderRadius: tk.radius.full, flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-            "--feeg-bg": tk.surface, "--feeg-fg": tk.textMuted, "--feeg-border": tk.border,
-            "--feeg-hover-fg": tk.accent, "--feeg-hover-border": tk.accent, "--feeg-border-width": "1px",
+            "--feeg-bg": tk.hairline, "--feeg-fg": tk.text, "--feeg-border": "transparent",
+            "--feeg-hover-fg": tk.accent, "--feeg-border-width": "0px",
             "--feeg-press-scale": 0.9,
           } as React.CSSProperties}
         >
@@ -271,10 +271,10 @@ function PlanDays({ tk, plan }: { tk: ReturnType<typeof getTokens>; plan: Genera
   return (
     <div>
       {plan.days.map((day, idx) => (
-        <div key={idx} style={{ marginBottom: "14px", padding: "14px", backgroundColor: tk.surfaceAlt, borderRadius: tk.radius.md, border: `1px solid ${tk.border}` }}>
+        <div key={idx} style={{ marginBottom: "14px", paddingTop: "12px", borderTop: `1px solid ${tk.hairline}` }}>
           <h4 style={{ margin: "0 0 10px 0", color: tk.accent, fontSize: tk.fontSize.sm }}>{day.name}</h4>
           {day.exercises.map((ex, i) => (
-            <div key={i} style={{ padding: "8px 0", borderBottom: i === day.exercises.length - 1 ? "none" : `1px solid ${tk.border}` }}>
+            <div key={i} style={{ padding: "8px 0", borderBottom: i === day.exercises.length - 1 ? "none" : `1px solid ${tk.hairline}` }}>
               <div style={{ fontWeight: tk.weight.bold, color: tk.text, fontSize: tk.fontSize.sm }}>{ex.name}</div>
               <div style={{ fontSize: tk.fontSize.xs, color: tk.textMuted }}>{ex.sets} series x {ex.reps} • Descanso: {ex.rest}</div>
               <div style={{ fontSize: tk.fontSize.xs, fontStyle: "italic", marginTop: "4px", color: tk.textMuted }}>💡 {ex.note}</div>
@@ -282,7 +282,7 @@ function PlanDays({ tk, plan }: { tk: ReturnType<typeof getTokens>; plan: Genera
           ))}
         </div>
       ))}
-      <div style={{ backgroundColor: tk.accentSoft, padding: "14px", borderRadius: tk.radius.md, borderLeft: `3px solid ${tk.accent}`, fontSize: tk.fontSize.sm, color: tk.text }}>
+      <div style={{ backgroundColor: tk.accentSoft, padding: "14px", borderRadius: 14, fontSize: tk.fontSize.sm, color: tk.text, lineHeight: 1.5 }}>
         <strong>Consejo IA:</strong> {plan.advice}
       </div>
     </div>
@@ -305,9 +305,8 @@ function PlanCard({ tk, isMobile, plan, optionLabel, isExpanded, onToggleExpand,
     <div
       className="feeg-surface"
       style={{
-        borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "22px", display: "flex", flexDirection: "column", gap: "12px",
-        "--feeg-bg": tk.surface, "--feeg-border": isExpanded ? tk.accent : tk.border, "--feeg-border-width": isExpanded ? "1.5px" : "1px",
-        "--feeg-shadow": tk.shadow.card,
+        borderRadius: 18, padding: isMobile ? "16px" : "22px", display: "flex", flexDirection: "column", gap: "12px",
+        "--feeg-bg": tk.isDark ? "rgba(255,255,255,0.05)" : "#fff", "--feeg-border": isExpanded ? tk.accent : "transparent", "--feeg-border-width": "1.5px",
       } as React.CSSProperties}
     >
       <div>
@@ -323,11 +322,11 @@ function PlanCard({ tk, isMobile, plan, optionLabel, isExpanded, onToggleExpand,
       </div>
 
       <div style={{ display: "flex", gap: "8px" }}>
-        <div style={{ flex: 1, backgroundColor: tk.surfaceAlt, borderRadius: tk.radius.sm, padding: "8px 10px", textAlign: "center" }}>
+        <div style={{ flex: 1, backgroundColor: tk.hairline, borderRadius: 10, padding: "8px 10px", textAlign: "center" }}>
           <div style={{ color: tk.text, fontWeight: tk.weight.bold, fontSize: tk.fontSize.sm }}>{plan.days.length}</div>
           <div style={{ color: tk.textMuted, fontSize: tk.fontSize.xs }}>días</div>
         </div>
-        <div style={{ flex: 1, backgroundColor: tk.surfaceAlt, borderRadius: tk.radius.sm, padding: "8px 10px", textAlign: "center" }}>
+        <div style={{ flex: 1, backgroundColor: tk.hairline, borderRadius: 10, padding: "8px 10px", textAlign: "center" }}>
           <div style={{ color: tk.text, fontWeight: tk.weight.bold, fontSize: tk.fontSize.sm }}>{totalExercises}</div>
           <div style={{ color: tk.textMuted, fontSize: tk.fontSize.xs }}>ejercicios</div>
         </div>
@@ -499,7 +498,7 @@ export default function TrainingGenerator({
 
   const fieldStyle: React.CSSProperties = {
     width: "100%", padding: "13px 14px", borderRadius: tk.radius.md,
-    border: `1.5px solid ${tk.border}`, backgroundColor: tk.surfaceAlt, color: tk.text,
+    border: "1.5px solid transparent", backgroundColor: tk.isDark ? "rgba(255,255,255,0.06)" : "#fff", color: tk.text,
     fontSize: tk.fontSize.sm, outline: "none", boxSizing: "border-box", transition: tk.transition, fontFamily: "inherit",
   };
 
@@ -507,26 +506,39 @@ export default function TrainingGenerator({
 
   // ---- Intro ----
   if (phase === "intro") {
+    // Sin tarjeta: un titular, lo que vas a obtener y el botón. La tarjeta centrada con un icono y
+    // un párrafo gris se leía como un estado vacío, no como una función que merece la pena probar.
+    const steps: [string, string, string][] = [
+      ["target", "Tu objetivo y tu nivel", "Fuerza, músculo, pérdida de grasa…"],
+      ["calendar", "Días y tiempo disponibles", "De 2 a 6 días, de 30 a 90 minutos"],
+      ["dumbbell", "Tu material", "Gimnasio completo, mancuernas o en casa"],
+      ["layers", "Dos planes para elegir", "Compáralos y guarda el que te convenza"],
+    ];
     return (
-      <div
-        className="feeg-surface"
-        style={{
-          borderRadius: tk.radius.lg, padding: isMobile ? "28px 20px" : "44px 40px", textAlign: "center",
-          "--feeg-bg": tk.surface, "--feeg-border": tk.border, "--feeg-shadow": tk.shadow.card,
-        } as React.CSSProperties}
-      >
-        <div style={{
-          width: "56px", height: "56px", borderRadius: tk.radius.full, margin: "0 auto 18px",
-          backgroundColor: tk.accentSoft, color: tk.accent, display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <Icon name="zap" size={26} />
-        </div>
-        <h3 style={{ margin: "0 0 8px", color: tk.text, fontSize: isMobile ? "1.25rem" : "1.5rem" }}>¿Necesitas un plan a tu medida?</h3>
-        <p style={{ color: tk.textMuted, fontSize: tk.fontSize.sm, margin: "0 auto 24px", maxWidth: "420px" }}>
-          Nueve preguntas rápidas sobre tu objetivo, disponibilidad, material y prioridades. Tu Coach IA te propone dos planes distintos para que elijas el que más te convenza.
+      <div style={{ paddingTop: isMobile ? 6 : 12 }}>
+        <div style={{ color: tk.accent, fontSize: "0.72rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em" }}>Plan a medida · 2 minutos</div>
+        <h3 style={{ margin: "6px 0 8px", color: tk.text, fontSize: isMobile ? "1.6rem" : "1.9rem", fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+          Tu rutina, diseñada por el Coach
+        </h3>
+        <p style={{ color: tk.textMuted, fontSize: "0.9rem", margin: "0 0 18px", lineHeight: 1.5, maxWidth: 520 }}>
+          Nueve preguntas rápidas y el Coach te propone dos planes completos, con series, repeticiones y descansos, listos para guardar en Rutinas.
         </p>
-        <Button isDark={isDark} size="lg" onClick={() => setPhase("wizard")} style={{ margin: "0 auto" }}>
-          Empezar
+        <ol style={{ listStyle: "none", margin: "0 0 22px", padding: 0, borderTop: `1px solid ${tk.hairline}` }}>
+          {steps.map(([icon, title, sub], i) => (
+            <li key={title} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: `1px solid ${tk.hairline}` }}>
+              <span style={{ width: 34, height: 34, borderRadius: 10, display: "grid", placeItems: "center", background: tk.accentSoft, color: tk.accent, flexShrink: 0 }}>
+                <Icon name={icon} size={16} />
+              </span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: "block", color: tk.text, fontWeight: 700, fontSize: "0.92rem" }}>{title}</span>
+                <span style={{ display: "block", color: tk.textMuted, fontSize: "0.78rem", marginTop: 1 }}>{sub}</span>
+              </span>
+              <span style={{ color: tk.textFaint, fontSize: "0.78rem", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{i + 1}</span>
+            </li>
+          ))}
+        </ol>
+        <Button isDark={isDark} size="lg" fullWidth={isMobile} onClick={() => setPhase("wizard")}>
+          Diseñar mi rutina
         </Button>
       </div>
     );
@@ -544,8 +556,8 @@ export default function TrainingGenerator({
             style={{
               width: "32px", height: "32px", borderRadius: tk.radius.full, flexShrink: 0,
               display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-              "--feeg-bg": tk.surface, "--feeg-fg": tk.textMuted, "--feeg-border": tk.border,
-              "--feeg-hover-fg": tk.accent, "--feeg-hover-border": tk.accent, "--feeg-border-width": "1px",
+              "--feeg-bg": tk.hairline, "--feeg-fg": tk.text, "--feeg-border": "transparent",
+              "--feeg-hover-fg": tk.accent, "--feeg-border-width": "0px",
               "--feeg-press-scale": 0.9,
             } as React.CSSProperties}
           >
@@ -580,7 +592,7 @@ export default function TrainingGenerator({
     return (
       <div
         className="feeg-surface"
-        style={{ borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "28px", "--feeg-bg": tk.surface, "--feeg-border": tk.border, "--feeg-shadow": tk.shadow.card } as React.CSSProperties}
+        style={{ paddingTop: 4 } as React.CSSProperties}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px", marginBottom: "8px" }}>
           <div>
@@ -660,7 +672,7 @@ export default function TrainingGenerator({
                   fontSize: tk.fontSize.md, fontWeight: tk.weight.bold, "--feeg-press-scale": 0.92,
                   ...(selected
                     ? { backgroundColor: tk.accent, color: tk.onAccent, border: `1.5px solid ${tk.accent}` }
-                    : { "--feeg-bg": tk.surface, "--feeg-fg": tk.text, "--feeg-border": tk.border, "--feeg-hover-border": tk.accent, "--feeg-border-width": "1.5px" }),
+                    : { "--feeg-bg": tk.isDark ? "rgba(255,255,255,0.05)" : "#fff", "--feeg-fg": tk.text, "--feeg-border": "transparent", "--feeg-hover-border": tk.accent, "--feeg-border-width": "1.5px" }),
                 } as unknown as React.CSSProperties}
               >
                 {d}
@@ -783,7 +795,7 @@ export default function TrainingGenerator({
           {rows.map((row) => (
             <div key={row.label} style={{
               display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px",
-              padding: "12px 14px", backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.md,
+              padding: "10px 0", borderBottom: `1px solid ${tk.hairline}`,
             }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ color: tk.textMuted, fontSize: tk.fontSize.xs }}>{row.label}</div>

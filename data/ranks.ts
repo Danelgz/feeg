@@ -7,34 +7,15 @@
 // un nivel (1RM estimado contra peso corporal) es problema de lib/rankEngine, y a propósito no vive
 // aquí: la escalera es estable y la fórmula se va a afinar con datos reales de uso.
 
-export type RankIconKey =
-  | 'plate'
-  | 'gem'
-  | 'crystalShield'
-  | 'flame'
-  | 'starShield'
-  | 'medal'
-  | 'crown'
-  | 'diamond'
-  | 'helmet'
-  | 'legendCrown';
-
 export interface RankDefinition {
   /** Orden en la escalera, 0 = Principiante. */
   index: number;
   name: string;
-  /**
-   * Identificador sin acentos ni mayúsculas para nombrar los archivos de arte:
-   * `public/ranks/<slug>-<escalón>.png`. Ver el README de esa carpeta.
-   */
+  /** Identificador estable sin acentos ni mayúsculas (claves de React, ids del DOM). */
   slug: string;
-  icon: RankIconKey;
-  /** Color protagonista de la insignia y del perfil en ese rango. */
+  /** Color de identidad: nombre del rango, músculo en el mapa, barras de progreso. */
   color: string;
-  /**
-   * Segundo color. En la mayoría es un tono más profundo del principal para dar volumen al degradado;
-   * en Titán es el rojo de los detalles sobre negro, y en Leyenda cierra el barrido del brillo.
-   */
+  /** Tono profundo del mismo rango, para el arranque de degradados (barra de progreso del titular). */
   accent: string;
   /** Nivel más bajo (1-30) que pertenece a este rango. */
   minLevel: number;
@@ -52,35 +33,32 @@ export interface RankDefinition {
 export const LEVELS_PER_RANK = 3;
 export const MAX_LEVEL = 30;
 
-// Los colores siguen la descripción del arte, no al revés: son los que tiñen el disco, el borde y
-// el nombre del rango por toda la interfaz, así que tienen que reconocerse como el mismo rango que
-// la insignia aunque aparezcan sin ella (en una fila de texto, en un gráfico).
-//
 // `rarityPercent` es cumulativo hacia arriba ("Atleta o más"), no el escalón exacto: es lo que se
 // enseña en una escalera ("a partir de aquí sólo llega un X%"), no una foto de "cuánta gente está
 // AHORA en Atleta". Calcular esto último de verdad requeriría trackear el histórico de rangos de
 // cada usuario, que hoy no se guarda.
 export const RANKS: RankDefinition[] = [
-  // Gris neutro y no azulado a propósito: `restFill` en MuscleMap.tsx (el tono de "sin rango
-  // todavía") es un gris CON tinte azul, así que un Principiante azulado se confundiría con un
-  // músculo sin entrenar. Este es más frío y más claro; se leen como dos cosas distintas uno al
-  // lado del otro.
-  { index: 0, name: 'Principiante', slug: 'principiante', icon: 'plate', color: '#9b9b9b', accent: '#5f5f5f', minLevel: 1, rarityPercent: 100 },
-  { index: 1, name: 'Novato', slug: 'novato', icon: 'gem', color: '#00f566', accent: '#008539', minLevel: 4, rarityPercent: 55 },
-  { index: 2, name: 'Aprendiz', slug: 'aprendiz', icon: 'crystalShield', color: '#14a5ff', accent: '#0967ae', minLevel: 7, rarityPercent: 30 },
-  { index: 3, name: 'Constante', slug: 'constante', icon: 'flame', color: '#00d9ff', accent: '#047690', minLevel: 10, rarityPercent: 16 },
-  { index: 4, name: 'Disciplinado', slug: 'disciplinado', icon: 'starShield', color: '#a033ff', accent: '#620bda', minLevel: 13, rarityPercent: 8 },
-  { index: 5, name: 'Atleta', slug: 'atleta', icon: 'medal', color: '#ff1420', accent: '#d5920b', minLevel: 16, rarityPercent: 4 },
-  { index: 6, name: 'Avanzado', slug: 'avanzado', icon: 'crown', color: '#ff8205', accent: '#a35200', minLevel: 19, rarityPercent: 1.8 },
-  // Élite y Leyenda comparten familia dorada y diamante azul a propósito (Leyenda «se parece a
-  // Élite pero más grande y luminoso»). Se separan por luminosidad: Élite es un dorado intenso y
-  // Leyenda su versión pálida, casi blanca.
-  { index: 7, name: 'Élite', slug: 'elite', icon: 'diamond', color: '#ffc400', accent: '#1aa3ff', minLevel: 22, rarityPercent: 0.7 },
-  // Titán sigue siendo el más oscuro de la escalera, pero ya no es un marrón apagado: un granate
-  // profundo tiene el mismo peso visual y encima combina con las luces rojas del contorno en vez
-  // de competir con ellas.
-  { index: 8, name: 'Titán', slug: 'titan', icon: 'helmet', color: '#601016', accent: '#ff3429', minLevel: 25, rarityPercent: 0.25 },
-  { index: 9, name: 'Leyenda', slug: 'leyenda', icon: 'legendCrown', color: '#ffdb66', accent: '#14a5ff', minLevel: 28, rarityPercent: 0.08 },
+  // `color` es el tono medio del esmalte de cada insignia (components/ui/RankEmblem.tsx): el mismo
+  // que tiñe el músculo en el mapa y el nombre del rango en texto, para que se reconozca como el
+  // mismo rango aunque aparezca sin su insignia. Tonos de esmalte, no de neón: la versión anterior
+  // (#00f566, #ff1420...) vibraba contra el fondo negro y competía con el acento de la app.
+  //
+  // Principiante es gris neutro a propósito: `restFill` en MuscleMap.tsx ("sin rango todavía") es
+  // un gris CON tinte azul, y un Principiante azulado se confundiría con un músculo sin entrenar.
+  { index: 0, name: 'Principiante', slug: 'principiante', color: '#a8a8a8', accent: '#5c5c5c', minLevel: 1, rarityPercent: 100 },
+  { index: 1, name: 'Novato', slug: 'novato', color: '#3fcf86', accent: '#136b40', minLevel: 4, rarityPercent: 55 },
+  { index: 2, name: 'Aprendiz', slug: 'aprendiz', color: '#4f97ee', accent: '#1a4d94', minLevel: 7, rarityPercent: 30 },
+  { index: 3, name: 'Constante', slug: 'constante', color: '#2fc4dc', accent: '#0b5e6f', minLevel: 10, rarityPercent: 16 },
+  { index: 4, name: 'Disciplinado', slug: 'disciplinado', color: '#a274f2', accent: '#48208c', minLevel: 13, rarityPercent: 8 },
+  // Atleta es frambuesa y Titán rojo: los dos llevan rojo en la insignia y, con el mismo tono, en
+  // el mapa muscular serían indistinguibles.
+  { index: 5, name: 'Atleta', slug: 'atleta', color: '#ec4f86', accent: '#7a0c35', minLevel: 16, rarityPercent: 4 },
+  { index: 6, name: 'Avanzado', slug: 'avanzado', color: '#f19a3e', accent: '#8a4309', minLevel: 19, rarityPercent: 1.8 },
+  { index: 7, name: 'Élite', slug: 'elite', color: '#f4c645', accent: '#2160c0', minLevel: 22, rarityPercent: 0.7 },
+  // La insignia de Titán es obsidiana, pero en texto y en el mapa un casi-negro desaparece sobre
+  // el fondo; se identifica por el rojo de sus detalles.
+  { index: 8, name: 'Titán', slug: 'titan', color: '#e5484d', accent: '#40444c', minLevel: 25, rarityPercent: 0.25 },
+  { index: 9, name: 'Leyenda', slug: 'leyenda', color: '#f4df98', accent: '#3a2b92', minLevel: 28, rarityPercent: 0.08 },
 ];
 
 /** Formatea `rarityPercent` para pantalla: "Top 4%", "Top 0.08%"... y el caso especial del 100%. */

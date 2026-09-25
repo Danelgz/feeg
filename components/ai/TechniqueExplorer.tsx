@@ -125,7 +125,7 @@ export default function TechniqueExplorer({
 
   const fieldStyle: React.CSSProperties = {
     width: "100%", padding: "13px 44px 13px 44px", borderRadius: tk.radius.md,
-    border: `1.5px solid ${tk.border}`, backgroundColor: tk.surfaceAlt, color: tk.text,
+    border: '1.5px solid transparent', backgroundColor: tk.isDark ? 'rgba(255,255,255,0.06)' : '#fff', color: tk.text,
     fontSize: tk.fontSize.sm, outline: "none", boxSizing: "border-box", transition: tk.transition, fontFamily: "inherit",
   };
 
@@ -202,7 +202,7 @@ export default function TechniqueExplorer({
               <button key={name} onClick={() => runSearch(name)} className="feeg-surface feeg-press feeg-hover" style={{
                 padding: "7px 14px", borderRadius: tk.radius.pill, fontSize: tk.fontSize.xs, cursor: "pointer",
                 display: "flex", alignItems: "center", gap: "6px",
-                "--feeg-bg": tk.surface, "--feeg-fg": tk.textMuted, "--feeg-border": tk.border,
+                "--feeg-bg": tk.hairline, "--feeg-fg": tk.textMuted, "--feeg-border": "transparent",
                 "--feeg-hover-fg": tk.accent, "--feeg-hover-border": tk.accent, "--feeg-border-width": "1px", "--feeg-press-scale": 0.95,
               } as React.CSSProperties}>
                 <Icon name="clock" size={12} /> {name}
@@ -222,7 +222,7 @@ export default function TechniqueExplorer({
               <button key={name} onClick={() => runSearch(name)} className="feeg-surface feeg-press feeg-hover" style={{
                 padding: "12px 14px", borderRadius: tk.radius.md, cursor: "pointer", textAlign: "left",
                 fontSize: tk.fontSize.sm, color: tk.text, fontWeight: tk.weight.medium,
-                "--feeg-bg": tk.surfaceAlt, "--feeg-border": tk.border, "--feeg-hover-border": tk.accent,
+                "--feeg-bg": tk.isDark ? "rgba(255,255,255,0.05)" : "#fff", "--feeg-border": "transparent", "--feeg-hover-border": tk.accent,
                 "--feeg-border-width": "1px", "--feeg-press-scale": 0.97,
               } as React.CSSProperties}>
                 {name}
@@ -234,7 +234,7 @@ export default function TechniqueExplorer({
 
       {/* Estado de carga */}
       {isSearching && (
-        <div className="feeg-surface" style={{ borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "24px", "--feeg-bg": tk.surface, "--feeg-border": tk.border, "--feeg-shadow": tk.shadow.card } as React.CSSProperties}>
+        <div style={{ paddingTop: 16, borderTop: `1px solid ${tk.hairline}` }}>
           <Skeleton isDark={isDark} width="55%" height={24} />
           <Skeleton isDark={isDark} width="90%" height={14} style={{ marginTop: "16px" }} />
           <Skeleton isDark={isDark} width="80%" height={14} style={{ marginTop: "8px" }} />
@@ -253,7 +253,7 @@ export default function TechniqueExplorer({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: tk.motion.duration.base, ease: tk.motion.ease.out }}
           className="feeg-surface"
-          style={{ borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "26px", "--feeg-bg": tk.surface, "--feeg-border": tk.border, "--feeg-shadow": tk.shadow.card } as React.CSSProperties}
+          style={{ paddingTop: 4 } as React.CSSProperties}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px", marginBottom: "6px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
@@ -302,16 +302,16 @@ export default function TechniqueExplorer({
               <span style={{ color: tk.text, fontSize: tk.fontSize.sm, lineHeight: 1.55 }}>{result.musclesInvolved}</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-              <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.md, padding: "10px 12px" }}>
+              <div style={{ backgroundColor: tk.isDark ? "rgba(255,255,255,0.05)" : "#fff", borderRadius: 12, padding: "10px 12px" }}>
                 <div style={{ color: tk.textMuted, fontSize: tk.fontSize.xs, marginBottom: "2px" }}>Repeticiones</div>
                 <div style={{ color: tk.text, fontSize: tk.fontSize.sm, fontWeight: tk.weight.medium }}>{result.repRange}</div>
               </div>
-              <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.md, padding: "10px 12px" }}>
+              <div style={{ backgroundColor: tk.isDark ? "rgba(255,255,255,0.05)" : "#fff", borderRadius: 12, padding: "10px 12px" }}>
                 <div style={{ color: tk.textMuted, fontSize: tk.fontSize.xs, marginBottom: "2px" }}>Descanso</div>
                 <div style={{ color: tk.text, fontSize: tk.fontSize.sm, fontWeight: tk.weight.medium }}>{result.restAdvice}</div>
               </div>
             </div>
-            <div style={{ backgroundColor: tk.accentSoft, padding: "12px", borderRadius: tk.radius.sm, border: `1px dashed ${tk.accent}`, fontSize: tk.fontSize.sm, color: tk.text }}>
+            <div style={{ backgroundColor: tk.accentSoft, padding: "12px", borderRadius: 12, fontSize: tk.fontSize.sm, color: tk.text }}>
               <strong>💡 Tip:</strong> {result.tip}
             </div>
           </div>
@@ -323,7 +323,7 @@ export default function TechniqueExplorer({
                 {relatedToResult.map((name) => (
                   <button key={name} onClick={() => runSearch(name)} className="feeg-surface feeg-press feeg-hover" style={{
                     padding: "7px 14px", borderRadius: tk.radius.pill, fontSize: tk.fontSize.xs, cursor: "pointer",
-                    "--feeg-bg": tk.surfaceAlt, "--feeg-fg": tk.text, "--feeg-border": tk.border,
+                    "--feeg-bg": tk.hairline, "--feeg-fg": tk.text, "--feeg-border": "transparent",
                     "--feeg-hover-fg": tk.accent, "--feeg-hover-border": tk.accent, "--feeg-border-width": "1px", "--feeg-press-scale": 0.95,
                   } as React.CSSProperties}>
                     {name}

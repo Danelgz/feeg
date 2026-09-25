@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getTokens } from "../../lib/tokens";
 import { activityGrid, heatLevels, type HeatDay, type SeriesWorkout } from "../../lib/statsSeries";
 import { tapFeedback } from "../../lib/haptics";
+import { SectionHeader } from "./StatSection";
 
 interface ConsistencyHeatmapProps {
   workouts: SeriesWorkout[];
@@ -10,7 +11,9 @@ interface ConsistencyHeatmapProps {
   caption?: string;
 }
 
-const WEEKS = 18;
+// Tamaño objetivo de celda: el número de semanas sale del ancho disponible (18 en un móvil,
+// casi un año en escritorio) en vez de ser fijo y dejar media pantalla vacía en pantallas anchas.
+const TARGET_CELL = 16;
 const GAP = 3;
 const LABEL_W = 14;
 const DAY_LABELS = ["L", "", "X", "", "V", "", "D"];
@@ -23,7 +26,7 @@ function fmtDay(d: Date): string {
 }
 
 /**
- * Constancia de las últimas 18 semanas, un cuadrado por día (lunes arriba). La intensidad es el
+ * Constancia de las últimas semanas (tantas como quepan), un cuadrado por día (lunes arriba). La intensidad es el
  * volumen de ese día respecto a tus propios días entrenados (cuartiles), no un umbral fijo, así que
  * funciona igual para quien mueve 3 t que para quien mueve 30 t.
  *
@@ -47,7 +50,8 @@ export default function ConsistencyHeatmap({ workouts, isDark, caption }: Consis
     return () => ro.disconnect();
   }, []);
 
-  const grid = useMemo(() => activityGrid(workouts, WEEKS), [workouts]);
+  const WEEKS = Math.max(12, Math.min(52, Math.floor((width - LABEL_W + GAP) / (TARGET_CELL + GAP))));
+  const grid = useMemo(() => activityGrid(workouts, WEEKS), [workouts, WEEKS]);
   const level = useMemo(() => heatLevels(grid), [grid]);
   const trainedDays = grid.flat().filter((d) => d.sessions > 0).length;
 
@@ -60,20 +64,16 @@ export default function ConsistencyHeatmap({ workouts, isDark, caption }: Consis
     return new Date(2026, 0, 5 + best).toLocaleDateString("es-ES", { weekday: "long" });
   }, [grid]);
 
-  // Tope de 18px: en escritorio las celdas crecían hasta ser bloques de 50px.
-  const cell = Math.min(18, Math.max(8, Math.floor((width - LABEL_W - GAP * (WEEKS - 1)) / WEEKS)));
+  const cell = Math.min(22, Math.max(8, Math.floor((width - LABEL_W - GAP * (WEEKS - 1)) / WEEKS)));
   const gridW = LABEL_W + WEEKS * cell + (WEEKS - 1) * GAP;
   const monthRowH = 14;
-  const empty = isDark ? "rgba(255,255,255,0.055)" : "rgba(0,0,0,0.05)";
+  const empty = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
 
   return (
-    <section aria-label="Constancia" style={{ marginBottom: 20 }}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
-        <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: tk.text }}>Constancia</h2>
-        <span style={{ fontSize: "0.76rem", color: tk.textMuted, fontWeight: 600 }}>{WEEKS} semanas</span>
-      </div>
+    <section aria-label="Constancia" style={{ marginBottom: 22, paddingTop: 18, borderTop: `1px solid ${tk.hairline}` }}>
+      <SectionHeader title="Constancia" meta={`${WEEKS} semanas`} isDark={isDark} />
 
-      <div style={{ borderRadius: 20, padding: 14, background: tk.surface, border: `1px solid ${tk.border}` }}>
+      <div>
         <div style={{ display: "flex", gap: 18, marginBottom: 12 }}>
           <div>
             <div style={{ fontSize: "1.45rem", fontWeight: 800, color: tk.text, lineHeight: 1 }}>{trainedDays}</div>

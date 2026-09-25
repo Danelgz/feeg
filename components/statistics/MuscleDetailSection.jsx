@@ -40,7 +40,7 @@ export default function MuscleDetailSection({ isDark, isMobile, group, workouts,
     return { key: b.key, current: b.current, series: computeSeriesByGroup(inWeek, [group])[group] || 0 };
   });
   const maxWeekly = Math.max(1, ...weekly.map((w) => w.series));
-  const line = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
+  const line = tk.hairline;
 
   return (
     <div>
@@ -66,7 +66,7 @@ export default function MuscleDetailSection({ isDark, isMobile, group, workouts,
       </button>
 
       {/* Cabecera: el músculo, su trabajo de la semana y su constancia en 8 semanas */}
-      <div style={{ borderRadius: 22, padding: 16, marginBottom: 20, background: isDark ? 'linear-gradient(150deg, rgba(29,209,161,0.12) 0%, #121412 50%)' : 'linear-gradient(150deg, rgba(29,209,161,0.12) 0%, #ffffff 55%)', border: `1px solid ${isDark ? 'rgba(29,209,161,0.18)' : 'rgba(29,209,161,0.25)'}` }}>
+      <div style={{ padding: '4px 0 18px', marginBottom: 18, borderBottom: `1px solid ${line}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ width: 64, height: 64, borderRadius: 18, overflow: 'hidden', background: tk.surfaceAlt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <MuscleGroupIcon group={group} isDark={isDark} size={58} />
@@ -102,11 +102,12 @@ export default function MuscleDetailSection({ isDark, isMobile, group, workouts,
       </div>
 
       {available && groupRanks.length > 0 && (
-        <div style={{ marginBottom: 20 }}>
-          <h3 style={{ margin: '0 0 10px', fontSize: '1.05rem', fontWeight: 800, color: tk.text }}>
+        <div style={{ marginBottom: 18, paddingBottom: 6, borderBottom: `1px solid ${line}` }}>
+          <h3 style={{ margin: '0 0 6px', fontSize: '1.05rem', fontWeight: 800, color: tk.text }}>
             Rangos <span style={{ fontSize: '0.74rem', fontWeight: 600, color: tk.textMuted }}>· histórico completo</span>
           </h3>
           <ExerciseRankList
+            layout="grid"
             ranks={groupRanks}
             bodyweightKg={bodyweightKg}
             sex={sex}
@@ -127,11 +128,11 @@ export default function MuscleDetailSection({ isDark, isMobile, group, workouts,
           description="El volumen de los últimos 7 días aparecerá aquí en cuanto lo trabajes."
         />
       ) : (
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, borderRadius: 20, border: `1px solid ${tk.border}`, background: tk.surface, overflow: 'hidden' }}>
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0, borderTop: `1px solid ${line}`, borderBottom: `1px solid ${line}` }}>
           {results.map((entry, idx) => {
             const share = totalSeries ? entry.series / totalSeries : 0;
             return (
-              <li key={entry.name} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px 11px 12px', borderTop: idx ? `1px solid ${line}` : 'none' }}>
+              <li key={entry.name} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderTop: idx ? `1px solid ${line}` : 'none' }}>
                 <ExerciseThumb name={entry.name} size={36} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: '0.9rem', color: tk.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

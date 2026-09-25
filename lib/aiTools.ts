@@ -25,9 +25,31 @@ export interface RoutineLike {
   exercises?: RoutineExerciseLike[];
 }
 
+/** Rangos ya calculados en el cliente (hooks/useRanks): el servidor no tiene el peso corporal ni
+ * las preferencias de equipamiento, y recalcularlos allí daría otro número que el de la pantalla. */
+export interface AiRankSnapshot {
+  available: boolean;
+  overall?: { label: string; level: number; rarity?: string };
+  groups?: { group: string; label: string; level: number }[];
+  exercises?: { exercise: string; label: string; level: number; group?: string }[];
+  nextMilestone?: { exercise: string; group: string; deltaKg: number; targetLabel: string } | null;
+}
+
+export interface AiBodySnapshot {
+  weights?: { date: string; weight: number }[];
+  heightCm?: number | null;
+  sex?: string | null;
+  weightUnit?: string;
+}
+
 export interface AiToolContext {
   workouts: CompletedWorkout[];
   routines: RoutineLike[];
+  ranks?: AiRankSnapshot | null;
+  body?: AiBodySnapshot | null;
+  weeklyGoal?: number;
+  /** Para tests: "ahora" inyectable. */
+  now?: number;
 }
 
 function detailsOf(w: CompletedWorkout): CompletedExerciseDetail[] {
@@ -278,10 +300,157 @@ export function listExercises(args: { group?: string; equipment?: string; limit?
   return { availableGroups: Object.keys(exercisesList), exercises: results };
 }
 
+
+// ---------------------------------------------------------------------------------------------
+// Récords, rangos, estado de entrenamiento y cuerpo
+
+export function getPersonalRecords(ctx: AiToolContext, args: { exerciseName?: string; limit?: number }) {
+  const limit = Math.min(Math.max(args.limit || 10, 1), 40);
+  const name = args.exerciseName?.trim().toLowerCase();
+  const now = ctx.now ?? Date.now();
+  const { milestones, currentRecords } = computePRTimeline(ctx.workouts, 400);
+  const filterByName = <T extends { exerciseName: string }>(list: T[]) =>
+    name ? list.filter((m) => m.exerciseName.toLowerCase().includes(name)) : list;
+  const round = (n: number) => Math.round(n * 10) / 10;
+
+  return {
+    records: filterByName(currentRecords)
+      .slice(0, limit)
+      .map((r) => ({ exercise: r.exerciseName, weight: r.weight, reps: r.reps, estimated1RM: round(r.oneRM), date: r.date })),
+    recentPRs: filterByName(milestones)
+      .filter((m) => m.tier !== "first" && now - new Date(m.date).getTime() <= 30 * 86400000)
+      .slice(0, limit)
+      .map((m) => ({
+        exercise: m.exerciseName,
+        weight: m.weight,
+        reps: m.reps,
+        estimated1RM: round(m.oneRM),
+        improvementPercent: m.deltaOneRMPercent === null ? null : round(m.deltaOneRMPercent),
+        date: m.date,
+      })),
+  };
+}
+
+export function getStrengthRanks(ctx: AiToolContext) {
+  if (!ctx.ranks || !ctx.ranks.available) {
+    return {
+      available: false,
+      reason: "El usuario no tiene peso corporal registrado (o ningún ejercicio puntuable): los rangos comparan lo que levanta con su propio peso. Sugiérele registrar su peso en Medidas.",
+    };
+  }
+  return ctx.ranks;
+}
+
+type TimedWorkout = CompletedWorkout & { name?: string; routineName?: string; elapsedTime?: number; totalTime?: number };
+
+const WEEKDAYS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
+export function getTrainingStatus(ctx: AiToolContext) {
+  const now = ctx.now ?? Date.now();
+  const day = 86400000;
+  const sorted: TimedWorkout[] = sortedByDateDesc(ctx.workouts);
+  const last = sorted[0];
+
+  // Última vez que se trabajó cada grupo, y series de los últimos 7 días: es lo que hace falta
+  // para contestar "¿qué entreno hoy?" sin mandar al usuario a un músculo que machacó ayer.
+  const lastByGroup: Record<string, number> = {};
+  sorted.forEach((w) => {
+    const t = new Date(w.completedAt as string).getTime();
+    detailsOf(w).forEach((d) => {
+      const g = d.muscleGroup;
+      if (g && lastByGroup[g] === undefined) lastByGroup[g] = t;
+    });
+  });
+  const weekSeries = computeSeriesByGroup(ctx.workouts.filter((w) => w.completedAt && now - new Date(w.completedAt).getTime() <= 7 * day));
+
+  const muscleGroups = Object.entries(lastByGroup)
+    .map(([group, t]) => ({ group, daysSinceTrained: Math.floor((now - t) / day), seriesLast7Days: weekSeries[group] || 0 }))
+    .sort((a, b) => b.daysSinceTrained - a.daysSinceTrained);
+
+  const weeks = [0, 1, 2, 3].map((i) => {
+    const to = now - i * 7 * day;
+    const from = to - 7 * day;
+    return sorted.filter((w) => {
+      const t = new Date(w.completedAt as string).getTime();
+      return t > from && t <= to;
+    }).length;
+  });
+
+  const dayCounts = Array(7).fill(0);
+  sorted.slice(0, 60).forEach((w) => (dayCounts[new Date(w.completedAt as string).getDay()] += 1));
+  const favIndex = dayCounts.indexOf(Math.max(...dayCounts));
+
+  const minutes = sorted
+    .slice(0, 20)
+    .map((w) => (w.elapsedTime !== undefined ? Number(w.elapsedTime) / 60 : Number(w.totalTime || 0)))
+    .filter((m) => m > 0);
+  const { streak, goal, thisWeek } = computeWeeklyStreak(ctx.workouts, ctx.weeklyGoal || undefined, new Date(now));
+
+  return {
+    today: WEEKDAYS[new Date(now).getDay()],
+    daysSinceLastWorkout: last ? Math.floor((now - new Date(last.completedAt as string).getTime()) / day) : null,
+    lastWorkoutName: last ? last.name || last.routineName || null : null,
+    sessionsPerWeekLast4: weeks,
+    weeklyGoal: goal,
+    sessionsThisWeek: thisWeek,
+    streakWeeks: streak,
+    favoriteWeekday: sorted.length ? WEEKDAYS[favIndex] : null,
+    averageSessionMinutes: minutes.length ? Math.round(minutes.reduce((a, b) => a + b, 0) / minutes.length) : null,
+    muscleGroups,
+  };
+}
+
+export function getBodyMetrics(ctx: AiToolContext) {
+  const body = ctx.body;
+  const weights = (body?.weights || []).filter((w) => w && Number(w.weight) > 0);
+  if (weights.length === 0 && !body?.heightCm) return { available: false };
+  const sorted = [...weights].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const first = sorted[0];
+  const latest = sorted[sorted.length - 1];
+  return {
+    available: true,
+    unit: body?.weightUnit === "lb" ? "lb" : "kg",
+    heightCm: body?.heightCm ?? null,
+    sex: body?.sex ?? null,
+    latestWeight: latest ? { date: latest.date, weight: latest.weight } : null,
+    changeSinceFirst: first && latest && first !== latest ? Math.round((latest.weight - first.weight) * 10) / 10 : null,
+    history: sorted.slice(-12),
+  };
+}
+
 // ---------------------------------------------------------------------------------------------
 // Declaraciones para Gemini (function calling, esquema OpenAPI simplificado) + dispatcher
 
 export const AI_TOOL_DECLARATIONS = [
+  {
+    name: "get_personal_records",
+    description:
+      "Récords personales del usuario: el récord vigente de cada ejercicio (1RM estimado, peso × reps y fecha) y los récords batidos en los últimos 30 días con su mejora en %.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        exerciseName: { type: "STRING", description: "Filtra por ejercicio (búsqueda parcial). Omitir para ver todos." },
+        limit: { type: "NUMBER", description: "Máximo de resultados por lista (por defecto 10)." },
+      },
+    },
+  },
+  {
+    name: "get_strength_ranks",
+    description:
+      "Rangos de fuerza de FEEG del usuario (escala de 30 niveles: Principiante, Novato, Aprendiz, Constante, Disciplinado, Atleta, Avanzado, Élite, Titán, Leyenda): rango global, por grupo muscular, por ejercicio y la siguiente subida al alcance en kg.",
+    parameters: { type: "OBJECT", properties: {} },
+  },
+  {
+    name: "get_training_status",
+    description:
+      "Estado actual del entrenamiento: días desde el último entreno, días desde que se trabajó cada grupo muscular y sus series de los últimos 7 días, sesiones por semana en las últimas 4 semanas, objetivo y racha semanal, día favorito y duración media. Úsala para '¿qué entreno hoy?', recuperación y constancia.",
+    parameters: { type: "OBJECT", properties: {} },
+  },
+  {
+    name: "get_body_metrics",
+    description: "Medidas corporales registradas por el usuario: evolución del peso corporal, altura y sexo.",
+    parameters: { type: "OBJECT", properties: {} },
+  },
   {
     name: "get_workout_history",
     description:
@@ -489,6 +658,14 @@ export function runAiTool(name: string, args: Record<string, unknown> | undefine
       return getRoutines(ctx);
     case "list_exercises":
       return listExercises(a as any);
+    case "get_personal_records":
+      return getPersonalRecords(ctx, a as any);
+    case "get_strength_ranks":
+      return getStrengthRanks(ctx);
+    case "get_training_status":
+      return getTrainingStatus(ctx);
+    case "get_body_metrics":
+      return getBodyMetrics(ctx);
     default:
       return { error: `Herramienta desconocida: ${name}` };
   }

@@ -8,13 +8,20 @@ function formatElapsed(seconds) {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+function formatDuration(seconds) {
+  const mins = Math.round(seconds / 60);
+  if (mins < 60) return `${mins} min`;
+  return `${Math.floor(mins / 60)} h ${String(mins % 60).padStart(2, "0")} min`;
+}
+
 /**
  * Cifras del entreno bajo la cabecera: tres columnas centradas con separadores finos, la cifra
  * grande y la etiqueta debajo. En vivo el cronómetro lleva un punto que late (se está grabando) y
  * las series se leen como hechas/planificadas, que es la pregunta real a mitad de sesión: "¿cuánto
- * me queda?".
+ * me queda?". Con `finished` (un entreno ya guardado) la duración se lee como tiempo total
+ * ("1 h 05 min") y no como un cronómetro.
  */
-export default function WorkoutStatsBar({ mode = "live", elapsedSeconds, totalVolume, totalSeries, plannedSeries, exerciseCount, t, recording = false }) {
+export default function WorkoutStatsBar({ mode = "live", elapsedSeconds, totalVolume, totalSeries, plannedSeries, exerciseCount, t, recording = false, finished = false }) {
   const tk = getWorkoutTokens();
   const translate = t || ((s) => s);
   const volume = `${Math.round(totalVolume || 0).toLocaleString("es-ES")} kg`;
@@ -22,7 +29,7 @@ export default function WorkoutStatsBar({ mode = "live", elapsedSeconds, totalVo
   const items =
     mode === "live"
       ? [
-          { key: "duration", label: translate("duration_label"), value: formatElapsed(elapsedSeconds || 0), live: recording },
+          { key: "duration", label: translate("duration_label"), value: finished ? formatDuration(elapsedSeconds || 0) : formatElapsed(elapsedSeconds || 0), live: recording },
           { key: "volume", label: translate("volume"), value: volume },
           { key: "series", label: translate("series_label"), value: plannedSeries ? `${totalSeries || 0}/${plannedSeries}` : totalSeries || 0 },
         ]
@@ -51,7 +58,7 @@ export default function WorkoutStatsBar({ mode = "live", elapsedSeconds, totalVo
               display: "inline-flex",
               alignItems: "center",
               gap: 6,
-              color: item.key === "duration" ? tk.accent : tk.text,
+              color: item.key === "duration" && !finished ? tk.accent : tk.text,
               fontSize: "1.18rem",
               fontWeight: 800,
               fontVariantNumeric: "tabular-nums",

@@ -106,6 +106,7 @@ export default function ReadOnlyWorkoutModal({ workout, language, translate, onC
           totalVolume={workout.totalVolume}
           totalSeries={totalSeries}
           t={translate}
+          finished
         />
 
         {/* Foto y nota en una sola fila: la foto como miniatura (se abre entera al tocarla) para

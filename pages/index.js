@@ -458,7 +458,7 @@ export default function Home() {
                   </div>
 
                   {visibleExercises.length > 0 && (
-                    <div style={{ borderTop: `1px solid ${tk.border}`, paddingTop: "12px", marginBottom: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <div style={{ borderTop: `1px solid ${tk.hairline}`, paddingTop: "12px", marginBottom: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
                       {visibleExercises.map((ex, idx) => {
                         const seriesKey = `${workout.id}_${idx}`;
                         const isSeriesOpen = !!expandedSeriesFor[seriesKey];
@@ -485,8 +485,8 @@ export default function Home() {
                             </div>
 
                             {isSeriesOpen && (
-                              <div style={{ marginTop: "8px", marginLeft: "46px", backgroundColor: tk.surfaceAlt, borderRadius: tk.radius.sm, border: `1px solid ${tk.border}`, overflow: "hidden" }}>
-                                <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr", padding: "6px 10px", color: tk.textFaint, fontSize: "0.68rem", fontWeight: "bold", textAlign: "center", borderBottom: `1px solid ${tk.border}` }}>
+                              <div style={{ marginTop: "8px", marginLeft: "46px", backgroundColor: tk.surfaceAlt, borderRadius: tk.radius.sm, overflow: "hidden", fontVariantNumeric: "tabular-nums" }}>
+                                <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr", padding: "6px 10px", color: tk.textFaint, fontSize: "0.68rem", fontWeight: "bold", textAlign: "center", borderBottom: `1px solid ${tk.hairline}` }}>
                                   <div>{t("serie_upper")}</div>
                                   <div>{t("weight_upper")}</div>
                                   <div>{t("reps_upper")}</div>
@@ -505,7 +505,7 @@ export default function Home() {
                                     }}
                                   >
                                     <div style={{ color: tk.textFaint, fontWeight: "bold" }}>{sIdx + 1}</div>
-                                    <div>{s.weight || "-"}</div>
+                                    <div>{s.weight ? String(s.weight).replace(".", ",") : "-"}</div>
                                     <div>{s.reps || "-"}</div>
                                   </div>
                                 ))}
@@ -542,7 +542,7 @@ export default function Home() {
                     </div>
                   )}
 
-                  <div onClick={(event) => event.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: "20px", borderTop: `1px solid ${tk.border}`, paddingTop: "12px", marginTop: "4px" }}>
+                  <div onClick={(event) => event.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: "20px", borderTop: `1px solid ${tk.hairline}`, paddingTop: "12px", marginTop: "4px" }}>
                     <button
                       onClick={(event) => {
                         event.stopPropagation();
@@ -620,7 +620,7 @@ export default function Home() {
                     <div style={{
                       marginTop: "15px",
                       paddingTop: "20px",
-                      borderTop: `1px solid ${tk.border}`,
+                      borderTop: `1px solid ${tk.hairline}`,
                       display: "flex",
                       flexDirection: "column",
                       gap: "20px"
@@ -680,10 +680,9 @@ export default function Home() {
                           display: "flex",
                           alignItems: "center",
                           gap: "10px",
-                          backgroundColor: tk.surface,
+                          backgroundColor: tk.surfaceAlt,
                           borderRadius: tk.radius.pill,
-                          padding: "5px 5px 5px 15px",
-                          border: `1px solid ${tk.border}`
+                          padding: "5px 5px 5px 15px"
                         }}>
                           <input
                             ref={commentInputRef}

@@ -21,7 +21,7 @@ import {
   type PRTier,
   type PRTypeResult,
 } from "../lib/exerciseStats";
-import { playPRChime } from "../lib/prSound";
+import { playPRChime, playRestDoneChime } from "../lib/prSound";
 
 export interface UseWorkoutSessionOptions {
   workoutId: string;
@@ -110,9 +110,10 @@ export function useWorkoutSession({
           /* no soportado, ignorar */
         }
       }
+      if (soundEnabled) playRestDoneChime();
       dispatch({ type: "STOP_REST" });
     }
-  }, [state.restEndsAt, restRemainingSeconds]);
+  }, [state.restEndsAt, restRemainingSeconds, soundEnabled]);
 
   // Persistencia debounced. Nunca depende del timer (elapsedSeconds/restRemainingSeconds no
   // están en las deps) para que el debounce pueda asentarse — ver arquitectura en el plan.

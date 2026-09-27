@@ -21,7 +21,8 @@ export default function WorkoutHeader({
   return (
     <div
       style={{
-        padding: "15px 20px",
+        padding: "12px 16px",
+        gap: 12,
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
@@ -35,9 +36,11 @@ export default function WorkoutHeader({
         {onBack && (
           <button
             onClick={onBack}
-            style={{ background: "none", border: "none", color: tk.text, cursor: "pointer", display: "flex", flexShrink: 0 }}
+            aria-label="Volver"
+            className="feeg-press"
+            style={{ width: 38, height: 38, borderRadius: 12, background: tk.surfaceAlt, border: "none", color: tk.text, cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}
           >
-            <Icon name="chevronLeft" size={22} />
+            <Icon name="chevronLeft" size={20} />
           </button>
         )}
         {mode === "template" ? (
@@ -57,7 +60,7 @@ export default function WorkoutHeader({
             }}
           />
         ) : (
-          <span style={{ color: tk.text, fontSize: "1.1rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <span style={{ color: tk.text, fontSize: "1.15rem", fontWeight: 800, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {title}
           </span>
         )}
@@ -67,14 +70,16 @@ export default function WorkoutHeader({
         <button
           onClick={onPrimaryAction}
           disabled={primaryDisabled}
+          className="feeg-press"
           style={{
             backgroundColor: tk.accent,
             color: tk.onAccent,
             border: "none",
-            borderRadius: tk.radius.sm,
-            padding: "8px 20px",
-            fontSize: "1rem",
-            fontWeight: 600,
+            borderRadius: 12,
+            height: 38,
+            padding: "0 18px",
+            fontSize: "0.95rem",
+            fontWeight: 800,
             cursor: primaryDisabled ? "not-allowed" : "pointer",
             opacity: primaryDisabled ? 0.5 : 1,
             flexShrink: 0,

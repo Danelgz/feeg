@@ -9,38 +9,8 @@ function formatMinSec(total) {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-function formatElapsed(seconds) {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  const parts = [];
-  if (h > 0) parts.push(`${h}h`);
-  if (m > 0 || h > 0) parts.push(`${m}m`);
-  parts.push(`${s}s`);
-  return parts.join(" ");
-}
-
-const adjustBtnStyle = (tk) => ({
-  backgroundColor: tk.surfaceAlt,
-  border: "none",
-  color: tk.text,
-  padding: "10px 16px",
-  borderRadius: tk.radius.pill,
-  cursor: "pointer",
-  fontSize: "0.95rem",
-  fontWeight: 700,
-  flexShrink: 0,
-  transition: "transform 100ms ease, background-color 150ms ease",
-});
-
-const pressHandlers = {
-  onMouseDown: (e) => (e.currentTarget.style.transform = "scale(0.94)"),
-  onMouseUp: (e) => (e.currentTarget.style.transform = "scale(1)"),
-  onMouseLeave: (e) => (e.currentTarget.style.transform = "scale(1)"),
-};
-
-const RING_SIZE = 60;
-const RING_STROKE = 4;
+const RING_SIZE = 46;
+const RING_STROKE = 3.5;
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
@@ -76,17 +46,14 @@ function RestRing({ progress, color, trackColor }) {
 }
 
 /**
- * Barra de descanso a todo lo ancho, fija en la parte inferior de la pantalla (mismo lenguaje
- * visual que apps de referencia como Hevy, con los colores propios de FEEG). Sustituye la pastilla
- * flotante anterior — más legible, botones más fáciles de acertar con el pulgar, y un anillo de
- * progreso real alrededor del número (no solo el número) que se vuelve ámbar en los últimos 5s
- * como aviso.
+ * Descanso entre series: una tarjeta flotante sobre la barra de navegación, sólo mientras se
+ * descansa. Anillo y barra superior de progreso que se vuelven ámbar en los últimos 5 s, la cuenta
+ * atrás grande y los ajustes de ±10 s al alcance del pulgar.
  */
 export default function FloatingRestTimer({
   restActive,
   restRemainingSeconds,
   totalRestSeconds,
-  elapsedSeconds,
   onAdjust,
   onStop,
   t,
@@ -101,124 +68,98 @@ export default function FloatingRestTimer({
       : 0;
   const isFinalStretch = restActive && restRemainingSeconds > 0 && restRemainingSeconds <= 5;
 
+  // Sin descanso en marcha no se pinta nada: la barra fija con el "tiempo total" repetía el
+  // cronómetro que ya está arriba y se comía ~80px de la pantalla durante todo el entreno.
+  if (!restActive) return null;
+
+  const smallBtn = {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    border: "none",
+    background: tk.surfaceAlt,
+    color: tk.text,
+    fontWeight: 800,
+    fontSize: "0.85rem",
+    cursor: "pointer",
+    flexShrink: 0,
+    fontVariantNumeric: "tabular-nums",
+  };
+
   return (
     <div
+      role="timer"
+      aria-live="off"
+      aria-label={`${translate("rest_prefix")}: ${formatMinSec(restRemainingSeconds)}`}
       style={{
         position: "fixed",
         // En móvil la barra de pestañas sigue visible durante el entreno (para poder salir a
-        // mirar otra cosa sin cerrarlo), así que el temporizador se apoya ENCIMA de ella.
-        bottom: isMobile ? `calc(${BOTTOM_NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px))` : 0,
-        left: isMobile ? 0 : "230px",
-        right: 0,
+        // mirar otra cosa sin cerrarlo), así que el temporizador flota ENCIMA de ella.
+        bottom: isMobile ? `calc(${BOTTOM_NAV_HEIGHT + 8}px + env(safe-area-inset-bottom, 0px))` : 16,
+        left: isMobile ? 10 : "calc(230px + 16px)",
+        right: isMobile ? 10 : 16,
         zIndex: 1500,
+        animation: "feeg-rest-in 260ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
       <div
         style={{
+          position: "relative",
+          overflow: "hidden",
+          maxWidth: 560,
+          margin: "0 auto",
           backgroundColor: tk.surface,
-          borderTop: `1px solid ${tk.border}`,
-          padding: "12px 16px",
-          paddingBottom: isMobile ? "12px" : "calc(12px + env(safe-area-inset-bottom, 0px))",
+          borderRadius: 20,
+          padding: "10px 10px 10px 12px",
           display: "flex",
           alignItems: "center",
-          justifyContent: restActive ? "space-between" : "center",
-          gap: "10px",
-          boxShadow: tk.shadow.float,
+          gap: 10,
+          boxShadow: "0 12px 32px rgba(0,0,0,0.55)",
           boxSizing: "border-box",
         }}
       >
-        {restActive ? (
-          <>
-            <button onClick={() => onAdjust(-10)} style={adjustBtnStyle(tk)} {...pressHandlers}>
-              −10
-            </button>
+        {/* Progreso también como barra en el borde superior: se lee de reojo sin mirar el número. */}
+        <span aria-hidden style={{ position: "absolute", left: 0, top: 0, height: 3, width: `${progress * 100}%`, background: isFinalStretch ? tk.warning : tk.accent, transition: "width 1s linear" }} />
 
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, minWidth: 0, gap: "4px" }}>
-              <span
-                style={{
-                  fontSize: "0.65rem",
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  color: tk.accent,
-                  lineHeight: 1,
-                }}
-              >
-                {translate("rest_prefix")}
-              </span>
-              <div style={{ position: "relative", width: RING_SIZE, height: RING_SIZE, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <RestRing progress={progress} color={isFinalStretch ? tk.warning : tk.accent} trackColor={tk.surfaceAlt} />
-                <span
-                  style={{
-                    fontWeight: 800,
-                    fontSize: "1.05rem",
-                    fontVariantNumeric: "tabular-nums",
-                    lineHeight: 1,
-                    color: tk.text,
-                    display: "inline-block",
-                    transform: isFinalStretch ? "scale(1.1)" : "scale(1)",
-                    transition: "transform 300ms ease",
-                  }}
-                >
-                  {formatMinSec(restRemainingSeconds)}
-                </span>
-              </div>
-            </div>
+        <div style={{ position: "relative", width: RING_SIZE, height: RING_SIZE, display: "grid", placeItems: "center", flexShrink: 0 }}>
+          <RestRing progress={progress} color={isFinalStretch ? tk.warning : tk.accent} trackColor={tk.surfaceAlt} />
+          <Icon name="timer" size={18} color={isFinalStretch ? tk.warning : tk.accent} />
+        </div>
 
-            <button onClick={() => onAdjust(10)} style={adjustBtnStyle(tk)} {...pressHandlers}>
-              +10
-            </button>
-
-            <button
-              onClick={onStop}
-              style={{
-                backgroundColor: tk.accent,
-                color: tk.onAccent,
-                border: "none",
-                borderRadius: tk.radius.pill,
-                padding: "10px 20px",
-                fontWeight: 700,
-                fontSize: "0.9rem",
-                cursor: "pointer",
-                flexShrink: 0,
-                transition: "transform 100ms ease",
-              }}
-              {...pressHandlers}
-            >
-              {translate("skip_rest")}
-            </button>
-          </>
-        ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: "50%",
-                backgroundColor: tk.accentSoft,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <Icon name="clock" size={13} color={tk.accent} />
-            </div>
-            <span
-              style={{
-                fontSize: "0.7rem",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "0.04em",
-                color: tk.accent,
-              }}
-            >
-              {translate("total_time_label")}
-            </span>
-            <span style={{ fontWeight: 800, fontSize: "1rem", color: tk.text }}>{formatElapsed(elapsedSeconds || 0)}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: "0.62rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: tk.textFaint }}>{translate("rest_prefix")}</div>
+          <div
+            style={{
+              fontWeight: 900,
+              fontSize: "1.5rem",
+              lineHeight: 1.1,
+              fontVariantNumeric: "tabular-nums",
+              color: isFinalStretch ? tk.warning : tk.text,
+              letterSpacing: "-0.02em",
+            }}
+          >
+            {formatMinSec(restRemainingSeconds)}
           </div>
-        )}
+        </div>
+
+        <button onClick={() => onAdjust(-10)} aria-label="Quitar 10 segundos" className="feeg-press" style={smallBtn}>
+          −10
+        </button>
+        <button onClick={() => onAdjust(10)} aria-label="Añadir 10 segundos" className="feeg-press" style={smallBtn}>
+          +10
+        </button>
+        <button
+          onClick={onStop}
+          className="feeg-press"
+          style={{ height: 42, padding: "0 16px", borderRadius: 12, border: "none", background: tk.accent, color: tk.onAccent, fontWeight: 800, fontSize: "0.88rem", cursor: "pointer", flexShrink: 0 }}
+        >
+          {translate("skip_rest")}
+        </button>
       </div>
+      <style>{`
+        @keyframes feeg-rest-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { [role="timer"] { animation: none !important; } }
+      `}</style>
     </div>
   );
 }

@@ -187,10 +187,10 @@ function ExerciseCard({
                 vistazo — se separa a su propia línea, notablemente más grande que el resto de la
                 tarjeta, para que no compita en tamaño con el "· basado en" ni con el motivo. */}
             <div style={{ color: tk.text, fontSize: "1.15rem", fontWeight: 800, letterSpacing: "-0.02em", marginTop: "3px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.15 }}>
-              {primaryRecommendation.weight !== null && primaryRecommendation.weight !== undefined ? `${primaryRecommendation.weight}${weightUnit}` : ""} {primaryRecommendation.reps !== null && primaryRecommendation.reps !== undefined ? `× ${primaryRecommendation.reps}` : ""}
+              {primaryRecommendation.weight !== null && primaryRecommendation.weight !== undefined ? `${String(primaryRecommendation.weight).replace(".", ",")} ${weightUnit}` : ""} {primaryRecommendation.reps !== null && primaryRecommendation.reps !== undefined ? `× ${primaryRecommendation.reps}` : ""}
             </div>
             <div style={{ color: tk.textFaint, fontSize: "0.72rem", fontWeight: 600, marginTop: "3px" }}>
-              {t(`recommendation_${primaryRecommendation.decision}`)} · {t("progression_based_on")} {previousSeries?.[firstRecommendationIndex]?.weight}{weightUnit} × {previousSeries?.[firstRecommendationIndex]?.reps}
+              {t(`recommendation_${primaryRecommendation.decision}`)} · {t("progression_based_on")} {String(previousSeries?.[firstRecommendationIndex]?.weight ?? "").replace(".", ",")} {weightUnit} × {previousSeries?.[firstRecommendationIndex]?.reps}
             </div>
           </div>
           <button

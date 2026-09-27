@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { useWorkoutPhoto } from "../../components/workout/WorkoutPhotoPicker";
+import { useWakeLock } from "../../hooks/useWakeLock";
 import Layout from "../../components/Layout";
 import { BOTTOM_NAV_HEIGHT } from "../../components/BottomNavigation";
 import { useUser } from "../../context/UserContext";
@@ -34,6 +35,8 @@ export default function EmptyRoutine() {
   const [showRoutineActiveAlert, setShowRoutineActiveAlert] = useState(false);
   const [finishName, setFinishName] = useState("Entrenamiento Vacío");
   const [finishComments, setFinishComments] = useState("");
+  // Pantalla encendida mientras se entrena (no en la vista previa ni en el resumen final).
+  useWakeLock(state.status === "ongoing");
   const { photo: finishPhoto, pick: pickFinishPhoto, retry: retryFinishPhoto, remove: removeFinishPhoto, adjust: adjustFinishPhoto } = useWorkoutPhoto();
   const [finishTotalTime, setFinishTotalTime] = useState(0);
   const [savingWorkout, setSavingWorkout] = useState(false);
@@ -278,11 +281,16 @@ export default function EmptyRoutine() {
       <div className="feeg-active-workout-viewport" style={{ maxWidth: "900px", width: "100%", height: "100dvh", minHeight: 0, margin: "0 auto", display: "flex", flexDirection: "column", overflow: "hidden", touchAction: "pan-y", overscrollBehaviorX: "none" }}>
         <WorkoutHeader mode="live" title="Entreno Vacío" onBack={() => setShowDiscardConfirm(true)} primaryLabel={t("finish_button")} onPrimaryAction={openFinishForm} />
 
-        <WorkoutStatsBar mode="live" elapsedSeconds={elapsedSeconds} totalVolume={totals.totalVolume} totalSeries={totals.totalSeries} t={t} />
+        <WorkoutStatsBar mode="live" recording elapsedSeconds={elapsedSeconds} totalVolume={totals.totalVolume} totalSeries={totals.totalSeries} plannedSeries={state.exercises.reduce((n, ex) => n + ex.series.length, 0)} t={t} />
 
         <WorkoutExercisePager
           ref={pagerRef}
           exercises={state.exercises}
+          getMeta={(exercise) => ({
+            label: translateExerciseName(exercise.name, language).replace(/\s*\(.*\)$/, ""),
+            done: exercise.series.filter((s) => s.completed).length,
+            total: exercise.series.length,
+          })}
           renderExercise={(exercise) => (
             <ExerciseCard
               key={exercise.uid}

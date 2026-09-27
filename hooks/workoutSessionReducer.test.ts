@@ -232,8 +232,11 @@ describe("workoutSessionReducer — rest timer controls", () => {
     expect(workoutSessionReducer(base, { type: "ADJUST_REST", deltaSeconds: 30 })).toBe(base);
 
     const resting = { ...base, restEndsAt: Date.now() + 5000 };
+    // "Ahora" se toma ANTES de llamar al reductor: comparar con un Date.now() posterior fallaba
+    // cada vez que entre una llamada y otra pasaba un milisegundo.
+    const before = Date.now();
     const shortened = workoutSessionReducer(resting, { type: "ADJUST_REST", deltaSeconds: -3600 });
-    expect(shortened.restEndsAt).toBeGreaterThanOrEqual(Date.now());
+    expect(shortened.restEndsAt).toBeGreaterThanOrEqual(before);
   });
 
   it("STOP_REST clears both the timer and its owning exercise", () => {

@@ -64,7 +64,7 @@ function SeriesRow({
 
   const badgeLabel = serie.type === "W" ? "W" : serie.type === "D" ? "D" : String(effectiveIndex);
   const badgeColor = readOnly ? tk.text : serie.type === "W" ? tk.accent : serie.type === "D" ? tk.warning : tk.text;
-  const previousLabel = previous ? `${previous.weight}${weightUnit} × ${previous.reps}` : "—";
+  const previousLabel = previous ? `${String(previous.weight).replace(".", ",")} ${weightUnit} × ${previous.reps}` : "—";
   // Campos de 38px de alto y cifras en negrita: son lo que se toca con el pulgar entre series, con
   // el pulso alto. En una serie completada el fondo del campo se funde con la fila verde.
   const fieldStyle = {

@@ -366,31 +366,25 @@ export default function Layout({ children, hideBottomNav = false, gutter = false
                         onClick={smartBack}
                         title="Atrás"
                         aria-label="Atrás"
+                        className="feeg-press"
+                        // Mismo botón de volver que el del entreno (WorkoutHeader): cuadrado redondeado
+                        // relleno, sin el aro de color que lo hacía parecer un botón de acción.
                         style={{
-                          width: currentIsMobile ? "34px" : "38px",
-                          height: currentIsMobile ? "34px" : "38px",
-                          borderRadius: tk.radius.full,
-                          backgroundColor: tk.surface,
-                          border: `1.5px solid ${tk.accent}`,
-                          color: tk.accent,
+                          width: "38px",
+                          height: "38px",
+                          borderRadius: "12px",
+                          backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)",
+                          border: "none",
+                          color: tk.text,
                           cursor: "pointer",
                           display: "flex",
                           justifyContent: "center",
                           alignItems: "center",
                           transition: tk.transition,
-                          boxShadow: tk.shadow.card,
                           flexShrink: 0,
                         }}
-                        onMouseOver={(e) => {
-                          e.currentTarget.style.backgroundColor = tk.accent;
-                          e.currentTarget.style.color = tk.onAccent;
-                        }}
-                        onMouseOut={(e) => {
-                          e.currentTarget.style.backgroundColor = tk.surface;
-                          e.currentTarget.style.color = tk.accent;
-                        }}
                       >
-                        <Icon name="chevronLeft" size={currentIsMobile ? 18 : 20} />
+                        <Icon name="chevronLeft" size={20} />
                       </button>
                     ) : (
                       <span />

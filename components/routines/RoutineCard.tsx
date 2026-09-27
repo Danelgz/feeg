@@ -54,9 +54,11 @@ export default function RoutineCard({ routine, isDark, language, t, lastDoneLabe
           ? isDark
             ? "linear-gradient(135deg, rgba(29,209,161,0.12) 0%, #141414 60%)"
             : "linear-gradient(135deg, rgba(29,209,161,0.14) 0%, #ffffff 60%)"
-          : tk.surface,
-        border: `1px solid ${isNext ? (isDark ? "rgba(29,209,161,0.3)" : "rgba(29,209,161,0.35)") : tk.border}`,
-        boxShadow: tk.shadow.card,
+          : isDark
+            ? "rgba(255,255,255,0.045)"
+            : "#fff",
+        border: "none",
+        boxShadow: isNext ? `inset 0 0 0 1px ${isDark ? "rgba(29,209,161,0.3)" : "rgba(29,209,161,0.35)"}` : isDark ? "none" : "0 1px 3px rgba(24,32,44,0.06)",
       }}
     >
       <div

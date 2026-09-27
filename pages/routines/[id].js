@@ -311,7 +311,8 @@ export default function RoutineDetail() {
           onTotalMinutesChange={setFinishTotalTime}
           elapsedSeconds={elapsedSeconds}
           totals={totals}
-          exerciseCount={state.exercises.length}
+          exerciseCount={state.exercises.filter((ex) => ex.series.some((s) => s.completed)).length}
+          pendingSeries={state.exercises.reduce((n, ex) => n + ex.series.filter((s) => !s.completed).length, 0)}
           routineChanges={routineChanges}
           updateOriginalRoutine={updateOriginalRoutine}
           onUpdateOriginalRoutineChange={setUpdateOriginalRoutine}

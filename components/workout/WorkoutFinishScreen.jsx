@@ -30,6 +30,7 @@ export default function WorkoutFinishScreen({
   elapsedSeconds,
   totals,
   exerciseCount,
+  pendingSeries = 0,
   routineChanges,
   updateOriginalRoutine,
   onUpdateOriginalRoutineChange,
@@ -180,6 +181,18 @@ export default function WorkoutFinishScreen({
             </div>
           ))}
         </div>
+
+        {/* Sólo se guardan las series marcadas: avisarlo evita la sorpresa de "¿y mis series?"
+            cuando alguien olvidó tocar el check de las últimas. */}
+        {pendingSeries > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "14px 0 0", padding: "11px 14px", borderRadius: 14, background: `${tk.warning}1f`, color: tk.warning, fontSize: "0.84rem", fontWeight: 700 }}>
+            <Icon name="alertCircle" size={17} />
+            <span>
+              {pendingSeries === 1 ? "1 serie sin marcar no se guardará." : `${pendingSeries} series sin marcar no se guardarán.`}
+              <span style={{ color: tk.textMuted, fontWeight: 600 }}> Vuelve atrás si te faltó marcar alguna.</span>
+            </span>
+          </div>
+        )}
 
         <button
           type="button"

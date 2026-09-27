@@ -111,6 +111,16 @@ export default function EmptyRoutine() {
     const prRecords = buildPRRecordsFromExercises(state.exercises);
     const workoutVolumeRecord = checkWorkoutVolumePR(totals.totalVolume, completedWorkouts);
 
+    // Igual que en [id].js: sólo las series marcadas y sólo los ejercicios con alguna. Antes se
+    // guardaban TODAS en el detalle mientras los totales contaban sólo las marcadas, así que el
+    // historial enseñaba series que nunca se hicieron.
+    const doneExercises = state.exercises
+      .map((ex) => {
+        const series = ex.series.filter((s) => s.completed).map((s) => ({ reps: s.reps, weight: s.weight, type: s.type, rir: s.rir ?? "" }));
+        return series.length ? { name: ex.name, muscleGroup: ex.muscleGroup, series } : null;
+      })
+      .filter(Boolean);
+
     const completedWorkout = {
       id: Date.now(),
       name: finishName,
@@ -120,15 +130,11 @@ export default function EmptyRoutine() {
       completedAt: new Date().toISOString(),
       elapsedTime: elapsedSeconds,
       totalTime: Number(finishTotalTime) || Math.floor(elapsedSeconds / 60),
-      exercises: state.exercises.length,
+      exercises: doneExercises.length,
       series: totals.totalSeries,
       totalReps: totals.totalReps,
       totalVolume: totals.totalVolume,
-      exerciseDetails: state.exercises.map((ex) => ({
-        name: ex.name,
-        muscleGroup: ex.muscleGroup,
-        series: ex.series.map((s) => ({ reps: s.reps, weight: s.weight, type: s.type, rir: s.rir ?? "" })),
-      })),
+      exerciseDetails: doneExercises,
     };
 
     saveCompletedWorkout(completedWorkout);
@@ -267,7 +273,8 @@ export default function EmptyRoutine() {
           onTotalMinutesChange={setFinishTotalTime}
           elapsedSeconds={elapsedSeconds}
           totals={totals}
-          exerciseCount={state.exercises.length}
+          exerciseCount={state.exercises.filter((ex) => ex.series.some((s) => s.completed)).length}
+          pendingSeries={state.exercises.reduce((n, ex) => n + ex.series.filter((s) => !s.completed).length, 0)}
           savingWorkout={savingWorkout}
           onCancel={() => setShowFinishForm(false)}
           onSave={handleSaveFinishedRoutine}

@@ -226,7 +226,7 @@ export const translations = {
     pr_summary_workout_volume_detail: "+{pct}% respecto a tu mejor sesión ({prev} kg)",
     // Ajustes — sonido
     sound_pr_label: "Sonido de récord personal",
-    sound_pr_desc: "Reproduce un tono breve al superar tu marca durante un entreno.",
+    sound_pr_desc: "Un tono al batir tu marca y un doble pitido cuando termina el descanso.",
     // Ajustes — cómo registras tus pesos (afecta al cálculo de 1RM y rangos)
     equipment_settings_title: "Cómo registras tus pesos",
     equipment_settings_desc: "Dos gimnasios nunca son iguales. Ajusta esto para que tus marcas y tus rangos reflejen lo que de verdad levantas.",

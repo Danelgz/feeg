@@ -77,7 +77,6 @@ export default function ProfileRankMapModal({
           overflow: "hidden",
           borderRadius: "24px",
           backgroundColor: tk.surface,
-          border: `1px solid ${tk.border}`,
           boxShadow: "0 28px 90px rgba(0,0,0,0.42)",
           animation: "profileRankMapIn 220ms cubic-bezier(0.16, 1, 0.3, 1)",
           fontFamily: "var(--font-feeg), -apple-system, 'Segoe UI', sans-serif",
@@ -89,7 +88,7 @@ export default function ProfileRankMapModal({
             position: "relative",
             overflow: "hidden",
             padding: "20px 22px 18px",
-            borderBottom: `1px solid ${tk.border}`,
+            borderBottom: `1px solid ${tk.hairline}`,
             background: overallPosition
               ? `radial-gradient(120% 140% at 90% -10%, ${overallPosition.rank.color}26 0%, ${overallPosition.rank.color}0a 45%, transparent 75%)`
               : "none",
@@ -119,9 +118,9 @@ export default function ProfileRankMapModal({
                 height: "34px",
                 display: "grid",
                 placeItems: "center",
-                border: `1px solid ${tk.border}`,
+                border: "none",
                 borderRadius: "12px",
-                background: "transparent",
+                background: tk.surfaceAlt,
                 color: tk.textMuted,
                 cursor: "pointer",
                 "--feeg-hover-bg": tk.surfaceHover,
@@ -211,7 +210,7 @@ export default function ProfileRankMapModal({
               legend={
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", maxWidth: "340px" }}>
                   <span style={{ fontSize: "0.68rem", fontWeight: 700, color: tk.textFaint, flexShrink: 0 }}>{RANKS[0].name}</span>
-                  <span aria-hidden="true" style={{ flex: 1, height: "6px", borderRadius: "999px", background: RANK_SCALE, border: `1px solid ${tk.border}` }} />
+                  <span aria-hidden="true" style={{ flex: 1, height: "6px", borderRadius: "999px", background: RANK_SCALE }} />
                   <span style={{ fontSize: "0.68rem", fontWeight: 700, color: tk.textFaint, flexShrink: 0 }}>{RANKS[RANKS.length - 1].name}</span>
                 </div>
               }

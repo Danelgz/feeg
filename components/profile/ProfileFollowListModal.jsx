@@ -23,7 +23,6 @@ export default function ProfileFollowListModal({ isDark = true, open, title, use
         onClick={(e) => e.stopPropagation()}
         style={{
           backgroundColor: tk.surface,
-          border: `1px solid ${tk.border}`,
           padding: "22px",
           borderRadius: "20px",
           width: "100%",
@@ -44,9 +43,9 @@ export default function ProfileFollowListModal({ isDark = true, open, title, use
               height: "32px",
               display: "grid",
               placeItems: "center",
-              border: `1px solid ${tk.border}`,
+              border: "none",
               borderRadius: "10px",
-              background: "transparent",
+              background: tk.surfaceAlt,
               color: tk.textMuted,
               fontSize: "1.2rem",
               cursor: "pointer",

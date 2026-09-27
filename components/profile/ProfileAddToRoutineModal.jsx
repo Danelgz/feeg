@@ -24,7 +24,6 @@ export default function ProfileAddToRoutineModal({ isDark = true, open, routineN
           width: "100%",
           maxWidth: "400px",
           textAlign: "center",
-          border: `1px solid ${tk.border}`,
           fontFamily: "var(--font-feeg), -apple-system, 'Segoe UI', sans-serif",
         }}
       >
@@ -42,7 +41,7 @@ export default function ProfileAddToRoutineModal({ isDark = true, open, routineN
             width: "100%",
             padding: "12px",
             borderRadius: "10px",
-            border: `1px solid ${tk.border}`,
+            border: "none",
             backgroundColor: tk.surfaceAlt,
             color: tk.text,
             marginBottom: "20px",
@@ -54,7 +53,7 @@ export default function ProfileAddToRoutineModal({ isDark = true, open, routineN
           autoFocus
         />
         <div style={{ display: "flex", gap: "10px" }}>
-          <button onClick={onClose} className="feeg-press feeg-hover" style={{ flex: 1, padding: "12px", borderRadius: "12px", border: `1px solid ${tk.border}`, backgroundColor: "transparent", color: tk.text, fontWeight: 700, cursor: "pointer", "--feeg-hover-bg": tk.surfaceHover, "--feeg-press-scale": 0.96 }}>
+          <button onClick={onClose} className="feeg-press feeg-hover" style={{ flex: 1, padding: "12px", borderRadius: "12px", border: "none", backgroundColor: tk.surfaceAlt, color: tk.text, fontWeight: 700, cursor: "pointer", "--feeg-hover-bg": tk.surfaceHover, "--feeg-press-scale": 0.96 }}>
             Cancelar
           </button>
           <button onClick={onConfirm} className="feeg-press" style={{ flex: 1, padding: "12px", borderRadius: "12px", border: "none", backgroundColor: tk.accent, color: tk.onAccent, fontWeight: "800", cursor: "pointer", "--feeg-press-scale": 0.96 }}>

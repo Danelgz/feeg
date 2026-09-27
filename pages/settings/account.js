@@ -80,8 +80,7 @@ export default function SettingsAccount() {
             gap: "15px",
             backgroundColor: tk.surfaceAlt,
             padding: "15px",
-            borderRadius: tk.radius.md,
-            border: `1px solid ${tk.border}`
+            borderRadius: tk.radius.md
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <div style={{ width: "45px", height: "45px", borderRadius: tk.radius.full, overflow: "hidden", border: `2px solid ${tk.accent}`, backgroundColor: tk.surfaceHover }}>
@@ -103,20 +102,17 @@ export default function SettingsAccount() {
             </Button>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "12px" }}>
-            <Button isDark={isDark} fullWidth onClick={loginWithGoogle}>
-              {t("login_google")}
-            </Button>
-            <Button isDark={isDark} variant="secondary" fullWidth onClick={loginWithGoogle}>
-              {t("register")}
-            </Button>
-          </div>
+          // Con Google entrar y registrarse son el mismo paso: antes había dos botones que llamaban
+          // a lo mismo.
+          <Button isDark={isDark} fullWidth onClick={loginWithGoogle}>
+            Continuar con Google
+          </Button>
         )}
       </div>
 
       {user && (
         <>
-          <div style={{ height: "1px", backgroundColor: tk.border }} />
+          <div style={{ height: "1px", backgroundColor: tk.hairline }} />
 
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "14px", padding: isMobile ? "16px 8px" : "24px 20px" }}>
             <div style={{

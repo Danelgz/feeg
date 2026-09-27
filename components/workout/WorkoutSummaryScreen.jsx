@@ -4,6 +4,7 @@ import { getWorkoutTokens } from "../../lib/tokens";
 import { pickPrimaryPRType } from "../../lib/exerciseStats";
 import { Icon, RankArt, ExerciseRankList } from "../ui";
 import WorkoutPhoto from "./WorkoutPhoto";
+import { shareWorkoutCard } from "../../lib/shareCard";
 import { useRankUps } from "../../hooks/useRankUps";
 import { useRanks } from "../../hooks/useRanks";
 import { getRankPosition } from "../../data/ranks";
@@ -165,10 +166,15 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
     const primaryDetail = hero ? buildRecordDetail(hero, translate) : headlineDetail;
     const shareText = `${workout.name} · ${formatValue(workout.totalVolume)} kg · ${workout.series} ${translate("series_label").toLowerCase()}${primaryDetail ? ` · ${primaryDetail}` : ""}`;
     try {
-      if (typeof navigator !== "undefined" && navigator.share) {
-        await navigator.share({ title: "FEEG", text: shareText });
-      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-        await navigator.clipboard.writeText(shareText);
+      // Primero la imagen (foto + cifras), que es lo que se comparte de verdad en redes; si el
+      // navegador no puede generarla, el texto de siempre.
+      const result = await shareWorkoutCard(workout, hero ? "Nuevo récord" : "Entreno completado", shareText);
+      if (result === "failed") {
+        if (typeof navigator !== "undefined" && navigator.share) {
+          await navigator.share({ title: "FEEG", text: shareText });
+        } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+          await navigator.clipboard.writeText(shareText);
+        }
       }
       setShared(true);
       window.setTimeout(() => setShared(false), 2200);

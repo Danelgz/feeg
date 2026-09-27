@@ -5,6 +5,7 @@ import { Icon } from "../ui";
 import { ExerciseThumb } from "../workout";
 import WorkoutPhoto from "../workout/WorkoutPhoto";
 import ProfileWorkoutSocial from "./ProfileWorkoutSocial";
+import { shareWorkoutCard } from "../../lib/shareCard";
 
 function timeAgo(date) {
   const diff = Date.now() - new Date(date).getTime();
@@ -62,11 +63,13 @@ export default function ProfileWorkoutCard({
 }) {
   const tk = getTokens(isDark);
   const [menuOpen, setMenuOpen] = useState(false);
-  const hasMenu = !!(onAddToRoutine || onEdit || onDelete || onAddPhoto);
+  // Compartir está siempre: también se puede compartir el entreno de otra persona.
+  const hasMenu = true;
   const exercises = workout.exerciseDetails || workout.details || [];
 
   const menuItems = [
     onAddPhoto && { key: "photo", label: workout.photoURL ? "Cambiar foto" : "Añadir foto", icon: "camera", run: onAddPhoto },
+    { key: "share", label: "Compartir imagen", icon: "share", run: () => shareWorkoutCard(workout, "Entreno", workout.name) },
     onAddToRoutine && { key: "routine", label: "Guardar como rutina", icon: "plus", run: onAddToRoutine },
     onEdit && { key: "edit", label: "Editar", icon: "edit", run: onEdit },
     onDelete && { key: "delete", label: "Borrar", icon: "trash", run: onDelete, danger: true },

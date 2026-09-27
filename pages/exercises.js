@@ -95,7 +95,7 @@ export default function Exercises() {
   const renderExerciseRow = (exercise, index, showGroup = false) => {
     const isFavorite = favoriteExercises.includes(exercise.name);
     return (
-      <li key={`${exercise.group || ""}-${exercise.id}`} style={{ borderTop: index === 0 ? "none" : `1px solid ${tk.border}` }}>
+      <li key={`${exercise.group || ""}-${exercise.id}`} style={{ borderTop: index === 0 ? "none" : `1px solid ${tk.hairline}` }}>
         <div
           role="button"
           tabIndex={0}

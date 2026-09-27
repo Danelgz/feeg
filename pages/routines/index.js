@@ -290,7 +290,7 @@ export default function Routines() {
                           initial={reduceMotion ? false : { opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ delay: Math.min(i, 10) * 0.025 }}
-                          style={{ display: "flex", alignItems: "center", borderTop: i === 0 ? "none" : `1px solid ${tk.border}` }}
+                          style={{ display: "flex", alignItems: "center", borderTop: i === 0 ? "none" : `1px solid ${tk.hairline}` }}
                         >
                           <button
                             type="button"

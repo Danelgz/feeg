@@ -43,7 +43,6 @@ export default function ConfirmModal({
           maxWidth: "400px",
           width: "100%",
           boxShadow: tk.shadow.float,
-          border: `1px solid ${tk.border}`,
         }}
       >
         {title && <h3 style={{ margin: 0, color: tk.text, fontSize: "1.15rem", fontWeight: 700 }}>{title}</h3>}

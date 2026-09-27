@@ -317,7 +317,7 @@ export default function TechniqueExplorer({
           </div>
 
           {relatedToResult.length > 0 && (
-            <div style={{ marginTop: "18px", paddingTop: "16px", borderTop: `1px solid ${tk.border}` }}>
+            <div style={{ marginTop: "18px", paddingTop: "16px", borderTop: `1px solid ${tk.hairline}` }}>
               <div style={{ color: tk.textMuted, fontSize: tk.fontSize.xs, fontWeight: tk.weight.medium, marginBottom: "8px" }}>Sigue explorando {result.muscleGroup}</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                 {relatedToResult.map((name) => (

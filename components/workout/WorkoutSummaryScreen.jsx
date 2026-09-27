@@ -284,7 +284,7 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
               ) : null}
 
               {workoutVolumeRecord && (
-                <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 0", borderTop: hero ? `1px solid ${tk.border}` : "none" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 0", borderTop: hero ? `1px solid ${tk.hairline}` : "none" }}>
                   <Icon name="barChart" size={20} color={tk.accent} />
                   <div style={{ minWidth: 0 }}>
                     <div style={{ color: tk.text, fontWeight: tk.weight.bold, fontSize: "0.9rem" }}>{translate("pr_summary_workout_volume_title")}</div>
@@ -294,9 +294,9 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
               )}
 
               {realRecords.length > 1 && (
-                <div style={{ borderTop: `1px solid ${tk.border}`, marginTop: 4 }}>
+                <div style={{ borderTop: `1px solid ${tk.hairline}`, marginTop: 4 }}>
                   {realRecords.map((record, index) => (
-                    <div key={record.name} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "12px 0", borderBottom: index === realRecords.length - 1 ? "none" : `1px solid ${tk.border}` }}>
+                    <div key={record.name} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "12px 0", borderBottom: index === realRecords.length - 1 ? "none" : `1px solid ${tk.hairline}` }}>
                       <span style={{ color: tk.text, fontSize: "0.86rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{record.name}</span>
                       <span style={{ color: tk.accent, fontSize: "0.82rem", fontWeight: tk.weight.bold, flexShrink: 0 }}>{buildRecordDeltaShort(record)}</span>
                     </div>

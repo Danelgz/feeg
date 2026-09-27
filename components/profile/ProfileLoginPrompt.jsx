@@ -39,7 +39,7 @@ export default function ProfileLoginPrompt({ isDark, isMobile, t, loginWithGoogl
           <span style={{ color: tk.accent }}>Entrena en compañía.</span>
         </div>
         <p style={{ margin: "8px 0 20px", color: tk.textMuted, fontSize: "0.9rem", lineHeight: 1.45 }}>
-          Crea tu cuenta gratis en un paso. Entrar y registrarte es el mismo paso.
+          Gratis. Con tu cuenta de Google entras o te registras en un toque.
         </p>
 
         <button

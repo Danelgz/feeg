@@ -7,6 +7,7 @@ import { useUser } from "../../context/UserContext";
 import ExerciseSelector from "../../components/ExerciseSelector";
 import { useWorkoutSession } from "../../hooks/useWorkoutSession";
 import { findNextSet } from "../../lib/nextSet";
+import { resolveElapsedSeconds } from "../../lib/sessionCompare";
 import { createExerciseFromCatalog } from "../../hooks/workoutSessionReducer";
 import { getExerciseInfo, computeWorkoutTotals, buildPRRecordsFromExercises, checkWorkoutVolumePR } from "../../lib/exerciseStats";
 import { getLatestExerciseSeries } from "../../lib/workoutRecommendations";
@@ -187,7 +188,7 @@ export default function RoutineDetail() {
       ...(finishPhoto.status === "done" && finishPhoto.url ? { photoURL: finishPhoto.url } : {}),
       completedAt: new Date().toISOString(),
       totalTime: Number(finishTotalTime) || 0,
-      elapsedTime: elapsedSeconds,
+      elapsedTime: resolveElapsedSeconds(elapsedSeconds, finishTotalTime),
       exercises: exerciseDetails.length,
       series: totalsCompleted.totalSeries,
       totalReps: totalsCompleted.totalReps,

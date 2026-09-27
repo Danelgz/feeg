@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareWithPrevious, findPreviousSameWorkout, signed } from "./sessionCompare";
+import { compareWithPrevious, findPreviousSameWorkout, resolveElapsedSeconds, signed } from "./sessionCompare";
 
 const w = (id: string, name: string, date: string, totalVolume: number, series: number, minutes: number) => ({
   id,
@@ -59,5 +59,21 @@ describe("signed", () => {
     expect(signed(1320)).toBe("+1320".replace("1320", (1320).toLocaleString("es-ES")));
     expect(signed(-15)).toBe("−15");
     expect(signed(0)).toBe("=");
+  });
+});
+
+
+describe("resolveElapsedSeconds", () => {
+  it("conserva el tiempo real si no se tocó la duración", () => {
+    expect(resolveElapsedSeconds(3725, 62)).toBe(3725);
+  });
+  it("usa la duración corregida si se cambió", () => {
+    expect(resolveElapsedSeconds(3 * 3600, 60)).toBe(3600);
+    expect(resolveElapsedSeconds(600, "45")).toBe(2700);
+  });
+  it("ignora valores vacíos o no válidos", () => {
+    expect(resolveElapsedSeconds(600, "")).toBe(600);
+    expect(resolveElapsedSeconds(600, 0)).toBe(600);
+    expect(resolveElapsedSeconds(600, null)).toBe(600);
   });
 });

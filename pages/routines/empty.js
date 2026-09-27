@@ -8,6 +8,7 @@ import { useUser } from "../../context/UserContext";
 import ExerciseSelector from "../../components/ExerciseSelector";
 import { useWorkoutSession } from "../../hooks/useWorkoutSession";
 import { findNextSet } from "../../lib/nextSet";
+import { resolveElapsedSeconds } from "../../lib/sessionCompare";
 import { createExerciseFromCatalog } from "../../hooks/workoutSessionReducer";
 import { getExerciseInfo, computeWorkoutTotals, buildPRRecordsFromExercises, checkWorkoutVolumePR } from "../../lib/exerciseStats";
 import { getWorkoutTokens } from "../../lib/tokens";
@@ -128,7 +129,7 @@ export default function EmptyRoutine() {
       // Solo si la subida terminó: una foto a medio subir o fallida no se publica con el entreno.
       ...(finishPhoto.status === "done" && finishPhoto.url ? { photoURL: finishPhoto.url } : {}),
       completedAt: new Date().toISOString(),
-      elapsedTime: elapsedSeconds,
+      elapsedTime: resolveElapsedSeconds(elapsedSeconds, finishTotalTime),
       totalTime: Number(finishTotalTime) || Math.floor(elapsedSeconds / 60),
       exercises: doneExercises.length,
       series: totals.totalSeries,

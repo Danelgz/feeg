@@ -63,3 +63,16 @@ export function signed(n: number): string {
   const abs = Math.abs(n).toLocaleString("es-ES");
   return n > 0 ? `+${abs}` : `−${abs}`;
 }
+
+/**
+ * Segundos a guardar como `elapsedTime`. Toda la app (feed, perfil, calendario, estadísticas,
+ * resumen, imagen para compartir) lee `elapsedTime` antes que `totalTime`, así que si al terminar
+ * se corrige la duración (p.ej. se olvidó parar el entreno) hay que guardarla AQUÍ: antes sólo iba
+ * a `totalTime` y la corrección no se veía en ningún sitio.
+ */
+export function resolveElapsedSeconds(realSeconds: number, editedMinutes: number | string | null | undefined): number {
+  const real = Math.max(0, Math.round(Number(realSeconds) || 0));
+  const edited = Number(editedMinutes);
+  if (!Number.isFinite(edited) || edited <= 0) return real;
+  return edited === Math.floor(real / 60) ? real : Math.round(edited * 60);
+}

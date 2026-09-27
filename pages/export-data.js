@@ -4,7 +4,7 @@ import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { exercisesList } from "../data/exercises";
 import { getTokens } from "../lib/tokens";
-import { Icon, Button, EmptyState, PageHeader } from "../components/ui";
+import { Icon, Button, PageHeader } from "../components/ui";
 import { resolveExerciseNames } from "../lib/exerciseMatcher";
 import ExerciseMatchReview from "../components/import/ExerciseMatchReview";
 
@@ -494,13 +494,9 @@ export default function ExportData() {
     return { workouts, latestWeight: null, weightMeasures: [] };
   };
 
-  if (!authUser) {
-    return (
-      <Layout gutter>
-        <EmptyState isDark={isDark} icon="user" title={t("please_login_to_import")} />
-      </Layout>
-    );
-  }
+  // Exportar sólo lee lo que ya está en el dispositivo, así que también sirve sin cuenta (es
+  // justo quien más necesita una copia). Importar escribe en la nube y sí pide sesión.
+  const section = (first) => ({ padding: "22px 0", borderTop: first ? "none" : `1px solid ${tk.hairline}` });
 
   return (
     <Layout gutter>
@@ -511,15 +507,8 @@ export default function ExportData() {
           subtitle="Descarga una copia de tus datos, o importa tu historial desde Hevy."
         />
 
-        <div style={{
-          backgroundColor: tk.surface,
-          padding: "30px",
-          borderRadius: tk.radius.md,
-          border: `1px solid ${tk.border}`,
-          boxShadow: tk.shadow.card,
-          marginBottom: "24px"
-        }}>
-          <h2 style={{ fontSize: "1.2rem", marginBottom: "10px", color: tk.text }}>Exportar mis datos</h2>
+        <div style={section(true)}>
+          <h2 style={{ fontSize: "1.1rem", fontWeight: 800, margin: "0 0 8px", color: tk.text }}>Exportar mis datos</h2>
           <p style={{ color: tk.textMuted, lineHeight: "1.6", marginBottom: "20px" }}>
             Descarga una copia de seguridad de todo tu historial — entrenamientos completados, rutinas, medidas
             corporales y tu perfil — en un único archivo JSON que puedes guardar donde quieras.
@@ -529,16 +518,9 @@ export default function ExportData() {
           </Button>
         </div>
 
-        {completedWorkouts?.length > 0 && (
-          <div style={{
-            backgroundColor: tk.surface,
-            padding: "24px 30px",
-            borderRadius: tk.radius.md,
-            border: `1px solid ${tk.border}`,
-            boxShadow: tk.shadow.card,
-            marginBottom: "24px",
-          }}>
-            <h2 style={{ fontSize: "1.2rem", marginBottom: "10px", color: tk.text }}>Revisar conexiones del historial</h2>
+        {authUser && completedWorkouts?.length > 0 && (
+          <div style={section(false)}>
+            <h2 style={{ fontSize: "1.1rem", fontWeight: 800, margin: "0 0 8px", color: tk.text }}>Revisar conexiones del historial</h2>
             <p style={{ color: tk.textMuted, lineHeight: "1.6", marginBottom: "18px" }}>
               FEEG puede encontrar ejercicios importados con otro nombre y conectarlos con el catálogo actual.
               Las coincidencias dudosas te pedirán confirmación antes de modificar tus datos.
@@ -549,14 +531,15 @@ export default function ExportData() {
           </div>
         )}
 
-        <div style={{
-          backgroundColor: tk.surface,
-          padding: "30px",
-          borderRadius: tk.radius.md,
-          border: `1px solid ${tk.border}`,
-          boxShadow: tk.shadow.card
-        }}>
-          <h2 style={{ fontSize: "1.2rem", marginBottom: "20px", color: tk.text }}>Importar desde Hevy</h2>
+        <div style={section(false)}>
+          <h2 style={{ fontSize: "1.1rem", fontWeight: 800, margin: "0 0 12px", color: tk.text }}>Importar desde Hevy</h2>
+          {!authUser ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 16, background: tk.accentSoft, color: tk.text }}>
+              <Icon name="user" size={18} color={tk.accent} />
+              <span style={{ flex: 1, fontSize: "0.9rem", fontWeight: 600 }}>Inicia sesión para importar tu historial.</span>
+              <Button isDark={isDark} size="sm" onClick={() => router.push("/profile")}>Entrar</Button>
+            </div>
+          ) : (<>
 
           <div style={{ marginBottom: "20px" }}>
             <ol style={{ paddingLeft: "20px", lineHeight: "1.6", color: tk.textMuted }}>
@@ -568,8 +551,8 @@ export default function ExportData() {
           </div>
 
           <div style={{
-            border: `2px dashed ${tk.accent}`,
-            borderRadius: tk.radius.sm,
+            border: `1.5px dashed ${tk.accent}66`,
+            borderRadius: 18,
             padding: "40px",
             textAlign: "center",
             cursor: "pointer",
@@ -638,6 +621,7 @@ export default function ExportData() {
               </Button>
             </div>
           )}
+          </>)}
         </div>
       </div>
 

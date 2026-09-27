@@ -1,356 +1,229 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useUser } from "../context/UserContext";
 import { exercisesList } from "../data/exercises";
+import { getTokens } from "../lib/tokens";
+import { translateExerciseName } from "../lib/exerciseTranslation";
 import CreateCustomExerciseModal from "./CreateCustomExerciseModal";
 import { ExerciseThumb } from "./workout";
+import { Icon, MuscleGroupIcon } from "./ui";
 
+const TYPE_LABEL = { weight_reps: "Peso + reps", reps: "Solo reps", time: "Tiempo", weight_bodyweight: "Peso corporal + lastre" };
+// Búsqueda sin tildes ni mayúsculas: "biceps" encuentra "Bíceps".
+const norm = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+/**
+ * Selector de ejercicios (añadir o sustituir en un entreno, crear rutina, importar).
+ *
+ * El buscador va arriba y busca en TODO el catálogo: antes había que adivinar el grupo muscular,
+ * entrar y sólo entonces buscar dentro. Sin texto se ven los ejercicios recientes (lo más probable
+ * que se quiera añadir) y los grupos con su silueta.
+ */
 export default function ExerciseSelector({ onSelectExercise, onCancel }) {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [customExercises, setCustomExercises] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
-  const { theme } = useUser();
+  const { theme, completedWorkouts, language } = useUser();
   const isDark = theme === "dark";
+  const tk = getTokens(isDark);
+  const inputRef = useRef(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('customExercises');
+    const saved = localStorage.getItem("customExercises");
     if (saved) {
       try {
         setCustomExercises(JSON.parse(saved));
       } catch (e) {
-        console.error('Error loading custom exercises', e);
+        console.error("Error loading custom exercises", e);
       }
     }
   }, []);
 
+  // Catálogo + personalizados como una sola lista, cada uno con su grupo.
+  const all = useMemo(() => {
+    const out = [];
+    Object.entries(exercisesList).forEach(([group, list]) => list.forEach((ex) => out.push({ ex, group, custom: false })));
+    Object.entries(customExercises).forEach(([group, list]) => (list || []).forEach((ex) => out.push({ ex, group, custom: true })));
+    return out;
+  }, [customExercises]);
+
+  const recents = useMemo(() => {
+    const seen = new Set();
+    const out = [];
+    const sorted = [...(completedWorkouts || [])].sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+    for (const w of sorted) {
+      for (const d of w.exerciseDetails || w.details || []) {
+        const name = d.name || d.exercise;
+        if (!name || seen.has(name)) continue;
+        const hit = all.find((x) => x.ex.name === name);
+        if (hit) {
+          seen.add(name);
+          out.push(hit);
+        }
+        if (out.length >= 8) return out;
+      }
+    }
+    return out;
+  }, [completedWorkouts, all]);
+
+  const q = norm(searchQuery.trim());
+  const results = useMemo(() => {
+    if (q) return all.filter((x) => norm(x.ex.name).includes(q) || norm(translateExerciseName(x.ex.name, language)).includes(q) || norm(x.group).includes(q)).slice(0, 80);
+    if (selectedGroup) return all.filter((x) => x.group === selectedGroup);
+    return [];
+  }, [q, selectedGroup, all, language]);
+
   const handleCreateCustomExercise = (customExercise) => {
     const group = customExercise.muscleGroup;
-    const updated = {
-      ...customExercises,
-      [group]: [...(customExercises[group] || []), customExercise]
-    };
+    const updated = { ...customExercises, [group]: [...(customExercises[group] || []), customExercise] };
     setCustomExercises(updated);
-    localStorage.setItem('customExercises', JSON.stringify(updated));
+    localStorage.setItem("customExercises", JSON.stringify(updated));
     onSelectExercise(customExercise);
     setShowCreateModal(false);
   };
 
-  const handleSelectExercise = (exercise) => {
-    // Los ejercicios del catálogo (data/exercises.js) no llevan su grupo muscular como campo
-    // propio — el grupo es la CLAVE del objeto exercisesList, no una propiedad de cada entrada.
-    // Sin esto, cualquier caller que espere `exercise.muscleGroup` (p.ej. ExerciseMatchReview al
-    // "Conectar con otro" durante una importación) recibía undefined, y Firestore rechaza de
-    // forma síncrona cualquier escritura con un campo undefined — abortaba el lote entero de
-    // golpe, antes incluso de llegar al manejador de reintentos.
-    onSelectExercise({ ...exercise, muscleGroup: selectedGroup });
-  };
+  // Los ejercicios del catálogo no llevan su grupo como campo propio (es la CLAVE de
+  // exercisesList): se añade aquí porque quien llama espera `muscleGroup` (p.ej. la importación,
+  // donde Firestore rechaza un campo undefined).
+  const pick = ({ ex, group }) => onSelectExercise({ ...ex, muscleGroup: ex.muscleGroup || group });
 
-  const modalStyle = {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: isDark ? "#0a0a0a" : "#f5f5f5",
-    display: "flex",
-    flexDirection: "column",
-    // BottomNavigation.jsx usa zIndex 1000-1001 (barra fija en móvil) — con 999 aquí quedaba por
-    // DEBAJO de la barra inferior, así que los toques sobre los últimos ejercicios de la lista (o
-    // directamente todo si la lista era corta) le llegaban a la barra de navegación en vez de al
-    // selector. El resto de modales de la app usa 2000+; alineamos con esa convención.
-    zIndex: 3000,
-    overflow: "hidden",
-  };
-
-  const headerStyle = {
-    padding: "20px",
-    borderBottom: `1px solid ${isDark ? "#333" : "#ddd"}`,
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: isDark ? "#1a1a1a" : "#fff",
-  };
-
-  const titleStyle = {
-    fontSize: "1.3rem",
-    fontWeight: "bold",
-    color: isDark ? "#fff" : "#333",
-    fontFamily: "Arial",
-  };
-
-  const contentStyle = {
-    flex: 1,
-    overflowY: "auto",
-    WebkitOverflowScrolling: "touch",
-    overscrollBehavior: "contain",
-    padding: "20px",
-    display: "flex",
-    flexDirection: "column",
-  };
-
-  const closeButtonStyle = {
-    backgroundColor: "transparent",
-    border: "none",
-    fontSize: "1.5rem",
-    cursor: "pointer",
-    color: isDark ? "#fff" : "#333",
-    padding: "0",
-    width: "40px",
-    height: "40px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  };
-
-  const createButtonStyle = {
-    padding: "15px",
-    marginBottom: "20px",
-    backgroundColor: "#1dd1a1",
-    color: "#000",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "1rem",
-    transition: "all 0.3s ease",
-    width: "100%",
-    fontFamily: "Arial",
-  };
-
-  const groupsContainerStyle = {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-    gap: "12px",
-    marginBottom: "20px",
-  };
-
-  const groupButtonStyle = (isSelected) => ({
-    padding: "20px",
-    backgroundColor: isSelected ? "#1dd1a1" : isDark ? "#2a2a2a" : "#fff",
-    border: `2px solid ${isSelected ? "#1dd1a1" : isDark ? "#444" : "#ddd"}`,
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "0.95rem",
-    transition: "all 0.3s ease",
-    color: isSelected ? "#000" : isDark ? "#fff" : "#333",
-    textAlign: "center",
-    fontFamily: "Arial",
-  });
-
-  const exercisesContainerStyle = {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-  };
-
-  const exerciseItemStyle = {
-    padding: "15px",
-    backgroundColor: isDark ? "#2a2a2a" : "#fff",
-    border: `1px solid ${isDark ? "#444" : "#ddd"}`,
-    borderRadius: "8px",
-    cursor: "pointer",
-    transition: "all 0.3s ease",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  };
-
-  const exerciseNameStyle = {
-    color: isDark ? "#fff" : "#333",
-    fontWeight: "500",
-    fontFamily: "Arial",
-  };
-
-  const exerciseTypeStyle = {
-    fontSize: "0.8rem",
-    color: isDark ? "#999" : "#666",
-    marginTop: "5px",
-    fontFamily: "Arial",
-  };
-
-  const backButtonStyle = {
-    padding: "10px 15px",
-    marginBottom: "15px",
-    backgroundColor: isDark ? "#444" : "#e0e0e0",
-    color: isDark ? "#fff" : "#333",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "0.95rem",
-    transition: "all 0.3s ease",
-    fontFamily: "Arial",
-  };
-
-  const searchInputStyle = {
-    width: "100%",
-    padding: "12px",
-    marginBottom: "15px",
-    borderRadius: "8px",
-    border: `1px solid ${isDark ? "#444" : "#ddd"}`,
-    backgroundColor: isDark ? "#2a2a2a" : "#fff",
-    color: isDark ? "#fff" : "#333",
-    fontSize: "1rem",
-    boxSizing: "border-box",
-    fontFamily: "Arial",
-  };
+  const row = (item, i) => (
+    <button
+      key={`${item.group}-${item.ex.name}-${i}`}
+      type="button"
+      onClick={() => pick(item)}
+      className="feeg-press"
+      style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "10px 0", border: "none", borderBottom: `1px solid ${tk.hairline}`, background: "none", textAlign: "left", cursor: "pointer", color: tk.text }}
+    >
+      <ExerciseThumb name={item.ex.name} size={40} />
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: "block", fontWeight: 700, fontSize: "0.94rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {translateExerciseName(item.ex.name, language)}
+        </span>
+        <span style={{ display: "block", fontSize: "0.74rem", color: tk.textMuted, marginTop: 2 }}>
+          {item.group} · {TYPE_LABEL[item.ex.type] || "Peso + reps"}
+          {item.ex.unit === "lastre" ? " (con lastre)" : ""}
+          {item.custom && <span style={{ color: tk.accent, fontWeight: 700 }}> · personalizado</span>}
+        </span>
+      </span>
+      <span style={{ width: 30, height: 30, borderRadius: 10, display: "grid", placeItems: "center", background: tk.accentSoft, color: tk.accent, flexShrink: 0 }}>
+        <Icon name="plus" size={16} />
+      </span>
+    </button>
+  );
 
   return (
     <>
-      <div style={modalStyle} onClick={onCancel}>
-        <div style={headerStyle} onClick={(e) => e.stopPropagation()}>
-          <h2 style={titleStyle}>
-            {selectedGroup ? `Ejercicios - ${selectedGroup}` : "Selecciona Grupo Muscular"}
-          </h2>
-          <button style={closeButtonStyle} onClick={onCancel}>
-            ✕
-          </button>
+      <div
+        style={{ position: "fixed", inset: 0, backgroundColor: tk.bg, display: "flex", flexDirection: "column", zIndex: 3000, overflow: "hidden", fontFamily: "var(--font-feeg), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Elegir ejercicio"
+      >
+        <div style={{ padding: "14px 16px 10px", display: "flex", flexDirection: "column", gap: 12, borderBottom: `1px solid ${tk.hairline}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {selectedGroup && !q ? (
+              <button type="button" onClick={() => setSelectedGroup(null)} aria-label="Volver a los grupos" className="feeg-press" style={iconBtn(tk)}>
+                <Icon name="chevronLeft" size={18} />
+              </button>
+            ) : null}
+            <h2 style={{ flex: 1, margin: 0, fontFamily: "inherit", fontSize: "1.25rem", fontWeight: 900, color: tk.text, letterSpacing: "-0.01em" }}>
+              {selectedGroup && !q ? selectedGroup : "Añadir ejercicio"}
+            </h2>
+            <button type="button" onClick={onCancel} aria-label="Cerrar" className="feeg-press" style={iconBtn(tk)}>
+              <Icon name="close" size={18} />
+            </button>
+          </div>
+          <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 12px", height: 44, borderRadius: 14, background: isDark ? "rgba(255,255,255,0.07)" : "#fff" }}>
+            <Icon name="search" size={17} color={tk.textFaint} />
+            <input
+              ref={inputRef}
+              type="text"
+              enterKeyHint="search"
+              placeholder="Buscar en todos los ejercicios…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ flex: 1, minWidth: 0, background: "none", border: "none", outline: "none", color: tk.text, fontSize: "0.95rem", fontFamily: "inherit" }}
+            />
+            {searchQuery && (
+              <button type="button" onClick={() => setSearchQuery("")} aria-label="Borrar búsqueda" style={{ background: "none", border: "none", color: tk.textFaint, cursor: "pointer", display: "flex" }}>
+                <Icon name="close" size={15} />
+              </button>
+            )}
+          </label>
         </div>
 
-        <div style={contentStyle} onClick={(e) => e.stopPropagation()}>
-          {selectedGroup ? (
-            <>
-              <button
-                style={backButtonStyle}
-                onClick={() => {
-                  setSelectedGroup(null);
-                  setSearchQuery("");
-                }}
-                onMouseOver={(e) =>
-                  (e.target.style.backgroundColor = isDark ? "#555" : "#d0d0d0")
-                }
-                onMouseOut={(e) =>
-                  (e.target.style.backgroundColor = isDark ? "#444" : "#e0e0e0")
-                }
-              >
-                ← Volver
-              </button>
-
-              <input
-                type="text"
-                placeholder="Buscar ejercicio..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={searchInputStyle}
-              />
-
-              <div style={exercisesContainerStyle}>
-                {exercisesList[selectedGroup]
-                  ?.filter((exercise) =>
-                    exercise.name.toLowerCase().includes(searchQuery.toLowerCase())
-                  )
-                  .map((exercise, index) => (
-                  <div
-                    key={`predefined-${index}`}
-                    style={exerciseItemStyle}
-                    onClick={() => handleSelectExercise(exercise)}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = isDark ? "#333" : "#f9f9f9";
-                      e.currentTarget.style.transform = "translateX(5px)";
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = isDark ? "#2a2a2a" : "#fff";
-                      e.currentTarget.style.transform = "translateX(0)";
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
-                      <ExerciseThumb name={exercise.name} size={38} />
-                      <div style={{ minWidth: 0 }}>
-                        <div style={exerciseNameStyle}>{exercise.name}</div>
-                        <div style={exerciseTypeStyle}>
-                          {exercise.type === "weight_reps" && "Peso + Reps"}
-                          {exercise.type === "reps" && "Solo Reps"}
-                          {exercise.type === "time" && "Tiempo"}
-                          {exercise.unit === "lastre" && " (con lastre)"}
-                        </div>
-                      </div>
-                    </div>
-                    <span style={{ fontSize: "1.2rem" }}>→</span>
-                  </div>
-                ))}
-
-                {customExercises[selectedGroup]
-                  ?.filter((exercise) =>
-                    exercise.name.toLowerCase().includes(searchQuery.toLowerCase())
-                  )
-                  .map((exercise, index) => (
-                  <div
-                    key={`custom-${index}`}
-                    style={{
-                      ...exerciseItemStyle,
-                      borderLeft: `4px solid #008CFF`,
-                      backgroundColor: isDark ? "#1a2a2a" : "#f0f8ff"
-                    }}
-                    onClick={() => handleSelectExercise(exercise)}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = isDark ? "#1a3a3a" : "#e6f2ff";
-                      e.currentTarget.style.transform = "translateX(5px)";
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = isDark ? "#1a2a2a" : "#f0f8ff";
-                      e.currentTarget.style.transform = "translateX(0)";
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
-                      <ExerciseThumb name={exercise.name} size={38} />
-                      <div style={{ minWidth: 0 }}>
-                        <div style={exerciseNameStyle}>{exercise.name}</div>
-                        <div style={exerciseTypeStyle}>
-                          {exercise.type === "weight_reps" && "Peso + Reps"}
-                          {exercise.type === "reps" && "Solo Reps"}
-                          {exercise.type === "time" && "Tiempo"}
-                          {exercise.type === "weight_bodyweight" && "Peso corporal + lastre"}
-                          <span style={{ marginLeft: "8px", fontStyle: "italic" }}>✓ Personalizado</span>
-                        </div>
-                      </div>
-                    </div>
-                    <span style={{ fontSize: "1.2rem" }}>→</span>
-                  </div>
-                ))}
+        <div style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain", padding: "6px 16px 32px" }}>
+          {q || selectedGroup ? (
+            results.length ? (
+              <div>
+                {q && <div style={{ fontSize: "0.72rem", color: tk.textFaint, fontWeight: 700, padding: "8px 0 2px" }}>{results.length} resultados</div>}
+                {results.map(row)}
               </div>
-            </>
+            ) : (
+              <div style={{ padding: "40px 12px", textAlign: "center", color: tk.textMuted }}>
+                <div style={{ fontWeight: 800, color: tk.text, marginBottom: 6 }}>Ningún ejercicio coincide</div>
+                <button type="button" onClick={() => setShowCreateModal(true)} className="feeg-press" style={{ border: "none", background: tk.accentSoft, color: tk.accent, fontWeight: 800, borderRadius: 12, padding: "10px 14px", cursor: "pointer" }}>
+                  Crear «{searchQuery.trim() || "nuevo"}» como personalizado
+                </button>
+              </div>
+            )
           ) : (
             <>
-              <button
-                style={createButtonStyle}
-                onClick={() => setShowCreateModal(true)}
-                onMouseOver={(e) => (e.target.style.backgroundColor = "#16a085")}
-                onMouseOut={(e) => (e.target.style.backgroundColor = "#1dd1a1")}
-              >
-                Crear ejercicio personalizado
-              </button>
+              {recents.length > 0 && (
+                <section style={{ marginTop: 8 }}>
+                  <div style={sectionLabel(tk)}>
+                    <Icon name="history" size={13} /> Recientes
+                  </div>
+                  {recents.map(row)}
+                </section>
+              )}
 
-              <div style={groupsContainerStyle}>
-                {Object.keys(exercisesList).map((group) => (
-                  <button
-                    key={group}
-                    style={groupButtonStyle(false)}
-                    onClick={() => setSelectedGroup(group)}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.transform = "scale(1.05)";
-                      e.currentTarget.style.backgroundColor = isDark ? "#333" : "#f0f0f0";
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.transform = "scale(1)";
-                      e.currentTarget.style.backgroundColor = isDark ? "#2a2a2a" : "#fff";
-                    }}
-                  >
-                    {group}
-                  </button>
-                ))}
-              </div>
+              <section style={{ marginTop: 18 }}>
+                <div style={sectionLabel(tk)}>
+                  <Icon name="grid" size={13} /> Grupos musculares
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: 8, marginTop: 8 }}>
+                  {Object.keys(exercisesList).map((group) => (
+                    <button
+                      key={group}
+                      type="button"
+                      onClick={() => setSelectedGroup(group)}
+                      className="feeg-press"
+                      style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "10px 4px 9px", border: "none", borderRadius: 16, background: isDark ? "rgba(255,255,255,0.045)" : "#fff", color: tk.text, cursor: "pointer", minWidth: 0 }}
+                    >
+                      <MuscleGroupIcon group={group} isDark={isDark} size={52} />
+                      <span style={{ fontSize: "0.78rem", fontWeight: 700, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{group}</span>
+                      <span style={{ fontSize: "0.66rem", color: tk.textFaint, fontWeight: 600 }}>
+                        {(exercisesList[group]?.length || 0) + (customExercises[group]?.length || 0)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(true)}
+                className="feeg-press"
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", marginTop: 18, padding: 14, border: "none", borderRadius: 14, background: tk.accentSoft, color: tk.accent, fontWeight: 800, fontSize: "0.9rem", cursor: "pointer" }}
+              >
+                <Icon name="plus" size={16} /> Crear ejercicio personalizado
+              </button>
             </>
           )}
         </div>
       </div>
 
-      {showCreateModal && (
-        <CreateCustomExerciseModal
-          onSave={handleCreateCustomExercise}
-          onCancel={() => setShowCreateModal(false)}
-        />
-      )}
+      {showCreateModal && <CreateCustomExerciseModal onSave={handleCreateCustomExercise} onCancel={() => setShowCreateModal(false)} />}
     </>
   );
+}
+
+function iconBtn(tk) {
+  return { width: 38, height: 38, borderRadius: 12, border: "none", display: "grid", placeItems: "center", background: tk.hairline, color: tk.text, cursor: "pointer", flexShrink: 0 };
+}
+
+function sectionLabel(tk) {
+  return { display: "flex", alignItems: "center", gap: 6, fontSize: "0.7rem", fontWeight: 800, color: tk.textFaint, textTransform: "uppercase", letterSpacing: "0.08em", paddingTop: 8 };
 }

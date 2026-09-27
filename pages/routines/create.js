@@ -173,12 +173,11 @@ export default function CreateRoutine() {
             onClick={() => setShowExerciseSelector(true)}
             className="feeg-surface feeg-press feeg-hover"
             style={{
-              width: "100%", padding: "15px", borderStyle: "dashed", borderRadius: "10px", fontWeight: "600", cursor: "pointer",
-              "--feeg-bg": tk.accentSoft,
-              "--feeg-fg": tk.accent,
-              "--feeg-border": tk.accent,
-              "--feeg-hover-bg": tk.accentSoft,
-              "--feeg-border-width": "1px",
+              width: "100%", padding: "15px", borderRadius: "14px", fontWeight: "800", cursor: "pointer",
+              "--feeg-bg": tk.accent,
+              "--feeg-fg": tk.onAccent,
+              "--feeg-hover-bg": tk.accentHover,
+              "--feeg-border-width": "0px",
               "--feeg-press-scale": 0.98,
             }}
           >

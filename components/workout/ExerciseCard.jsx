@@ -251,7 +251,7 @@ function ExerciseCard({
 
       <div style={{ marginBottom: "15px" }}>
         <div
-          className={`feeg-series-grid ${readOnly ? (showRir ? "feeg-series-grid--readonly-rir" : "feeg-series-grid--readonly") : showRir ? "feeg-series-grid--rir" : "feeg-series-grid--no-rir"}`}
+          className={`feeg-series-grid ${readOnly ? (showRir ? "feeg-series-grid--readonly-rir" : "feeg-series-grid--readonly") : mode !== "live" ? "feeg-series-grid--template" : showRir ? "feeg-series-grid--rir" : "feeg-series-grid--no-rir"}`}
           style={{
             display: "grid",
             marginBottom: "4px",
@@ -267,11 +267,11 @@ function ExerciseCard({
         >
           {/* "SERIE" no cabe en la columna de 32px de móvil y se montaba sobre "ANTERIOR". */}
           <div><span className="feeg-series-h-long">SERIE</span><span className="feeg-series-h-short">#</span></div>
-          {!readOnly && <div>ANTERIOR</div>}
+          {!readOnly && mode === "live" && <div>ANTERIOR</div>}
           <div style={{ textAlign: "center" }}>{isTimeBased ? "TIEMPO" : weightUnit === "L" ? "LASTRE" : "KG"}</div>
           <div style={{ textAlign: "center" }}>{isTimeBased ? "KM/H" : "REPS"}</div>
           {showRir && <div style={{ textAlign: "center" }}>RIR</div>}
-          {!readOnly && <div />}
+          {!readOnly && mode === "live" && <div />}
         </div>
 
         {exercise.series.map((serie, idx) => (
@@ -340,6 +340,10 @@ function ExerciseCard({
         }
         .feeg-series-grid--readonly {
           grid-template-columns: 40px minmax(0, 1fr) 70px 70px;
+        }
+        /* Plantilla (crear/editar rutina): sin "anterior" ni check, los campos se reparten el ancho. */
+        .feeg-series-grid--template {
+          grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr);
         }
         .feeg-series-grid > * {
           min-width: 0;

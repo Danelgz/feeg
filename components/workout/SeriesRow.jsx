@@ -76,7 +76,7 @@ function SeriesRow({
 
   return (
     <div
-      className={`feeg-series-grid ${readOnly ? (showRir ? "feeg-series-grid--readonly-rir" : "feeg-series-grid--readonly") : mode === "live" && showRir ? "feeg-series-grid--rir" : "feeg-series-grid--no-rir"}`}
+      className={`feeg-series-grid ${readOnly ? (showRir ? "feeg-series-grid--readonly-rir" : "feeg-series-grid--readonly") : mode !== "live" ? "feeg-series-grid--template" : showRir ? "feeg-series-grid--rir" : "feeg-series-grid--no-rir"}`}
       ref={rowRef}
       style={{
         display: "grid",
@@ -118,7 +118,7 @@ function SeriesRow({
         {justAchieved ? <Icon name="trendUp" size={14} color={tk.accent} /> : badgeLabel}
       </div>
 
-      {!readOnly && (
+      {!readOnly && mode === "live" && (
         // Tocar la marca anterior la copia en la serie: repetir lo de la semana pasada es un toque.
         <button
           type="button"
@@ -177,7 +177,7 @@ function SeriesRow({
         </select>
       ))}
 
-      {!readOnly && <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+      {!readOnly && mode === "live" && <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
         {mode === "live" ? (
           <button
             type="button"

@@ -130,15 +130,14 @@ export default function RoutinePreview({ routine, completedWorkouts, language, t
             {routine.name}
           </h1>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginTop: 18 }}>
-            {stats.map((s) => (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", marginTop: 18, borderTop: `1px solid ${tk.hairline}`, borderBottom: `1px solid ${tk.hairline}` }}>
+            {stats.map((s, i) => (
               <div
                 key={s.icon}
                 style={{
-                  padding: "10px 12px",
-                  borderRadius: 16,
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.07)",
+                  padding: "10px 0 10px",
+                  paddingLeft: i ? 14 : 0,
+                  borderLeft: i ? `1px solid ${tk.hairline}` : "none",
                 }}
               >
                 <Icon name={s.icon} size={15} color={tk.accent} />
@@ -179,7 +178,7 @@ export default function RoutinePreview({ routine, completedWorkouts, language, t
       </div>
 
       {/* Lista de ejercicios */}
-      <div style={{ padding: "0 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ padding: "0 16px", display: "flex", flexDirection: "column" }}>
         {exercises.map((ex, i) => (
           <motion.div
             key={`${ex.name}-${i}`}
@@ -190,10 +189,8 @@ export default function RoutinePreview({ routine, completedWorkouts, language, t
               display: "flex",
               alignItems: "center",
               gap: 12,
-              padding: "12px 14px 12px 12px",
-              borderRadius: 18,
-              background: tk.surface,
-              border: `1px solid ${tk.border}`,
+              padding: "12px 0",
+              borderBottom: i < exercises.length - 1 ? `1px solid ${tk.hairline}` : "none",
             }}
           >
             <span style={{ width: 20, fontSize: "0.8rem", fontWeight: 800, color: tk.textFaint, textAlign: "center", flexShrink: 0 }}>{i + 1}</span>
@@ -267,8 +264,8 @@ function circleButton(tk: ReturnType<typeof getWorkoutTokens>): React.CSSPropert
     width: 40,
     height: 40,
     borderRadius: 99,
-    border: `1px solid ${tk.border}`,
-    background: "rgba(255,255,255,0.06)",
+    border: "none",
+    background: "rgba(255,255,255,0.08)",
     color: tk.text,
     display: "flex",
     alignItems: "center",

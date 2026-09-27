@@ -132,7 +132,7 @@ function SeriesRow({
       )}
 
       {readOnly ? (
-        <div style={fieldStyle}>{serie.weight === "" || serie.weight === undefined || serie.weight === null ? "—" : serie.weight}</div>
+        <div style={fieldStyle}>{serie.weight === "" || serie.weight === undefined || serie.weight === null ? "—" : String(serie.weight).replace(".", ",")}</div>
       ) : (
         <input
           aria-label="Peso de la serie"

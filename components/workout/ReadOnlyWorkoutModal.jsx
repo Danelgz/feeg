@@ -7,6 +7,15 @@ import WorkoutPhoto from "./WorkoutPhoto";
 
 const noop = () => {};
 
+function dateLabel(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const text = d.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: d.getFullYear() === new Date().getFullYear() ? undefined : "numeric" });
+  const time = d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+  return `${text.charAt(0).toUpperCase()}${text.slice(1)} · ${time}`;
+}
+
 function elapsedSecondsFor(workout) {
   return workout.elapsedTime || (workout.totalTime || 0) * 60;
 }
@@ -88,9 +97,8 @@ export default function ReadOnlyWorkoutModal({ workout, language, translate, onC
         <WorkoutHeader
           mode="live"
           title={workout.name}
+          subtitle={dateLabel(workout.completedAt)}
           onBack={onClose}
-          primaryLabel={translate("close")}
-          onPrimaryAction={onClose}
         />
         <WorkoutStatsBar
           mode="live"

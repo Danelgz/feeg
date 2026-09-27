@@ -335,11 +335,13 @@ function ExerciseCard({
         .feeg-series-grid--no-rir {
           grid-template-columns: 40px minmax(0, 1fr) 76px 72px 40px;
         }
+        /* Solo lectura: sin "anterior" ni check, así que son 3 celdas (4 con RIR); con más columnas
+           que celdas la última quedaba vacía y el peso se estiraba a lo ancho. */
         .feeg-series-grid--readonly-rir {
-          grid-template-columns: 40px minmax(0, 1fr) 62px 62px 52px;
+          grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr) 64px;
         }
         .feeg-series-grid--readonly {
-          grid-template-columns: 40px minmax(0, 1fr) 70px 70px;
+          grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr);
         }
         /* Plantilla (crear/editar rutina): sin "anterior" ni check, los campos se reparten el ancho. */
         .feeg-series-grid--template {
@@ -369,10 +371,10 @@ function ExerciseCard({
             grid-template-columns: 30px minmax(0, 1fr) 60px 56px 34px;
           }
           .feeg-series-grid--readonly-rir {
-            grid-template-columns: 32px minmax(0, 1fr) 50px 50px 38px;
+            grid-template-columns: 32px minmax(0, 1fr) minmax(0, 1fr) 48px;
           }
           .feeg-series-grid--readonly {
-            grid-template-columns: 32px minmax(0, 1fr) 50px 50px;
+            grid-template-columns: 32px minmax(0, 1fr) minmax(0, 1fr);
           }
         }
       `}</style>

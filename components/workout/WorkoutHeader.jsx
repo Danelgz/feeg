@@ -11,6 +11,7 @@ export default function WorkoutHeader({
   onNameChange,
   namePlaceholder,
   title,
+  subtitle,
   onBack,
   primaryLabel,
   onPrimaryAction,
@@ -60,8 +61,13 @@ export default function WorkoutHeader({
             }}
           />
         ) : (
-          <span style={{ color: tk.text, fontSize: "1.15rem", fontWeight: 800, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {title}
+          <span style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
+            <span style={{ color: tk.text, fontSize: "1.15rem", fontWeight: 800, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {title}
+            </span>
+            {subtitle && (
+              <span style={{ color: tk.textMuted, fontSize: "0.78rem", fontWeight: 600, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subtitle}</span>
+            )}
           </span>
         )}
       </div>

@@ -10,6 +10,7 @@ const MeasurementField = ({ label, value, name, unit, onChange, tk }) => (
     <label style={{ display: "block", color: tk.textMuted, fontSize: "0.85rem", marginBottom: "5px" }}>{label} ({unit})</label>
     <input
       type="number"
+      inputMode="decimal"
       step="0.1"
       value={value}
       onChange={(e) => onChange(name, e.target.value)}
@@ -17,7 +18,9 @@ const MeasurementField = ({ label, value, name, unit, onChange, tk }) => (
         width: "100%",
         padding: "12px",
         backgroundColor: tk.surfaceAlt,
-        border: `1px solid ${tk.border}`,
+        border: "none",
+        outline: "none",
+        fontFamily: "inherit",
         borderRadius: tk.radius.md,
         color: tk.text,
         fontSize: "1rem",
@@ -31,7 +34,7 @@ const MeasurementField = ({ label, value, name, unit, onChange, tk }) => (
 const DetailRow = ({ label, value, unit, tk }) => {
   if (!value) return null;
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: `1px solid ${tk.border}` }}>
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: `1px solid ${tk.hairline}` }}>
       <span style={{ color: tk.textMuted }}>{label}</span>
       <span style={{ fontWeight: "bold", color: tk.accent }}>{value}{unit}</span>
     </div>
@@ -291,10 +294,10 @@ export default function Measures() {
             borderRadius: tk.radius.lg,
             overflowY: "auto",
             padding: "25px",
-            border: `1px solid ${tk.border}`
+            boxShadow: tk.shadow.float
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <h2 style={{ margin: 0, color: tk.accent }}>{editingId ? "Editar Medida" : "Nueva Medida"}</h2>
+              <h2 style={{ margin: 0, color: tk.text, fontWeight: 900, letterSpacing: "-0.01em" }}>{editingId ? "Editar medida" : "Nueva medida"}</h2>
               <button
                 onClick={() => { setShowAddForm(false); setEditingId(null); }}
                 className="feeg-surface feeg-press feeg-hover"
@@ -321,12 +324,12 @@ export default function Measures() {
                   alignItems: "center",
                   justifyContent: "center",
                   overflow: "hidden",
-                  border: `2px dashed ${tk.border}`
+                  border: "none"
                 }}>
                   {newEntry.photo ? (
                     <img src={newEntry.photo} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
-                    <Icon name="edit" size={32} color={tk.textFaint} />
+                    <Icon name="camera" size={30} color={tk.textFaint} />
                   )}
                 </div>
                 <label style={{
@@ -338,7 +341,7 @@ export default function Measures() {
                   fontSize: "0.85rem",
                   fontWeight: "bold"
                 }}>
-                  {newEntry.photo ? "Cambiar Foto" : "Subir Foto Progreso"}
+                  {newEntry.photo ? "Cambiar foto" : "Añadir foto de progreso"}
                   <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: "none" }} />
                 </label>
               </div>
@@ -353,7 +356,8 @@ export default function Measures() {
                     width: "100%",
                     padding: "12px",
                     backgroundColor: tk.surfaceAlt,
-                    border: `1px solid ${tk.border}`,
+                    border: "none",
+                    fontFamily: "inherit",
                     borderRadius: tk.radius.md,
                     color: tk.text,
                     boxSizing: "border-box"
@@ -363,7 +367,7 @@ export default function Measures() {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
                 <MeasurementField tk={tk} label="Peso" value={newEntry.weight} name="weight" unit={units.weight} onChange={handleFieldChange} />
-                <MeasurementField tk={tk} label="Grasa %" value={newEntry.bodyFat} name="bodyFat" unit="%" onChange={handleFieldChange} />
+                <MeasurementField tk={tk} label="Grasa corporal" value={newEntry.bodyFat} name="bodyFat" unit="%" onChange={handleFieldChange} />
                 <MeasurementField tk={tk} label="Altura" value={newEntry.height} name="height" unit={units.length} onChange={handleFieldChange} />
                 <MeasurementField tk={tk} label="Cintura" value={newEntry.waist} name="waist" unit={units.length} onChange={handleFieldChange} />
                 <MeasurementField tk={tk} label="Cuello" value={newEntry.neck} name="neck" unit={units.length} onChange={handleFieldChange} />
@@ -404,7 +408,7 @@ export default function Measures() {
             borderRadius: tk.radius.lg,
             overflowY: "auto",
             padding: "25px",
-            border: `1px solid ${tk.border}`,
+            boxShadow: tk.shadow.float,
             position: "relative"
           }}>
             <button
@@ -425,7 +429,7 @@ export default function Measures() {
             <p style={{ color: tk.textMuted, marginBottom: "25px" }}>{new Date(viewingMeasure.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
 
             {viewingMeasure.photo && (
-              <div style={{ width: "100%", borderRadius: tk.radius.lg, overflow: "hidden", marginBottom: "25px", border: `1px solid ${tk.border}` }}>
+              <div style={{ width: "100%", borderRadius: tk.radius.lg, overflow: "hidden", marginBottom: "25px" }}>
                 <img src={viewingMeasure.photo} alt="Progreso" style={{ width: "100%", height: "auto", display: "block" }} />
               </div>
             )}

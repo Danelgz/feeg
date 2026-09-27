@@ -268,8 +268,9 @@ export default function Home() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={{
                   width: "100%",
-                  backgroundColor: tk.surface,
-                  border: `1px solid ${tk.border}`,
+                  backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "#fff",
+                  border: "none",
+                  boxShadow: isDark ? "none" : tk.shadow.card,
                   borderRadius: tk.radius.pill,
                   padding: "12px 20px 12px 45px",
                   color: tk.text,
@@ -278,8 +279,8 @@ export default function Home() {
                   transition: tk.transition,
                   boxSizing: "border-box"
                 }}
-                onFocus={(e) => e.target.style.borderColor = tk.accent}
-                onBlur={(e) => e.target.style.borderColor = tk.border}
+                onFocus={(e) => (e.target.style.boxShadow = `0 0 0 2px ${tk.accent}`)}
+                onBlur={(e) => (e.target.style.boxShadow = isDark ? "none" : tk.shadow.card)}
               />
               {searchTerm && (
                 <button
@@ -303,20 +304,18 @@ export default function Home() {
           {!searchTerm && (
             <div
               onClick={() => router.push("/recommended")}
+              className="feeg-press"
               style={{
                 marginTop: "10px",
-                backgroundColor: tk.surface,
+                backgroundColor: tk.accentSoft,
                 borderRadius: tk.radius.md,
-                border: `1px solid ${tk.border}`,
-                padding: "12px 20px",
+                padding: "12px 16px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
                 cursor: "pointer",
                 transition: tk.transition
               }}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = tk.surfaceHover}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = tk.surface}
             >
               <div style={{ color: tk.accent, fontWeight: "bold", fontSize: "0.9rem", display: "flex", alignItems: "center", gap: "8px" }}>
                 <Icon name="users" size={16} />
@@ -332,7 +331,6 @@ export default function Home() {
               marginTop: "10px",
               backgroundColor: tk.surface,
               borderRadius: tk.radius.lg,
-              border: `1px solid ${tk.border}`,
               maxHeight: "300px",
               overflowY: "auto",
               boxShadow: tk.shadow.float,
@@ -341,7 +339,7 @@ export default function Home() {
               left: 0,
               right: 0
             }}>
-              <div style={{ padding: "10px 15px", fontSize: "0.8rem", color: tk.accent, borderBottom: `1px solid ${tk.border}`, fontWeight: "bold" }}>
+              <div style={{ padding: "10px 15px", fontSize: "0.8rem", color: tk.accent, borderBottom: `1px solid ${tk.hairline}`, fontWeight: "bold" }}>
                 {t("search_results")}
               </div>
               {searchResults.map(u => (
@@ -353,7 +351,7 @@ export default function Home() {
                     alignItems: "center",
                     justifyContent: "space-between",
                     padding: "12px 15px",
-                    borderBottom: `1px solid ${tk.border}`,
+                    borderBottom: `1px solid ${tk.hairline}`,
                     cursor: "pointer",
                     transition: tk.transition
                   }}

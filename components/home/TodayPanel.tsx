@@ -263,8 +263,8 @@ export default function TodayPanel({ isDark, onOpenWorkout }: TodayPanelProps) {
                       style={{
                         height: 38,
                         borderRadius: 12,
-                        border: `1px solid ${selected ? tk.accent : tk.border}`,
-                        background: selected ? tk.accent : "transparent",
+                        border: "none",
+                        background: selected ? tk.accent : tk.surfaceAlt,
                         color: selected ? tk.onAccent : tk.text,
                         fontWeight: 800,
                         fontSize: "0.95rem",
@@ -434,8 +434,7 @@ export default function TodayPanel({ isDark, onOpenWorkout }: TodayPanelProps) {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        background: tk.surfaceAlt,
-                        border: `1px solid ${done ? (isDark ? "rgba(29,209,161,0.35)" : "rgba(29,209,161,0.45)") : tk.border}`,
+                        background: done ? tk.accentSoft : tk.surfaceAlt,
                       }}
                     >
                       <MuscleGroupIcon group={group} isDark={isDark} size={46} />
@@ -492,8 +491,9 @@ export default function TodayPanel({ isDark, onOpenWorkout }: TodayPanelProps) {
               gap: 10,
               padding: "12px",
               borderRadius: 18,
-              border: `1px solid ${tk.border}`,
-              background: tk.surface,
+              border: "none",
+              background: isDark ? "rgba(255,255,255,0.045)" : "#fff",
+              boxShadow: isDark ? "none" : tk.shadow.card,
               color: tk.text,
               cursor: "pointer",
               minWidth: 0,
@@ -534,8 +534,9 @@ export default function TodayPanel({ isDark, onOpenWorkout }: TodayPanelProps) {
             gap: 12,
             padding: "12px 14px",
             borderRadius: 18,
-            border: `1px solid ${tk.border}`,
-            background: tk.surface,
+            border: "none",
+            background: isDark ? "rgba(255,255,255,0.045)" : "#fff",
+            boxShadow: isDark ? "none" : tk.shadow.card,
             color: tk.text,
             cursor: "pointer",
             textAlign: "left",
@@ -570,7 +571,6 @@ function glassCard(tk: Tokens, isDark: boolean): React.CSSProperties {
     padding: 16,
     borderRadius: 22,
     background: isDark ? "linear-gradient(160deg, #161816 0%, #0d0d0d 100%)" : "linear-gradient(160deg, #ffffff 0%, #f6faf8 100%)",
-    border: `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)"}`,
     boxShadow: tk.shadow.card,
   };
 }
@@ -586,7 +586,6 @@ function heroAction(tk: Tokens, isDark: boolean): React.CSSProperties {
     background: isDark
       ? "linear-gradient(135deg, rgba(29,209,161,0.16) 0%, rgba(29,209,161,0.04) 55%, #0d0d0d 100%)"
       : "linear-gradient(135deg, rgba(29,209,161,0.18) 0%, rgba(29,209,161,0.05) 55%, #ffffff 100%)",
-    border: `1px solid ${isDark ? "rgba(29,209,161,0.22)" : "rgba(29,209,161,0.3)"}`,
     ["--feeg-press-scale" as string]: 0.98,
   };
 }
@@ -659,7 +658,7 @@ function roundButton(tk: Tokens, isDark: boolean): React.CSSProperties {
     justifyContent: "center",
     color: tk.text,
     background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
-    border: `1px solid ${tk.border}`,
+    border: "none",
     flexShrink: 0,
   };
 }
@@ -675,8 +674,8 @@ function pillButton(tk: Tokens, primary: boolean): React.CSSProperties {
     fontWeight: 700,
     textDecoration: "none",
     color: primary ? tk.onAccent : tk.text,
-    background: primary ? tk.accent : "transparent",
-    border: primary ? "none" : `1px solid ${tk.border}`,
+    background: primary ? tk.accent : tk.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
+    border: "none",
     whiteSpace: "nowrap",
   };
 }

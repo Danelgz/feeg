@@ -6,6 +6,7 @@ import Layout from "../../components/Layout";
 import { useUser } from "../../context/UserContext";
 import ExerciseSelector from "../../components/ExerciseSelector";
 import { useWorkoutSession } from "../../hooks/useWorkoutSession";
+import { findNextSet } from "../../lib/nextSet";
 import { createExerciseFromCatalog } from "../../hooks/workoutSessionReducer";
 import { getExerciseInfo, computeWorkoutTotals, buildPRRecordsFromExercises, checkWorkoutVolumePR } from "../../lib/exerciseStats";
 import { getLatestExerciseSeries } from "../../lib/workoutRecommendations";
@@ -376,7 +377,7 @@ export default function RoutineDetail() {
         }
       `}</style>
 
-      <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} totalRestSeconds={totalRestSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} />
+      <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} totalRestSeconds={totalRestSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} nextSet={restActive ? findNextSet(state.exercises, state.restForExerciseUid) : null} translateExerciseName={(name) => translateExerciseName(name, language)} />
       <PRToast item={prToast} t={t} onDismiss={dismissPRToast} />
 
       <ConfirmModal

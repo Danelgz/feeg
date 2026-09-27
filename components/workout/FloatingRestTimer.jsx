@@ -2,6 +2,7 @@ import { getWorkoutTokens } from "../../lib/tokens";
 import { useUser } from "../../context/UserContext";
 import { Icon } from "../ui";
 import { BOTTOM_NAV_HEIGHT } from "../BottomNavigation";
+import { formatNextSetLoad } from "../../lib/nextSet";
 
 function formatMinSec(total) {
   const m = Math.floor(total / 60);
@@ -57,6 +58,8 @@ export default function FloatingRestTimer({
   onAdjust,
   onStop,
   t,
+  nextSet = null,
+  translateExerciseName = (name) => name,
 }) {
   const tk = getWorkoutTokens();
   const { isMobile } = useUser();
@@ -113,6 +116,7 @@ export default function FloatingRestTimer({
           padding: "10px 10px 10px 12px",
           display: "flex",
           alignItems: "center",
+          flexWrap: "wrap",
           gap: 10,
           boxShadow: "0 12px 32px rgba(0,0,0,0.55)",
           boxSizing: "border-box",
@@ -155,6 +159,30 @@ export default function FloatingRestTimer({
         >
           {translate("skip_rest")}
         </button>
+
+        {/* Lo que toca después del descanso: se ve sin tener que buscarlo en la lista. */}
+        {nextSet && (
+          <div
+            style={{
+              flexBasis: "100%",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "8px 4px 2px",
+              borderTop: `1px solid ${tk.hairline}`,
+              fontSize: "0.8rem",
+              color: tk.textMuted,
+              minWidth: 0,
+            }}
+          >
+            <span style={{ color: tk.accent, fontWeight: 800, flexShrink: 0 }}>Siguiente</span>
+            <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: tk.text, fontWeight: 700 }}>
+              {nextSet.changesExercise ? translateExerciseName(nextSet.exerciseName) : `Serie ${nextSet.setNumber} de ${nextSet.totalSets}`}
+              {nextSet.changesExercise && <span style={{ color: tk.textMuted, fontWeight: 600 }}> · serie {nextSet.setNumber}</span>}
+            </span>
+            <span style={{ flexShrink: 0, fontWeight: 800, color: tk.text, fontVariantNumeric: "tabular-nums" }}>{formatNextSetLoad(nextSet)}</span>
+          </div>
+        )}
       </div>
       <style>{`
         @keyframes feeg-rest-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }

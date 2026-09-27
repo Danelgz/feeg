@@ -15,7 +15,6 @@ export default function ProfileAddToRoutineModal({ isDark = true, open, routineN
         backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
       }}
     >
-      <style>{`@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap");`}</style>
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
@@ -26,7 +25,7 @@ export default function ProfileAddToRoutineModal({ isDark = true, open, routineN
           maxWidth: "400px",
           textAlign: "center",
           border: `1px solid ${tk.border}`,
-          fontFamily: "'Manrope', -apple-system, 'Segoe UI', sans-serif",
+          fontFamily: "var(--font-feeg), -apple-system, 'Segoe UI', sans-serif",
         }}
       >
         <h2 style={{ color: tk.text, marginBottom: "12px", fontSize: "1.1rem", fontWeight: 800, letterSpacing: "-0.02em" }}>Crear Rutina desde Entrenamiento</h2>

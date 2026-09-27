@@ -21,10 +21,8 @@ function elapsedSecondsFor(workout) {
  * concreta lo tiene guardado (ExerciseCard calcula hasRecordedRir con readOnly=true) — nunca se
  * inventa uno si quien entrenó no lo registró.
  *
- * fontFamily: Manrope se declara aquí, no en ExerciseCard/WorkoutHeader/etc. — esos archivos son
- * compartidos con las pantallas de "modo entreno" en vivo (create/empty/[id]), que a propósito no
- * lo usan (ver el historial de commits de esta zona). Como es CSS heredado, envolver aquí el árbol
- * entero le da la tipografía "premium" al visor sin tocar ni un pixel de la experiencia en vivo.
+ * fontFamily: la de la app (var(--font-feeg)) se declara aquí porque el modal se abre también
+ * desde pantallas que no pasan por Layout; como es CSS heredado, llega a todo el árbol.
  */
 export default function ReadOnlyWorkoutModal({ workout, language, translate, onClose }) {
   const tk = getWorkoutTokens();
@@ -60,12 +58,11 @@ export default function ReadOnlyWorkoutModal({ workout, language, translate, onC
         inset: 0,
         zIndex: 6000,
         backgroundColor: tk.bg,
-        fontFamily: "'Manrope', -apple-system, 'Segoe UI', sans-serif",
+        fontFamily: "var(--font-feeg), -apple-system, 'Segoe UI', sans-serif",
         fontWeight: 500,
       }}
     >
       <style>{`
-        @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap");
         @keyframes feeg-readonly-workout-in {
           from { opacity: 0; transform: translateY(14px); }
           to { opacity: 1; transform: translateY(0); }

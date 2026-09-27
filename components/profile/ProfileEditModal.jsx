@@ -61,12 +61,11 @@ export default function ProfileEditModal({ isDark = true, open, editData, setEdi
       style={{ backgroundColor: "rgba(4, 8, 8, 0.74)" }}
     >
       <style>{`
-        @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
         @keyframes profileEditOverlayIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes profileEditDialogIn { from { opacity: 0; transform: scale(0.96) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         @keyframes profileEditPop { 0% { transform: scale(1); } 40% { transform: scale(1.05); } 100% { transform: scale(1); } }
         .profile-edit-overlay { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; width: 100%; max-width: 100%; box-sizing: border-box; padding: 18px; overflow: hidden; backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); animation: profileEditOverlayIn 200ms ease-out; }
-        .profile-edit-dialog { width: 100%; max-width: 760px; min-width: 0; max-height: min(820px, calc(100dvh - 36px)); display: flex; flex-direction: column; overflow: hidden; border-radius: 28px; box-shadow: 0 28px 90px rgba(0,0,0,0.42); font-family: "Manrope", "Avenir Next", "Segoe UI", sans-serif; animation: profileEditDialogIn 260ms cubic-bezier(0.16, 1, 0.3, 1); }
+        .profile-edit-dialog { width: 100%; max-width: 760px; min-width: 0; max-height: min(820px, calc(100dvh - 36px)); display: flex; flex-direction: column; overflow: hidden; border-radius: 28px; box-shadow: 0 28px 90px rgba(0,0,0,0.42); font-family: var(--font-feeg), "Avenir Next", "Segoe UI", sans-serif; animation: profileEditDialogIn 260ms cubic-bezier(0.16, 1, 0.3, 1); }
         @media (prefers-reduced-motion: reduce) { .profile-edit-overlay, .profile-edit-dialog { animation: none; } }
         .profile-edit-header { display: flex; align-items: flex-start; justify-content: space-between; min-width: 0; max-width: 100%; gap: 24px; padding: 28px 32px 24px; border-bottom: 1px solid ${tk.border}; box-sizing: border-box; }
         .profile-edit-kicker { color: ${tk.accent}; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }

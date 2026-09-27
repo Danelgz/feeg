@@ -15,7 +15,6 @@ export default function ProfileConfirmModal({ isDark = true, open, title, messag
         backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
       }}
     >
-      <style>{`@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap");`}</style>
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
@@ -26,7 +25,7 @@ export default function ProfileConfirmModal({ isDark = true, open, title, messag
           width: "100%",
           maxWidth: "400px",
           textAlign: "center",
-          fontFamily: "'Manrope', -apple-system, 'Segoe UI', sans-serif",
+          fontFamily: "var(--font-feeg), -apple-system, 'Segoe UI', sans-serif",
         }}
       >
         <h2 style={{ color: tk.text, marginBottom: "12px", fontSize: "1.15rem", fontWeight: 800, letterSpacing: "-0.02em" }}>{title}</h2>

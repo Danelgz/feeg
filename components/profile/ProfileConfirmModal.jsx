@@ -15,24 +15,22 @@ export default function ProfileConfirmModal({ isDark = true, open, title, messag
         backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
       }}
     >
-      <style>{`@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap");`}</style>
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
           backgroundColor: tk.surface,
-          border: `1px solid ${tk.border}`,
           padding: "25px",
           borderRadius: "18px",
           width: "100%",
           maxWidth: "400px",
           textAlign: "center",
-          fontFamily: "'Manrope', -apple-system, 'Segoe UI', sans-serif",
+          fontFamily: "var(--font-feeg), -apple-system, 'Segoe UI', sans-serif",
         }}
       >
         <h2 style={{ color: tk.text, marginBottom: "12px", fontSize: "1.15rem", fontWeight: 800, letterSpacing: "-0.02em" }}>{title}</h2>
         <p style={{ color: tk.textMuted, marginBottom: "25px", fontWeight: 500, lineHeight: 1.5 }}>{message}</p>
         <div style={{ display: "flex", gap: "10px" }}>
-          <button onClick={onCancel} className="feeg-press feeg-hover" style={{ flex: 1, padding: "12px", borderRadius: "12px", border: `1px solid ${tk.border}`, backgroundColor: "transparent", color: tk.text, fontWeight: 700, cursor: "pointer", "--feeg-hover-bg": tk.surfaceHover, "--feeg-press-scale": 0.96 }}>
+          <button onClick={onCancel} className="feeg-press feeg-hover" style={{ flex: 1, padding: "12px", borderRadius: "12px", border: "none", backgroundColor: tk.surfaceAlt, color: tk.text, fontWeight: 700, cursor: "pointer", "--feeg-hover-bg": tk.surfaceHover, "--feeg-press-scale": 0.96 }}>
             {cancelLabel}
           </button>
           <button onClick={onConfirm} className="feeg-press" style={{ flex: 1, padding: "12px", borderRadius: "12px", border: "none", backgroundColor: tk.danger, color: "#fff", fontWeight: "800", cursor: "pointer", "--feeg-press-scale": 0.96 }}>

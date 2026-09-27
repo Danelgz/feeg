@@ -109,7 +109,7 @@ export default function TechniqueExplorer({
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
         body: JSON.stringify({ exerciseName }),
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({ error: response.status === 504 ? "La IA ha tardado demasiado en responder. Vuelve a intentarlo." : "No se pudo contactar con la IA. Vuelve a intentarlo." }));
       if (!response.ok) throw new Error(data.error || "Error consultando la técnica");
 
       setResult(data.result);
@@ -317,7 +317,7 @@ export default function TechniqueExplorer({
           </div>
 
           {relatedToResult.length > 0 && (
-            <div style={{ marginTop: "18px", paddingTop: "16px", borderTop: `1px solid ${tk.border}` }}>
+            <div style={{ marginTop: "18px", paddingTop: "16px", borderTop: `1px solid ${tk.hairline}` }}>
               <div style={{ color: tk.textMuted, fontSize: tk.fontSize.xs, fontWeight: tk.weight.medium, marginBottom: "8px" }}>Sigue explorando {result.muscleGroup}</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                 {relatedToResult.map((name) => (

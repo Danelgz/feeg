@@ -40,7 +40,6 @@ export default function DurationPickerModal({ open, totalMinutes, onChange, onCl
           maxWidth: "100%",
           padding: "20px",
           textAlign: "center",
-          border: `1px solid ${tk.border}`,
           boxSizing: "border-box",
         }}
       >

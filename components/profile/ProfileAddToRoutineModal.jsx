@@ -15,7 +15,6 @@ export default function ProfileAddToRoutineModal({ isDark = true, open, routineN
         backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
       }}
     >
-      <style>{`@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap");`}</style>
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
@@ -25,8 +24,7 @@ export default function ProfileAddToRoutineModal({ isDark = true, open, routineN
           width: "100%",
           maxWidth: "400px",
           textAlign: "center",
-          border: `1px solid ${tk.border}`,
-          fontFamily: "'Manrope', -apple-system, 'Segoe UI', sans-serif",
+          fontFamily: "var(--font-feeg), -apple-system, 'Segoe UI', sans-serif",
         }}
       >
         <h2 style={{ color: tk.text, marginBottom: "12px", fontSize: "1.1rem", fontWeight: 800, letterSpacing: "-0.02em" }}>Crear Rutina desde Entrenamiento</h2>
@@ -43,7 +41,7 @@ export default function ProfileAddToRoutineModal({ isDark = true, open, routineN
             width: "100%",
             padding: "12px",
             borderRadius: "10px",
-            border: `1px solid ${tk.border}`,
+            border: "none",
             backgroundColor: tk.surfaceAlt,
             color: tk.text,
             marginBottom: "20px",
@@ -55,7 +53,7 @@ export default function ProfileAddToRoutineModal({ isDark = true, open, routineN
           autoFocus
         />
         <div style={{ display: "flex", gap: "10px" }}>
-          <button onClick={onClose} className="feeg-press feeg-hover" style={{ flex: 1, padding: "12px", borderRadius: "12px", border: `1px solid ${tk.border}`, backgroundColor: "transparent", color: tk.text, fontWeight: 700, cursor: "pointer", "--feeg-hover-bg": tk.surfaceHover, "--feeg-press-scale": 0.96 }}>
+          <button onClick={onClose} className="feeg-press feeg-hover" style={{ flex: 1, padding: "12px", borderRadius: "12px", border: "none", backgroundColor: tk.surfaceAlt, color: tk.text, fontWeight: 700, cursor: "pointer", "--feeg-hover-bg": tk.surfaceHover, "--feeg-press-scale": 0.96 }}>
             Cancelar
           </button>
           <button onClick={onConfirm} className="feeg-press" style={{ flex: 1, padding: "12px", borderRadius: "12px", border: "none", backgroundColor: tk.accent, color: tk.onAccent, fontWeight: "800", cursor: "pointer", "--feeg-press-scale": 0.96 }}>

@@ -40,7 +40,6 @@ export default function ProfileRoutinePreviewModal({ isDark = true, routine, lan
       }}
     >
       <style>{`
-        @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap");
         @keyframes profileRoutinePreviewIn { from { opacity: 0; transform: scale(0.96) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         @media (prefers-reduced-motion: reduce) { .profile-routine-preview-dialog { animation: none; } }
       `}</style>
@@ -59,14 +58,13 @@ export default function ProfileRoutinePreviewModal({ isDark = true, routine, lan
           overflow: "hidden",
           borderRadius: "24px",
           backgroundColor: tk.surface,
-          border: `1px solid ${tk.border}`,
           boxShadow: "0 28px 90px rgba(0,0,0,0.42)",
           animation: "profileRoutinePreviewIn 220ms cubic-bezier(0.16, 1, 0.3, 1)",
-          fontFamily: "'Manrope', -apple-system, 'Segoe UI', sans-serif",
+          fontFamily: "var(--font-feeg), -apple-system, 'Segoe UI', sans-serif",
           fontWeight: 500,
         }}
       >
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "14px", padding: "20px 22px 16px", borderBottom: `1px solid ${tk.border}` }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "14px", padding: "20px 22px 16px", borderBottom: `1px solid ${tk.hairline}` }}>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: "1.15rem", fontWeight: 800, color: tk.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {routine.name}
@@ -85,9 +83,9 @@ export default function ProfileRoutinePreviewModal({ isDark = true, routine, lan
               height: "34px",
               display: "grid",
               placeItems: "center",
-              border: `1px solid ${tk.border}`,
+              border: "none",
               borderRadius: "12px",
-              background: "transparent",
+              background: tk.surfaceAlt,
               color: tk.textMuted,
               cursor: "pointer",
               "--feeg-hover-bg": tk.surfaceHover,
@@ -99,14 +97,14 @@ export default function ProfileRoutinePreviewModal({ isDark = true, routine, lan
           </button>
         </div>
 
-        <div style={{ flex: 1, overflowY: "auto", padding: "18px 22px" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: "4px 22px 8px" }}>
+          <div style={{ display: "flex", flexDirection: "column" }}>
             {routine.exercises.map((ex, idx) => {
               const isTimeBased = ex.type === "time";
               const isLastre = ex.unit === "lastre";
 
               return (
-                <div key={idx} style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: "14px", padding: "13px" }}>
+                <div key={idx} style={{ padding: "14px 0", borderTop: idx ? `1px solid ${tk.hairline}` : "none" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
                     <ExerciseThumb name={ex.name} size={34} />
                     <div style={{ minWidth: 0 }}>
@@ -119,21 +117,21 @@ export default function ProfileRoutinePreviewModal({ isDark = true, routine, lan
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", paddingLeft: "44px" }}>
                     {ex.series.map((s, sIdx) => (
                       <span
                         key={sIdx}
                         style={{
                           padding: "4px 9px",
                           borderRadius: tk.radius.pill,
-                          backgroundColor: tk.surface,
-                          border: `1px solid ${tk.border}`,
+                          backgroundColor: tk.surfaceAlt,
                           color: tk.textMuted,
+                          fontVariantNumeric: "tabular-nums",
                           fontSize: "0.74rem",
                           fontWeight: 600,
                         }}
                       >
-                        {s.weight || "-"}{isTimeBased ? "min" : isLastre ? "kg lastre" : "kg"} × {s.reps || "-"}
+                        {isTimeBased ? `${s.weight || "-"} min × ${s.reps || "-"}` : `${String(s.weight || "-").replace(".", ",")} ${isLastre ? "kg lastre" : "kg"} × ${s.reps || "-"}`}
                       </span>
                     ))}
                   </div>
@@ -143,11 +141,11 @@ export default function ProfileRoutinePreviewModal({ isDark = true, routine, lan
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "10px", padding: "16px 22px 20px", borderTop: `1px solid ${tk.border}` }}>
+        <div style={{ display: "flex", gap: "10px", padding: "14px 22px 20px", borderTop: `1px solid ${tk.hairline}` }}>
           <button
             onClick={onClose}
             className="feeg-press feeg-hover"
-            style={{ flex: 1, padding: "12px", borderRadius: "12px", border: `1px solid ${tk.border}`, backgroundColor: "transparent", color: tk.text, fontWeight: 700, cursor: "pointer", "--feeg-hover-bg": tk.surfaceHover, "--feeg-press-scale": 0.96 }}
+            style={{ flex: 1, padding: "12px", borderRadius: "12px", border: "none", backgroundColor: tk.surfaceAlt, color: tk.text, fontWeight: 700, cursor: "pointer", "--feeg-hover-bg": tk.surfaceHover, "--feeg-press-scale": 0.96 }}
           >
             Cerrar
           </button>

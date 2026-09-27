@@ -245,8 +245,9 @@ export default function Routines() {
                     gap: 8,
                     padding: "16px",
                     borderRadius: 20,
-                    border: `1.5px dashed ${tk.borderStrong}`,
-                    color: tk.textMuted,
+                    border: "none",
+                    background: tk.accentSoft,
+                    color: tk.accent,
                     textDecoration: "none",
                     fontWeight: 700,
                     fontSize: "0.92rem",
@@ -280,7 +281,7 @@ export default function Routines() {
                       {group.items.length} · {Math.round(group.volume).toLocaleString(langCode)} kg
                     </span>
                   </div>
-                  <div style={{ borderRadius: 20, overflow: "hidden", border: `1px solid ${tk.border}`, background: tk.surface }}>
+                  <div style={{ borderRadius: 20, overflow: "hidden", background: isDark ? "rgba(255,255,255,0.045)" : "#fff" }}>
                     {group.items.map((workout, i) => {
                       const d = new Date(workout.completedAt);
                       return (
@@ -289,7 +290,7 @@ export default function Routines() {
                           initial={reduceMotion ? false : { opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ delay: Math.min(i, 10) * 0.025 }}
-                          style={{ display: "flex", alignItems: "center", borderTop: i === 0 ? "none" : `1px solid ${tk.border}` }}
+                          style={{ display: "flex", alignItems: "center", borderTop: i === 0 ? "none" : `1px solid ${tk.hairline}` }}
                         >
                           <button
                             type="button"

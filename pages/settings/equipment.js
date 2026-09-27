@@ -31,10 +31,10 @@ function EquipmentChoiceGroup({ isDark, isMobile, tk, label, desc, value, onChan
                 padding: "12px 14px",
                 borderRadius: tk.radius.md,
                 cursor: "pointer",
-                "--feeg-bg": active ? tk.accentSoft : tk.surfaceAlt,
-                "--feeg-border": active ? tk.accent : tk.border,
+                "--feeg-bg": active ? tk.accentSoft : tk.surfaceHover,
+                "--feeg-border": active ? tk.accent : "transparent",
                 "--feeg-hover-bg": active ? tk.accentSoft : tk.surfaceHover,
-                "--feeg-hover-border": tk.accent,
+                "--feeg-hover-border": active ? tk.accent : "transparent",
                 "--feeg-border-width": "1.5px",
                 "--feeg-press-scale": 0.98,
               }}
@@ -68,7 +68,7 @@ export default function SettingsEquipment() {
       title={t("equipment_settings_title")}
       subtitle={t("equipment_settings_desc")}
     >
-      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: "12px" }}>
+      <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: "14px" }}>
         <div>
           <div style={{ color: tk.text, fontSize: "0.95rem", fontWeight: 600 }}>{t("rir_button_label")}</div>
           <div style={{ color: tk.textMuted, fontSize: "0.82rem", marginTop: "2px" }}>{t("rir_button_desc")}</div>
@@ -96,7 +96,7 @@ export default function SettingsEquipment() {
         ]}
       />
 
-      <div style={{ height: "1px", backgroundColor: tk.border }} />
+      <div style={{ height: "1px", backgroundColor: tk.hairline }} />
 
       <EquipmentChoiceGroup
         isDark={isDark}

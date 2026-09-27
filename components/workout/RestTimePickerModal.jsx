@@ -37,7 +37,6 @@ export default function RestTimePickerModal({ open, value, onChange, onClose, t 
           width: "280px",
           padding: "20px",
           textAlign: "center",
-          border: `1px solid ${tk.border}`,
         }}
       >
         <h3 style={{ color: tk.text, margin: "0 0 16px 0" }}>{translate("edit_rest_title")}</h3>

@@ -26,7 +26,7 @@ export default function Sidebar() {
         flexDirection: "column",
         gap: "4px",
         minHeight: "100vh",
-        borderRight: `1px solid ${tk.border}`,
+        borderRight: `1px solid ${tk.hairline}`,
         transition: tk.transition,
       }}
     >

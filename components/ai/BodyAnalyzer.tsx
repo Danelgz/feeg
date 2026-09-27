@@ -183,7 +183,7 @@ export default function BodyAnalyzer({ isDark, isMobile }: { isDark: boolean; is
           userProfile: { sex: user?.sex, height: user?.height, weight: user?.weight, level: user?.level },
         }),
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({ error: response.status === 504 ? "La IA ha tardado demasiado en responder. Vuelve a intentarlo." : "No se pudo contactar con la IA. Vuelve a intentarlo." }));
       if (!response.ok) throw new Error(data.error || 'No se pudo completar el análisis.');
       setAnalysis(data.analysis as BodyAnalysis);
     } catch (analysisError) {

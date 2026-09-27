@@ -1,4 +1,5 @@
 import { getAuth } from 'firebase-admin/auth';
+import { generateContent, responseText, parseJsonLoose, GeminiError } from '../../lib/gemini';
 import admin from 'firebase-admin';
 
 // Evitamos inicializar fuera del handler para que no colapse todo Vercel si faltan variables
@@ -20,7 +21,6 @@ function initAdmin() {
 // Mismo modelo que el resto del Coach IA (ai-chat.js, ai-technique.js) — este endpoint usaba
 // OpenAI mientras el resto de la IA ya se había migrado a Gemini, así que en cualquier entorno
 // donde solo hay GEMINI_API_KEY configurada (como este) fallaba con un error genérico.
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 
 const EXERCISE_SCHEMA = {
     type: 'OBJECT',
@@ -94,6 +94,8 @@ Reglas importantes:
 - Responde ÚNICAMENTE en el formato JSON exacto solicitado, en español.`;
 }
 
+export const config = { maxDuration: 60 };
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
@@ -125,36 +127,16 @@ export default async function handler(req, res) {
             throw new Error('Falta configurar GEMINI_API_KEY en el servidor.');
         }
 
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`;
-        const geminiResponse = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                systemInstruction: { parts: [{ text: buildSystemInstruction(trainingData) }] },
-                contents: [{ role: 'user', parts: [{ text: 'Genera los dos planes según los datos y reglas del system prompt.' }] }],
-                generationConfig: {
-                    temperature: 0.8,
-                    responseMimeType: 'application/json',
-                    responseSchema: RESPONSE_SCHEMA,
-                },
-            }),
+        const aiData = await generateContent({
+            systemInstruction: { parts: [{ text: buildSystemInstruction(trainingData) }] },
+            contents: [{ role: 'user', parts: [{ text: 'Genera los dos planes según los datos y reglas del system prompt.' }] }],
+            generationConfig: {
+                temperature: 0.8,
+                responseMimeType: 'application/json',
+                responseSchema: RESPONSE_SCHEMA,
+            },
         });
-
-        const aiData = await geminiResponse.json();
-
-        if (!geminiResponse.ok) {
-            console.error('Gemini Error Details:', aiData);
-            throw new Error(aiData.error?.message || 'Error en Gemini API');
-        }
-
-        const rawText = (aiData.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('');
-        let parsed;
-        try {
-            parsed = JSON.parse(rawText);
-        } catch (parseError) {
-            console.error('Generate Routine: respuesta no era JSON válido:', rawText);
-            throw new Error('La IA devolvió una respuesta con formato inesperado.');
-        }
+        const parsed = parseJsonLoose(responseText(aiData));
 
         const plans = Array.isArray(parsed.plans) ? parsed.plans.slice(0, 2) : [];
         if (plans.length < 2) {
@@ -165,6 +147,6 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error('API Error:', error.message || error);
-        res.status(500).json({ error: error.message || 'Internal Server Error' });
+        res.status(error instanceof GeminiError && error.status === 400 ? 400 : 500).json({ error: error.message || 'No se pudo contactar con la IA.' });
     }
 }

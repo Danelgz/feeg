@@ -8,6 +8,7 @@ import ExerciseActionsMenu from "./ExerciseActionsMenu";
 import SeriesRow from "./SeriesRow";
 import SeriesTypeModal from "./SeriesTypeModal";
 import RestTimePickerModal from "./RestTimePickerModal";
+import PlateCalculator from "./PlateCalculator";
 
 function formatRest(totalSeconds) {
   if (totalSeconds < 60) return `${totalSeconds}s`;
@@ -54,6 +55,13 @@ function ExerciseCard({
   // de una pantalla donde lo que importa son las series. Si ya hay nota, se muestra abierta.
   const [notesOpen, setNotesOpen] = useState(!!exercise.notes);
   const doneCount = exercise.series.filter((s) => s.completed).length;
+  const [platesOpen, setPlatesOpen] = useState(false);
+  // Sólo con barra tiene sentido contar discos por lado.
+  const usesBarbell = /\(barra\)|barra|barbell/i.test(exercise.name || "") && exercise.exerciseType !== "time";
+  const plateWeight = (() => {
+    const next = exercise.series.find((s) => !s.completed && Number(s.weight) > 0) || [...exercise.series].reverse().find((s) => Number(s.weight) > 0);
+    return Number(next?.weight) || Number(previousSeries?.[0]?.weight) || 60;
+  })();
   const seriesRowRefs = useRef({});
 
   const weightUnit = weightUnitFor(exercise);
@@ -154,6 +162,16 @@ function ExerciseCard({
         >
           <Icon name="timer" size={14} /> {formatRest(exercise.restSeconds)}
         </button>
+        {!readOnly && mode === "live" && usesBarbell && (
+          <button
+            type="button"
+            onClick={() => setPlatesOpen(true)}
+            className="feeg-press"
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 11px", borderRadius: 99, border: "none", background: tk.surfaceAlt, color: tk.textMuted, fontSize: "0.8rem", fontWeight: 700, cursor: "pointer" }}
+          >
+            <Icon name="barbell" size={14} /> Discos
+          </button>
+        )}
         {!readOnly && mode === "live" && !notesOpen && (
           <button
             type="button"
@@ -187,10 +205,10 @@ function ExerciseCard({
                 vistazo — se separa a su propia línea, notablemente más grande que el resto de la
                 tarjeta, para que no compita en tamaño con el "· basado en" ni con el motivo. */}
             <div style={{ color: tk.text, fontSize: "1.15rem", fontWeight: 800, letterSpacing: "-0.02em", marginTop: "3px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.15 }}>
-              {primaryRecommendation.weight !== null && primaryRecommendation.weight !== undefined ? `${primaryRecommendation.weight}${weightUnit}` : ""} {primaryRecommendation.reps !== null && primaryRecommendation.reps !== undefined ? `× ${primaryRecommendation.reps}` : ""}
+              {primaryRecommendation.weight !== null && primaryRecommendation.weight !== undefined ? `${String(primaryRecommendation.weight).replace(".", ",")} ${weightUnit}` : ""} {primaryRecommendation.reps !== null && primaryRecommendation.reps !== undefined ? `× ${primaryRecommendation.reps}` : ""}
             </div>
             <div style={{ color: tk.textFaint, fontSize: "0.72rem", fontWeight: 600, marginTop: "3px" }}>
-              {t(`recommendation_${primaryRecommendation.decision}`)} · {t("progression_based_on")} {previousSeries?.[firstRecommendationIndex]?.weight}{weightUnit} × {previousSeries?.[firstRecommendationIndex]?.reps}
+              {t(`recommendation_${primaryRecommendation.decision}`)} · {t("progression_based_on")} {String(previousSeries?.[firstRecommendationIndex]?.weight ?? "").replace(".", ",")} {weightUnit} × {previousSeries?.[firstRecommendationIndex]?.reps}
             </div>
           </div>
           <button
@@ -233,7 +251,7 @@ function ExerciseCard({
 
       <div style={{ marginBottom: "15px" }}>
         <div
-          className={`feeg-series-grid ${readOnly ? (showRir ? "feeg-series-grid--readonly-rir" : "feeg-series-grid--readonly") : showRir ? "feeg-series-grid--rir" : "feeg-series-grid--no-rir"}`}
+          className={`feeg-series-grid ${readOnly ? (showRir ? "feeg-series-grid--readonly-rir" : "feeg-series-grid--readonly") : mode !== "live" ? "feeg-series-grid--template" : showRir ? "feeg-series-grid--rir" : "feeg-series-grid--no-rir"}`}
           style={{
             display: "grid",
             marginBottom: "4px",
@@ -249,11 +267,11 @@ function ExerciseCard({
         >
           {/* "SERIE" no cabe en la columna de 32px de móvil y se montaba sobre "ANTERIOR". */}
           <div><span className="feeg-series-h-long">SERIE</span><span className="feeg-series-h-short">#</span></div>
-          {!readOnly && <div>ANTERIOR</div>}
+          {!readOnly && mode === "live" && <div>ANTERIOR</div>}
           <div style={{ textAlign: "center" }}>{isTimeBased ? "TIEMPO" : weightUnit === "L" ? "LASTRE" : "KG"}</div>
           <div style={{ textAlign: "center" }}>{isTimeBased ? "KM/H" : "REPS"}</div>
           {showRir && <div style={{ textAlign: "center" }}>RIR</div>}
-          {!readOnly && <div />}
+          {!readOnly && mode === "live" && <div />}
         </div>
 
         {exercise.series.map((serie, idx) => (
@@ -317,11 +335,17 @@ function ExerciseCard({
         .feeg-series-grid--no-rir {
           grid-template-columns: 40px minmax(0, 1fr) 76px 72px 40px;
         }
+        /* Solo lectura: sin "anterior" ni check, así que son 3 celdas (4 con RIR); con más columnas
+           que celdas la última quedaba vacía y el peso se estiraba a lo ancho. */
         .feeg-series-grid--readonly-rir {
-          grid-template-columns: 40px minmax(0, 1fr) 62px 62px 52px;
+          grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr) 64px;
         }
         .feeg-series-grid--readonly {
-          grid-template-columns: 40px minmax(0, 1fr) 70px 70px;
+          grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr);
+        }
+        /* Plantilla (crear/editar rutina): sin "anterior" ni check, los campos se reparten el ancho. */
+        .feeg-series-grid--template {
+          grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr);
         }
         .feeg-series-grid > * {
           min-width: 0;
@@ -347,13 +371,17 @@ function ExerciseCard({
             grid-template-columns: 30px minmax(0, 1fr) 60px 56px 34px;
           }
           .feeg-series-grid--readonly-rir {
-            grid-template-columns: 32px minmax(0, 1fr) 50px 50px 38px;
+            grid-template-columns: 32px minmax(0, 1fr) minmax(0, 1fr) 48px;
           }
           .feeg-series-grid--readonly {
-            grid-template-columns: 32px minmax(0, 1fr) 50px 50px;
+            grid-template-columns: 32px minmax(0, 1fr) minmax(0, 1fr);
           }
         }
       `}</style>
+
+      {!readOnly && mode === "live" && usesBarbell && (
+        <PlateCalculator open={platesOpen} onClose={() => setPlatesOpen(false)} initialWeight={plateWeight} />
+      )}
 
       {!readOnly && <RestTimePickerModal
         open={restPickerOpen}

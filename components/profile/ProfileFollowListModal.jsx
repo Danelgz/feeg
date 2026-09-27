@@ -18,20 +18,18 @@ export default function ProfileFollowListModal({ isDark = true, open, title, use
         backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
       }}
     >
-      <style>{`@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap");`}</style>
 
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
           backgroundColor: tk.surface,
-          border: `1px solid ${tk.border}`,
           padding: "22px",
           borderRadius: "20px",
           width: "100%",
           maxWidth: "400px",
           maxHeight: "80vh",
           overflowY: "auto",
-          fontFamily: "'Manrope', -apple-system, 'Segoe UI', sans-serif",
+          fontFamily: "var(--font-feeg), -apple-system, 'Segoe UI', sans-serif",
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
@@ -45,9 +43,9 @@ export default function ProfileFollowListModal({ isDark = true, open, title, use
               height: "32px",
               display: "grid",
               placeItems: "center",
-              border: `1px solid ${tk.border}`,
+              border: "none",
               borderRadius: "10px",
-              background: "transparent",
+              background: tk.surfaceAlt,
               color: tk.textMuted,
               fontSize: "1.2rem",
               cursor: "pointer",

@@ -1,4 +1,5 @@
 import { getAuth } from 'firebase-admin/auth';
+import { generateContent, responseText, parseJsonLoose, GeminiError } from '../../lib/gemini';
 import admin from 'firebase-admin';
 import { getExerciseInfo } from '../../lib/exerciseStats';
 
@@ -19,7 +20,6 @@ function initAdmin() {
 }
 
 // Mantener la misma versión vigente que usa el Coach IA principal.
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 
 // Sin function calling aquí (a diferencia de ai-chat.js): es una única pregunta autocontenida,
 // así que se pide directamente salida JSON estructurada (responseSchema) en vez de montar el
@@ -45,6 +45,8 @@ const SYSTEM_INSTRUCTION = `Eres un entrenador personal experto en biomecánica 
 Te dan el nombre de un ejercicio de gimnasio y debes devolver, en español y en el formato JSON exacto solicitado, una explicación técnica precisa: postura/ejecución, errores comunes, músculos implicados, rango de repeticiones y descanso recomendado, y un consejo práctico.
 Sé concreto y útil, no genérico — la explicación debe ser específica de ESE ejercicio, no una plantilla que sirva para cualquiera.
 Si el texto no corresponde a ningún ejercicio de fuerza/gimnasio real reconocible (está vacío de sentido, es una broma, o no es un ejercicio), pon recognized:false y dilo honestamente en el campo "position" en vez de inventar una técnica.`;
+
+export const config = { maxDuration: 60 };
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -87,40 +89,20 @@ export default async function handler(req, res) {
             prompt += `\nEste ejercicio existe en el catálogo de la app con grupo muscular "${catalogInfo.group}" y forma de registro "${catalogInfo.type}". Tenlo en cuenta como referencia.`;
         }
 
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`;
-        const geminiResponse = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-                contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                generationConfig: {
-                    temperature: 0.4,
-                    responseMimeType: 'application/json',
-                    responseSchema: TECHNIQUE_SCHEMA,
-                },
-            }),
+        const data = await generateContent({
+            systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: {
+                temperature: 0.4,
+                responseMimeType: 'application/json',
+                responseSchema: TECHNIQUE_SCHEMA,
+            },
         });
-
-        const data = await geminiResponse.json();
-
-        if (!geminiResponse.ok) {
-            console.error('Gemini Error Details:', data);
-            throw new Error(data.error?.message || 'Error en Gemini API');
-        }
-
-        const rawText = (data.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('');
-        let result;
-        try {
-            result = JSON.parse(rawText);
-        } catch (parseError) {
-            console.error('AI Technique: respuesta no era JSON válido:', rawText);
-            throw new Error('La IA devolvió una respuesta con formato inesperado.');
-        }
+        const result = parseJsonLoose(responseText(data));
 
         res.status(200).json({ result });
     } catch (error) {
         console.error('AI Technique API Error:', error.message || error);
-        res.status(500).json({ error: error.message || 'Internal Server Error' });
+        res.status(error instanceof GeminiError && error.status === 400 ? 400 : 500).json({ error: error.message || 'No se pudo contactar con la IA.' });
     }
 }

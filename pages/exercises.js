@@ -95,7 +95,7 @@ export default function Exercises() {
   const renderExerciseRow = (exercise, index, showGroup = false) => {
     const isFavorite = favoriteExercises.includes(exercise.name);
     return (
-      <li key={`${exercise.group || ""}-${exercise.id}`} style={{ borderTop: index === 0 ? "none" : `1px solid ${tk.border}` }}>
+      <li key={`${exercise.group || ""}-${exercise.id}`} style={{ borderTop: index === 0 ? "none" : `1px solid ${tk.hairline}` }}>
         <div
           role="button"
           tabIndex={0}
@@ -155,10 +155,10 @@ export default function Exercises() {
     listStyle: "none",
     padding: 0,
     margin: 0,
-    borderRadius: tk.radius.lg,
+    borderRadius: 18,
     overflow: "hidden",
-    border: `1px solid ${tk.border}`,
-    backgroundColor: tk.surface,
+    border: "none",
+    backgroundColor: isDark ? "rgba(255,255,255,0.045)" : "#fff",
   };
 
   const shortcutRow = (label, icon, names) =>
@@ -180,8 +180,8 @@ export default function Exercises() {
                 gap: "8px",
                 padding: "6px 12px 6px 6px",
                 borderRadius: tk.radius.pill,
-                border: `1px solid ${tk.border}`,
-                backgroundColor: tk.surface,
+                border: "none",
+                backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "#fff",
                 color: tk.text,
                 cursor: "pointer",
                 flexShrink: 0,
@@ -319,9 +319,9 @@ export default function Exercises() {
                     alignItems: "center",
                     gap: "6px",
                     padding: isMobile ? "12px 6px 10px" : "20px 12px",
-                    borderRadius: tk.radius.lg,
-                    border: `1px solid ${tk.border}`,
-                    backgroundColor: tk.surface,
+                    borderRadius: 18,
+                    border: "none",
+                    backgroundColor: isDark ? "rgba(255,255,255,0.045)" : "#fff",
                     cursor: "pointer",
                     minWidth: 0,
                     "--feeg-hover-border": tk.accent,

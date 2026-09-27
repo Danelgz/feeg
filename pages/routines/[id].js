@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { useWorkoutPhoto } from "../../components/workout/WorkoutPhotoPicker";
+import { useWakeLock } from "../../hooks/useWakeLock";
 import Layout from "../../components/Layout";
 import { useUser } from "../../context/UserContext";
 import ExerciseSelector from "../../components/ExerciseSelector";
 import { useWorkoutSession } from "../../hooks/useWorkoutSession";
+import { findNextSet } from "../../lib/nextSet";
+import { resolveElapsedSeconds } from "../../lib/sessionCompare";
 import { createExerciseFromCatalog } from "../../hooks/workoutSessionReducer";
 import { getExerciseInfo, computeWorkoutTotals, buildPRRecordsFromExercises, checkWorkoutVolumePR } from "../../lib/exerciseStats";
 import { getLatestExerciseSeries } from "../../lib/workoutRecommendations";
@@ -51,7 +54,9 @@ export default function RoutineDetail() {
   const [showRoutineActiveAlert, setShowRoutineActiveAlert] = useState(false);
   const [finishName, setFinishName] = useState("");
   const [finishComments, setFinishComments] = useState("");
-  const { photo: finishPhoto, pick: pickFinishPhoto, retry: retryFinishPhoto, remove: removeFinishPhoto } = useWorkoutPhoto();
+  // Pantalla encendida mientras se entrena (no en la vista previa ni en el resumen final).
+  useWakeLock(state.status === "ongoing");
+  const { photo: finishPhoto, pick: pickFinishPhoto, retry: retryFinishPhoto, remove: removeFinishPhoto, adjust: adjustFinishPhoto } = useWorkoutPhoto();
   const [finishTotalTime, setFinishTotalTime] = useState(0);
   const [updateOriginalRoutine, setUpdateOriginalRoutine] = useState(false);
   const [savingWorkout, setSavingWorkout] = useState(false);
@@ -183,7 +188,7 @@ export default function RoutineDetail() {
       ...(finishPhoto.status === "done" && finishPhoto.url ? { photoURL: finishPhoto.url } : {}),
       completedAt: new Date().toISOString(),
       totalTime: Number(finishTotalTime) || 0,
-      elapsedTime: elapsedSeconds,
+      elapsedTime: resolveElapsedSeconds(elapsedSeconds, finishTotalTime),
       exercises: exerciseDetails.length,
       series: totalsCompleted.totalSeries,
       totalReps: totalsCompleted.totalReps,
@@ -302,11 +307,13 @@ export default function RoutineDetail() {
           onPhotoPick={pickFinishPhoto}
           onPhotoRetry={retryFinishPhoto}
           onPhotoRemove={removeFinishPhoto}
+          onPhotoAdjust={adjustFinishPhoto}
           totalMinutes={finishTotalTime}
           onTotalMinutesChange={setFinishTotalTime}
           elapsedSeconds={elapsedSeconds}
           totals={totals}
-          exerciseCount={state.exercises.length}
+          exerciseCount={state.exercises.filter((ex) => ex.series.some((s) => s.completed)).length}
+          pendingSeries={state.exercises.reduce((n, ex) => n + ex.series.filter((s) => !s.completed).length, 0)}
           routineChanges={routineChanges}
           updateOriginalRoutine={updateOriginalRoutine}
           onUpdateOriginalRoutineChange={setUpdateOriginalRoutine}
@@ -325,11 +332,16 @@ export default function RoutineDetail() {
       <div className="feeg-active-workout-viewport" style={{ maxWidth: "900px", width: "100%", height: "100dvh", minHeight: 0, margin: "0 auto", display: "flex", flexDirection: "column", overflow: "hidden", touchAction: "pan-y", overscrollBehaviorX: "none" }}>
         <WorkoutHeader mode="live" title={state.name || foundRoutine?.name} onBack={() => setShowDiscardConfirm(true)} primaryLabel={t("finish_button")} onPrimaryAction={openFinishForm} />
 
-        <WorkoutStatsBar mode="live" elapsedSeconds={elapsedSeconds} totalVolume={totals.totalVolume} totalSeries={totals.totalSeries} t={t} />
+        <WorkoutStatsBar mode="live" recording elapsedSeconds={elapsedSeconds} totalVolume={totals.totalVolume} totalSeries={totals.totalSeries} plannedSeries={state.exercises.reduce((n, ex) => n + ex.series.length, 0)} t={t} />
 
         <WorkoutExercisePager
           ref={pagerRef}
           exercises={state.exercises}
+          getMeta={(exercise) => ({
+            label: translateExerciseName(exercise.name, language).replace(/\s*\(.*\)$/, ""),
+            done: exercise.series.filter((s) => s.completed).length,
+            total: exercise.series.length,
+          })}
           renderExercise={(exercise) => (
             <ExerciseCard
               key={exercise.uid}
@@ -367,7 +379,7 @@ export default function RoutineDetail() {
         }
       `}</style>
 
-      <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} totalRestSeconds={totalRestSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} />
+      <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} totalRestSeconds={totalRestSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} nextSet={restActive ? findNextSet(state.exercises, state.restForExerciseUid) : null} translateExerciseName={(name) => translateExerciseName(name, language)} onNextSetClick={(next) => pagerRef.current?.scrollToExercise(state.exercises.findIndex((ex) => ex.uid === next.exerciseUid))} />
       <PRToast item={prToast} t={t} onDismiss={dismissPRToast} />
 
       <ConfirmModal

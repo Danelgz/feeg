@@ -4,9 +4,12 @@ import { getWorkoutTokens } from "../../lib/tokens";
 import { pickPrimaryPRType } from "../../lib/exerciseStats";
 import { Icon, RankArt, ExerciseRankList } from "../ui";
 import WorkoutPhoto from "./WorkoutPhoto";
+import { shareWorkoutCard } from "../../lib/shareCard";
 import { useRankUps } from "../../hooks/useRankUps";
 import { useRanks } from "../../hooks/useRanks";
 import { getRankPosition } from "../../data/ranks";
+import { useUser } from "../../context/UserContext";
+import { compareWithPrevious, signed } from "../../lib/sessionCompare";
 
 function formatDuration(seconds) {
   const m = Math.floor(seconds / 60);
@@ -126,6 +129,9 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
     .map((name) => exerciseRanks.find((r) => r.exercise === name))
     .filter(Boolean);
 
+  const { completedWorkouts } = useUser();
+  const comparison = useMemo(() => compareWithPrevious(workout || {}, completedWorkouts || []), [workout, completedWorkouts]);
+
   const realRecords = prRecords.filter((r) => r.tier);
   const firstEverOnly = prRecords.filter((r) => !r.tier && r.isFirstEver);
   const countActive = !prefersReducedMotion;
@@ -165,10 +171,15 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
     const primaryDetail = hero ? buildRecordDetail(hero, translate) : headlineDetail;
     const shareText = `${workout.name} · ${formatValue(workout.totalVolume)} kg · ${workout.series} ${translate("series_label").toLowerCase()}${primaryDetail ? ` · ${primaryDetail}` : ""}`;
     try {
-      if (typeof navigator !== "undefined" && navigator.share) {
-        await navigator.share({ title: "FEEG", text: shareText });
-      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-        await navigator.clipboard.writeText(shareText);
+      // Primero la imagen (foto + cifras), que es lo que se comparte de verdad en redes; si el
+      // navegador no puede generarla, el texto de siempre.
+      const result = await shareWorkoutCard(workout, hero ? "Nuevo récord" : "Entreno completado", shareText);
+      if (result === "failed") {
+        if (typeof navigator !== "undefined" && navigator.share) {
+          await navigator.share({ title: "FEEG", text: shareText });
+        } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+          await navigator.clipboard.writeText(shareText);
+        }
       }
       setShared(true);
       window.setTimeout(() => setShared(false), 2200);
@@ -254,6 +265,37 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
           <Metric label={translate("series_label")} value={Math.round(seriesCount)} detail={`${completedExerciseCount} ${exerciseLabel}`} tk={tk} delay={0.2} />
         </motion.div>
 
+        {/* Contra la última vez que hiciste este mismo entreno: "¿he ido a más?" sin salir de aquí. */}
+        {comparison && (
+          <motion.div
+            variants={itemVariants}
+            style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 10px", padding: "14px 0", borderBottom: "1px solid rgba(255,255,255,0.08)", fontSize: "0.84rem" }}
+          >
+            <span style={{ color: tk.textMuted, fontWeight: 600 }}>
+              Vs. la última vez ({new Date(comparison.previousDate).toLocaleDateString("es-ES", { day: "numeric", month: "short" })})
+            </span>
+            {[
+              { key: "vol", text: `${signed(comparison.volumeDelta)} kg${comparison.volumePct !== null && comparison.volumePct !== 0 ? ` (${signed(comparison.volumePct)}%)` : ""}`, good: comparison.volumeDelta > 0, bad: comparison.volumeDelta < 0 },
+              { key: "ser", text: `${signed(comparison.seriesDelta)} series`, good: comparison.seriesDelta > 0, bad: comparison.seriesDelta < 0 },
+              { key: "min", text: `${signed(comparison.minutesDelta)} min`, good: false, bad: false },
+            ].map((d) => (
+              <span
+                key={d.key}
+                style={{
+                  padding: "4px 10px",
+                  borderRadius: 99,
+                  fontWeight: 800,
+                  fontVariantNumeric: "tabular-nums",
+                  background: d.good ? tk.accentSoft : tk.surfaceAlt,
+                  color: d.good ? tk.accent : d.bad ? tk.warning : tk.text,
+                }}
+              >
+                {d.text}
+              </span>
+            ))}
+          </motion.div>
+        )}
+
         <div className="summary-content-grid">
           {(realRecords.length > 0 || workoutVolumeRecord || firstEverOnly.length > 0) && (
             <motion.section variants={itemVariants} className="summary-panel summary-panel-achievements">
@@ -278,7 +320,7 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
               ) : null}
 
               {workoutVolumeRecord && (
-                <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 0", borderTop: hero ? `1px solid ${tk.border}` : "none" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 0", borderTop: hero ? `1px solid ${tk.hairline}` : "none" }}>
                   <Icon name="barChart" size={20} color={tk.accent} />
                   <div style={{ minWidth: 0 }}>
                     <div style={{ color: tk.text, fontWeight: tk.weight.bold, fontSize: "0.9rem" }}>{translate("pr_summary_workout_volume_title")}</div>
@@ -288,9 +330,9 @@ export default function WorkoutSummaryScreen({ workout, prRecords = [], workoutV
               )}
 
               {realRecords.length > 1 && (
-                <div style={{ borderTop: `1px solid ${tk.border}`, marginTop: 4 }}>
+                <div style={{ borderTop: `1px solid ${tk.hairline}`, marginTop: 4 }}>
                   {realRecords.map((record, index) => (
-                    <div key={record.name} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "12px 0", borderBottom: index === realRecords.length - 1 ? "none" : `1px solid ${tk.border}` }}>
+                    <div key={record.name} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "12px 0", borderBottom: index === realRecords.length - 1 ? "none" : `1px solid ${tk.hairline}` }}>
                       <span style={{ color: tk.text, fontSize: "0.86rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{record.name}</span>
                       <span style={{ color: tk.accent, fontSize: "0.82rem", fontWeight: tk.weight.bold, flexShrink: 0 }}>{buildRecordDeltaShort(record)}</span>
                     </div>

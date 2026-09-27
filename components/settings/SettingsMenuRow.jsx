@@ -26,7 +26,7 @@ export default function SettingsMenuRow({ isDark, icon, label, value, path }) {
         padding: "14px 4px",
         background: "none",
         border: "none",
-        borderBottom: `1px solid ${tk.border}`,
+        borderBottom: `1px solid ${tk.hairline}`,
         cursor: "pointer",
         textAlign: "left",
         transition: tk.transition,

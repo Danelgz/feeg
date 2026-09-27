@@ -77,8 +77,7 @@ export default function ProfileImageCropper({ sourcePhotoURL, onSave, onClose })
   };
 
   return (
-    <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "#111", zIndex: 6000, display: "flex", flexDirection: "column", fontFamily: "'Manrope', -apple-system, 'Segoe UI', sans-serif" }}>
-      <style>{`@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap");`}</style>
+    <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "#111", zIndex: 6000, display: "flex", flexDirection: "column", fontFamily: "var(--font-feeg), -apple-system, 'Segoe UI', sans-serif" }}>
       <div style={{ padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <button onClick={onClose} style={{ background: "none", border: "none", color: "#fff", cursor: "pointer" }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>

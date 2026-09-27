@@ -2,11 +2,14 @@ import { getAuth } from 'firebase-admin/auth';
 import admin from 'firebase-admin';
 import { AI_TOOL_DECLARATIONS, AI_PROPOSAL_TOOL_DECLARATIONS, AI_PROPOSAL_TOOL_NAMES, runAiTool } from '../../lib/aiTools';
 import { splitSuggestions, toolLabels } from '../../lib/aiReply';
+import { generateContent, normalizeHistory, GeminiError } from '../../lib/gemini';
 
 // El cliente manda su historial local compacto (ver lib/aiContext.ts): FEEG es local-first y lo
 // que ve el usuario en pantalla puede ir por delante de Firestore. 1 MB (el límite por defecto)
 // se queda corto para historiales largos.
-export const config = { api: { bodyParser: { sizeLimit: '2mb' } } };
+// maxDuration: con varias rondas de herramientas una respuesta puede tardar más de los 10 s por
+// defecto de una función de Vercel, y el corte llegaba al usuario como un error sin explicación.
+export const config = { api: { bodyParser: { sizeLimit: '2mb' } }, maxDuration: 60 };
 
 // Evitamos inicializar fuera del handler para que no colapse todo Vercel si faltan las variables de entorno.
 function initAdmin() {
@@ -24,9 +27,6 @@ function initAdmin() {
     }
 }
 
-// Usamos un modelo estable actualmente disponible para cuentas nuevas. Se lee de env por si
-// algún día se quiere cambiar de modelo sin tocar código.
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 // Límite de idas y vueltas modelo -> herramienta -> modelo por mensaje. Evita que una cadena de
 // llamadas a función mal encadenada deje la petición colgada o dispare coste sin fin.
 const MAX_TOOL_ROUNDS = 4;
@@ -122,9 +122,7 @@ export default async function handler(req, res) {
         };
         const toolsUsed = [];
 
-        const contents = messages
-            .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && m.content)
-            .map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: String(m.content) }] }));
+        const contents = normalizeHistory(messages);
 
         if (contents.length === 0) {
             return res.status(400).json({ error: 'Invalid messages array' });
@@ -132,7 +130,6 @@ export default async function handler(req, res) {
 
         const systemInstruction = { parts: [{ text: buildSystemInstruction(userProfile, clientContext) }] };
         const tools = [{ functionDeclarations: [...AI_TOOL_DECLARATIONS, ...AI_PROPOSAL_TOOL_DECLARATIONS] }];
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`;
 
         let finalText = null;
         // Si el modelo llama a una herramienta propose_*, se captura aquí en vez de ejecutarla —
@@ -141,30 +138,23 @@ export default async function handler(req, res) {
         let pendingAction = null;
 
         for (let round = 0; round < MAX_TOOL_ROUNDS && finalText === null; round++) {
-            const geminiResponse = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    systemInstruction,
-                    contents,
-                    tools,
-                    generationConfig: { temperature: 0.6 },
-                }),
+            // En la última ronda se prohíben las herramientas: el modelo tiene que contestar con
+            // lo que ya ha consultado en vez de agotar las rondas y dejar al usuario sin respuesta.
+            const lastRound = round === MAX_TOOL_ROUNDS - 1;
+            const data = await generateContent({
+                systemInstruction,
+                contents,
+                tools,
+                ...(lastRound ? { toolConfig: { functionCallingConfig: { mode: 'NONE' } } } : {}),
+                generationConfig: { temperature: 0.6 },
             });
-
-            const data = await geminiResponse.json();
-
-            if (!geminiResponse.ok) {
-                console.error('Gemini Error Details:', data);
-                throw new Error(data.error?.message || 'Error en Gemini API');
-            }
 
             const candidate = data.candidates?.[0];
             const parts = candidate?.content?.parts || [];
             const functionCalls = parts.filter((p) => p.functionCall).map((p) => p.functionCall);
 
             if (functionCalls.length === 0) {
-                const text = parts.map((p) => p.text || '').join('').trim();
+                const text = parts.filter((p) => !p.thought).map((p) => p.text || '').join('').trim();
                 finalText = text || 'No he podido generar una respuesta, inténtalo de nuevo.';
                 break;
             }
@@ -180,7 +170,16 @@ export default async function handler(req, res) {
                     pendingAction = { type: fc.name, payload: fc.args || {} };
                     return { functionResponse: { name: fc.name, response: { result: { proposed: true } } } };
                 }
-                return { functionResponse: { name: fc.name, response: { result: runAiTool(fc.name, fc.args, toolCtx) } } };
+                // Una herramienta que falla con datos raros no debe tumbar la respuesta entera: el
+                // modelo recibe el error y contesta con lo que tenga.
+                let result;
+                try {
+                    result = runAiTool(fc.name, fc.args, toolCtx);
+                } catch (toolError) {
+                    console.error(`[ai-chat] herramienta ${fc.name} falló:`, toolError);
+                    result = { error: 'No se pudieron leer esos datos.' };
+                }
+                return { functionResponse: { name: fc.name, response: { result } } };
             });
             // Gemini espera las respuestas de las herramientas como un turno `user`;
             // el rol `function` pertenece a otros formatos de function calling y devuelve
@@ -196,6 +195,7 @@ export default async function handler(req, res) {
         res.status(200).json({ reply: text, pendingAction, suggestions, toolsUsed: toolLabels(toolsUsed) });
     } catch (error) {
         console.error('AI Chat API Error:', error.message || error);
-        res.status(500).json({ error: error.message || 'Internal Server Error' });
+        const status = error instanceof GeminiError && error.status < 500 && error.status !== 401 && error.status !== 403 ? error.status : 500;
+        res.status(status).json({ error: error.message || 'No se pudo contactar con la IA.' });
     }
 }

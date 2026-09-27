@@ -13,6 +13,7 @@ export default function Switch({ isDark, checked, onChange, disabled = false }) 
       onClick={() => !disabled && onChange(!checked)}
       style={{
         width: "46px",
+        flexShrink: 0,
         height: "26px",
         borderRadius: tk.radius.pill,
         border: "none",

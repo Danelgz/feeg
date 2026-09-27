@@ -60,7 +60,7 @@ export default function ProfileWorkoutsSection({
           No hay entrenamientos registrados aún.
         </div>
       ) : (
-        <div style={{ borderBottom: `1px solid ${tk.hairline}` }}>
+        <div style={{ paddingTop: 2 }}>
           {sorted.map((workout) => (
             <ProfileWorkoutCard
               key={workout.id}

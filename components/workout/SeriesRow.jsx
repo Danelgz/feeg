@@ -64,7 +64,7 @@ function SeriesRow({
 
   const badgeLabel = serie.type === "W" ? "W" : serie.type === "D" ? "D" : String(effectiveIndex);
   const badgeColor = readOnly ? tk.text : serie.type === "W" ? tk.accent : serie.type === "D" ? tk.warning : tk.text;
-  const previousLabel = previous ? `${previous.weight}${weightUnit} × ${previous.reps}` : "—";
+  const previousLabel = previous ? `${String(previous.weight).replace(".", ",")} ${weightUnit} × ${previous.reps}` : "—";
   // Campos de 38px de alto y cifras en negrita: son lo que se toca con el pulgar entre series, con
   // el pulso alto. En una serie completada el fondo del campo se funde con la fila verde.
   const fieldStyle = {
@@ -76,7 +76,7 @@ function SeriesRow({
 
   return (
     <div
-      className={`feeg-series-grid ${readOnly ? (showRir ? "feeg-series-grid--readonly-rir" : "feeg-series-grid--readonly") : mode === "live" && showRir ? "feeg-series-grid--rir" : "feeg-series-grid--no-rir"}`}
+      className={`feeg-series-grid ${readOnly ? (showRir ? "feeg-series-grid--readonly-rir" : "feeg-series-grid--readonly") : mode !== "live" ? "feeg-series-grid--template" : showRir ? "feeg-series-grid--rir" : "feeg-series-grid--no-rir"}`}
       ref={rowRef}
       style={{
         display: "grid",
@@ -118,7 +118,7 @@ function SeriesRow({
         {justAchieved ? <Icon name="trendUp" size={14} color={tk.accent} /> : badgeLabel}
       </div>
 
-      {!readOnly && (
+      {!readOnly && mode === "live" && (
         // Tocar la marca anterior la copia en la serie: repetir lo de la semana pasada es un toque.
         <button
           type="button"
@@ -132,7 +132,7 @@ function SeriesRow({
       )}
 
       {readOnly ? (
-        <div style={fieldStyle}>{serie.weight === "" || serie.weight === undefined || serie.weight === null ? "—" : serie.weight}</div>
+        <div style={fieldStyle}>{serie.weight === "" || serie.weight === undefined || serie.weight === null ? "—" : String(serie.weight).replace(".", ",")}</div>
       ) : (
         <input
           aria-label="Peso de la serie"
@@ -177,7 +177,7 @@ function SeriesRow({
         </select>
       ))}
 
-      {!readOnly && <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+      {!readOnly && mode === "live" && <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
         {mode === "live" ? (
           <button
             type="button"

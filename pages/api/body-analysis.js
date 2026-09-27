@@ -1,4 +1,5 @@
 import { getAuth } from 'firebase-admin/auth';
+import { generateContent, responseText, parseJsonLoose } from '../../lib/gemini';
 import admin from 'firebase-admin';
 
 function initAdmin() {
@@ -16,9 +17,8 @@ function initAdmin() {
     }
 }
 
-export const config = { api: { bodyParser: { sizeLimit: '24mb' } } };
+export const config = { api: { bodyParser: { sizeLimit: '24mb' } }, maxDuration: 60 };
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 const MUSCLE_GROUPS = ['Cuello', 'Hombros', 'Pecho', 'Espalda', 'Abdomen', 'Bíceps', 'Tríceps', 'Antebrazo', 'Cuádriceps', 'Femoral', 'Glúteos', 'Gemelos'];
 
 function buildPrompt(userProfile, hasPrevious) {
@@ -73,14 +73,10 @@ export default async function handler(req, res) {
         currentImages.forEach((image, index) => parts.push({ text: `Foto actual ${index + 1}: ${image.label || 'ángulo'}` }, currentParts[index]));
         if (previousParts.length) parts.push({ text: 'Foto anterior para comparar evolución:' }, ...previousParts);
 
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`;
-        const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { temperature: 0.25, responseMimeType: 'application/json' } }) });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error?.message || 'Gemini no pudo analizar las imágenes.');
-        const text = data.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('').trim();
-        if (!text) throw new Error('El analizador no devolvió una lectura.');
-        let analysis;
-        try { analysis = JSON.parse(text.replace(/^```json\s*|\s*```$/g, '')); } catch { throw new Error('La respuesta del analizador no tenía un formato válido.'); }
+        const data = await generateContent({ contents: [{ role: 'user', parts }], generationConfig: { temperature: 0.25, responseMimeType: 'application/json' } });
+        const text = responseText(data);
+        if (!text) throw new Error('El analizador no devolvió una lectura. Vuelve a intentarlo.');
+        const analysis = parseJsonLoose(text);
         if (!analysis || !Array.isArray(analysis.muscles)) throw new Error('La respuesta del analizador está incompleta.');
         analysis.muscles = MUSCLE_GROUPS.map((group) => analysis.muscles.find((item) => item.group === group)).filter(Boolean).map((item) => ({ ...item, score: Math.max(0, Math.min(100, Number(item.score) || 0)) }));
         return res.status(200).json({ analysis });

@@ -194,11 +194,8 @@ export default function ExerciseHistoryPage() {
             display: "flex",
             alignItems: "flex-start",
             gap: isMobile ? "14px" : "20px",
-            backgroundColor: tk.surfaceAlt,
-            border: `1px solid ${tk.border}`,
-            borderRadius: tk.radius.lg,
-            padding: isMobile ? "16px" : "22px",
-            marginBottom: "20px",
+            padding: "4px 0 6px",
+            marginBottom: "14px",
           }}
         >
           <ExercisePhoto name={exerciseName} size={isMobile ? 64 : 88} />
@@ -259,7 +256,7 @@ export default function ExerciseHistoryPage() {
           </div>
         </div>
 
-        <ChipNav items={TABS} activeKey={activeTab} onChange={setActiveTab} isDark={isDark} ariaLabel="Secciones de la ficha del ejercicio" />
+        <ChipNav items={TABS} activeKey={activeTab} onChange={setActiveTab} isDark={isDark} variant="underline" fill={isMobile} ariaLabel="Secciones de la ficha del ejercicio" />
 
         <div style={{ marginTop: "20px", marginBottom: "40px" }}>
           {activeTab === "resumen" && (
@@ -277,13 +274,13 @@ export default function ExerciseHistoryPage() {
                   { key: "freq", label: "Frecuencia reciente", value: frequency.perWeekRecent > 0 ? `${frequency.perWeekRecent}/sem` : "—" },
                 ]}
               />
-              <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
+              <div style={{ paddingTop: 16, borderTop: `1px solid ${tk.hairline}` }}>
                 <p style={{ margin: "0 0 12px", color: tk.text, fontWeight: 800, fontSize: "1.02rem" }}>Progreso</p>
                 <ExerciseProgressChart isDark={isDark} sessions={sessions} unit={unit} />
               </div>
 
               {rankPosition && (
-                <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
+                <div style={{ paddingTop: 16, borderTop: `1px solid ${tk.hairline}` }}>
                   <p style={{ margin: "0 0 10px", color: tk.textFaint, fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
                     Progreso hacia el siguiente rango
                   </p>
@@ -293,7 +290,7 @@ export default function ExerciseHistoryPage() {
                       aria-valuenow={Math.round((rank.level % 1) * 100)}
                       aria-valuemin={0}
                       aria-valuemax={100}
-                      style={{ height: "8px", backgroundColor: tk.surface, border: `1px solid ${tk.border}`, borderRadius: tk.radius.pill, overflow: "hidden", marginBottom: "10px" }}
+                      style={{ height: "8px", backgroundColor: tk.hairline, borderRadius: tk.radius.pill, overflow: "hidden", marginBottom: "10px" }}
                     >
                       <div style={{ width: `${Math.round((rank.level % 1) * 100)}%`, height: "100%", background: `linear-gradient(90deg, ${rankPosition.rank.accent}, ${rankPosition.rank.color})`, borderRadius: tk.radius.pill }} />
                     </div>
@@ -312,7 +309,7 @@ export default function ExerciseHistoryPage() {
                         Dónde caes en el baremo completo
                       </p>
                       <div style={{ position: "relative", height: "8px" }}>
-                        <div style={{ position: "absolute", inset: 0, borderRadius: tk.radius.pill, background: RANK_SCALE, border: `1px solid ${tk.border}` }} />
+                        <div style={{ position: "absolute", inset: 0, borderRadius: tk.radius.pill, background: RANK_SCALE }} />
                         <div
                           style={{
                             position: "absolute",
@@ -337,14 +334,14 @@ export default function ExerciseHistoryPage() {
                 </div>
               )}
 
-              <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${goalReached ? tk.accent : tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
+              <div style={{ paddingTop: 16, borderTop: `1px solid ${goalReached ? tk.accent : tk.hairline}` }}>
                 <p style={{ margin: "0 0 10px", color: tk.textFaint, fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
                   Tu objetivo
                 </p>
 
                 {goal && (
                   <>
-                    <div style={{ height: "8px", backgroundColor: tk.surface, border: `1px solid ${tk.border}`, borderRadius: tk.radius.pill, overflow: "hidden", marginBottom: "10px" }}>
+                    <div style={{ height: "8px", backgroundColor: tk.hairline, borderRadius: tk.radius.pill, overflow: "hidden", marginBottom: "10px" }}>
                       <div
                         style={{
                           width: `${Math.round((goalProgress || 0) * 100)}%`,
@@ -375,7 +372,7 @@ export default function ExerciseHistoryPage() {
                     placeholder={`Peso (${unit})`}
                     value={goalWeight}
                     onChange={(e) => setGoalDraft({ weight: e.target.value, reps: goalReps })}
-                    style={{ width: "110px", padding: "9px 10px", borderRadius: tk.radius.sm, border: `1px solid ${tk.border}`, backgroundColor: tk.surface, color: tk.text, fontSize: "0.88rem", fontFamily: "inherit" }}
+                    style={{ width: "110px", padding: "9px 10px", borderRadius: tk.radius.sm, border: "none", backgroundColor: tk.isDark ? "rgba(255,255,255,0.06)" : "#fff", color: tk.text, fontSize: "0.88rem", fontFamily: "inherit" }}
                   />
                   <input
                     type="number"
@@ -383,7 +380,7 @@ export default function ExerciseHistoryPage() {
                     placeholder="Reps"
                     value={goalReps}
                     onChange={(e) => setGoalDraft({ weight: goalWeight, reps: e.target.value })}
-                    style={{ width: "80px", padding: "9px 10px", borderRadius: tk.radius.sm, border: `1px solid ${tk.border}`, backgroundColor: tk.surface, color: tk.text, fontSize: "0.88rem", fontFamily: "inherit" }}
+                    style={{ width: "80px", padding: "9px 10px", borderRadius: tk.radius.sm, border: "none", backgroundColor: tk.isDark ? "rgba(255,255,255,0.06)" : "#fff", color: tk.text, fontSize: "0.88rem", fontFamily: "inherit" }}
                   />
                   <button
                     onClick={handleSaveGoal}
@@ -425,7 +422,7 @@ export default function ExerciseHistoryPage() {
 
           {activeTab === "records" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-              <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
+              <div style={{ paddingTop: 16, borderTop: `1px solid ${tk.hairline}` }}>
                 <p style={{ margin: "0 0 16px", color: tk.text, fontWeight: 800, fontSize: "1.02rem" }}>Mejores marcas por repetición</p>
                 {repRecords.length === 0 ? (
                   <EmptyState isDark={isDark} icon="award" title="Sin marcas todavía" description="Registra una serie de este ejercicio para empezar a ver tus récords." />
@@ -442,14 +439,14 @@ export default function ExerciseHistoryPage() {
                 )}
               </div>
 
-              <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
+              <div style={{ paddingTop: 16, borderTop: `1px solid ${tk.hairline}` }}>
                 <p style={{ margin: "0 0 16px", color: tk.text, fontWeight: 800, fontSize: "1.02rem" }}>Línea de tiempo de récords</p>
                 {prTimeline.length === 0 ? (
                   <EmptyState isDark={isDark} icon="trendUp" title="Sin récords registrados" description="Cuando superes tu mejor 1RM estimado en este ejercicio, aparecerá aquí." />
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                     {prTimeline.map((m) => (
-                      <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 0", borderBottom: `1px solid ${tk.border}` }}>
+                      <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 0", borderBottom: `1px solid ${tk.hairline}` }}>
                         <Icon name="trendUp" size={16} color={tk.accent} style={{ flexShrink: 0 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ color: tk.text, fontSize: "0.9rem", fontWeight: 700 }}>
@@ -469,7 +466,7 @@ export default function ExerciseHistoryPage() {
           )}
 
           {activeTab === "historial" && (
-            <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
+            <div style={{ paddingTop: 16, borderTop: `1px solid ${tk.hairline}` }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "8px" }}>
                 <p style={{ margin: 0, color: tk.text, fontWeight: 800, fontSize: "1.02rem" }}>Sesiones</p>
                 <span style={{ color: tk.textMuted, fontSize: "0.82rem" }}>
@@ -496,9 +493,9 @@ export default function ExerciseHistoryPage() {
                         justifyContent: "space-between",
                         gap: "12px",
                         padding: "12px 14px",
-                        borderRadius: tk.radius.md,
-                        border: `1px solid ${tk.border}`,
-                        backgroundColor: tk.surface,
+                        borderRadius: 14,
+                        border: "none",
+                        backgroundColor: tk.isDark ? "rgba(255,255,255,0.05)" : "#fff",
                         color: tk.text,
                         cursor: "pointer",
                         textAlign: "left",
@@ -527,7 +524,7 @@ export default function ExerciseHistoryPage() {
           )}
 
           {activeTab === "similares" && (
-            <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
+            <div style={{ paddingTop: 16, borderTop: `1px solid ${tk.hairline}` }}>
               <p style={{ margin: "0 0 6px", color: tk.text, fontWeight: 800, fontSize: "1.02rem" }}>Alternativas</p>
               <p style={{ margin: "0 0 16px", color: tk.textMuted, fontSize: "0.85rem" }}>
                 Mismo grupo muscular ({t(info?.group) || info?.group}), para variar o si no tienes acceso a este material.
@@ -549,9 +546,9 @@ export default function ExerciseHistoryPage() {
                         justifyContent: "space-between",
                         gap: "12px",
                         padding: "10px 12px",
-                        borderRadius: tk.radius.sm,
-                        border: `1px solid ${tk.border}`,
-                        backgroundColor: tk.surface,
+                        borderRadius: 12,
+                        border: "none",
+                        backgroundColor: tk.isDark ? "rgba(255,255,255,0.05)" : "#fff",
                         color: tk.text,
                         cursor: "pointer",
                         textAlign: "left",
@@ -578,7 +575,7 @@ export default function ExerciseHistoryPage() {
           )}
 
           {activeTab === "notas" && (
-            <div style={{ backgroundColor: tk.surfaceAlt, border: `1px solid ${tk.border}`, borderRadius: tk.radius.lg, padding: isMobile ? "16px" : "20px" }}>
+            <div style={{ paddingTop: 16, borderTop: `1px solid ${tk.hairline}` }}>
               <p style={{ margin: "0 0 6px", color: tk.text, fontWeight: 800, fontSize: "1.02rem" }}>Tus notas</p>
               <p style={{ margin: "0 0 14px", color: tk.textMuted, fontSize: "0.85rem" }}>
                 Técnica, cues, lesiones a vigilar — lo que quieras recordar la próxima vez que hagas este ejercicio. Solo tú lo ves.
@@ -592,9 +589,9 @@ export default function ExerciseHistoryPage() {
                   width: "100%",
                   boxSizing: "border-box",
                   padding: "12px 14px",
-                  borderRadius: tk.radius.md,
-                  border: `1px solid ${tk.border}`,
-                  backgroundColor: tk.surface,
+                  borderRadius: 14,
+                  border: "none",
+                  backgroundColor: tk.isDark ? "rgba(255,255,255,0.06)" : "#fff",
                   color: tk.text,
                   fontSize: "0.92rem",
                   fontFamily: "inherit",

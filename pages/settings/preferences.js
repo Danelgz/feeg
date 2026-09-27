@@ -109,11 +109,11 @@ export default function SettingsPreferences() {
                   fontWeight: active ? 700 : 500,
                   cursor: "pointer",
                   minWidth: isMobile ? undefined : "120px",
-                  "--feeg-bg": active ? tk.accentSoft : "transparent",
+                  "--feeg-bg": active ? tk.accentSoft : tk.surfaceHover,
                   "--feeg-fg": active ? tk.accent : tk.text,
-                  "--feeg-border": active ? tk.accent : tk.border,
+                  "--feeg-border": active ? tk.accent : "transparent",
                   "--feeg-hover-bg": active ? tk.accentSoft : tk.surfaceHover,
-                  "--feeg-hover-border": tk.accent,
+                  "--feeg-hover-border": active ? tk.accent : "transparent",
                   "--feeg-border-width": "1.5px",
                   "--feeg-press-scale": 0.97,
                 }}
@@ -126,7 +126,7 @@ export default function SettingsPreferences() {
         </div>
       </div>
 
-      <div style={{ height: "1px", backgroundColor: tk.border }} />
+      <div style={{ height: "1px", backgroundColor: tk.hairline }} />
 
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         <span style={{ color: tk.text, fontSize: "1.1rem", fontWeight: 600 }}>{t("language")}</span>
@@ -148,11 +148,11 @@ export default function SettingsPreferences() {
                   fontSize: "1rem",
                   cursor: "pointer",
                   minWidth: isMobile ? undefined : "120px",
-                  "--feeg-bg": active ? tk.accentSoft : "transparent",
+                  "--feeg-bg": active ? tk.accentSoft : tk.surfaceHover,
                   "--feeg-fg": active ? tk.accent : tk.text,
-                  "--feeg-border": active ? tk.accent : tk.border,
+                  "--feeg-border": active ? tk.accent : "transparent",
                   "--feeg-hover-bg": active ? tk.accentSoft : tk.surfaceHover,
-                  "--feeg-hover-border": tk.accent,
+                  "--feeg-hover-border": active ? tk.accent : "transparent",
                   "--feeg-border-width": "1.5px",
                   "--feeg-press-scale": 0.97,
                 }}
@@ -164,7 +164,7 @@ export default function SettingsPreferences() {
         </div>
       </div>
 
-      <div style={{ height: "1px", backgroundColor: tk.border }} />
+      <div style={{ height: "1px", backgroundColor: tk.hairline }} />
 
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         <div>
@@ -191,10 +191,10 @@ export default function SettingsPreferences() {
                   padding: "10px 6px",
                   borderRadius: tk.radius.md,
                   cursor: "pointer",
-                  "--feeg-bg": active ? tk.accentSoft : tk.surfaceAlt,
-                  "--feeg-border": active ? tk.accent : tk.border,
+                  "--feeg-bg": active ? tk.accentSoft : tk.surfaceHover,
+                  "--feeg-border": active ? tk.accent : "transparent",
                   "--feeg-hover-bg": active ? tk.accentSoft : tk.surfaceHover,
-                  "--feeg-hover-border": tk.accent,
+                  "--feeg-hover-border": active ? tk.accent : "transparent",
                   "--feeg-border-width": "1.5px",
                   "--feeg-press-scale": 0.97,
                 }}

@@ -268,8 +268,9 @@ export default function Home() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={{
                   width: "100%",
-                  backgroundColor: tk.surface,
-                  border: `1px solid ${tk.border}`,
+                  backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "#fff",
+                  border: "none",
+                  boxShadow: isDark ? "none" : tk.shadow.card,
                   borderRadius: tk.radius.pill,
                   padding: "12px 20px 12px 45px",
                   color: tk.text,
@@ -278,8 +279,8 @@ export default function Home() {
                   transition: tk.transition,
                   boxSizing: "border-box"
                 }}
-                onFocus={(e) => e.target.style.borderColor = tk.accent}
-                onBlur={(e) => e.target.style.borderColor = tk.border}
+                onFocus={(e) => (e.target.style.boxShadow = `0 0 0 2px ${tk.accent}`)}
+                onBlur={(e) => (e.target.style.boxShadow = isDark ? "none" : tk.shadow.card)}
               />
               {searchTerm && (
                 <button
@@ -303,20 +304,18 @@ export default function Home() {
           {!searchTerm && (
             <div
               onClick={() => router.push("/recommended")}
+              className="feeg-press"
               style={{
                 marginTop: "10px",
-                backgroundColor: tk.surface,
+                backgroundColor: tk.accentSoft,
                 borderRadius: tk.radius.md,
-                border: `1px solid ${tk.border}`,
-                padding: "12px 20px",
+                padding: "12px 16px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
                 cursor: "pointer",
                 transition: tk.transition
               }}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = tk.surfaceHover}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = tk.surface}
             >
               <div style={{ color: tk.accent, fontWeight: "bold", fontSize: "0.9rem", display: "flex", alignItems: "center", gap: "8px" }}>
                 <Icon name="users" size={16} />
@@ -332,7 +331,6 @@ export default function Home() {
               marginTop: "10px",
               backgroundColor: tk.surface,
               borderRadius: tk.radius.lg,
-              border: `1px solid ${tk.border}`,
               maxHeight: "300px",
               overflowY: "auto",
               boxShadow: tk.shadow.float,
@@ -341,7 +339,7 @@ export default function Home() {
               left: 0,
               right: 0
             }}>
-              <div style={{ padding: "10px 15px", fontSize: "0.8rem", color: tk.accent, borderBottom: `1px solid ${tk.border}`, fontWeight: "bold" }}>
+              <div style={{ padding: "10px 15px", fontSize: "0.8rem", color: tk.accent, borderBottom: `1px solid ${tk.hairline}`, fontWeight: "bold" }}>
                 {t("search_results")}
               </div>
               {searchResults.map(u => (
@@ -353,7 +351,7 @@ export default function Home() {
                     alignItems: "center",
                     justifyContent: "space-between",
                     padding: "12px 15px",
-                    borderBottom: `1px solid ${tk.border}`,
+                    borderBottom: `1px solid ${tk.hairline}`,
                     cursor: "pointer",
                     transition: tk.transition
                   }}
@@ -387,7 +385,7 @@ export default function Home() {
         </div>
 
         {/* Feed de Entrenamientos */}
-        <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "0" : "20px", padding: isMobile ? "0" : "0" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "12px" : "16px", padding: isMobile ? "0 12px" : "0" }}>
           {visibleFeedWorkouts.length === 0 ? (
             <EmptyState
               isDark={isDark}
@@ -407,13 +405,14 @@ export default function Home() {
                 <div
                   key={workout.id}
                   onClick={() => setSelectedWorkout(workout)}
+                  // Cada entreno del feed en su propio bloque (fondo sin borde): con sólo una línea
+                  // entre ellos no se distinguía dónde acababa uno y empezaba el siguiente.
                   style={{
-                    backgroundColor: isMobile ? tk.bg : tk.surface,
-                    border: isMobile ? "none" : `1px solid ${tk.border}`,
-                    borderBottom: `1px solid ${tk.border}`,
-                    padding: isMobile ? "18px 15px" : "18px",
-                    borderRadius: isMobile ? 0 : tk.radius.lg,
-                    boxShadow: isMobile ? "none" : tk.shadow.card,
+                    backgroundColor: isDark ? "rgba(255,255,255,0.045)" : "#fff",
+                    border: "none",
+                    padding: isMobile ? "16px 14px" : "18px",
+                    borderRadius: 20,
+                    boxShadow: isDark ? "none" : "0 1px 3px rgba(24,32,44,0.06)",
                     cursor: "pointer",
                   }}
                 >
@@ -459,7 +458,7 @@ export default function Home() {
                   </div>
 
                   {visibleExercises.length > 0 && (
-                    <div style={{ borderTop: `1px solid ${tk.border}`, paddingTop: "12px", marginBottom: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <div style={{ borderTop: `1px solid ${tk.hairline}`, paddingTop: "12px", marginBottom: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
                       {visibleExercises.map((ex, idx) => {
                         const seriesKey = `${workout.id}_${idx}`;
                         const isSeriesOpen = !!expandedSeriesFor[seriesKey];
@@ -486,8 +485,8 @@ export default function Home() {
                             </div>
 
                             {isSeriesOpen && (
-                              <div style={{ marginTop: "8px", marginLeft: "46px", backgroundColor: tk.surfaceAlt, borderRadius: tk.radius.sm, border: `1px solid ${tk.border}`, overflow: "hidden" }}>
-                                <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr", padding: "6px 10px", color: tk.textFaint, fontSize: "0.68rem", fontWeight: "bold", textAlign: "center", borderBottom: `1px solid ${tk.border}` }}>
+                              <div style={{ marginTop: "8px", marginLeft: "46px", backgroundColor: tk.surfaceAlt, borderRadius: tk.radius.sm, overflow: "hidden", fontVariantNumeric: "tabular-nums" }}>
+                                <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 1fr", padding: "6px 10px", color: tk.textFaint, fontSize: "0.68rem", fontWeight: "bold", textAlign: "center", borderBottom: `1px solid ${tk.hairline}` }}>
                                   <div>{t("serie_upper")}</div>
                                   <div>{t("weight_upper")}</div>
                                   <div>{t("reps_upper")}</div>
@@ -506,7 +505,7 @@ export default function Home() {
                                     }}
                                   >
                                     <div style={{ color: tk.textFaint, fontWeight: "bold" }}>{sIdx + 1}</div>
-                                    <div>{s.weight || "-"}</div>
+                                    <div>{s.weight ? String(s.weight).replace(".", ",") : "-"}</div>
                                     <div>{s.reps || "-"}</div>
                                   </div>
                                 ))}
@@ -543,7 +542,7 @@ export default function Home() {
                     </div>
                   )}
 
-                  <div onClick={(event) => event.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: "20px", borderTop: `1px solid ${tk.border}`, paddingTop: "12px", marginTop: "4px" }}>
+                  <div onClick={(event) => event.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: "20px", borderTop: `1px solid ${tk.hairline}`, paddingTop: "12px", marginTop: "4px" }}>
                     <button
                       onClick={(event) => {
                         event.stopPropagation();
@@ -621,7 +620,7 @@ export default function Home() {
                     <div style={{
                       marginTop: "15px",
                       paddingTop: "20px",
-                      borderTop: `1px solid ${tk.border}`,
+                      borderTop: `1px solid ${tk.hairline}`,
                       display: "flex",
                       flexDirection: "column",
                       gap: "20px"
@@ -681,10 +680,9 @@ export default function Home() {
                           display: "flex",
                           alignItems: "center",
                           gap: "10px",
-                          backgroundColor: tk.surface,
+                          backgroundColor: tk.surfaceAlt,
                           borderRadius: tk.radius.pill,
-                          padding: "5px 5px 5px 15px",
-                          border: `1px solid ${tk.border}`
+                          padding: "5px 5px 5px 15px"
                         }}>
                           <input
                             ref={commentInputRef}

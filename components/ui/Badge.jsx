@@ -6,7 +6,7 @@ export default function Badge({ isDark, variant = "accent", children, style }) {
   const variants = {
     accent: { backgroundColor: tk.accentSoft, color: tk.accent, border: `1px solid transparent` },
     danger: { backgroundColor: tk.dangerSoft, color: tk.danger, border: `1px solid transparent` },
-    neutral: { backgroundColor: tk.surfaceHover, color: tk.textMuted, border: `1px solid ${tk.border}` },
+    neutral: { backgroundColor: tk.surfaceHover, color: tk.textMuted, border: `1px solid transparent` },
     outline: { backgroundColor: "transparent", color: tk.text, border: `1px solid ${tk.border}` },
   };
 

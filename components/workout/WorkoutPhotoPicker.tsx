@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { getWorkoutTokens } from "../../lib/tokens";
-import { compressImage, uploadImage } from "../../lib/imageUpload";
+import { compressImage, uploadImage, type ImageTransform } from "../../lib/imageUpload";
 import { Icon } from "../ui";
 
 export interface WorkoutPhotoState {
@@ -11,9 +11,29 @@ export interface WorkoutPhotoState {
   url: string | null;
   status: "idle" | "uploading" | "done" | "error";
   error: string | null;
+  /** Giro/espejo aplicado a mano; la vista previa lo muestra al instante con CSS. */
+  transform: Required<ImageTransform>;
 }
 
-const EMPTY: WorkoutPhotoState = { preview: null, url: null, status: "idle", error: null };
+const NO_TRANSFORM: Required<ImageTransform> = { flip: false, rotate: 0 };
+// Si el usuario volteó la última foto que hizo con la cámara, su móvil guarda los selfis en
+// espejo: las siguientes se voltean solas. Se recuerda por dispositivo, no por cuenta.
+const FLIP_KEY = "feeg.cameraPhotoFlip";
+const readFlipPref = () => {
+  try {
+    return localStorage.getItem(FLIP_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
+const writeFlipPref = (on: boolean) => {
+  try {
+    localStorage.setItem(FLIP_KEY, on ? "1" : "0");
+  } catch {
+    /* modo privado: no se recuerda, sin más */
+  }
+};
+const EMPTY: WorkoutPhotoState = { preview: null, url: null, status: "idle", error: null, transform: NO_TRANSFORM };
 
 /**
  * Estado de la foto del entreno: se sube en cuanto se elige (no al pulsar "Guardar"), así cuando
@@ -23,6 +43,10 @@ export function useWorkoutPhoto() {
   const [state, setState] = useState<WorkoutPhotoState>(EMPTY);
   const fileRef = useRef<Blob | null>(null);
   const localUrlRef = useRef<string | null>(null);
+  // Cada subida lleva un número: si el usuario gira dos veces seguidas, sólo cuenta la última.
+  const requestRef = useRef(0);
+  const fromCameraRef = useRef(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const release = () => {
     if (localUrlRef.current) URL.revokeObjectURL(localUrlRef.current);
@@ -30,19 +54,20 @@ export function useWorkoutPhoto() {
   };
   useEffect(() => release, []);
 
-  const upload = useCallback(async (file: Blob) => {
+  const upload = useCallback(async (file: Blob, transform: ImageTransform) => {
+    const id = ++requestRef.current;
     setState((s) => ({ ...s, status: "uploading", error: null }));
     try {
-      const compressed = await compressImage(file);
+      const compressed = await compressImage(file, 1440, 0.82, transform);
       const url = await uploadImage(compressed, "feeg/workouts");
-      setState((s) => ({ ...s, url, status: "done" }));
+      if (id === requestRef.current) setState((s) => ({ ...s, url, status: "done" }));
     } catch (e) {
-      setState((s) => ({ ...s, status: "error", error: e instanceof Error ? e.message : "No se pudo subir la foto." }));
+      if (id === requestRef.current) setState((s) => ({ ...s, status: "error", error: e instanceof Error ? e.message : "No se pudo subir la foto." }));
     }
   }, []);
 
   const pick = useCallback(
-    (file: File) => {
+    (file: File, source: "camera" | "gallery" = "gallery") => {
       if (!file.type.startsWith("image/")) {
         setState({ ...EMPTY, status: "error", error: "Ese archivo no es una imagen." });
         return;
@@ -51,45 +76,67 @@ export function useWorkoutPhoto() {
       const local = URL.createObjectURL(file);
       localUrlRef.current = local;
       fileRef.current = file;
-      setState({ preview: local, url: null, status: "uploading", error: null });
-      upload(file);
+      fromCameraRef.current = source === "camera";
+      const initial = source === "camera" && readFlipPref() ? { ...NO_TRANSFORM, flip: true } : NO_TRANSFORM;
+      setState({ preview: local, url: null, status: "uploading", error: null, transform: initial });
+      upload(file, initial);
     },
     [upload]
   );
 
   const retry = useCallback(() => {
-    if (fileRef.current) upload(fileRef.current);
-  }, [upload]);
+    if (fileRef.current) upload(fileRef.current, state.transform);
+  }, [upload, state.transform]);
+
+  /** Girar o voltear: la vista previa cambia ya; la versión corregida se sube tras una pausa. */
+  const adjust = useCallback(
+    (change: "flip" | "rotate") => {
+      if (!fileRef.current) return;
+      const next: Required<ImageTransform> =
+        change === "flip"
+          ? { ...state.transform, flip: !state.transform.flip }
+          : { ...state.transform, rotate: (((state.transform.rotate + 90) % 360) as 0 | 90 | 180 | 270) };
+      if (change === "flip" && fromCameraRef.current) writeFlipPref(next.flip);
+      setState((s) => ({ ...s, transform: next, status: "uploading", url: null }));
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      const file = fileRef.current;
+      debounceRef.current = setTimeout(() => upload(file, next), 450);
+    },
+    [state.transform, upload]
+  );
 
   const remove = useCallback(() => {
     release();
     fileRef.current = null;
+    requestRef.current += 1;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     setState(EMPTY);
   }, []);
 
-  return { photo: state, pick, retry, remove };
+  return { photo: state, pick, retry, remove, adjust };
 }
 
 interface WorkoutPhotoPickerProps {
   photo: WorkoutPhotoState;
-  onPick: (file: File) => void;
+  onPick: (file: File, source?: "camera" | "gallery") => void;
   onRetry: () => void;
   onRemove: () => void;
+  onAdjust?: (change: "flip" | "rotate") => void;
 }
 
 /**
  * Foto del entreno en la pantalla de cierre: hacer una con la cámara o elegirla de la galería.
  * Se publica con el entreno y la ven tus seguidores en el feed y en tu perfil.
  */
-export default function WorkoutPhotoPicker({ photo, onPick, onRetry, onRemove }: WorkoutPhotoPickerProps) {
+export default function WorkoutPhotoPicker({ photo, onPick, onRetry, onRemove, onAdjust }: WorkoutPhotoPickerProps) {
   const tk = getWorkoutTokens();
   const reduceMotion = useReducedMotion();
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onChange = (source: "camera" | "gallery") => (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) onPick(file);
+    if (file) onPick(file, source);
     e.target.value = "";
   };
 
@@ -117,8 +164,8 @@ export default function WorkoutPhotoPicker({ photo, onPick, onRetry, onRemove }:
         <span style={{ color: tk.textFaint, fontSize: "0.74rem", fontWeight: 600 }}>La verán tus seguidores</span>
       </div>
 
-      <input ref={cameraRef} type="file" accept="image/*" capture="environment" onChange={onChange} style={{ display: "none" }} />
-      <input ref={galleryRef} type="file" accept="image/*" onChange={onChange} style={{ display: "none" }} />
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" onChange={onChange("camera")} style={{ display: "none" }} />
+      <input ref={galleryRef} type="file" accept="image/*" onChange={onChange("gallery")} style={{ display: "none" }} />
 
       <AnimatePresence mode="wait" initial={false}>
         {photo.preview ? (
@@ -129,7 +176,18 @@ export default function WorkoutPhotoPicker({ photo, onPick, onRetry, onRemove }:
             exit={reduceMotion ? undefined : { opacity: 0 }}
             style={{ position: "relative", borderRadius: 18, overflow: "hidden", background: tk.surface, aspectRatio: "4 / 5", maxHeight: 420, margin: "0 auto" }}
           >
-            <img src={photo.preview} alt="Foto del entreno" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+            <img
+              src={photo.preview}
+              alt="Foto del entreno"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+                transform: `rotate(${photo.transform.rotate}deg) scaleX(${photo.transform.flip ? -1 : 1})`,
+                transition: "transform .25s ease",
+              }}
+            />
 
             {photo.status === "uploading" && (
               <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", background: "rgba(0,0,0,0.45)" }}>
@@ -156,6 +214,16 @@ export default function WorkoutPhotoPicker({ photo, onPick, onRetry, onRemove }:
             )}
 
             <div style={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 8 }}>
+              {onAdjust && (
+                <>
+                  <button type="button" onClick={() => onAdjust("flip")} aria-label="Voltear foto (quitar efecto espejo)" title="Voltear" style={{ ...overlayButton, background: photo.transform.flip ? tk.accent : overlayButton.background, color: photo.transform.flip ? tk.onAccent : "#fff" }}>
+                    <Icon name="flip" size={16} />
+                  </button>
+                  <button type="button" onClick={() => onAdjust("rotate")} aria-label="Girar foto" title="Girar" style={overlayButton}>
+                    <Icon name="rotate" size={16} />
+                  </button>
+                </>
+              )}
               <button type="button" onClick={() => galleryRef.current?.click()} aria-label="Cambiar foto" style={overlayButton}>
                 <Icon name="edit" size={15} />
               </button>

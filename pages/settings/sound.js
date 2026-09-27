@@ -35,10 +35,10 @@ export default function SettingsSound() {
     <SettingsSubpage isDark={isDark} isMobile={isMobile} title="Sonido y voz">
       <div style={{
         display: "flex",
-        flexDirection: isMobile ? "column" : "row",
+        flexDirection: "row",
         justifyContent: "space-between",
-        alignItems: isMobile ? "flex-start" : "center",
-        gap: isMobile ? "12px" : "0"
+        alignItems: "center",
+        gap: "14px"
       }}>
         <div>
           <div style={{ color: tk.text, fontSize: "1.1rem" }}>{t("sound_pr_label")}</div>
@@ -47,7 +47,7 @@ export default function SettingsSound() {
         <Switch isDark={isDark} checked={soundEnabled} onChange={setSoundEnabled} />
       </div>
 
-      <div style={{ height: "1px", backgroundColor: tk.border }} />
+      <div style={{ height: "1px", backgroundColor: tk.hairline }} />
 
       <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
         <span style={{ color: tk.text, fontSize: "1.1rem", fontWeight: 600 }}>
@@ -56,10 +56,10 @@ export default function SettingsSound() {
 
         <div style={{
           display: "flex",
-          flexDirection: isMobile ? "column" : "row",
+          flexDirection: "row",
           justifyContent: "space-between",
-          alignItems: isMobile ? "flex-start" : "center",
-          gap: isMobile ? "12px" : "0",
+          alignItems: "center",
+          gap: "14px",
         }}>
           <div>
             <div style={{ color: tk.text, fontSize: "1.1rem" }}>{t("ai_voice_enable_label")}</div>
@@ -73,7 +73,7 @@ export default function SettingsSound() {
         )}
 
         {ttsSupported && aiVoiceEnabled && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "14px", backgroundColor: tk.surfaceAlt, borderRadius: tk.radius.md, padding: "15px", border: `1px solid ${tk.border}` }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px", backgroundColor: tk.surfaceAlt, borderRadius: tk.radius.md, padding: "15px" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <span style={{ color: tk.textMuted, fontSize: "0.85rem" }}>{t("ai_voice_select_label")}</span>
               <select

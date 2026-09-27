@@ -25,12 +25,14 @@ export default function Card({
         borderRadius: tk.radius.lg,
         padding: PADDING[padding] || PADDING.md,
         cursor: interactive ? "pointer" : "default",
-        "--feeg-bg": tk.surface,
-        "--feeg-border": tk.border,
-        "--feeg-shadow": tk.shadow.card,
+        // Relleno sin contorno: los bordes de 1px en cada tarjeta recargaban las pantallas. En
+        // claro, una sombra mínima separa la tarjeta del fondo gris.
+        "--feeg-bg": isDark ? "rgba(255,255,255,0.045)" : "#fff",
+        "--feeg-border": "transparent",
+        "--feeg-shadow": isDark ? "none" : "0 1px 3px rgba(24,32,44,0.06)",
         ...(interactive
           ? {
-              "--feeg-hover-bg": tk.surface,
+              "--feeg-hover-bg": isDark ? "rgba(255,255,255,0.07)" : "#fff",
               "--feeg-hover-border": tk.accent,
               "--feeg-lift-shadow": tk.shadow.float,
               "--feeg-press-scale": 0.985,

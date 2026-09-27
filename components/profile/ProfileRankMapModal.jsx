@@ -15,7 +15,7 @@ const RANK_SCALE = `linear-gradient(90deg, ${RANKS.map((r) => r.color).join(", "
  * otra "reducida" para los demás. El desglose ejercicio a ejercicio de siempre sigue en
  * Estadísticas → Rangos, que sólo tiene sentido para tus propios datos.
  *
- * fontWeight: 500 en el contenedor es la base — Manrope a 400 (el normal del navegador) se lee
+ * fontWeight: 500 en el contenedor es la base — la fuente a 400 (el normal del navegador) se lee
  * fino sobre el fondo oscuro a estos tamaños pequeños; el texto propio de aquí ya pide 600+ donde
  * importa, pero el "hint" que dibuja MuscleMap internamente no fija su propio peso, así que hereda
  * de aquí.
@@ -59,7 +59,6 @@ export default function ProfileRankMapModal({
       }}
     >
       <style>{`
-        @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap");
         @keyframes profileRankMapIn { from { opacity: 0; transform: scale(0.96) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         @media (prefers-reduced-motion: reduce) { .profile-rankmap-dialog { animation: none; } }
       `}</style>
@@ -78,10 +77,9 @@ export default function ProfileRankMapModal({
           overflow: "hidden",
           borderRadius: "24px",
           backgroundColor: tk.surface,
-          border: `1px solid ${tk.border}`,
           boxShadow: "0 28px 90px rgba(0,0,0,0.42)",
           animation: "profileRankMapIn 220ms cubic-bezier(0.16, 1, 0.3, 1)",
-          fontFamily: "'Manrope', -apple-system, 'Segoe UI', sans-serif",
+          fontFamily: "var(--font-feeg), -apple-system, 'Segoe UI', sans-serif",
           fontWeight: 500,
         }}
       >
@@ -90,7 +88,7 @@ export default function ProfileRankMapModal({
             position: "relative",
             overflow: "hidden",
             padding: "20px 22px 18px",
-            borderBottom: `1px solid ${tk.border}`,
+            borderBottom: `1px solid ${tk.hairline}`,
             background: overallPosition
               ? `radial-gradient(120% 140% at 90% -10%, ${overallPosition.rank.color}26 0%, ${overallPosition.rank.color}0a 45%, transparent 75%)`
               : "none",
@@ -120,9 +118,9 @@ export default function ProfileRankMapModal({
                 height: "34px",
                 display: "grid",
                 placeItems: "center",
-                border: `1px solid ${tk.border}`,
+                border: "none",
                 borderRadius: "12px",
-                background: "transparent",
+                background: tk.surfaceAlt,
                 color: tk.textMuted,
                 cursor: "pointer",
                 "--feeg-hover-bg": tk.surfaceHover,
@@ -212,7 +210,7 @@ export default function ProfileRankMapModal({
               legend={
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", maxWidth: "340px" }}>
                   <span style={{ fontSize: "0.68rem", fontWeight: 700, color: tk.textFaint, flexShrink: 0 }}>{RANKS[0].name}</span>
-                  <span aria-hidden="true" style={{ flex: 1, height: "6px", borderRadius: "999px", background: RANK_SCALE, border: `1px solid ${tk.border}` }} />
+                  <span aria-hidden="true" style={{ flex: 1, height: "6px", borderRadius: "999px", background: RANK_SCALE }} />
                   <span style={{ fontSize: "0.68rem", fontWeight: 700, color: tk.textFaint, flexShrink: 0 }}>{RANKS[RANKS.length - 1].name}</span>
                 </div>
               }

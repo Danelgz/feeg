@@ -20,6 +20,8 @@ interface WorkoutExercisePagerProps<T extends PagerItem> {
  *  saltar automáticamente al siguiente ejercicio cuando se completa la última serie del actual. */
 export interface WorkoutExercisePagerHandle {
   scrollToNext: () => void;
+  /** Salta a un ejercicio concreto (p.ej. desde "Siguiente" del temporizador de descanso). */
+  scrollToExercise: (index: number) => void;
 }
 
 function prefersReducedMotion() {
@@ -37,8 +39,16 @@ function WorkoutExercisePagerInner<T extends PagerItem>(
   const [activeIndex, setActiveIndex] = useState(0);
   const chipsRef = useRef<HTMLDivElement | null>(null);
 
+  // Desplaza SÓLO el contenedor del pager. scrollIntoView movía también la página entera y dejaba
+  // la cabecera del entreno medio cortada por arriba al saltar de ejercicio.
   const scrollToIndex = (index: number) => {
-    sectionRefs.current[index]?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
+    const section = sectionRefs.current[index];
+    const scroller = scrollerRef.current;
+    if (!section || !scroller) return;
+    const top = section.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+    const behavior: ScrollBehavior = prefersReducedMotion() ? "auto" : "smooth";
+    if (typeof scroller.scrollTo === "function") scroller.scrollTo({ top, behavior });
+    else scroller.scrollTop = top;
   };
 
   // La ficha activa siempre a la vista en la fila (con 8 ejercicios la fila no cabe).
@@ -81,12 +91,8 @@ function WorkoutExercisePagerInner<T extends PagerItem>(
   useImperativeHandle(
     ref,
     () => ({
-      scrollToNext: () => {
-        const nextIndex = activeIndex + 1;
-        const section = sectionRefs.current[nextIndex];
-        if (!section) return;
-        section.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
-      },
+      scrollToNext: () => scrollToIndex(activeIndex + 1),
+      scrollToExercise: (index: number) => scrollToIndex(index),
     }),
     [activeIndex]
   );

@@ -379,7 +379,7 @@ export default function RoutineDetail() {
         }
       `}</style>
 
-      <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} totalRestSeconds={totalRestSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} nextSet={restActive ? findNextSet(state.exercises, state.restForExerciseUid) : null} translateExerciseName={(name) => translateExerciseName(name, language)} />
+      <FloatingRestTimer restActive={restActive} restRemainingSeconds={restRemainingSeconds} totalRestSeconds={totalRestSeconds} elapsedSeconds={elapsedSeconds} onAdjust={actions.adjustRest} onStop={actions.stopRest} t={t} nextSet={restActive ? findNextSet(state.exercises, state.restForExerciseUid) : null} translateExerciseName={(name) => translateExerciseName(name, language)} onNextSetClick={(next) => pagerRef.current?.scrollToExercise(state.exercises.findIndex((ex) => ex.uid === next.exerciseUid))} />
       <PRToast item={prToast} t={t} onDismiss={dismissPRToast} />
 
       <ConfirmModal

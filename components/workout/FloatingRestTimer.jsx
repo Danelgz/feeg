@@ -60,6 +60,7 @@ export default function FloatingRestTimer({
   t,
   nextSet = null,
   translateExerciseName = (name) => name,
+  onNextSetClick,
 }) {
   const tk = getWorkoutTokens();
   const { isMobile } = useUser();
@@ -162,8 +163,16 @@ export default function FloatingRestTimer({
 
         {/* Lo que toca después del descanso: se ve sin tener que buscarlo en la lista. */}
         {nextSet && (
-          <div
+          <button
+            type="button"
+            onClick={onNextSetClick ? () => onNextSetClick(nextSet) : undefined}
+            aria-label="Ir a la siguiente serie"
             style={{
+              border: "none",
+              background: "none",
+              font: "inherit",
+              textAlign: "left",
+              cursor: onNextSetClick ? "pointer" : "default",
               flexBasis: "100%",
               display: "flex",
               alignItems: "center",
@@ -181,7 +190,8 @@ export default function FloatingRestTimer({
               {nextSet.changesExercise && <span style={{ color: tk.textMuted, fontWeight: 600 }}> · serie {nextSet.setNumber}</span>}
             </span>
             <span style={{ flexShrink: 0, fontWeight: 800, color: tk.text, fontVariantNumeric: "tabular-nums" }}>{formatNextSetLoad(nextSet)}</span>
-          </div>
+            {onNextSetClick && <Icon name="chevronRight" size={15} color={tk.textFaint} style={{ flexShrink: 0 }} />}
+          </button>
         )}
       </div>
       <style>{`

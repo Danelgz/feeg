@@ -51,7 +51,7 @@ export default function RoutineDetail() {
   const [showRoutineActiveAlert, setShowRoutineActiveAlert] = useState(false);
   const [finishName, setFinishName] = useState("");
   const [finishComments, setFinishComments] = useState("");
-  const { photo: finishPhoto, pick: pickFinishPhoto, retry: retryFinishPhoto, remove: removeFinishPhoto } = useWorkoutPhoto();
+  const { photo: finishPhoto, pick: pickFinishPhoto, retry: retryFinishPhoto, remove: removeFinishPhoto, adjust: adjustFinishPhoto } = useWorkoutPhoto();
   const [finishTotalTime, setFinishTotalTime] = useState(0);
   const [updateOriginalRoutine, setUpdateOriginalRoutine] = useState(false);
   const [savingWorkout, setSavingWorkout] = useState(false);
@@ -302,6 +302,7 @@ export default function RoutineDetail() {
           onPhotoPick={pickFinishPhoto}
           onPhotoRetry={retryFinishPhoto}
           onPhotoRemove={removeFinishPhoto}
+          onPhotoAdjust={adjustFinishPhoto}
           totalMinutes={finishTotalTime}
           onTotalMinutesChange={setFinishTotalTime}
           elapsedSeconds={elapsedSeconds}

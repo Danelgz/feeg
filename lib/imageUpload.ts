@@ -6,23 +6,60 @@
 const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dfs9hazxo/image/upload";
 const UPLOAD_PRESET = "feeg_profile";
 
-export async function compressImage(file: Blob, maxSide = 1440, quality = 0.82): Promise<Blob> {
-  if (typeof window === "undefined" || typeof createImageBitmap !== "function") return file;
+export interface ImageTransform {
+  /** Espejo horizontal: deshace el efecto espejo de muchos selfis de la cámara frontal. */
+  flip?: boolean;
+  /** Giro en grados, sentido horario. */
+  rotate?: 0 | 90 | 180 | 270;
+}
+
+function loadImage(file: Blob): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = (e) => {
+      URL.revokeObjectURL(url);
+      reject(e);
+    };
+    img.src = url;
+  });
+}
+
+/**
+ * Reescala, reorienta y aplica el giro/espejo pedido, y devuelve un JPEG.
+ *
+ * Se decodifica con un <img> y no con `createImageBitmap(file)`: el <img> aplica siempre la
+ * orientación EXIF de la cámara, mientras que createImageBitmap, según navegador y versión, la
+ * ignora — y entonces una foto hecha con el móvil vertical salía tumbada o boca abajo.
+ */
+export async function compressImage(file: Blob, maxSide = 1440, quality = 0.82, transform: ImageTransform = {}): Promise<Blob> {
+  if (typeof window === "undefined") return file;
+  const hasTransform = !!transform.flip || !!transform.rotate;
   try {
-    const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
-    const w = Math.round(bitmap.width * scale);
-    const h = Math.round(bitmap.height * scale);
+    const img = await loadImage(file);
+    const srcW = img.naturalWidth;
+    const srcH = img.naturalHeight;
+    const scale = Math.min(1, maxSide / Math.max(srcW, srcH));
+    const w = Math.round(srcW * scale);
+    const h = Math.round(srcH * scale);
+    const quarter = transform.rotate === 90 || transform.rotate === 270;
     const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
+    canvas.width = quarter ? h : w;
+    canvas.height = quarter ? w : h;
     const ctx = canvas.getContext("2d");
     if (!ctx) return file;
-    ctx.drawImage(bitmap, 0, 0, w, h);
-    bitmap.close?.();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    if (transform.rotate) ctx.rotate((transform.rotate * Math.PI) / 180);
+    if (transform.flip) ctx.scale(-1, 1);
+    ctx.drawImage(img, -w / 2, -h / 2, w, h);
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
-    // Si por lo que sea la "comprimida" pesa más (una imagen ya pequeña), se sube la original.
-    return blob && blob.size < file.size ? blob : file;
+    if (!blob) return file;
+    // Sin giro ni espejo, si la "comprimida" pesa más (una imagen ya pequeña) se sube la original.
+    return hasTransform || blob.size < file.size ? blob : file;
   } catch {
     return file;
   }

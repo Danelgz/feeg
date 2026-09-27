@@ -109,7 +109,7 @@ export default function TechniqueExplorer({
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
         body: JSON.stringify({ exerciseName }),
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({ error: response.status === 504 ? "La IA ha tardado demasiado en responder. Vuelve a intentarlo." : "No se pudo contactar con la IA. Vuelve a intentarlo." }));
       if (!response.ok) throw new Error(data.error || "Error consultando la técnica");
 
       setResult(data.result);

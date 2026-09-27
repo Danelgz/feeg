@@ -176,16 +176,22 @@ export default function IA() {
       })
     });
 
-    const data = await response.json();
-    const reply = response.ok
-      ? data.reply
-      : "Ha ocurrido un error contactando con mis servidores. Por favor, inténtalo de nuevo en unos segundos.";
-
-    if (!response.ok) console.error('Error del servidor:', data.error);
+    // Si Vercel corta la función devuelve una página HTML, no JSON: sin el catch el error real
+    // quedaba tapado por un "Unexpected token <".
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error('Error del servidor:', response.status, data.error);
+      // No se guarda en la conversación: un mensaje de error en el historial ensucia el contexto
+      // de las siguientes preguntas. La pregunta queda sola al final y aparece "reintentar".
+      throw new Error(
+        data.error || (response.status === 504 ? "La IA ha tardado demasiado en responder. Vuelve a intentarlo." : "No se pudo contactar con la IA. Vuelve a intentarlo.")
+      );
+    }
+    const reply = data.reply;
 
     await addAiMessage(authUser.uid, conversationId, 'assistant', reply);
-    setLastMeta(response.ok ? { suggestions: data.suggestions || [], toolsUsed: data.toolsUsed || [] } : null);
-    if (response.ok && data.pendingAction) setPendingAction(data.pendingAction);
+    setLastMeta({ suggestions: data.suggestions || [], toolsUsed: data.toolsUsed || [] });
+    if (data.pendingAction) setPendingAction(data.pendingAction);
     if (aiVoiceEnabled) voice.speak(reply);
   };
 
@@ -210,7 +216,7 @@ export default function IA() {
       await requestReply(conversationId, history, userMessage);
     } catch (error) {
       console.error('Error enviando mensaje:', error);
-      showNotification("Hubo un problema al enviar tu mensaje. Revisa tu conexión.", 'error');
+      showNotification(error?.message || "Hubo un problema al enviar tu mensaje. Revisa tu conexión.", 'error');
     } finally {
       setIsLoadingChat(false);
     }
@@ -227,7 +233,7 @@ export default function IA() {
       await requestReply(activeConversationId, history, last.content);
     } catch (error) {
       console.error('Error reintentando:', error);
-      showNotification("Sigue sin haber conexión. Inténtalo en un momento.", 'error');
+      showNotification(error?.message || "Sigue sin haber conexión. Inténtalo en un momento.", 'error');
     } finally {
       setIsLoadingChat(false);
     }

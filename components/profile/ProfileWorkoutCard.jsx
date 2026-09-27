@@ -22,10 +22,26 @@ function durationLabel(w) {
   return min >= 60 ? `${Math.floor(min / 60)} h ${min % 60} min` : `${min} min`;
 }
 
+const MONTHS = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+
+function DateTile({ date, tk }) {
+  const d = new Date(date);
+  const valid = !isNaN(d.getTime());
+  return (
+    <div
+      aria-hidden
+      style={{ width: 44, height: 48, flexShrink: 0, borderRadius: 12, background: tk.accentSoft, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", lineHeight: 1 }}
+    >
+      <span style={{ fontSize: "1.15rem", fontWeight: 900, color: tk.accent, fontVariantNumeric: "tabular-nums" }}>{valid ? d.getDate() : "–"}</span>
+      <span style={{ fontSize: "0.58rem", fontWeight: 800, color: tk.accent, letterSpacing: "0.06em", marginTop: 3 }}>{valid ? MONTHS[d.getMonth()] : ""}</span>
+    </div>
+  );
+}
+
 /**
  * Un entreno en el perfil, con forma de publicación: título y cuándo, la foto si la tiene, tres
- * cifras, los ejercicios principales y la nota. Sin caja con fondo: las publicaciones se separan
- * con una línea fina, como en el feed.
+ * cifras, los ejercicios principales y la nota. Cada una es un bloque con fondo propio (sin borde)
+ * y una ficha de fecha, para que se distinga dónde acaba un entreno y empieza el siguiente.
  *
  * Las acciones del menú son todas opcionales: en el perfil propio se pasan (foto, rutina, editar,
  * borrar); en el ajeno no, y en su lugar van like y comentarios.
@@ -63,8 +79,19 @@ export default function ProfileWorkoutCard({
   ];
 
   return (
-    <article style={{ padding: "16px 0", borderTop: `1px solid ${tk.hairline}` }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+    // Cada entreno es un bloque con su propio fondo (sin borde) y una ficha de fecha a la izquierda:
+    // con sólo una línea fina entre publicaciones, dos entrenos seguidos se leían como uno.
+    <article
+      style={{
+        marginTop: 12,
+        padding: 14,
+        borderRadius: 20,
+        background: isDark ? "rgba(255,255,255,0.045)" : "#fff",
+        boxShadow: isDark ? "none" : "0 1px 3px rgba(24,32,44,0.06)",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+        <DateTile date={workout.completedAt} tk={tk} />
         <button type="button" onClick={onOpenDetail} style={{ minWidth: 0, flex: 1, textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer" }}>
           <div style={{ fontSize: "1.05rem", fontWeight: 800, color: tk.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.01em" }}>
             {workout.name || "Entreno"}
@@ -111,13 +138,13 @@ export default function ProfileWorkoutCard({
 
       {workout.photoURL && (
         <div style={{ marginTop: 12 }}>
-          <WorkoutPhoto url={workout.photoURL} alt={`Foto de ${workout.name || "entreno"}`} />
+          <WorkoutPhoto url={workout.photoURL} alt={`Foto de ${workout.name || "entreno"}`} radius={14} />
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", marginTop: 12 }}>
-        {stats.map((s) => (
-          <div key={s.label}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", marginTop: 12, paddingTop: 10, borderTop: `1px solid ${tk.hairline}` }}>
+        {stats.map((s, i) => (
+          <div key={s.label} style={{ paddingLeft: i ? 12 : 0, borderLeft: i ? `1px solid ${tk.hairline}` : "none" }}>
             <div style={{ fontSize: "0.68rem", color: tk.textFaint, fontWeight: 600 }}>{s.label}</div>
             <div style={{ fontSize: "0.98rem", color: tk.text, fontWeight: 800, marginTop: 1, fontVariantNumeric: "tabular-nums" }}>{s.value}</div>
           </div>

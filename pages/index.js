@@ -387,7 +387,7 @@ export default function Home() {
         </div>
 
         {/* Feed de Entrenamientos */}
-        <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "0" : "20px", padding: isMobile ? "0" : "0" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "12px" : "16px", padding: isMobile ? "0 12px" : "0" }}>
           {visibleFeedWorkouts.length === 0 ? (
             <EmptyState
               isDark={isDark}
@@ -407,13 +407,14 @@ export default function Home() {
                 <div
                   key={workout.id}
                   onClick={() => setSelectedWorkout(workout)}
+                  // Cada entreno del feed en su propio bloque (fondo sin borde): con sólo una línea
+                  // entre ellos no se distinguía dónde acababa uno y empezaba el siguiente.
                   style={{
-                    backgroundColor: isMobile ? tk.bg : tk.surface,
-                    border: isMobile ? "none" : `1px solid ${tk.border}`,
-                    borderBottom: `1px solid ${tk.border}`,
-                    padding: isMobile ? "18px 15px" : "18px",
-                    borderRadius: isMobile ? 0 : tk.radius.lg,
-                    boxShadow: isMobile ? "none" : tk.shadow.card,
+                    backgroundColor: isDark ? "rgba(255,255,255,0.045)" : "#fff",
+                    border: "none",
+                    padding: isMobile ? "16px 14px" : "18px",
+                    borderRadius: 20,
+                    boxShadow: isDark ? "none" : "0 1px 3px rgba(24,32,44,0.06)",
                     cursor: "pointer",
                   }}
                 >

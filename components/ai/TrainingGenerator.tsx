@@ -446,7 +446,7 @@ export default function TrainingGenerator({
           },
         }),
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({ error: response.status === 504 ? "La IA ha tardado demasiado en responder. Vuelve a intentarlo." : "No se pudo contactar con la IA. Vuelve a intentarlo." }));
       if (!response.ok) throw new Error(data.error || "Error generando la rutina");
       if (!Array.isArray(data.plans) || data.plans.length < 2) throw new Error("Respuesta incompleta del generador");
 

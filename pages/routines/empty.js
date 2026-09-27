@@ -34,7 +34,7 @@ export default function EmptyRoutine() {
   const [showRoutineActiveAlert, setShowRoutineActiveAlert] = useState(false);
   const [finishName, setFinishName] = useState("Entrenamiento Vacío");
   const [finishComments, setFinishComments] = useState("");
-  const { photo: finishPhoto, pick: pickFinishPhoto, retry: retryFinishPhoto, remove: removeFinishPhoto } = useWorkoutPhoto();
+  const { photo: finishPhoto, pick: pickFinishPhoto, retry: retryFinishPhoto, remove: removeFinishPhoto, adjust: adjustFinishPhoto } = useWorkoutPhoto();
   const [finishTotalTime, setFinishTotalTime] = useState(0);
   const [savingWorkout, setSavingWorkout] = useState(false);
   const [finishedWorkout, setFinishedWorkout] = useState(null);
@@ -258,6 +258,7 @@ export default function EmptyRoutine() {
           onPhotoPick={pickFinishPhoto}
           onPhotoRetry={retryFinishPhoto}
           onPhotoRemove={removeFinishPhoto}
+          onPhotoAdjust={adjustFinishPhoto}
           totalMinutes={finishTotalTime}
           onTotalMinutesChange={setFinishTotalTime}
           elapsedSeconds={elapsedSeconds}

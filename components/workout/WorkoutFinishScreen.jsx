@@ -40,6 +40,7 @@ export default function WorkoutFinishScreen({
   onPhotoPick,
   onPhotoRetry,
   onPhotoRemove,
+  onPhotoAdjust,
   t,
 }) {
   const tk = getWorkoutTokens();
@@ -112,7 +113,7 @@ export default function WorkoutFinishScreen({
         />
 
         {onPhotoPick && photo && (
-          <WorkoutPhotoPicker photo={photo} onPick={onPhotoPick} onRetry={onPhotoRetry} onRemove={onPhotoRemove} />
+          <WorkoutPhotoPicker photo={photo} onPick={onPhotoPick} onRetry={onPhotoRetry} onRemove={onPhotoRemove} onAdjust={onPhotoAdjust} />
         )}
 
         <div className="finish-row" onClick={() => setDurationPickerOpen(true)}>

@@ -36,9 +36,9 @@ export default function Recommended() {
         width: "100%",
         boxSizing: "border-box"
       }}>
-        <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", margin: "0 0 24px", color: tk.text }}>Gente recomendada</h1>
+        <h1 style={{ fontSize: "1.8rem", fontWeight: 900, letterSpacing: "-0.02em", margin: "0 0 12px", color: tk.text }}>Gente recomendada</h1>
 
-        <div style={{ backgroundColor: tk.surface, borderRadius: tk.radius.lg, border: `1px solid ${tk.border}`, overflow: "hidden" }}>
+        <div>
           {loadingUsers ? (
             <Spinner isDark={isDark} fullPage />
           ) : users.length === 0 ? (
@@ -52,8 +52,8 @@ export default function Recommended() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  padding: "15px",
-                  borderBottom: `1px solid ${tk.border}`,
+                  padding: "14px 0",
+                  borderBottom: `1px solid ${tk.hairline}`,
                   cursor: "pointer",
                   transition: tk.transition
                 }}

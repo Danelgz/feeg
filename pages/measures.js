@@ -3,6 +3,7 @@ import Layout from "../components/Layout";
 import { useUser } from "../context/UserContext";
 import { getTokens } from "../lib/tokens";
 import { Icon, Button, EmptyState, PageHeader, ConfirmModal, SkeletonPage } from "../components/ui";
+import MeasuresDashboard from "../components/measures/MeasuresDashboard";
 
 const MeasurementField = ({ label, value, name, unit, onChange, tk }) => (
   <div style={{ marginBottom: "15px" }}>
@@ -24,26 +25,6 @@ const MeasurementField = ({ label, value, name, unit, onChange, tk }) => (
       }}
       placeholder="0.0"
     />
-  </div>
-);
-
-const StatCard = ({ label, value, unit, icon, tk }) => (
-  <div style={{
-    backgroundColor: tk.surface,
-    padding: "15px",
-    borderRadius: tk.radius.lg,
-    display: "flex",
-    flexDirection: "column",
-    gap: "5px",
-    border: `1px solid ${tk.border}`
-  }}>
-    <div style={{ color: tk.textMuted, fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "5px" }}>
-      <Icon name={icon} size={14} />
-      {label}
-    </div>
-    <div style={{ fontSize: "1.2rem", fontWeight: "bold", color: tk.accent }}>
-      {value || "--"} <span style={{ fontSize: "0.8rem", color: tk.textFaint }}>{unit}</span>
-    </div>
   </div>
 );
 
@@ -230,8 +211,6 @@ export default function Measures() {
     if (viewingMeasure?.id === id) setViewingMeasure(null);
   };
 
-  const latest = measures[0] || {};
-
   return (
     <Layout gutter>
       <PageHeader
@@ -241,69 +220,9 @@ export default function Measures() {
         subtitle="Seguimiento de progreso corporal"
       />
 
-      {/* Units Toggles */}
-      <div style={{ display: "flex", gap: "10px", marginBottom: "30px" }}>
-        <div style={{ flex: 1, backgroundColor: tk.surface, border: `1px solid ${tk.border}`, padding: "5px", borderRadius: tk.radius.md, display: "flex" }}>
-          {['kg', 'lb'].map(u => (
-            <button
-              key={u}
-              onClick={() => updateUnits('weight', u)}
-              className="feeg-surface feeg-press feeg-hover"
-              style={{
-                flex: 1,
-                padding: "8px",
-                borderRadius: tk.radius.sm,
-                border: "none",
-                fontWeight: "bold",
-                cursor: "pointer",
-                fontSize: "0.8rem",
-                "--feeg-bg": units.weight === u ? tk.accent : "transparent",
-                "--feeg-fg": units.weight === u ? tk.onAccent : tk.textMuted,
-                "--feeg-hover-bg": units.weight === u ? tk.accentHover : tk.surfaceHover,
-                "--feeg-hover-fg": units.weight === u ? tk.onAccent : tk.text,
-                "--feeg-border-width": "0px",
-                "--feeg-press-scale": 0.96,
-              }}
-            >{u.toUpperCase()}</button>
-          ))}
-        </div>
-        <div style={{ flex: 1, backgroundColor: tk.surface, border: `1px solid ${tk.border}`, padding: "5px", borderRadius: tk.radius.md, display: "flex" }}>
-          {['cm', 'in'].map(u => (
-            <button
-              key={u}
-              onClick={() => updateUnits('length', u)}
-              className="feeg-surface feeg-press feeg-hover"
-              style={{
-                flex: 1,
-                padding: "8px",
-                borderRadius: tk.radius.sm,
-                border: "none",
-                fontWeight: "bold",
-                cursor: "pointer",
-                fontSize: "0.8rem",
-                "--feeg-bg": units.length === u ? tk.accent : "transparent",
-                "--feeg-fg": units.length === u ? tk.onAccent : tk.textMuted,
-                "--feeg-hover-bg": units.length === u ? tk.accentHover : tk.surfaceHover,
-                "--feeg-hover-fg": units.length === u ? tk.onAccent : tk.text,
-                "--feeg-border-width": "0px",
-                "--feeg-press-scale": 0.96,
-              }}
-            >{u.toUpperCase()}</button>
-          ))}
-        </div>
-      </div>
-
-      {/* Main Stats Summary */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", marginBottom: "30px" }}>
-        <StatCard tk={tk} label="Peso" value={latest.weight} unit={units.weight} icon="dumbbell" />
-        <StatCard tk={tk} label="Grasa Corporal" value={latest.bodyFat} unit="%" icon="barChart" />
-        <StatCard tk={tk} label="Cintura" value={latest.waist} unit={units.length} icon="clock" />
-        <StatCard tk={tk} label="Bíceps (R)" value={latest.bicepsR} unit={units.length} icon="list" />
-      </div>
-
-      {/* History / List */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-        <h2 style={{ fontSize: "1.2rem", fontWeight: "bold", margin: 0, color: tk.text }}>Historial</h2>
+      {/* Añadir y unidades en una sola fila: las unidades se cambian una vez, no merecen dos
+          barras a todo el ancho encima del dato. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
         <Button
           isDark={isDark}
           size="sm"
@@ -314,67 +233,47 @@ export default function Measures() {
             setShowAddForm(true);
           }}
         >
-          Añadir Medida
+          Añadir medida
         </Button>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+          <div role="group" aria-label="Unidades" style={{ display: "flex", padding: 3, borderRadius: 10, background: tk.hairline }}>
+            {['kg', 'lb'].map(u => (
+              <button
+                key={u}
+                onClick={() => updateUnits('weight', u)}
+                aria-pressed={units.weight === u}
+                className="feeg-press"
+                style={{ padding: "5px 10px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: "0.72rem", fontWeight: 800, background: units.weight === u ? (isDark ? "rgba(255,255,255,0.14)" : "#fff") : "transparent", color: units.weight === u ? tk.text : tk.textMuted }}
+              >{u}</button>
+            ))}
+          </div>
+          <div role="group" aria-label="Unidades" style={{ display: "flex", padding: 3, borderRadius: 10, background: tk.hairline }}>
+            {['cm', 'in'].map(u => (
+              <button
+                key={u}
+                onClick={() => updateUnits('length', u)}
+                aria-pressed={units.length === u}
+                className="feeg-press"
+                style={{ padding: "5px 10px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: "0.72rem", fontWeight: 800, background: units.length === u ? (isDark ? "rgba(255,255,255,0.14)" : "#fff") : "transparent", color: units.length === u ? tk.text : tk.textMuted }}
+              >{u}</button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-        {measures.length === 0 ? (
-          <EmptyState isDark={isDark} icon="clock" title="No hay medidas registradas" description="Añade tu primera medida para empezar a seguir tu progreso corporal." />
-        ) : (
-          measures.map(m => (
-            <div
-              key={m.id}
-              onClick={() => setViewingMeasure(m)}
-              style={{ backgroundColor: tk.surface, padding: "15px", borderRadius: tk.radius.lg, border: `1px solid ${tk.border}`, cursor: "pointer" }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                <div style={{ fontWeight: "bold", color: tk.accent }}>{new Date(m.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
-                <div style={{ display: "flex", gap: "10px" }}>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleEdit(m); }}
-                    className="feeg-surface feeg-press feeg-hover"
-                    style={{
-                      border: "none", cursor: "pointer", display: "flex", padding: "4px", borderRadius: tk.radius.sm,
-                      "--feeg-fg": tk.textMuted,
-                      "--feeg-hover-fg": tk.accent,
-                      "--feeg-border-width": "0px",
-                      "--feeg-press-scale": 0.88,
-                    }}
-                  >
-                    <Icon name="edit" size={18} />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(m.id); }}
-                    className="feeg-surface feeg-press feeg-hover"
-                    style={{
-                      border: "none", cursor: "pointer", display: "flex", padding: "4px", borderRadius: tk.radius.sm,
-                      "--feeg-fg": tk.danger,
-                      "--feeg-hover-fg": tk.danger,
-                      "--feeg-hover-bg": tk.dangerSoft,
-                      "--feeg-border-width": "0px",
-                      "--feeg-press-scale": 0.88,
-                    }}
-                  >
-                    <Icon name="trash" size={18} />
-                  </button>
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
-                {m.photo && (
-                  <img src={m.photo} alt="Progreso" style={{ width: "60px", height: "60px", borderRadius: tk.radius.sm, objectFit: "cover" }} />
-                )}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "0.85rem", color: tk.textMuted, flex: 1 }}>
-                  {m.weight && <div>Peso: <span style={{ color: tk.text }}>{m.weight}{units.weight}</span></div>}
-                  {m.bodyFat && <div>Grasa: <span style={{ color: tk.text }}>{m.bodyFat}%</span></div>}
-                  {m.waist && <div>Cintura: <span style={{ color: tk.text }}>{m.waist}{units.length}</span></div>}
-                  {m.bicepsR && <div>Bíceps D: <span style={{ color: tk.text }}>{m.bicepsR}{units.length}</span></div>}
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+      {measures.length === 0 ? (
+        <EmptyState isDark={isDark} icon="ruler" title="No hay medidas registradas" description="Añade tu peso para seguir tu evolución y calcular tus rangos de fuerza." />
+      ) : (
+        <MeasuresDashboard
+          isDark={isDark}
+          measures={measures}
+          units={units}
+          heightCm={Number(user?.height) || null}
+          onOpen={(m) => setViewingMeasure(m)}
+          onEdit={handleEdit}
+          onDelete={(id) => setConfirmDeleteId(id)}
+        />
+      )}
 
       {/* Add/Edit Modal */}
       {showAddForm && (

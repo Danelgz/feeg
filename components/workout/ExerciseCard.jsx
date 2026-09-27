@@ -8,6 +8,7 @@ import ExerciseActionsMenu from "./ExerciseActionsMenu";
 import SeriesRow from "./SeriesRow";
 import SeriesTypeModal from "./SeriesTypeModal";
 import RestTimePickerModal from "./RestTimePickerModal";
+import PlateCalculator from "./PlateCalculator";
 
 function formatRest(totalSeconds) {
   if (totalSeconds < 60) return `${totalSeconds}s`;
@@ -54,6 +55,13 @@ function ExerciseCard({
   // de una pantalla donde lo que importa son las series. Si ya hay nota, se muestra abierta.
   const [notesOpen, setNotesOpen] = useState(!!exercise.notes);
   const doneCount = exercise.series.filter((s) => s.completed).length;
+  const [platesOpen, setPlatesOpen] = useState(false);
+  // Sólo con barra tiene sentido contar discos por lado.
+  const usesBarbell = /\(barra\)|barra|barbell/i.test(exercise.name || "") && exercise.exerciseType !== "time";
+  const plateWeight = (() => {
+    const next = exercise.series.find((s) => !s.completed && Number(s.weight) > 0) || [...exercise.series].reverse().find((s) => Number(s.weight) > 0);
+    return Number(next?.weight) || Number(previousSeries?.[0]?.weight) || 60;
+  })();
   const seriesRowRefs = useRef({});
 
   const weightUnit = weightUnitFor(exercise);
@@ -154,6 +162,16 @@ function ExerciseCard({
         >
           <Icon name="timer" size={14} /> {formatRest(exercise.restSeconds)}
         </button>
+        {!readOnly && mode === "live" && usesBarbell && (
+          <button
+            type="button"
+            onClick={() => setPlatesOpen(true)}
+            className="feeg-press"
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 11px", borderRadius: 99, border: "none", background: tk.surfaceAlt, color: tk.textMuted, fontSize: "0.8rem", fontWeight: 700, cursor: "pointer" }}
+          >
+            <Icon name="barbell" size={14} /> Discos
+          </button>
+        )}
         {!readOnly && mode === "live" && !notesOpen && (
           <button
             type="button"
@@ -354,6 +372,10 @@ function ExerciseCard({
           }
         }
       `}</style>
+
+      {!readOnly && mode === "live" && usesBarbell && (
+        <PlateCalculator open={platesOpen} onClose={() => setPlatesOpen(false)} initialWeight={plateWeight} />
+      )}
 
       {!readOnly && <RestTimePickerModal
         open={restPickerOpen}

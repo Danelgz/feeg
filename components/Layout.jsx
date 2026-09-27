@@ -166,6 +166,12 @@ export default function Layout({ children, hideBottomNav = false, gutter = false
             enmarcada por una franja blanca. */}
         <meta name="theme-color" content={isDark ? "#000000" : "#f0f2f5"} />
         <style>{`
+          /* La variable de la fuente también en la raíz: si sólo existe en el envoltorio de
+             _app, lo que se pinta por portal en <body> (hojas, visores de fotos) recibe una
+             var() sin definir, el font-family entero se invalida y sale con tipografía serif. */
+          :root {
+            --font-feeg: Outfit;
+          }
           html, body {
             margin: 0;
             padding: 0;
